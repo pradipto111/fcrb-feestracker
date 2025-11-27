@@ -153,7 +153,7 @@ If you prefer manual setup or need to customize:
      ```
    - **Start Command**: 
      ```
-     npm run preview
+     npm run preview -- --host 0.0.0.0 --port $PORT
      ```
    - **Plan**: Free
 
