@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Center {
+  id         Int        @id @default(autoincrement())
+  name       String
+  location   String?
+  city       String?
+  address    String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  students   Student[]
+  coachLinks CoachCenter[]
+  payments   Payment[]
+}
+
+model Coach {
+  id           Int            @id @default(autoincrement())
+  fullName     String
+  email        String         @unique
+  passwordHash String
+  role         Role           @default(COACH)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  centers      CoachCenter[]
+}
+
+model CoachCenter {
+  id       Int    @id @default(autoincrement())
+  coachId  Int
+  centerId Int
+  coach  Coach  @relation(fields: [coachId], references: [id])
+  center Center @relation(fields: [centerId], references: [id])
+  @@unique([coachId, centerId])
+}
+
+model Student {
+  id                Int        @id @default(autoincrement())
+  fullName          String
+  dateOfBirth       DateTime?
+  phoneNumber       String?
+  parentName        String?
+  parentPhoneNumber String?
+  email             String?    @unique
+  passwordHash      String?
+  centerId          Int
+  joiningDate       DateTime?
+  programType       String?    // "U13", "U15", etc.
+  monthlyFeeAmount  Int        @default(0)
+  paymentFrequency  Int        @default(1)  // Payment frequency in months (1-12)
+  status            StudentStatus @default(ACTIVE)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  center   Center   @relation(fields: [centerId], references: [id])
+  payments Payment[]
+}
+
+model Payment {
+  id                 Int      @id @default(autoincrement())
+  studentId          Int
+  centerId           Int
+  amount             Int
+  paymentDate        DateTime @default(now())
+  paymentMode        String   // UPI, cash, bank transfer
+  upiOrTxnReference  String?
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  student Student @relation(fields: [studentId], references: [id])
+  center  Center  @relation(fields: [centerId], references: [id])
+  @@index([studentId])
+  @@index([centerId])
+}
+
+enum Role {
+  ADMIN
+  COACH
+  STUDENT
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  TRIAL
+}
+

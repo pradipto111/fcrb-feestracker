@@ -1,0 +1,56 @@
+# Reset System Date to Today
+
+## Quick Reset (if you have the backend running)
+
+Just refresh the browser and click the "Reset" button in the System Date widget (top-right corner).
+
+OR
+
+Login to the website as admin and the widget will show the current date. If it shows a custom date, click "Reset".
+
+---
+
+## Manual Reset via API
+
+If you need to reset via command line:
+
+1. First, login to get a token:
+```bash
+curl -X POST http://localhost:4000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@feestrack.com","password":"admin123"}'
+```
+
+2. Copy the token from the response
+
+3. Reset the date:
+```bash
+curl -X DELETE http://localhost:4000/system/date \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+---
+
+## Automatic Reset
+
+The system date is stored in memory, so it will automatically reset to the actual current date when you restart the backend server.
+
+To restart backend:
+```bash
+# Stop the backend (Ctrl+C in the backend terminal)
+# Then start it again:
+cd /Users/pradiptom/fcrb/backend
+npm run dev
+```
+
+---
+
+## Note
+
+The system date resets automatically on server restart, so you don't need to manually reset it unless you want to while the server is running.
+
+
+
+
+
+
