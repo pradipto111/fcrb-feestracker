@@ -9,8 +9,13 @@ export default defineConfig({
   },
   preview: {
     port: 4173,
-    host: true,
-    strictPort: false
+    host: "0.0.0.0",
+    strictPort: false,
+    allowedHosts: [
+      ".onrender.com",
+      "fcrb-frontend.onrender.com",
+      "localhost"
+    ]
   }
 });
 
