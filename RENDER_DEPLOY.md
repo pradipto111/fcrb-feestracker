@@ -119,7 +119,7 @@ If you prefer manual setup or need to customize:
    - **Runtime**: `Node`
    - **Build Command**: 
      ```
-     npm install && npm run build && npx prisma generate && npx prisma migrate deploy
+     npm install && npm run build && npx prisma generate && npx prisma db push --accept-data-loss
      ```
    - **Start Command**: 
      ```
