@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:4000";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 let token: string | null = localStorage.getItem("token");
 
@@ -12,27 +12,38 @@ async function request(
   path: string,
   options: RequestInit = {}
 ): Promise<any> {
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    ...(options.headers || {})
-  };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  try {
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers
-  });
+    const url = `${API_BASE}${path}`;
+    console.log(`API Request: ${options.method || 'GET'} ${url}`);
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || res.statusText);
+    const res = await fetch(url, {
+      ...options,
+      headers,
+      mode: 'cors',
+      credentials: 'omit'
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error(`API Error: ${res.status} ${text}`);
+      throw new Error(text || res.statusText);
+    }
+
+    const contentType = res.headers.get("Content-Type") || "";
+    if (contentType.includes("application/json")) {
+      return res.json();
+    }
+    return null;
+  } catch (error) {
+    console.error(`API Request Failed:`, error);
+    throw error;
   }
-
-  const contentType = res.headers.get("Content-Type") || "";
-  if (contentType.includes("application/json")) {
-    return res.json();
-  }
-  return null;
 }
 
 export const api = {

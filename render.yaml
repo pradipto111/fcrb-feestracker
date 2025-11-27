@@ -35,4 +35,6 @@ services:
     envVars:
       - key: VITE_API_URL
         value: https://fcrb-backend.onrender.com
+        # IMPORTANT: After deployment, update this to your actual backend URL
+        # Go to frontend service → Environment → Edit VITE_API_URL
 
