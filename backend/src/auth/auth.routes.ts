@@ -8,6 +8,57 @@ const prisma = new PrismaClient();
 const router = Router();
 
 /**
+ * POST /auth/register-admin
+ * body: { email, password, fullName }
+ * TEMPORARY: Creates first admin user (only works if no admins exist)
+ */
+router.post("/register-admin", async (req, res) => {
+  try {
+    const { email, password, fullName } = req.body as { 
+      email: string; 
+      password: string; 
+      fullName: string;
+    };
+
+    // Check if any admin already exists
+    const existingAdmin = await prisma.coach.findFirst({
+      where: { role: "ADMIN" }
+    });
+
+    if (existingAdmin) {
+      return res.status(403).json({ 
+        message: "Admin already exists. Use seed script or contact administrator." 
+      });
+    }
+
+    // Create first admin
+    const passwordHash = await bcrypt.hash(password, 10);
+    const admin = await prisma.coach.create({
+      data: {
+        fullName,
+        email,
+        passwordHash,
+        role: "ADMIN"
+      }
+    });
+
+    const token = jwt.sign(
+      { id: admin.id, role: admin.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(201).json({
+      token,
+      user: { id: admin.id, role: admin.role, fullName: admin.fullName },
+      message: "Admin user created successfully"
+    });
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+/**
  * POST /auth/login
  * body: { email, password }
  * Supports login for Admin, Coach, and Student
