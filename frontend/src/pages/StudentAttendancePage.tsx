@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { api } from "../api/client";
 import { Card } from "../components/ui/Card";
 import { KPICard } from "../components/ui/KPICard";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
+import { pageVariants, cardVariants } from "../utils/motion";
 
 const StudentAttendancePage: React.FC = () => {
   const [sessions, setSessions] = useState<any[]>([]);
@@ -75,105 +77,112 @@ const StudentAttendancePage: React.FC = () => {
     : "0";
 
   return (
-    <div>
-      <div style={{ marginBottom: spacing.lg }}>
-        <h1 style={{ 
-          ...typography.h2,
-          marginBottom: spacing.sm,
-          color: colors.text.primary,
-        }}>
-          📅 My Attendance
-        </h1>
-        <p style={{ 
-          color: colors.text.muted, 
-          margin: 0,
-          ...typography.body,
-        }}>
-          View your session attendance for the month
-        </p>
+    <motion.main
+      className="rv-page rv-page--student-attendance"
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      {/* Floating Stars Background */}
+      <div className="rv-page-stars" aria-hidden="true">
+        <span className="rv-star" />
+        <span className="rv-star rv-star--delay1" />
+        <span className="rv-star rv-star--delay2" />
+        <span className="rv-star rv-star--delay3" />
+        <span className="rv-star rv-star--delay4" />
       </div>
 
-      {error && (
-        <div style={{
-          padding: 12,
-          background: "#fee",
-          color: "#c33",
-          borderRadius: 8,
-          marginBottom: 16
-        }}>
-          {error}
-        </div>
-      )}
+      <section className="rv-section-surface">
+        {/* Header */}
+        <header className="rv-section-header">
+          <div>
+            <h1 className="rv-page-title">📅 My Attendance</h1>
+            <p className="rv-page-subtitle">View your session attendance for the month</p>
+          </div>
+        </header>
 
-      {/* Statistics Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: spacing.md, marginBottom: spacing.lg }}>
-        <KPICard
-          label="Total Sessions"
-          value={stats.total.toString()}
-          color={colors.primary.main}
-        />
-        <KPICard
-          label="Present"
-          value={stats.present.toString()}
-          color={colors.success.main}
-        />
-        <KPICard
-          label="Absent"
-          value={stats.absent.toString()}
-          color={colors.danger.main}
-        />
-        <KPICard
-          label="Attendance Rate"
-          value={`${attendanceRate}%`}
-          color={colors.primary.main}
-        />
-      </div>
+        {/* Error State */}
+        {error && (
+          <Card variant="default" padding="md" style={{ 
+            marginBottom: spacing.md,
+            background: colors.danger.soft,
+            border: `1px solid ${colors.danger.main}40`,
+          }}>
+            <p style={{ margin: 0, color: colors.danger.main }}>Error: {error}</p>
+          </Card>
+        )}
 
-      {/* Filters */}
-      <Card variant="default" padding="lg" style={{
-        marginBottom: spacing.lg,
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-        gap: spacing.md,
-      }}>
-        <div>
-          <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
-            Month
-          </label>
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(Number(e.target.value))}
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              border: "2px solid #e0e0e0",
-              borderRadius: 6,
-              fontSize: 13
-            }}
-          >
-            {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-              <option key={month} value={month}>{getMonthName(month)}</option>
-            ))}
-          </select>
+        {/* Statistics Cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: spacing.md, marginBottom: spacing.lg }}>
+          <motion.div custom={0} variants={cardVariants} initial="initial" animate="animate">
+            <KPICard
+              title="Total Sessions"
+              value={stats.total.toString()}
+              variant="info"
+            />
+          </motion.div>
+          <motion.div custom={1} variants={cardVariants} initial="initial" animate="animate">
+            <KPICard
+              title="Present"
+              value={stats.present.toString()}
+              variant="success"
+            />
+          </motion.div>
+          <motion.div custom={2} variants={cardVariants} initial="initial" animate="animate">
+            <KPICard
+              title="Absent"
+              value={stats.absent.toString()}
+              variant="danger"
+            />
+          </motion.div>
+          <motion.div custom={3} variants={cardVariants} initial="initial" animate="animate">
+            <KPICard
+              title="Attendance Rate"
+              value={`${attendanceRate}%`}
+              variant="primary"
+            />
+          </motion.div>
         </div>
-        <div>
-          <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
-            Year
-          </label>
-          <input
-            type="number"
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              border: "2px solid #e0e0e0",
-              borderRadius: 6,
-              fontSize: 13
-            }}
-          />
+
+        {/* Filters */}
+        <div className="rv-filter-bar">
+          <div className="rv-filter-field">
+            <label>Month</label>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              style={{
+                background: "rgba(3, 9, 28, 0.9)",
+                color: colors.text.primary,
+                border: "1px solid var(--rv-border-subtle)",
+                borderRadius: "var(--rv-radius-sm)",
+                padding: "0.55rem 0.7rem",
+                fontSize: "0.86rem",
+              }}
+            >
+              {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                <option key={month} value={month}>{getMonthName(month)}</option>
+              ))}
+            </select>
+          </div>
+          <div className="rv-filter-field">
+            <label>Year</label>
+            <input
+              type="number"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              style={{
+                background: "rgba(3, 9, 28, 0.9)",
+                color: colors.text.primary,
+                border: "1px solid var(--rv-border-subtle)",
+                borderRadius: "var(--rv-radius-sm)",
+                padding: "0.55rem 0.7rem",
+                fontSize: "0.86rem",
+              }}
+            />
+          </div>
         </div>
-      </Card>
 
       {/* Sessions List */}
       <Card variant="default" padding="lg">
@@ -386,7 +395,8 @@ const StudentAttendancePage: React.FC = () => {
           </div>
         </Card>
       )}
-    </div>
+      </section>
+    </motion.main>
   );
 };
 

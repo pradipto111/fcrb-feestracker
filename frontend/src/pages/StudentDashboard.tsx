@@ -94,27 +94,27 @@ const StudentDashboard: React.FC = () => {
       {/* Summary Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: spacing.lg, marginBottom: spacing.lg }}>
         <KPICard
-          label="Monthly Fee"
-          value={`₹ ${student.monthlyFeeAmount.toLocaleString()}`}
-          color={colors.primary.main}
+          title="Monthly Fee"
+          value={`₹${student.monthlyFeeAmount.toLocaleString()}`}
+          variant="primary"
         />
         <KPICard
-          label="Total Paid"
-          value={`₹ ${summary.totalPaid.toLocaleString()}`}
-          subValue={`${summary.paymentCount} payments`}
-          color={colors.success.main}
+          title="Total Paid"
+          value={`₹${summary.totalPaid.toLocaleString()}`}
+          subtitle={`${summary.paymentCount} payments`}
+          variant="success"
         />
         <KPICard
-          label="Total Due"
-          value={`₹ ${summary.totalDue.toLocaleString()}`}
-          subValue={`${summary.monthsSinceJoining} months`}
-          color={colors.warning.main}
+          title="Total Due"
+          value={`₹${summary.totalDue.toLocaleString()}`}
+          subtitle={`${summary.monthsSinceJoining} months`}
+          variant="warning"
         />
         <KPICard
-          label="Outstanding"
-          value={`₹ ${Math.abs(summary.outstanding).toLocaleString()}`}
-          subValue={summary.outstanding > 0 ? "Due" : summary.outstanding < 0 ? "Advance" : "Paid"}
-          color={summary.outstanding > 0 ? colors.danger.main : colors.success.main}
+          title="Outstanding"
+          value={`₹${Math.abs(summary.outstanding).toLocaleString()}`}
+          subtitle={summary.outstanding > 0 ? "Due" : summary.outstanding < 0 ? "Advance" : "Paid"}
+          variant={summary.outstanding > 0 ? "danger" : "success"}
         />
       </div>
 
