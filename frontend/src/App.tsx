@@ -10,6 +10,17 @@ import EnhancedStudentsPage from "./pages/EnhancedStudentsPage";
 import StudentDetailPage from "./pages/StudentDetailPage";
 import AdminManagementPage from "./pages/AdminManagementPage";
 import CenterDetailPage from "./pages/CenterDetailPage";
+import AttendanceManagementPage from "./pages/AttendanceManagementPage";
+import StudentAttendancePage from "./pages/StudentAttendancePage";
+import FixturesManagementPage from "./pages/FixturesManagementPage";
+import StudentFixturesPage from "./pages/StudentFixturesPage";
+import DrillsManagementPage from "./pages/DrillsManagementPage";
+import DrillsPage from "./pages/DrillsPage";
+import FeedPage from "./pages/FeedPage";
+import PostCreationPage from "./pages/PostCreationPage";
+import PostApprovalPage from "./pages/PostApprovalPage";
+import LeaderboardPage from "./pages/LeaderboardPage";
+import VotingPage from "./pages/VotingPage";
 import NotFound from "./pages/NotFound";
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -80,6 +91,116 @@ const App: React.FC = () => {
             <PrivateRoute>
               <Layout>
                 <CenterDetailPage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/attendance"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <AttendanceManagementPage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/my-attendance"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <StudentAttendancePage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/fixtures"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <FixturesManagementPage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/my-fixtures"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <StudentFixturesPage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/drills"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <DrillsPage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/drills/manage"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <DrillsManagementPage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/feed"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <FeedPage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/feed/create"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <PostCreationPage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/feed/approve"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <PostApprovalPage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/leaderboard"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <LeaderboardPage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/vote/:sessionId"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <VotingPage />
               </Layout>
             </PrivateRoute>
           }

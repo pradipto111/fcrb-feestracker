@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
+import HeroSection from "../components/HeroSection";
 
 const EnhancedAdminDashboard: React.FC = () => {
   const [summary, setSummary] = useState<any>(null);
@@ -92,62 +93,100 @@ const EnhancedAdminDashboard: React.FC = () => {
 
   return (
     <div style={{
-      minHeight: "100vh",
-      backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url(/photo1.png)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundAttachment: "fixed"
+      minHeight: "100vh"
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+      {/* Hero Section with Video */}
+      <HeroSection 
+        title="Welcome to RealVerse"
+        subtitle="Complete academy management and analytics dashboard"
+        showVideo={true}
+      />
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
         <div>
-          <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, color: "#1E40AF" }}>
-            FCRB Admin Dashboard
+          <h1 style={{ 
+            fontSize: "2.5rem", 
+            fontWeight: 800, 
+            marginBottom: "8px",
+            fontFamily: "'Poppins', sans-serif",
+            background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            letterSpacing: "-0.02em"
+          }}>
+            Admin Dashboard
           </h1>
-          <p style={{ color: "#666", margin: 0 }}>FC Real Bengaluru - Complete academy overview</p>
+          <p style={{ 
+            color: "#64748B", 
+            margin: 0,
+            fontSize: "1rem",
+            fontWeight: 500
+          }}>
+            Complete academy overview and analytics
+          </p>
         </div>
         <button
           onClick={loadData}
           style={{
             padding: "12px 24px",
-            background: "#1E40AF",
+            background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
             color: "white",
             border: "none",
-            borderRadius: 8,
+            borderRadius: "10px",
             cursor: "pointer",
             fontWeight: 600,
-            fontSize: 14
+            fontSize: "14px",
+            fontFamily: "'Inter', sans-serif",
+            boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
+            transition: "all 0.2s ease"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-2px)";
+            e.currentTarget.style.boxShadow = "0 6px 16px rgba(16, 185, 129, 0.4)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.3)";
           }}
         >
-          🔄 Refresh
+          Refresh
         </button>
       </div>
 
       {/* Main Stats Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24, marginBottom: 32 }}>
         <div style={{
-          background: "linear-gradient(135deg, #1E40AF 0%, #1E3A8A 100%)",
-          padding: 24,
-          borderRadius: 12,
-          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-          color: "white"
-        }}>
-          <div style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>Total Revenue</div>
-          <div style={{ fontSize: 36, fontWeight: 700 }}>₹{summary.totalCollected.toLocaleString()}</div>
-          <div style={{ fontSize: 12, marginTop: 8, opacity: 0.8 }}>
+          background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+          padding: 28,
+          borderRadius: "16px",
+          boxShadow: "0 10px 25px rgba(16, 185, 129, 0.2)",
+          color: "white",
+          transition: "transform 0.2s ease",
+          cursor: "default"
+        }}
+        className="gamified-card"
+        >
+          <div style={{ fontSize: "14px", marginBottom: "12px", opacity: 0.95, fontWeight: 500 }}>Total Revenue</div>
+          <div style={{ fontSize: "2.5rem", fontWeight: 800, fontFamily: "'Poppins', sans-serif" }}>₹{summary.totalCollected.toLocaleString()}</div>
+          <div style={{ fontSize: "13px", marginTop: "8px", opacity: 0.9, fontWeight: 500 }}>
             All-time collections
           </div>
         </div>
 
         <div style={{
-          background: "linear-gradient(135deg, #F97316 0%, #EA580C 100%)",
-          padding: 24,
-          borderRadius: 12,
-          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-          color: "white"
-        }}>
-          <div style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>Outstanding</div>
-          <div style={{ fontSize: 36, fontWeight: 700 }}>₹{summary.approxOutstanding.toLocaleString()}</div>
-          <div style={{ fontSize: 12, marginTop: 8, opacity: 0.8 }}>
+          background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
+          padding: 28,
+          borderRadius: "16px",
+          boxShadow: "0 10px 25px rgba(245, 158, 11, 0.2)",
+          color: "white",
+          transition: "transform 0.2s ease",
+          cursor: "default"
+        }}
+        className="gamified-card"
+        >
+          <div style={{ fontSize: "14px", marginBottom: "12px", opacity: 0.95, fontWeight: 500 }}>Outstanding</div>
+          <div style={{ fontSize: "2.5rem", fontWeight: 800, fontFamily: "'Poppins', sans-serif" }}>₹{summary.approxOutstanding.toLocaleString()}</div>
+          <div style={{ fontSize: "13px", marginTop: "8px", opacity: 0.9, fontWeight: 500 }}>
             Pending collections
           </div>
         </div>

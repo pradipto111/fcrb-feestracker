@@ -26,9 +26,9 @@ export function authRequired(
   }
 }
 
-export function requireRole(role: "ADMIN" | "COACH" | "STUDENT") {
+export function requireRole(...roles: ("ADMIN" | "COACH" | "STUDENT")[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user || req.user.role !== role) {
+    if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({ message: "Forbidden" });
     }
     next();

@@ -1,29 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
+
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Brand Colors */
+  --color-primary: #10B981;
+  --color-primary-dark: #059669;
+  --color-primary-light: #34D399;
+  --color-secondary: #1E40AF;
+  --color-secondary-dark: #1E3A8A;
+  --color-accent-gold: #F59E0B;
+  --color-neutral-black: #0F172A;
+  --color-neutral-dark: #1E293B;
+  --color-neutral-gray: #64748B;
+  --color-neutral-light: #F1F5F9;
+  --color-neutral-white: #FFFFFF;
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--color-neutral-light);
+  color: var(--color-neutral-dark);
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-neutral-black);
+}
+
+/* RealVerse Brand Typography */
+.brand-heading {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.brand-text {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+}
+
+/* Smooth Animations */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Custom Scrollbar - Brand Colors */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-neutral-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-dark);
+}
+
+/* Selection */
+::selection {
+  background: var(--color-primary-light);
+  color: var(--color-neutral-black);
+}
+
+/* Focus States */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* Mobile Responsive Utilities */
 @media (max-width: 768px) {
-  /* Hide desktop-only elements */
   .desktop-only {
     display: none !important;
   }
 
-  /* Stack grid layouts */
   [style*="display: grid"] {
     grid-template-columns: 1fr !important;
   }
 
-  /* Full width tables */
   table {
     display: block;
     overflow-x: auto;
@@ -31,20 +107,18 @@ body {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Responsive text */
   h1 {
-    font-size: 24px !important;
+    font-size: 1.875rem !important; /* 30px */
   }
 
   h2 {
-    font-size: 20px !important;
+    font-size: 1.5rem !important; /* 24px */
   }
 
   h3 {
-    font-size: 18px !important;
+    font-size: 1.25rem !important; /* 20px */
   }
 
-  /* Responsive padding */
   [style*="padding: 32px"] {
     padding: 16px !important;
   }
@@ -53,7 +127,6 @@ body {
     padding: 12px !important;
   }
 
-  /* Responsive margins */
   [style*="margin: 32px"] {
     margin: 16px !important;
   }
@@ -62,13 +135,11 @@ body {
     margin: 12px !important;
   }
 
-  /* Responsive buttons */
   button, [role="button"] {
     min-height: 44px !important;
     font-size: 14px !important;
   }
 
-  /* Responsive inputs */
   input, select, textarea {
     font-size: 16px !important; /* Prevents zoom on iOS */
   }
@@ -86,22 +157,49 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Gamification Card Hover Effect */
+.gamified-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
+.gamified-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
+/* Badge Styles */
+.badge-gold {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  color: white;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
+.badge-silver {
+  background: linear-gradient(135deg, #94A3B8 0%, #64748B 100%);
+  color: white;
 }
 
+.badge-bronze {
+  background: linear-gradient(135deg, #CD7F32 0%, #A0522D 100%);
+  color: white;
+}
+
+/* Button Styles */
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
