@@ -1,15 +1,29 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api/client";
 
 const StudentDashboard: React.FC = () => {
   const [data, setData] = useState<any>(null);
+  const [attendanceData, setAttendanceData] = useState<any>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api
-      .getStudentDashboard()
-      .then(setData)
-      .catch((err) => setError(err.message));
+    const loadData = async () => {
+      try {
+        const [dashboardData, attendance] = await Promise.all([
+          api.getStudentDashboard(),
+          api.getStudentAttendance({
+            month: new Date().getMonth() + 1,
+            year: new Date().getFullYear()
+          })
+        ]);
+        setData(dashboardData);
+        setAttendanceData(attendance);
+      } catch (err: any) {
+        setError(err.message);
+      }
+    };
+    loadData();
   }, []);
 
   if (error) return <p style={{ color: "#e74c3c" }}>Error: {error}</p>;
@@ -188,6 +202,92 @@ const StudentDashboard: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Recent Attendance */}
+      {attendanceData && attendanceData.sessions && attendanceData.sessions.length > 0 && (
+        <div style={{
+          background: "white",
+          padding: 32,
+          borderRadius: 12,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+        }}>
+          <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>Recent Attendance</h2>
+          <div style={{ display: "grid", gap: 12 }}>
+            {attendanceData.sessions.slice(0, 5).map((session: any) => {
+              const sessionDate = new Date(session.sessionDate);
+              const statusColor = session.attendanceStatus === "PRESENT" ? "#27ae60" :
+                                 session.attendanceStatus === "ABSENT" ? "#e74c3c" :
+                                 session.attendanceStatus === "EXCUSED" ? "#f39c12" : "#999";
+              
+              return (
+                <div
+                  key={session.id}
+                  style={{
+                    border: "2px solid #e0e0e0",
+                    borderRadius: 8,
+                    padding: 16,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
+                    <div>
+                      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>
+                        {sessionDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} - {session.startTime} to {session.endTime}
+                      </div>
+                      <div style={{ fontSize: 14, color: "#666" }}>
+                        {session.center.name}
+                      </div>
+                    </div>
+                    <div style={{
+                      padding: "6px 12px",
+                      borderRadius: 20,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      background: statusColor,
+                      color: "white"
+                    }}>
+                      {session.attendanceStatus === "PRESENT" ? "✓ Present" :
+                       session.attendanceStatus === "ABSENT" ? "✗ Absent" :
+                       session.attendanceStatus === "EXCUSED" ? "~ Excused" : "Not Marked"}
+                    </div>
+                  </div>
+                  {session.attendanceNotes && (
+                    <div style={{
+                      padding: 12,
+                      background: "#f8f9fa",
+                      borderRadius: 6,
+                      borderLeft: "4px solid #1E40AF",
+                      marginTop: 8
+                    }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "#666", marginBottom: 4 }}>
+                        Coach Remarks:
+                      </div>
+                      <div style={{ fontSize: 14, color: "#333" }}>
+                        {session.attendanceNotes}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 16, textAlign: "center" }}>
+            <Link
+              to="/my-attendance"
+              style={{
+                color: "#1E40AF",
+                textDecoration: "none",
+                fontWeight: 600,
+                fontSize: 14
+              }}
+            >
+              View All Attendance →
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

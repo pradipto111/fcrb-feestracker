@@ -16,7 +16,7 @@ const LoginPage: React.FC = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 5000); // Change image every 5 seconds
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -42,7 +42,8 @@ const LoginPage: React.FC = () => {
       alignItems: "center",
       justifyContent: "center",
       position: "relative",
-      overflow: "hidden"
+      overflow: "hidden",
+      background: "#0F172A"
     }}>
       {/* Background Slideshow */}
       {images.map((image, index) => (
@@ -64,46 +65,82 @@ const LoginPage: React.FC = () => {
         />
       ))}
       
-      {/* Dark overlay for better text readability */}
+      {/* Brand Gradient Overlay */}
       <div style={{
         position: "absolute",
         top: 0,
         left: 0,
         width: "100%",
         height: "100%",
-        background: "linear-gradient(135deg, rgba(30, 64, 175, 0.85) 0%, rgba(16, 185, 129, 0.85) 100%)",
+        background: "linear-gradient(135deg, rgba(16, 185, 129, 0.85) 0%, rgba(5, 150, 105, 0.85) 100%)",
         zIndex: 1
       }} />
+
+      {/* Login Card */}
       <div style={{
         background: "rgba(255, 255, 255, 0.98)",
-        padding: 48,
-        borderRadius: 16,
-        boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
+        padding: "48px",
+        borderRadius: "24px",
+        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
         width: "100%",
-        maxWidth: 420,
+        maxWidth: "440px",
         position: "relative",
         zIndex: 2,
-        backdropFilter: "blur(10px)"
+        backdropFilter: "blur(20px)",
+        border: "1px solid rgba(255,255,255,0.2)"
       }}>
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
+        <div style={{ textAlign: "center", marginBottom: "40px" }}>
           <img 
             src="/fcrb-logo.png" 
             alt="FC Real Bengaluru" 
             style={{ 
               width: 120, 
               height: 120, 
-              margin: "0 auto 16px",
-              display: "block"
+              margin: "0 auto 20px",
+              display: "block",
+              borderRadius: "16px",
+              background: "white",
+              padding: 8,
+              boxShadow: "0 10px 25px rgba(0,0,0,0.2)"
             }} 
           />
-          <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, color: "#1E40AF" }}>
-            FCRB Fees Tracker
+          <h1 style={{ 
+            fontSize: "2.5rem", 
+            fontWeight: 800, 
+            marginBottom: "8px",
+            fontFamily: "'Poppins', sans-serif",
+            background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            letterSpacing: "-0.02em"
+          }}>
+            RealVerse
           </h1>
-          <p style={{ color: "#666", fontSize: 14 }}>FC Real Bengaluru Academy Management</p>
+          <p style={{ 
+            color: "#64748B", 
+            fontSize: "15px",
+            fontWeight: 500
+          }}>
+            FC Real Bengaluru Universe
+          </p>
+          <p style={{ 
+            color: "#94A3B8", 
+            fontSize: "13px",
+            marginTop: "4px"
+          }}>
+            Your complete football academy management platform
+          </p>
         </div>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <div>
-            <label style={{ display: "block", marginBottom: 8, fontSize: 14, fontWeight: 600 }}>
+            <label style={{ 
+              display: "block", 
+              marginBottom: "8px", 
+              fontSize: "14px", 
+              fontWeight: 600,
+              color: "#1E293B"
+            }}>
               Email
             </label>
             <input
@@ -114,17 +151,33 @@ const LoginPage: React.FC = () => {
               required
               style={{
                 width: "100%",
-                padding: "12px 16px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 8,
-                fontSize: 14,
+                padding: "14px 16px",
+                border: "2px solid #E2E8F0",
+                borderRadius: "10px",
+                fontSize: "15px",
                 outline: "none",
-                transition: "border 0.2s"
+                transition: "all 0.2s ease",
+                fontFamily: "'Inter', sans-serif"
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = "#10B981";
+                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(16, 185, 129, 0.1)";
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = "#E2E8F0";
+                e.currentTarget.style.boxShadow = "none";
               }}
             />
           </div>
+
           <div>
-            <label style={{ display: "block", marginBottom: 8, fontSize: 14, fontWeight: 600 }}>
+            <label style={{ 
+              display: "block", 
+              marginBottom: "8px", 
+              fontSize: "14px", 
+              fontWeight: 600,
+              color: "#1E293B"
+            }}>
               Password
             </label>
             <input
@@ -135,48 +188,91 @@ const LoginPage: React.FC = () => {
               required
               style={{
                 width: "100%",
-                padding: "12px 16px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 8,
-                fontSize: 14,
+                padding: "14px 16px",
+                border: "2px solid #E2E8F0",
+                borderRadius: "10px",
+                fontSize: "15px",
                 outline: "none",
-                transition: "border 0.2s"
+                transition: "all 0.2s ease",
+                fontFamily: "'Inter', sans-serif"
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = "#10B981";
+                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(16, 185, 129, 0.1)";
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = "#E2E8F0";
+                e.currentTarget.style.boxShadow = "none";
               }}
             />
           </div>
+
           {error && (
             <div style={{
-              padding: 12,
-              background: "#fee",
-              color: "#c33",
-              borderRadius: 8,
-              fontSize: 14
+              padding: "12px 16px",
+              background: "#FEE2E2",
+              color: "#DC2626",
+              borderRadius: "10px",
+              fontSize: "14px",
+              fontWeight: 500,
+              border: "1px solid #FECACA"
             }}>
               {error}
             </div>
           )}
+
           <button
             type="submit"
             disabled={loading}
             style={{
-              padding: "14px 24px",
-              background: loading ? "#ccc" : "#1E40AF",
+              padding: "16px 24px",
+              background: loading 
+                ? "#94A3B8" 
+                : "linear-gradient(135deg, #10B981 0%, #059669 100%)",
               color: "white",
               border: "none",
-              borderRadius: 8,
-              fontSize: 16,
+              borderRadius: "10px",
+              fontSize: "16px",
               fontWeight: 600,
               cursor: loading ? "not-allowed" : "pointer",
-              transition: "background 0.2s"
+              transition: "all 0.2s ease",
+              boxShadow: loading 
+                ? "none" 
+                : "0 10px 15px -3px rgba(16, 185, 129, 0.3)",
+              fontFamily: "'Inter', sans-serif"
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 15px 20px -3px rgba(16, 185, 129, 0.4)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!loading) {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 10px 15px -3px rgba(16, 185, 129, 0.3)";
+              }
             }}
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Logging in..." : "Sign In"}
           </button>
         </form>
-        <div style={{ marginTop: 24, padding: 16, background: "#f5f5f5", borderRadius: 8, fontSize: 12 }}>
-          <strong>Demo Credentials:</strong><br />
-          Admin: admin@feestrack.com / admin123<br />
-          Coach: rajesh@feestrack.com / coach123
+
+        <div style={{ 
+          marginTop: "32px", 
+          padding: "20px", 
+          background: "linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%)", 
+          borderRadius: "12px", 
+          fontSize: "12px",
+          border: "1px solid #E2E8F0"
+        }}>
+          <div style={{ fontWeight: 700, marginBottom: "8px", color: "#1E293B" }}>
+            Demo Credentials
+          </div>
+          <div style={{ color: "#64748B", lineHeight: "1.6" }}>
+            <div><strong>Admin:</strong> admin@feestrack.com / admin123</div>
+            <div style={{ marginTop: "4px" }}><strong>Coach:</strong> coach@feestrack.com / coach123</div>
+          </div>
         </div>
       </div>
     </div>
@@ -184,5 +280,3 @@ const LoginPage: React.FC = () => {
 };
 
 export default LoginPage;
-
-

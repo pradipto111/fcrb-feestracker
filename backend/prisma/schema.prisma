@@ -18,6 +18,11 @@ model Center {
   students   Student[]
   coachLinks CoachCenter[]
   payments   Payment[]
+  sessions   Session[]
+  fixtures   Fixture[]
+  posts      Post[]
+  votes      Vote[]
+  studentStats StudentStats[]
 }
 
 model Coach {
@@ -29,6 +34,9 @@ model Coach {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   centers      CoachCenter[]
+  sessions     Session[]
+  fixtures     Fixture[]
+  videos       Video[]
 }
 
 model CoachCenter {
@@ -59,6 +67,9 @@ model Student {
   updatedAt         DateTime   @updatedAt
   center   Center   @relation(fields: [centerId], references: [id])
   payments Payment[]
+  attendance Attendance[]
+  fixturePlayers FixturePlayer[]
+  stats    StudentStats[]
 }
 
 model Payment {
@@ -88,5 +99,233 @@ enum StudentStatus {
   ACTIVE
   INACTIVE
   TRIAL
+}
+
+model Session {
+  id          Int         @id @default(autoincrement())
+  centerId    Int
+  coachId     Int
+  sessionDate DateTime
+  startTime   String      // e.g., "09:00"
+  endTime     String      // e.g., "10:30"
+  notes       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  center      Center      @relation(fields: [centerId], references: [id])
+  coach       Coach       @relation(fields: [coachId], references: [id])
+  attendance  Attendance[]
+  votes       Vote[]
+  @@index([centerId])
+  @@index([coachId])
+  @@index([sessionDate])
+}
+
+model Attendance {
+  id         Int      @id @default(autoincrement())
+  sessionId  Int
+  studentId  Int
+  status     AttendanceStatus @default(ABSENT)
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student    Student  @relation(fields: [studentId], references: [id])
+  @@unique([sessionId, studentId])
+  @@index([sessionId])
+  @@index([studentId])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  EXCUSED
+}
+
+model Fixture {
+  id          Int             @id @default(autoincrement())
+  centerId    Int
+  coachId     Int
+  matchType   String          // e.g., "Friendly", "League", "Tournament", "Practice Match"
+  opponent    String?         // Opponent team name
+  matchDate   DateTime
+  matchTime   String          // e.g., "14:00"
+  venue       String?         // Match venue/location
+  notes       String?
+  status      FixtureStatus   @default(UPCOMING)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  center      Center          @relation(fields: [centerId], references: [id])
+  coach       Coach           @relation(fields: [coachId], references: [id])
+  players     FixturePlayer[]
+  @@index([centerId])
+  @@index([coachId])
+  @@index([matchDate])
+}
+
+model FixturePlayer {
+  id        Int      @id @default(autoincrement())
+  fixtureId Int
+  studentId Int
+  position  String?  // e.g., "Forward", "Midfielder", "Defender", "Goalkeeper"
+  role      String?  // e.g., "Starting XI", "Substitute", "Reserve"
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  fixture   Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  student   Student  @relation(fields: [studentId], references: [id])
+  @@unique([fixtureId, studentId])
+  @@index([fixtureId])
+  @@index([studentId])
+}
+
+enum FixtureStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+  POSTPONED
+}
+
+model Video {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  videoUrl    String    // YouTube or Instagram URL
+  platform    VideoPlatform @default(YOUTUBE)
+  category    String?   // e.g., "Dribbling", "Passing", "Shooting", "Defense", "Fitness", "Tactics"
+  thumbnailUrl String?  // Optional thumbnail URL
+  createdById Int      // Coach or Admin who created it
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  creator     Coach     @relation(fields: [createdById], references: [id])
+  @@index([createdById])
+  @@index([category])
+  @@index([platform])
+}
+
+enum VideoPlatform {
+  YOUTUBE
+  INSTAGRAM
+}
+
+model Post {
+  id          Int       @id @default(autoincrement())
+  title       String?
+  description String?
+  mediaType   PostMediaType @default(IMAGE)
+  mediaUrl    String    // URL to image, video, or external link
+  platform    PostPlatform? // For external links (YouTube/Instagram)
+  centerId    Int?      // Optional: associate with a center
+  createdByRole Role    // ADMIN, COACH, or STUDENT
+  createdById Int      // ID of the creator (coach or student)
+  approvalStatus PostApprovalStatus @default(PENDING) // For student posts
+  approvedById Int?    // Coach/Admin who approved
+  approvedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  center      Center?   @relation(fields: [centerId], references: [id])
+  comments    Comment[]
+  @@index([createdById, createdByRole])
+  @@index([centerId])
+  @@index([approvalStatus])
+  @@index([createdAt])
+}
+
+enum PostMediaType {
+  IMAGE
+  VIDEO
+  LINK
+}
+
+enum PostPlatform {
+  YOUTUBE
+  INSTAGRAM
+  INTERNAL
+}
+
+enum PostApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Comment {
+  id          Int       @id @default(autoincrement())
+  postId      Int
+  content     String
+  createdByRole Role    // ADMIN, COACH, or STUDENT
+  createdById Int      // ID of the creator (coach or student)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@index([postId])
+  @@index([createdById, createdByRole])
+  @@index([createdAt])
+}
+
+model Vote {
+  id          Int       @id @default(autoincrement())
+  sessionId   Int       // Session where voting happened
+  voterRole   Role      // STUDENT or COACH/ADMIN
+  voterId     Int       // Student or Coach who voted
+  votedForId  Int       // Student who received the vote
+  points      Int       @default(1) // 1 for student, 2 for coach
+  centerId    Int       // Center for filtering
+  createdAt   DateTime  @default(now())
+  session     Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  center      Center    @relation(fields: [centerId], references: [id])
+  @@unique([sessionId, voterId, voterRole, votedForId]) // Prevent duplicate votes
+  @@index([sessionId])
+  @@index([votedForId])
+  @@index([centerId])
+  @@index([createdAt])
+}
+
+model StudentStats {
+  id              Int       @id @default(autoincrement())
+  studentId       Int
+  centerId        Int
+  totalPoints      Int       @default(0)
+  studentVotes    Int       @default(0) // Votes from students
+  coachVotes      Int       @default(0) // Votes from coaches
+  sessionsVoted   Int       @default(0) // Number of sessions this student was voted for
+  currentStreak   Int       @default(0) // Consecutive sessions with votes
+  longestStreak   Int       @default(0)
+  weeklyPoints    Int       @default(0) // Points this week
+  monthlyPoints   Int       @default(0) // Points this month
+  lastVotedAt     DateTime? // Last time this student received a vote
+  updatedAt       DateTime  @updatedAt
+  student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  center          Center    @relation(fields: [centerId], references: [id])
+  badges          Badge[]
+  @@unique([studentId, centerId])
+  @@index([centerId, totalPoints])
+  @@index([centerId, weeklyPoints])
+  @@index([centerId, monthlyPoints])
+}
+
+model Badge {
+  id            Int       @id @default(autoincrement())
+  studentStatsId Int
+  badgeType     BadgeType
+  earnedAt      DateTime  @default(now())
+  studentStats  StudentStats @relation(fields: [studentStatsId], references: [id], onDelete: Cascade)
+  @@index([studentStatsId])
+  @@index([badgeType])
+}
+
+enum BadgeType {
+  FIRST_VOTE        // First time receiving a vote
+  TOP_WEEKLY        // Top performer of the week
+  TOP_MONTHLY       // Top performer of the month
+  STREAK_5          // 5 consecutive sessions with votes
+  STREAK_10         // 10 consecutive sessions with votes
+  STREAK_20         // 20 consecutive sessions with votes
+  CENTURY           // 100 total points
+  FIVE_HUNDRED      // 500 total points
+  THOUSAND          // 1000 total points
+  COACH_FAVORITE    // Most coach votes in a period
+  PEER_FAVORITE     // Most student votes in a period
+  CONSISTENT        // Voted for in 10+ different sessions
 }
 
