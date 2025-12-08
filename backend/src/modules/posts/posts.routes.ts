@@ -63,7 +63,7 @@ router.get("/", authRequired, async (req, res) => {
   });
 
   // Add creator information and embed URLs
-  const postsWithCreators = await Promise.all(posts.map(async (post) => {
+  const postsWithCreators = await Promise.all(posts.map(async (post: any) => {
     let creator: any = null;
     
     if (post.createdByRole === "ADMIN" || post.createdByRole === "COACH") {
@@ -81,7 +81,7 @@ router.get("/", authRequired, async (req, res) => {
     }
 
     // Add creator info to comments
-    const commentsWithCreators = await Promise.all(post.comments.map(async (comment) => {
+    const commentsWithCreators = await Promise.all(post.comments.map(async (comment: any) => {
       let commentCreator: any = null;
       
       if (comment.createdByRole === "ADMIN" || comment.createdByRole === "COACH") {
@@ -134,7 +134,7 @@ router.get("/pending", authRequired, requireRole("ADMIN", "COACH"), async (req, 
     }
   });
 
-  const postsWithCreators = await Promise.all(posts.map(async (post) => {
+  const postsWithCreators = await Promise.all(posts.map(async (post: any) => {
     let creator: any = null;
     
     if (post.createdByRole === "STUDENT") {
@@ -200,7 +200,7 @@ router.get("/:id", authRequired, async (req, res) => {
     creator = student;
   }
 
-  const commentsWithCreators = await Promise.all(post.comments.map(async (comment) => {
+  const commentsWithCreators = await Promise.all(post.comments.map(async (comment: any) => {
     let commentCreator: any = null;
     
     if (comment.createdByRole === "ADMIN" || comment.createdByRole === "COACH") {

@@ -31,7 +31,7 @@ router.get("/post/:postId", authRequired, async (req, res) => {
   });
 
   // Add creator information
-  const commentsWithCreators = await Promise.all(comments.map(async (comment) => {
+  const commentsWithCreators = await Promise.all(comments.map(async (comment: any) => {
     let creator: any = null;
     
     if (comment.createdByRole === "ADMIN" || comment.createdByRole === "COACH") {
