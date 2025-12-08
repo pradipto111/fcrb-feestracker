@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { Card } from "../components/ui/Card";
+import { KPICard } from "../components/ui/KPICard";
+import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 
 const StudentAttendancePage: React.FC = () => {
   const [sessions, setSessions] = useState<any[]>([]);
@@ -72,18 +75,22 @@ const StudentAttendancePage: React.FC = () => {
     : "0";
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url(/photo3.png)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundAttachment: "fixed"
-    }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, color: "#1E40AF" }}>
+    <div>
+      <div style={{ marginBottom: spacing.lg }}>
+        <h1 style={{ 
+          ...typography.h2,
+          marginBottom: spacing.sm,
+          color: colors.text.primary,
+        }}>
           📅 My Attendance
         </h1>
-        <p style={{ color: "#666", margin: 0 }}>View your session attendance for the month</p>
+        <p style={{ 
+          color: colors.text.muted, 
+          margin: 0,
+          ...typography.body,
+        }}>
+          View your session attendance for the month
+        </p>
       </div>
 
       {error && (
@@ -99,59 +106,35 @@ const StudentAttendancePage: React.FC = () => {
       )}
 
       {/* Statistics Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16, marginBottom: 24 }}>
-        <div style={{
-          background: "white",
-          padding: 20,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          textAlign: "center"
-        }}>
-          <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Total Sessions</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: "#1E40AF" }}>{stats.total}</div>
-        </div>
-        <div style={{
-          background: "white",
-          padding: 20,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          textAlign: "center"
-        }}>
-          <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Present</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: "#27ae60" }}>{stats.present}</div>
-        </div>
-        <div style={{
-          background: "white",
-          padding: 20,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          textAlign: "center"
-        }}>
-          <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Absent</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: "#e74c3c" }}>{stats.absent}</div>
-        </div>
-        <div style={{
-          background: "white",
-          padding: 20,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          textAlign: "center"
-        }}>
-          <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Attendance Rate</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: "#1E40AF" }}>{attendanceRate}%</div>
-        </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: spacing.md, marginBottom: spacing.lg }}>
+        <KPICard
+          label="Total Sessions"
+          value={stats.total.toString()}
+          color={colors.primary.main}
+        />
+        <KPICard
+          label="Present"
+          value={stats.present.toString()}
+          color={colors.success.main}
+        />
+        <KPICard
+          label="Absent"
+          value={stats.absent.toString()}
+          color={colors.danger.main}
+        />
+        <KPICard
+          label="Attendance Rate"
+          value={`${attendanceRate}%`}
+          color={colors.primary.main}
+        />
       </div>
 
       {/* Filters */}
-      <div style={{
-        background: "white",
-        padding: 20,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        marginBottom: 24,
+      <Card variant="default" padding="lg" style={{
+        marginBottom: spacing.lg,
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-        gap: 16
+        gap: spacing.md,
       }}>
         <div>
           <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
@@ -190,66 +173,89 @@ const StudentAttendancePage: React.FC = () => {
             }}
           />
         </div>
-      </div>
+      </Card>
 
       {/* Sessions List */}
-      <div style={{
-        background: "white",
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-      }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>
+      <Card variant="default" padding="lg">
+        <h2 style={{ 
+          ...typography.h3,
+          marginBottom: spacing.md,
+          color: colors.text.primary,
+        }}>
           Sessions for {getMonthName(selectedMonth)} {selectedYear}
         </h2>
         {loading ? (
-          <div style={{ textAlign: "center", padding: 48 }}>Loading...</div>
+          <div style={{ 
+            textAlign: "center", 
+            padding: spacing['3xl'],
+            color: colors.text.muted,
+            ...typography.body,
+          }}>
+            Loading...
+          </div>
         ) : sessions.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 48, color: "#999" }}>
+          <div style={{ 
+            textAlign: "center", 
+            padding: spacing['3xl'], 
+            color: colors.text.muted,
+            ...typography.body,
+          }}>
             No sessions found for this month
           </div>
         ) : (
-          <div style={{ display: "grid", gap: 12 }}>
+          <div style={{ display: "grid", gap: spacing.md }}>
             {sessions.map(session => {
               const sessionDate = new Date(session.sessionDate);
               const statusStyle = getStatusColor(session.attendanceStatus);
               
               return (
-                <div
+                <Card
                   key={session.id}
+                  variant="default"
+                  padding="md"
                   style={{
-                    border: "2px solid #e0e0e0",
-                    borderRadius: 8,
-                    padding: 16,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 12
+                    border: `1px solid rgba(255, 255, 255, 0.1)`,
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
-                        <div style={{ fontSize: 18, fontWeight: 700 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: spacing.md, marginBottom: spacing.sm }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.lg, 
+                          fontWeight: typography.fontWeight.bold,
+                          color: colors.text.primary,
+                        }}>
                           {sessionDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                         </div>
-                        <div style={{ fontSize: 16, color: "#666" }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.base, 
+                          color: colors.text.muted,
+                        }}>
                           {session.startTime} - {session.endTime}
                         </div>
                       </div>
-                      <div style={{ fontSize: 14, color: "#666" }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.sm, 
+                        color: colors.text.muted,
+                      }}>
                         {session.center.name} • Coach: {session.coach.fullName}
                       </div>
                       {session.notes && (
-                        <div style={{ fontSize: 13, color: "#999", marginTop: 4, fontStyle: "italic" }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.xs, 
+                          color: colors.text.muted, 
+                          marginTop: spacing.xs, 
+                          fontStyle: "italic",
+                        }}>
                           Session Notes: {session.notes}
                         </div>
                       )}
                     </div>
                     <div style={{
-                      padding: "8px 16px",
-                      borderRadius: 20,
-                      fontSize: 14,
-                      fontWeight: 600,
+                      padding: `${spacing.sm} ${spacing.md}`,
+                      borderRadius: borderRadius.full,
+                      fontSize: typography.fontSize.sm,
+                      fontWeight: typography.fontWeight.semibold,
                       ...statusStyle
                     }}>
                       {getStatusLabel(session.attendanceStatus)}
@@ -257,55 +263,128 @@ const StudentAttendancePage: React.FC = () => {
                   </div>
                   {session.attendanceNotes && (
                     <div style={{
-                      padding: 12,
-                      background: "#f8f9fa",
-                      borderRadius: 6,
-                      borderLeft: "4px solid #1E40AF"
+                      padding: spacing.md,
+                      background: "rgba(255, 255, 255, 0.05)",
+                      borderRadius: borderRadius.md,
+                      borderLeft: `4px solid ${colors.primary.main}`,
+                      marginTop: spacing.sm,
                     }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: "#666", marginBottom: 4 }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.xs, 
+                        fontWeight: typography.fontWeight.semibold, 
+                        color: colors.text.secondary, 
+                        marginBottom: spacing.xs,
+                      }}>
                         Coach Remarks:
                       </div>
-                      <div style={{ fontSize: 14, color: "#333" }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.sm, 
+                        color: colors.text.primary,
+                      }}>
                         {session.attendanceNotes}
                       </div>
                     </div>
                   )}
-                </div>
+                </Card>
               );
             })}
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Attendance Summary */}
       {sessions.length > 0 && (
-        <div style={{
-          background: "white",
-          padding: 24,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          marginTop: 24
-        }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Summary</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16 }}>
-            <div style={{ padding: 16, background: "#e8f5e9", borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Present</div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: "#27ae60" }}>{stats.present}</div>
+        <Card variant="default" padding="lg" style={{ marginTop: spacing.lg }}>
+          <h2 style={{ 
+            ...typography.h3,
+            marginBottom: spacing.md,
+            color: colors.text.primary,
+          }}>
+            Summary
+          </h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: spacing.md }}>
+            <div style={{ 
+              padding: spacing.md, 
+              background: colors.success.soft, 
+              borderRadius: borderRadius.md,
+            }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xs, 
+                color: colors.text.muted, 
+                marginBottom: spacing.xs,
+              }}>
+                Present
+              </div>
+              <div style={{ 
+                fontSize: typography.fontSize['2xl'], 
+                fontWeight: typography.fontWeight.bold, 
+                color: colors.success.main,
+              }}>
+                {stats.present}
+              </div>
             </div>
-            <div style={{ padding: 16, background: "#ffebee", borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Absent</div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: "#e74c3c" }}>{stats.absent}</div>
+            <div style={{ 
+              padding: spacing.md, 
+              background: colors.danger.soft, 
+              borderRadius: borderRadius.md,
+            }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xs, 
+                color: colors.text.muted, 
+                marginBottom: spacing.xs,
+              }}>
+                Absent
+              </div>
+              <div style={{ 
+                fontSize: typography.fontSize['2xl'], 
+                fontWeight: typography.fontWeight.bold, 
+                color: colors.danger.main,
+              }}>
+                {stats.absent}
+              </div>
             </div>
-            <div style={{ padding: 16, background: "#fff3e0", borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Excused</div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: "#f39c12" }}>{stats.excused}</div>
+            <div style={{ 
+              padding: spacing.md, 
+              background: colors.warning.soft, 
+              borderRadius: borderRadius.md,
+            }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xs, 
+                color: colors.text.muted, 
+                marginBottom: spacing.xs,
+              }}>
+                Excused
+              </div>
+              <div style={{ 
+                fontSize: typography.fontSize['2xl'], 
+                fontWeight: typography.fontWeight.bold, 
+                color: colors.warning.main,
+              }}>
+                {stats.excused}
+              </div>
             </div>
-            <div style={{ padding: 16, background: "#f5f5f5", borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Not Marked</div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: "#666" }}>{stats.notMarked}</div>
+            <div style={{ 
+              padding: spacing.md, 
+              background: "rgba(255, 255, 255, 0.05)", 
+              borderRadius: borderRadius.md,
+            }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xs, 
+                color: colors.text.muted, 
+                marginBottom: spacing.xs,
+              }}>
+                Not Marked
+              </div>
+              <div style={{ 
+                fontSize: typography.fontSize['2xl'], 
+                fontWeight: typography.fontWeight.bold, 
+                color: colors.text.muted,
+              }}>
+                {stats.notMarked}
+              </div>
             </div>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

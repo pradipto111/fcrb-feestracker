@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { api } from "../api/client";
+import { PageHeader } from "../components/ui/PageHeader";
+import { KPICard } from "../components/ui/KPICard";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 import HeroSection from "../components/HeroSection";
+import { pageVariants, cardVariants } from "../utils/motion";
 
 const EnhancedAdminDashboard: React.FC = () => {
   const [summary, setSummary] = useState<any>(null);
@@ -41,7 +48,7 @@ const EnhancedAdminDashboard: React.FC = () => {
       setSummary(summaryData);
       setCenters(centersData);
       setStudents(studentsData);
-      await Promise.all([loadRevenueData(), loadMonthlyData()]);
+      // Revenue and monthly data will be loaded by their respective useEffect hooks
     } catch (err: any) {
       setError(err.message);
     }
@@ -72,29 +79,23 @@ const EnhancedAdminDashboard: React.FC = () => {
     }
   };
 
-  if (error) return <p style={{ color: "#e74c3c" }}>Error: {error}</p>;
-  if (!summary || !centers.length) return <p>Loading...</p>;
-
-  // Calculate center-wise stats
-  const centerStats = centers.map(center => {
-    const centerStudents = students.filter(s => s.centerId === center.id);
-    const centerRevenue = centerStudents.reduce((sum, s) => s.monthlyFeeAmount, 0);
-    return {
-      ...center,
-      studentCount: centerStudents.length,
-      revenue: centerRevenue,
-      activeStudents: centerStudents.filter(s => s.status === "ACTIVE").length
-    };
-  });
-
-  const totalRevenue = centerStats.reduce((sum, c) => sum + c.revenue, 0);
-  const activeStudents = students.filter(s => s.status === "ACTIVE").length;
-  const totalExpected = summary.totalCollected + summary.approxOutstanding;
-
   return (
-    <div style={{
-      minHeight: "100vh"
-    }}>
+    <motion.main
+      className="rv-page rv-page--dashboard"
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      {/* Floating Stars Background */}
+      <div className="rv-page-stars" aria-hidden="true">
+        <span className="rv-star" />
+        <span className="rv-star rv-star--delay1" />
+        <span className="rv-star rv-star--delay2" />
+        <span className="rv-star rv-star--delay3" />
+        <span className="rv-star rv-star--delay4" />
+      </div>
+
       {/* Hero Section with Video */}
       <HeroSection 
         title="Welcome to RealVerse"
@@ -102,136 +103,115 @@ const EnhancedAdminDashboard: React.FC = () => {
         showVideo={true}
       />
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
-        <div>
-          <h1 style={{ 
-            fontSize: "2.5rem", 
-            fontWeight: 800, 
-            marginBottom: "8px",
-            fontFamily: "'Poppins', sans-serif",
-            background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            letterSpacing: "-0.02em"
+      <section className="rv-section-surface">
+        {/* Header */}
+        <header className="rv-section-header">
+          <div>
+            <h1 className="rv-page-title">Admin Dashboard</h1>
+            <p className="rv-page-subtitle">Complete academy overview and analytics</p>
+          </div>
+          <motion.button
+            className="rv-btn rv-btn-secondary"
+            whileHover={{ scale: 1.02, boxShadow: "0 0 12px rgba(0, 224, 255, 0.2)" }}
+            whileTap={{ scale: 0.98 }}
+            onClick={loadData}
+          >
+            🔄 Refresh
+          </motion.button>
+        </header>
+
+        {/* Error State */}
+        {error && (
+          <Card variant="default" padding="md" style={{ 
+            marginBottom: spacing.md,
+            background: colors.danger.soft,
+            border: `1px solid ${colors.danger.main}40`,
           }}>
-            Admin Dashboard
-          </h1>
-          <p style={{ 
-            color: "#64748B", 
-            margin: 0,
-            fontSize: "1rem",
-            fontWeight: 500
-          }}>
-            Complete academy overview and analytics
-          </p>
-        </div>
-        <button
-          onClick={loadData}
-          style={{
-            padding: "12px 24px",
-            background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-            color: "white",
-            border: "none",
-            borderRadius: "10px",
-            cursor: "pointer",
-            fontWeight: 600,
-            fontSize: "14px",
-            fontFamily: "'Inter', sans-serif",
-            boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
-            transition: "all 0.2s ease"
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-2px)";
-            e.currentTarget.style.boxShadow = "0 6px 16px rgba(16, 185, 129, 0.4)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.3)";
-          }}
-        >
-          Refresh
-        </button>
-      </div>
+            <p style={{ margin: 0, color: colors.danger.main }}>Error: {error}</p>
+          </Card>
+        )}
 
-      {/* Main Stats Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24, marginBottom: 32 }}>
-        <div style={{
-          background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-          padding: 28,
-          borderRadius: "16px",
-          boxShadow: "0 10px 25px rgba(16, 185, 129, 0.2)",
-          color: "white",
-          transition: "transform 0.2s ease",
-          cursor: "default"
-        }}
-        className="gamified-card"
-        >
-          <div style={{ fontSize: "14px", marginBottom: "12px", opacity: 0.95, fontWeight: 500 }}>Total Revenue</div>
-          <div style={{ fontSize: "2.5rem", fontWeight: 800, fontFamily: "'Poppins', sans-serif" }}>₹{summary.totalCollected.toLocaleString()}</div>
-          <div style={{ fontSize: "13px", marginTop: "8px", opacity: 0.9, fontWeight: 500 }}>
-            All-time collections
+        {/* Loading State */}
+        {!summary && !error && (
+          <div className="rv-empty-state">
+            <div className="rv-skeleton rv-skeleton-line rv-skeleton-line--lg" style={{ marginBottom: spacing.md }} />
+            <div className="rv-skeleton rv-skeleton-line rv-skeleton-line--md" />
+            <p style={{ marginTop: spacing.lg, color: colors.text.muted }}>Loading dashboard data...</p>
           </div>
-        </div>
+        )}
 
-        <div style={{
-          background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
-          padding: 28,
-          borderRadius: "16px",
-          boxShadow: "0 10px 25px rgba(245, 158, 11, 0.2)",
-          color: "white",
-          transition: "transform 0.2s ease",
-          cursor: "default"
-        }}
-        className="gamified-card"
-        >
-          <div style={{ fontSize: "14px", marginBottom: "12px", opacity: 0.95, fontWeight: 500 }}>Outstanding</div>
-          <div style={{ fontSize: "2.5rem", fontWeight: 800, fontFamily: "'Poppins', sans-serif" }}>₹{summary.approxOutstanding.toLocaleString()}</div>
-          <div style={{ fontSize: "13px", marginTop: "8px", opacity: 0.9, fontWeight: 500 }}>
-            Pending collections
-          </div>
-        </div>
+        {/* Content - Only render if data is loaded */}
+        {summary && !error && (() => {
+          // Calculate center-wise stats
+          const centerStats = centers.map(center => {
+            const centerStudents = students.filter(s => s.centerId === center.id);
+            const centerRevenue = centerStudents.reduce((sum, s) => sum + s.monthlyFeeAmount, 0);
+            return {
+              ...center,
+              studentCount: centerStudents.length,
+              revenue: centerRevenue,
+              activeStudents: centerStudents.filter(s => s.status === "ACTIVE").length
+            };
+          });
 
-        <div style={{
-          background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-          padding: 24,
-          borderRadius: 12,
-          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-          color: "white"
-        }}>
-          <div style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>Total Students</div>
-          <div style={{ fontSize: 36, fontWeight: 700 }}>{summary.studentCount}</div>
-          <div style={{ fontSize: 12, marginTop: 8, opacity: 0.8 }}>
-            {activeStudents} Active across {centers.length} centers
-          </div>
-        </div>
+          const totalRevenue = centerStats.reduce((sum, c) => sum + c.revenue, 0);
+          const activeStudents = students.filter(s => s.status === "ACTIVE").length;
+          const totalExpected = summary.totalCollected + summary.approxOutstanding;
 
-        <div style={{
-          background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-          padding: 24,
-          borderRadius: 12,
-          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-          color: "white"
-        }}>
-          <div style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>Total Expected</div>
-          <div style={{ fontSize: 36, fontWeight: 700 }}>₹{totalExpected.toLocaleString()}</div>
-          <div style={{ fontSize: 12, marginTop: 8, opacity: 0.8 }}>
-            Collected + Outstanding
-          </div>
-        </div>
-      </div>
+          return (
+            <React.Fragment key="dashboard-content">
+              {/* Main Stats Cards */}
+              <div style={{ 
+                display: "grid", 
+                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", 
+                gap: spacing.lg, 
+                marginBottom: spacing.xl 
+              }}>
+                <motion.div custom={0} variants={cardVariants} initial="initial" animate="animate">
+                  <KPICard
+                    title="Total Revenue"
+                    value={`₹${summary.totalCollected.toLocaleString()}`}
+                    subtitle="All-time collections"
+                    variant="primary"
+                  />
+                </motion.div>
 
-      {/* CHART 1: Revenue Collections */}
-      <div style={{
-        background: "white",
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        marginBottom: 24
-      }}>
+                <motion.div custom={1} variants={cardVariants} initial="initial" animate="animate">
+                  <KPICard
+                    title="Outstanding"
+                    value={`₹${summary.approxOutstanding.toLocaleString()}`}
+                    subtitle="Pending collections"
+                    variant="warning"
+                  />
+                </motion.div>
+
+                <motion.div custom={2} variants={cardVariants} initial="initial" animate="animate">
+                  <KPICard
+                    title="Total Students"
+                    value={summary.studentCount.toString()}
+                    subtitle={`${activeStudents} Active across ${centers.length} centers`}
+                    variant="info"
+                  />
+                </motion.div>
+
+                <motion.div custom={3} variants={cardVariants} initial="initial" animate="animate">
+                  <KPICard
+                    title="Total Expected"
+                    value={`₹${totalExpected.toLocaleString()}`}
+                    subtitle="Collected + Outstanding"
+                    variant="success"
+                  />
+                </motion.div>
+              </div>
+
+              {/* CHART 1: Revenue Collections */}
+              <Card variant="elevated" padding="lg" style={{ marginBottom: spacing.xl }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>💰 Revenue Collections</h2>
-            <p style={{ fontSize: 13, color: "#666", margin: "4px 0 0 0" }}>Total money collected by payment date</p>
+            <h2 style={{ ...typography.h3, margin: 0, color: colors.text.primary }}>Revenue Collections</h2>
+            <p style={{ ...typography.caption, color: colors.text.secondary, margin: `${spacing.xs} 0 0 0` }}>
+              Total money collected by payment date
+            </p>
           </div>
         </div>
 
@@ -242,11 +222,18 @@ const EnhancedAdminDashboard: React.FC = () => {
           gap: 16, 
           marginBottom: 24,
           padding: 16,
-          background: "#f8f9fa",
+          background: "rgba(255, 255, 255, 0.05)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
           borderRadius: 8
         }}>
           <div>
-            <label style={{ display: "block", marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
+            <label style={{ 
+              display: "block", 
+              marginBottom: spacing.sm, 
+              ...typography.caption,
+              fontWeight: typography.fontWeight.semibold,
+              color: colors.text.secondary,
+            }}>
               📅 Time Period
             </label>
             <select
@@ -254,11 +241,14 @@ const EnhancedAdminDashboard: React.FC = () => {
               onChange={(e) => setRevenueMonths(Number(e.target.value))}
               style={{
                 width: "100%",
-                padding: "10px 12px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 8,
-                fontSize: 14,
-                cursor: "pointer"
+                padding: `${spacing.sm} ${spacing.md}`,
+                border: "2px solid rgba(255, 255, 255, 0.2)",
+                borderRadius: borderRadius.lg,
+                fontSize: typography.fontSize.sm,
+                cursor: "pointer",
+                background: "rgba(255, 255, 255, 0.1)",
+                color: colors.text.primary,
+                fontFamily: typography.fontFamily.primary,
               }}
             >
               <option value="3">Last 3 Months</option>
@@ -270,7 +260,13 @@ const EnhancedAdminDashboard: React.FC = () => {
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
+            <label style={{ 
+              display: "block", 
+              marginBottom: spacing.sm, 
+              ...typography.caption,
+              fontWeight: typography.fontWeight.semibold,
+              color: colors.text.secondary,
+            }}>
               🏢 Center
             </label>
             <select
@@ -278,11 +274,14 @@ const EnhancedAdminDashboard: React.FC = () => {
               onChange={(e) => setRevenueCenterId(e.target.value)}
               style={{
                 width: "100%",
-                padding: "10px 12px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 8,
-                fontSize: 14,
-                cursor: "pointer"
+                padding: `${spacing.sm} ${spacing.md}`,
+                border: "2px solid rgba(255, 255, 255, 0.2)",
+                borderRadius: borderRadius.lg,
+                fontSize: typography.fontSize.sm,
+                cursor: "pointer",
+                background: "rgba(255, 255, 255, 0.1)",
+                color: colors.text.primary,
+                fontFamily: typography.fontFamily.primary,
               }}
             >
               <option value="">All Centers</option>
@@ -293,7 +292,13 @@ const EnhancedAdminDashboard: React.FC = () => {
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
+            <label style={{ 
+              display: "block", 
+              marginBottom: spacing.sm, 
+              ...typography.caption,
+              fontWeight: typography.fontWeight.semibold,
+              color: colors.text.secondary,
+            }}>
               💳 Payment Mode
             </label>
             <select
@@ -301,11 +306,14 @@ const EnhancedAdminDashboard: React.FC = () => {
               onChange={(e) => setRevenuePaymentMode(e.target.value)}
               style={{
                 width: "100%",
-                padding: "10px 12px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 8,
-                fontSize: 14,
-                cursor: "pointer"
+                padding: `${spacing.sm} ${spacing.md}`,
+                border: "2px solid rgba(255, 255, 255, 0.2)",
+                borderRadius: borderRadius.lg,
+                fontSize: typography.fontSize.sm,
+                cursor: "pointer",
+                background: "rgba(255, 255, 255, 0.1)",
+                color: colors.text.primary,
+                fontFamily: typography.fontFamily.primary,
               }}
             >
               <option value="all">All Modes</option>
@@ -316,22 +324,13 @@ const EnhancedAdminDashboard: React.FC = () => {
           </div>
 
           <div style={{ display: "flex", alignItems: "flex-end" }}>
-            <button
+            <Button
+              variant="utility"
               onClick={loadRevenueData}
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                background: "#1E40AF",
-                color: "white",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontWeight: 600,
-                fontSize: 14
-              }}
+              style={{ width: "100%" }}
             >
               🔄 Refresh Chart
-            </button>
+            </Button>
           </div>
         </div>
         {revenueData.length > 0 ? (
@@ -349,8 +348,8 @@ const EnhancedAdminDashboard: React.FC = () => {
                         height: `${heightPercent * 2.5}px`,
                         minHeight: data.amount > 0 ? "20px" : "5px",
                         background: data.amount > 0 
-                          ? "linear-gradient(to top, #1E40AF, #1E3A8A)" 
-                          : "#e0e0e0",
+                          ? `linear-gradient(to top, ${colors.primary.main}, ${colors.primary.dark})` 
+                          : "rgba(255, 255, 255, 0.1)",
                         borderRadius: "4px 4px 0 0",
                         transition: "all 0.3s",
                         cursor: "pointer",
@@ -389,7 +388,14 @@ const EnhancedAdminDashboard: React.FC = () => {
                 );
               })}
             </div>
-            <div style={{ textAlign: "center", marginTop: 32, padding: 16, background: "#f8f9fa", borderRadius: 8 }}>
+            <div style={{ 
+              textAlign: "center", 
+              marginTop: spacing.xl, 
+              padding: spacing.lg, 
+              background: "rgba(255, 255, 255, 0.05)", 
+              borderRadius: borderRadius.lg,
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+            }}>
               <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>
                 Total Revenue ({revenueMonths} months
                 {revenueCenterId && ` • ${centers.find(c => c.id === Number(revenueCenterId))?.name}`}
@@ -408,20 +414,35 @@ const EnhancedAdminDashboard: React.FC = () => {
             No payment data available yet
           </div>
         )}
-      </div>
+      </Card>
 
       {/* CHART 2: Monthly Collections */}
-      <div style={{
-        background: "white",
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        marginBottom: 24
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      <Card variant="default" padding="lg" style={{ marginBottom: spacing.xl }}>
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          marginBottom: spacing.lg,
+          borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+          paddingBottom: spacing.md,
+        }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>📊 Monthly Collections</h2>
-            <p style={{ fontSize: 13, color: "#666", margin: "4px 0 0 0" }}>Allocated monthly income (shows all months with payments, including future)</p>
+            <h2 style={{ 
+              ...typography.h2,
+              margin: 0,
+              background: `linear-gradient(135deg, ${colors.accent.main} 0%, ${colors.primary.light} 100%)`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}>
+              📊 Monthly Collections
+            </h2>
+            <p style={{ 
+              ...typography.caption,
+              color: colors.text.muted,
+              margin: `${spacing.xs} 0 0 0` 
+            }}>
+              Allocated monthly income (shows all months with payments, including future)
+            </p>
           </div>
         </div>
 
@@ -432,7 +453,8 @@ const EnhancedAdminDashboard: React.FC = () => {
           gap: 16, 
           marginBottom: 24,
           padding: 16,
-          background: "#f8f9fa",
+          background: "rgba(255, 255, 255, 0.05)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
           borderRadius: 8
         }}>
 
@@ -460,7 +482,13 @@ const EnhancedAdminDashboard: React.FC = () => {
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
+            <label style={{ 
+              display: "block", 
+              marginBottom: spacing.sm, 
+              ...typography.caption,
+              fontWeight: typography.fontWeight.semibold,
+              color: colors.text.secondary,
+            }}>
               💳 Payment Mode
             </label>
             <select
@@ -468,11 +496,14 @@ const EnhancedAdminDashboard: React.FC = () => {
               onChange={(e) => setMonthlyPaymentMode(e.target.value)}
               style={{
                 width: "100%",
-                padding: "10px 12px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 8,
-                fontSize: 14,
-                cursor: "pointer"
+                padding: `${spacing.sm} ${spacing.md}`,
+                border: "2px solid rgba(255, 255, 255, 0.2)",
+                borderRadius: borderRadius.lg,
+                fontSize: typography.fontSize.sm,
+                cursor: "pointer",
+                background: "rgba(255, 255, 255, 0.1)",
+                color: colors.text.primary,
+                fontFamily: typography.fontFamily.primary,
               }}
             >
               <option value="all">All Modes</option>
@@ -483,22 +514,13 @@ const EnhancedAdminDashboard: React.FC = () => {
           </div>
 
           <div style={{ display: "flex", alignItems: "flex-end" }}>
-            <button
+            <Button
+              variant="utility"
               onClick={loadMonthlyData}
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                background: "#43e97b",
-                color: "#000",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontWeight: 700,
-                fontSize: 14
-              }}
+              style={{ width: "100%" }}
             >
               🔄 Refresh Chart
-            </button>
+            </Button>
           </div>
         </div>
         {monthlyData.length > 0 ? (
@@ -556,7 +578,14 @@ const EnhancedAdminDashboard: React.FC = () => {
                 );
               })}
             </div>
-            <div style={{ textAlign: "center", marginTop: 32, padding: 16, background: "#f8f9fa", borderRadius: 8 }}>
+            <div style={{ 
+              textAlign: "center", 
+              marginTop: spacing.xl, 
+              padding: spacing.lg, 
+              background: "rgba(255, 255, 255, 0.05)", 
+              borderRadius: borderRadius.lg,
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+            }}>
               <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>
                 Total Allocated ({monthlyData.length} months
                 {monthlyCenterId && ` • ${centers.find(c => c.id === Number(monthlyCenterId))?.name}`}
@@ -571,17 +600,23 @@ const EnhancedAdminDashboard: React.FC = () => {
             </div>
           </>
         ) : (
-          <div style={{ textAlign: "center", padding: 48, color: "#999" }}>
+          <div style={{ 
+            textAlign: "center", 
+            padding: spacing['3xl'], 
+            color: colors.text.muted,
+            ...typography.body,
+          }}>
             No payment data available yet
           </div>
         )}
-      </div>
+              </Card>
 
-      {/* Charts Section */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24, marginBottom: 32 }}>
+              {/* Charts Section */}
+              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24, marginBottom: 32 }}>
         {/* Collection vs Outstanding Comparison */}
         <div style={{
-          background: "white",
+          background: colors.surface.card,
+          backdropFilter: "blur(20px)",
           padding: 24,
           borderRadius: 12,
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
@@ -624,9 +659,9 @@ const EnhancedAdminDashboard: React.FC = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "white",
-                fontWeight: 700,
-                fontSize: 18
+                color: colors.text.onPrimary,
+                fontWeight: typography.fontWeight.bold,
+                fontSize: typography.fontSize.lg,
               }}>
                 ₹{(summary.approxOutstanding / 1000).toFixed(0)}k
               </div>
@@ -646,7 +681,8 @@ const EnhancedAdminDashboard: React.FC = () => {
 
         {/* Center Pie Chart */}
         <div style={{
-          background: "white",
+          background: colors.surface.card,
+          backdropFilter: "blur(20px)",
           padding: 24,
           borderRadius: 12,
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
@@ -655,27 +691,42 @@ const EnhancedAdminDashboard: React.FC = () => {
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {centerStats.map((center, idx) => {
               const percentage = totalRevenue > 0 ? ((center.revenue / totalRevenue) * 100).toFixed(1) : 0;
-              const colors = ["#1E40AF", "#f093fb", "#4facfe", "#43e97b", "#feca57"];
+              const chartColors = ["#1E40AF", "#f093fb", "#4facfe", "#43e97b", "#feca57"];
               return (
                 <div key={center.id}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 14, fontWeight: 600 }}>{center.name}</span>
-                    <span style={{ fontSize: 14, color: "#666" }}>{percentage}%</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: spacing.xs }}>
+                    <span style={{ 
+                      ...typography.body,
+                      fontWeight: typography.fontWeight.semibold,
+                      color: colors.text.primary,
+                    }}>
+                      {center.name}
+                    </span>
+                    <span style={{ 
+                      ...typography.body,
+                      color: colors.text.secondary,
+                    }}>
+                      {percentage}%
+                    </span>
                   </div>
                   <div style={{
                     height: 8,
-                    background: "#f0f0f0",
+                    background: "rgba(255, 255, 255, 0.05)",
                     borderRadius: 4,
                     overflow: "hidden"
                   }}>
                     <div style={{
                       width: `${percentage}%`,
                       height: "100%",
-                      background: colors[idx % colors.length],
+                      background: chartColors[idx % chartColors.length],
                       transition: "width 0.3s"
                     }} />
                   </div>
-                  <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+                  <div style={{ 
+                    ...typography.caption,
+                    color: colors.text.muted, 
+                    marginTop: spacing.xs,
+                  }}>
                     {center.studentCount} students • ₹{center.revenue.toLocaleString()}/mo
                   </div>
                 </div>
@@ -683,17 +734,19 @@ const EnhancedAdminDashboard: React.FC = () => {
             })}
           </div>
         </div>
-      </div>
+              </div>
 
-      {/* Center-wise Detailed Stats */}
-      <div style={{
-        background: "white",
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        marginBottom: 32
-      }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>🎯 Center-wise Performance</h2>
+              {/* Center-wise Detailed Stats */}
+              <Card variant="default" padding="lg" style={{ marginBottom: spacing.xl }}>
+        <h2 style={{ 
+          ...typography.h2,
+          marginBottom: spacing.lg,
+          background: `linear-gradient(135deg, ${colors.accent.main} 0%, ${colors.primary.light} 100%)`,
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+        }}>
+          🎯 Center-wise Performance
+        </h2>
         <div style={{ display: "grid", gap: 16 }}>
           {centerStats.map((center, idx) => {
             const colors = [
@@ -743,12 +796,13 @@ const EnhancedAdminDashboard: React.FC = () => {
             );
           })}
         </div>
-      </div>
+              </Card>
 
-      {/* Quick Stats Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+              {/* Quick Stats Grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
         <div style={{
-          background: "white",
+          background: colors.surface.card,
+          backdropFilter: "blur(20px)",
           padding: 20,
           borderRadius: 12,
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
@@ -759,7 +813,8 @@ const EnhancedAdminDashboard: React.FC = () => {
         </div>
 
         <div style={{
-          background: "white",
+          background: colors.surface.card,
+          backdropFilter: "blur(20px)",
           padding: 20,
           borderRadius: 12,
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
@@ -770,7 +825,8 @@ const EnhancedAdminDashboard: React.FC = () => {
         </div>
 
         <div style={{
-          background: "white",
+          background: colors.surface.card,
+          backdropFilter: "blur(20px)",
           padding: 20,
           borderRadius: 12,
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
@@ -783,7 +839,8 @@ const EnhancedAdminDashboard: React.FC = () => {
         </div>
 
         <div style={{
-          background: "white",
+          background: colors.surface.card,
+          backdropFilter: "blur(20px)",
           padding: 20,
           borderRadius: 12,
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
@@ -794,8 +851,12 @@ const EnhancedAdminDashboard: React.FC = () => {
             ₹{students.length > 0 ? Math.floor(totalRevenue / students.length).toLocaleString() : 0}
           </div>
         </div>
-      </div>
-    </div>
+              </div>
+            </React.Fragment>
+          );
+        })()}
+      </section>
+    </motion.main>
   );
 };
 

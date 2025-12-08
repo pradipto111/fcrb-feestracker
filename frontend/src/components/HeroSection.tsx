@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
 
 interface HeroSectionProps {
   title: string;
@@ -29,17 +30,28 @@ const HeroSection: React.FC<HeroSectionProps> = ({ title, subtitle, showVideo = 
         backgroundImage: "url(/photo1.png)",
         backgroundSize: "cover",
         backgroundPosition: "center",
-        opacity: 0.3
+        opacity: 0.2,
+        filter: "brightness(0.3) contrast(1.2)"
       }} />
       
-      {/* Gradient Overlay */}
+      {/* Dark Overlay */}
       <div style={{
         position: "absolute",
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        background: "linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.9) 100%)"
+        background: "linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.85) 100%)"
+      }} />
+      
+      {/* Brand Gradient Overlay */}
+      <div style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: `linear-gradient(135deg, rgba(4, 61, 208, 0.3) 0%, rgba(255, 169, 0, 0.2) 100%)`
       }} />
 
       {/* Video Section */}
@@ -95,8 +107,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({ title, subtitle, showVideo = 
               autoPlay
               controls
               style={{
+                width: "100%",
+                height: "100%",
                 maxWidth: "90%",
                 maxHeight: "90%",
+                objectFit: "contain",
                 borderRadius: "12px",
                 boxShadow: "0 20px 60px rgba(0,0,0,0.5)"
               }}
@@ -119,22 +134,23 @@ const HeroSection: React.FC<HeroSectionProps> = ({ title, subtitle, showVideo = 
         color: "white"
       }}>
         <h1 style={{
-          fontSize: showVideo ? "3rem" : "2.5rem",
-          fontWeight: 800,
-          fontFamily: "'Poppins', sans-serif",
-          marginBottom: subtitle ? "16px" : 0,
+          ...typography.display,
+          fontSize: showVideo ? typography.fontSize['5xl'] : typography.fontSize['4xl'],
+          marginBottom: subtitle ? spacing.md : 0,
           textShadow: "0 2px 8px rgba(0,0,0,0.3)",
-          letterSpacing: "-0.02em"
+          background: `linear-gradient(135deg, ${colors.accent.main} 0%, ${colors.primary.light} 100%)`,
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
         }}>
           {title}
         </h1>
         {subtitle && (
           <p style={{
-            fontSize: "1.25rem",
-            fontWeight: 500,
+            ...typography.h4,
             opacity: 0.95,
             textShadow: "0 1px 4px rgba(0,0,0,0.2)",
-            maxWidth: "600px"
+            maxWidth: "600px",
+            color: colors.text.inverted,
           }}>
             {subtitle}
           </p>

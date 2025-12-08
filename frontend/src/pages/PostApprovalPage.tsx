@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { PageHeader } from "../components/ui/PageHeader";
+import { Badge } from "../components/ui/Badge";
+import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
 
 const PostApprovalPage: React.FC = () => {
   const [pendingPosts, setPendingPosts] = useState<any[]>([]);
@@ -42,7 +47,7 @@ const PostApprovalPage: React.FC = () => {
             width: "100%",
             maxHeight: 400,
             objectFit: "contain",
-            background: "#f0f0f0"
+            background: colors.surface.soft
           }}
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = "none";
@@ -63,19 +68,21 @@ const PostApprovalPage: React.FC = () => {
     } else if (post.mediaType === "LINK") {
       return (
         <div style={{
-          padding: 20,
-          background: "#f0f7ff",
-          borderRadius: 8,
-          textAlign: "center"
+          padding: spacing.lg,
+          background: colors.primary.soft,
+          borderRadius: borderRadius.lg,
+          textAlign: "center",
+          border: `1px solid ${colors.primary.outline}`,
         }}>
           <a
             href={post.mediaUrl}
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              color: "#1E40AF",
+              color: colors.primary.light,
               textDecoration: "none",
-              fontWeight: 600
+              fontWeight: typography.fontWeight.semibold,
+              ...typography.body,
             }}
           >
             🔗 {post.mediaUrl}
@@ -87,80 +94,79 @@ const PostApprovalPage: React.FC = () => {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url(/photo3.png)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundAttachment: "fixed"
-    }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, color: "#1E40AF" }}>
-          ✅ Post Approval
-        </h1>
-        <p style={{ color: "#666", margin: 0 }}>Review and approve student posts</p>
-      </div>
+    <div>
+      <PageHeader
+        title="✅ Post Approval"
+        subtitle="Review and approve student posts"
+      />
 
       {error && (
-        <div style={{
-          padding: 12,
-          background: "#fee",
-          color: "#c33",
-          borderRadius: 8,
-          marginBottom: 16
+        <Card variant="default" padding="md" style={{ 
+          marginBottom: spacing.md,
+          background: colors.danger.soft,
+          border: `1px solid ${colors.danger.main}40`,
         }}>
-          {error}
-        </div>
+          <p style={{ margin: 0, color: colors.danger.main }}>{error}</p>
+        </Card>
       )}
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: 48 }}>Loading...</div>
+        <Card variant="default" padding="xl">
+          <p style={{ textAlign: "center", color: colors.text.muted, ...typography.body }}>
+            Loading...
+          </p>
+        </Card>
       ) : pendingPosts.length === 0 ? (
-        <div style={{
-          background: "white",
-          padding: 48,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          textAlign: "center",
-          color: "#999"
-        }}>
-          No pending posts. All clear! ✅
-        </div>
+        <Card variant="default" padding="xl" style={{ textAlign: "center" }}>
+          <p style={{ color: colors.text.muted, ...typography.body }}>
+            No pending posts. All clear! ✅
+          </p>
+        </Card>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: spacing.lg }}>
           {pendingPosts.map(post => (
-            <div
+            <Card
               key={post.id}
-              style={{
-                background: "white",
-                borderRadius: 12,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                overflow: "hidden"
-              }}
+              variant="default"
+              padding="none"
+              style={{ overflow: "hidden" }}
             >
-              <div style={{ padding: 20, borderBottom: "2px solid #ffc107" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 12 }}>
+              <div style={{ 
+                padding: spacing.lg, 
+                borderBottom: `2px solid ${colors.warning.main}`,
+                background: `linear-gradient(135deg, ${colors.warning.soft} 0%, transparent 100%)`,
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: spacing.md }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: spacing.md, marginBottom: spacing.sm }}>
                       <div style={{
                         width: 40,
                         height: 40,
                         borderRadius: "50%",
-                        background: "#ffc107",
-                        color: "white",
+                        background: `linear-gradient(135deg, ${colors.warning.main} 0%, ${colors.warning.dark} 100%)`,
+                        color: colors.text.onAccent,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontWeight: 700,
-                        fontSize: 16
+                        fontWeight: typography.fontWeight.bold,
+                        fontSize: typography.fontSize.base,
+                        boxShadow: shadows.sm,
                       }}>
                         {post.creator?.fullName?.charAt(0) || "?"}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: 16 }}>
+                        <div style={{ 
+                          fontWeight: typography.fontWeight.semibold, 
+                          fontSize: typography.fontSize.base,
+                          color: colors.text.primary,
+                        }}>
                           {post.creator?.fullName || "Unknown Student"}
                         </div>
-                        <div style={{ fontSize: 12, color: "#666" }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.xs, 
+                          color: colors.text.muted,
+                          marginTop: spacing.xs,
+                        }}>
                           {post.creator?.email} • {new Date(post.createdAt).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'long',
@@ -172,31 +178,36 @@ const PostApprovalPage: React.FC = () => {
                       </div>
                     </div>
                     {post.title && (
-                      <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.lg, 
+                        fontWeight: typography.fontWeight.bold, 
+                        marginBottom: spacing.xs,
+                        color: colors.text.primary,
+                      }}>
                         {post.title}
                       </div>
                     )}
                     {post.description && (
-                      <div style={{ fontSize: 14, color: "#666", marginTop: 8 }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.sm, 
+                        color: colors.text.secondary, 
+                        marginTop: spacing.sm,
+                        lineHeight: 1.6,
+                      }}>
                         {post.description}
                       </div>
                     )}
                     {post.center && (
-                      <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.xs, 
+                        color: colors.text.muted, 
+                        marginTop: spacing.xs,
+                      }}>
                         Center: {post.center.name}
                       </div>
                     )}
                   </div>
-                  <div style={{
-                    padding: "6px 12px",
-                    background: "#ffc107",
-                    color: "#000",
-                    borderRadius: 6,
-                    fontSize: 12,
-                    fontWeight: 600
-                  }}>
-                    PENDING
-                  </div>
+                  <Badge variant="warning">PENDING</Badge>
                 </div>
               </div>
 
@@ -206,45 +217,32 @@ const PostApprovalPage: React.FC = () => {
                 </div>
               )}
 
-              <div style={{ padding: 20, display: "flex", gap: 12 }}>
-                <button
+              <div style={{ 
+                padding: spacing.lg, 
+                display: "flex", 
+                gap: spacing.md,
+                background: "rgba(255, 255, 255, 0.02)",
+              }}>
+                <Button
+                  variant="primary"
                   onClick={() => handleApproval(post.id, "APPROVED")}
-                  style={{
-                    flex: 1,
-                    padding: "12px",
-                    background: "#28a745",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    fontWeight: 600,
-                    fontSize: 14
-                  }}
+                  style={{ flex: 1 }}
                 >
                   ✅ Approve
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="danger"
                   onClick={() => {
                     if (confirm("Are you sure you want to reject this post?")) {
                       handleApproval(post.id, "REJECTED");
                     }
                   }}
-                  style={{
-                    flex: 1,
-                    padding: "12px",
-                    background: "#dc3545",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    fontWeight: 600,
-                    fontSize: 14
-                  }}
+                  style={{ flex: 1 }}
                 >
                   ❌ Reject
-                </button>
+                </Button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
@@ -253,5 +251,6 @@ const PostApprovalPage: React.FC = () => {
 };
 
 export default PostApprovalPage;
+
 
 

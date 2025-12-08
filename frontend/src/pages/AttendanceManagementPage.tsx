@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { PageHeader } from "../components/ui/PageHeader";
+import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
+import { pageVariants, cardVariants, primaryButtonWhileHover, primaryButtonWhileTap } from "../utils/motion";
 
 const AttendanceManagementPage: React.FC = () => {
   const { user } = useAuth();
@@ -339,73 +345,40 @@ const AttendanceManagementPage: React.FC = () => {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url(/photo3.png)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundAttachment: "fixed"
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, color: "#1E40AF" }}>
-            📅 Attendance Tracker
-          </h1>
-          <p style={{ color: "#666", margin: 0 }}>Manage sessions and track student attendance</p>
-        </div>
-        <div style={{ display: "flex", gap: 12 }}>
-          <button
-            onClick={() => setShowCreateSession(true)}
-            style={{
-              padding: "12px 24px",
-              background: "#1E40AF",
-              color: "white",
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer",
-              fontWeight: 600,
-              fontSize: 14
-            }}
-          >
-            ➕ Create Session
-          </button>
-          <button
-            onClick={() => setShowCreateMonthlySessions(true)}
-            style={{
-              padding: "12px 24px",
-              background: "#27ae60",
-              color: "white",
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer",
-              fontWeight: 600,
-              fontSize: 14
-            }}
-          >
-            📅 Create Monthly Sessions
-          </button>
-        </div>
-      </div>
+    <motion.main
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      style={{ position: 'relative' }}
+    >
+      <PageHeader
+        title="📅 Attendance"
+        subtitle="Manage sessions and track player attendance"
+        actions={
+          <>
+            <Button variant="primary" onClick={() => setShowCreateSession(true)}>
+              ➕ Create Session
+            </Button>
+            <Button variant="secondary" onClick={() => setShowCreateMonthlySessions(true)}>
+              📅 Create Monthly Sessions
+            </Button>
+          </>
+        }
+      />
 
       {error && (
-        <div style={{
-          padding: 12,
-          background: "#fee",
-          color: "#c33",
-          borderRadius: 8,
-          marginBottom: 16
+        <Card variant="default" padding="md" style={{ 
+          marginBottom: spacing.md,
+          background: colors.danger.soft,
+          border: `1px solid ${colors.danger.main}40`,
         }}>
-          {error}
-        </div>
+          <p style={{ margin: 0, color: colors.danger.main }}>{error}</p>
+        </Card>
       )}
 
       {/* Filters */}
-      <div style={{
-        background: "white",
-        padding: 20,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        marginBottom: 24,
+      <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg,
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
         gap: 16
@@ -467,7 +440,7 @@ const AttendanceManagementPage: React.FC = () => {
             }}
           />
         </div>
-      </div>
+      </Card>
 
       {/* Create Session Modal */}
       {showCreateSession && (
@@ -483,16 +456,17 @@ const AttendanceManagementPage: React.FC = () => {
           justifyContent: "center",
           zIndex: 1000
         }}>
-          <div style={{
-            background: "white",
-            padding: 32,
-            borderRadius: 12,
+          <Card variant="elevated" padding="xl" style={{
             maxWidth: 500,
             width: "90%",
             maxHeight: "90vh",
             overflowY: "auto"
           }}>
-            <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 20 }}>Create New Session</h2>
+            <h2 style={{ 
+              ...typography.h2,
+              marginBottom: spacing.lg,
+              color: colors.text.primary,
+            }}>Create New Session</h2>
             <form onSubmit={handleCreateSession}>
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
@@ -585,44 +559,29 @@ const AttendanceManagementPage: React.FC = () => {
                 />
               </div>
               <div style={{ display: "flex", gap: 12 }}>
-                <button
+                <Button
                   type="submit"
+                  variant="primary"
                   disabled={loading}
-                  style={{
-                    flex: 1,
-                    padding: "12px",
-                    background: "#1E40AF",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    fontWeight: 600
-                  }}
+                  style={{ flex: 1 }}
                 >
-                  Create Session
-                </button>
-                <button
+                  {loading ? "Creating..." : "Create Session"}
+                </Button>
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => {
                     setShowCreateSession(false);
                     setSessionForm({ centerId: "", sessionDate: "", startTime: "", endTime: "", notes: "" });
+                    setError("");
                   }}
-                  style={{
-                    flex: 1,
-                    padding: "12px",
-                    background: "#ccc",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    fontWeight: 600
-                  }}
+                  style={{ flex: 1 }}
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </form>
-          </div>
+          </Card>
         </div>
       )}
 
@@ -640,16 +599,17 @@ const AttendanceManagementPage: React.FC = () => {
           justifyContent: "center",
           zIndex: 1000
         }}>
-          <div style={{
-            background: "white",
-            padding: 32,
-            borderRadius: 12,
+          <Card variant="elevated" padding="xl" style={{
             maxWidth: 800,
             width: "90%",
             maxHeight: "90vh",
             overflowY: "auto"
           }}>
-            <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 20 }}>Create Monthly Sessions</h2>
+            <h2 style={{ 
+              ...typography.h2,
+              marginBottom: spacing.lg,
+              color: colors.text.primary,
+            }}>Create Monthly Sessions</h2>
             <form onSubmit={handleCreateMonthlySessions}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 20 }}>
                 <div>
@@ -1047,111 +1007,124 @@ const AttendanceManagementPage: React.FC = () => {
                 </button>
               </div>
             </form>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* Sessions List */}
-      <div style={{
-        background: "white",
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-      }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>
+      <Card variant="default" padding="lg">
+        <h2 style={{ 
+          ...typography.h3,
+          marginBottom: spacing.md,
+          color: colors.text.primary,
+        }}>
           Sessions for {getMonthName(selectedMonth)} {selectedYear}
         </h2>
         {loading ? (
-          <div style={{ textAlign: "center", padding: 48 }}>Loading...</div>
+          <div style={{ 
+            textAlign: "center", 
+            padding: spacing['3xl'],
+            color: colors.text.muted,
+            ...typography.body,
+          }}>
+            Loading...
+          </div>
         ) : sessions.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 48, color: "#999" }}>
+          <div style={{ 
+            textAlign: "center", 
+            padding: spacing['3xl'],
+            color: colors.text.muted,
+            ...typography.body,
+          }}>
             No sessions found for this month
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {sessions.map(session => {
+            {sessions.map((session, index) => {
               const sessionDate = new Date(session.sessionDate);
               const attendanceMap = new Map(session.attendance.map((a: any) => [a.studentId, a]));
               
               return (
-                <div
+                <motion.div
                   key={session.id}
-                  style={{
-                    border: "2px solid #e0e0e0",
-                    borderRadius: 8,
-                    padding: 16,
-                    background: selectedSession?.id === session.id ? "#f0f7ff" : "white"
-                  }}
+                  custom={index}
+                  variants={cardVariants}
+                  initial="initial"
+                  animate="animate"
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 12 }}>
+                  <Card
+                    variant={selectedSession?.id === session.id ? "elevated" : "default"}
+                    padding="md"
+                    style={{
+                      border: selectedSession?.id === session.id 
+                      ? `2px solid ${colors.primary.outline}` 
+                      : `1px solid rgba(255, 255, 255, 0.1)`,
+                    background: selectedSession?.id === session.id 
+                      ? colors.primary.soft 
+                      : colors.surface.card,
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                  onClick={() => setSelectedSession(session)}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: spacing.md }}>
                     <div>
-                      <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.lg, 
+                        fontWeight: typography.fontWeight.bold, 
+                        marginBottom: spacing.xs,
+                        color: colors.text.primary,
+                      }}>
                         {sessionDate.toLocaleDateString()} - {session.startTime} to {session.endTime}
                       </div>
-                      <div style={{ fontSize: 14, color: "#666" }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.sm, 
+                        color: colors.text.muted,
+                      }}>
                         {session.center.name} • Coach: {session.coach.fullName}
                       </div>
                       {session.notes && (
-                        <div style={{ fontSize: 13, color: "#666", marginTop: 4, fontStyle: "italic" }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.xs, 
+                          color: colors.text.muted, 
+                          marginTop: spacing.xs, 
+                          fontStyle: "italic",
+                        }}>
                           {session.notes}
                         </div>
                       )}
                     </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
+                    <div style={{ display: "flex", gap: spacing.sm }}>
+                      <Button
+                        variant="primary"
+                        size="sm"
                         onClick={() => handleOpenAttendanceModal(session)}
-                        style={{
-                          padding: "8px 16px",
-                          background: "#1E40AF",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 6,
-                          cursor: "pointer",
-                          fontSize: 13,
-                          fontWeight: 600
-                        }}
                       >
                         📋 Mark Attendance
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={() => navigate(`/vote/${session.id}`)}
-                        style={{
-                          padding: "8px 16px",
-                          background: "#28a745",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 6,
-                          cursor: "pointer",
-                          fontSize: 13,
-                          fontWeight: 600
-                        }}
                       >
                         🗳️ Vote
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
                         onClick={() => handleDeleteSession(session.id)}
-                        style={{
-                          padding: "8px 16px",
-                          background: "#e74c3c",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 6,
-                          cursor: "pointer",
-                          fontSize: 13,
-                          fontWeight: 600
-                        }}
                       >
                         Delete
-                      </button>
+                      </Button>
                     </div>
                   </div>
-
-                </div>
+                </Card>
+                </motion.div>
               );
             })}
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Attendance Marking Modal */}
       {showAttendanceModal && attendanceModalSession && (
@@ -1167,22 +1140,26 @@ const AttendanceManagementPage: React.FC = () => {
           justifyContent: "center",
           zIndex: 2000
         }}>
-          <div style={{
-            background: "white",
-            padding: 32,
-            borderRadius: 12,
+          <Card variant="elevated" padding="xl" style={{
             maxWidth: 900,
             width: "95%",
             maxHeight: "90vh",
             overflowY: "auto",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.3)"
           }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 24 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: spacing.lg }}>
               <div>
-                <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
+                <h2 style={{ 
+                  ...typography.h2,
+                  marginBottom: spacing.sm,
+                  color: colors.text.primary,
+                }}>
                   Mark Attendance
                 </h2>
-                <div style={{ fontSize: 16, color: "#666", marginBottom: 4 }}>
+                <div style={{ 
+                  fontSize: typography.fontSize.base, 
+                  color: colors.text.secondary, 
+                  marginBottom: spacing.xs,
+                }}>
                   {new Date(attendanceModalSession.sessionDate).toLocaleDateString('en-US', { 
                     weekday: 'long', 
                     year: 'numeric', 
@@ -1190,93 +1167,103 @@ const AttendanceManagementPage: React.FC = () => {
                     day: 'numeric' 
                   })}
                 </div>
-                <div style={{ fontSize: 14, color: "#999" }}>
+                <div style={{ 
+                  fontSize: typography.fontSize.sm, 
+                  color: colors.text.muted,
+                }}>
                   {attendanceModalSession.startTime} - {attendanceModalSession.endTime} • {attendanceModalSession.center.name}
                 </div>
                 {attendanceModalSession.notes && (
-                  <div style={{ fontSize: 13, color: "#666", marginTop: 8, fontStyle: "italic" }}>
+                  <div style={{ 
+                    fontSize: typography.fontSize.xs, 
+                    color: colors.text.muted, 
+                    marginTop: spacing.sm, 
+                    fontStyle: "italic",
+                  }}>
                     Session Notes: {attendanceModalSession.notes}
                   </div>
                 )}
               </div>
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   setShowAttendanceModal(false);
                   setAttendanceModalSession(null);
                   setAttendanceModalRemarks({});
                 }}
-                style={{
-                  padding: "8px 12px",
-                  background: "#e0e0e0",
-                  color: "#666",
-                  border: "none",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  fontSize: 14,
-                  fontWeight: 600
-                }}
               >
                 ✕ Close
-              </button>
+              </Button>
             </div>
 
-            <div style={{ marginBottom: 20 }}>
+            <Card variant="default" padding="md" style={{ 
+              marginBottom: spacing.lg,
+              background: colors.primary.soft,
+              border: `1px solid ${colors.primary.outline}`,
+            }}>
               <div style={{ 
-                padding: 12, 
-                background: "#f0f7ff", 
-                borderRadius: 8,
-                fontSize: 14,
-                color: "#1E40AF"
+                fontSize: typography.fontSize.sm,
+                color: colors.primary.light,
               }}>
                 <strong>Total Students:</strong> {students.length} • 
                 <strong> Marked:</strong> {
                   attendanceModalSession.attendance?.filter((a: any) => a.status !== "ABSENT" || a.notes).length || 0
                 } / {students.length}
               </div>
-            </div>
+            </Card>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
               {students.map(student => {
                 const attendance = attendanceModalSession.attendance?.find((a: any) => a.studentId === student.id);
                 const currentStatus = attendance?.status || "ABSENT";
                 const currentRemark = attendanceModalRemarks[student.id] || attendance?.notes || "";
                 
+                const statusColor = currentStatus === "PRESENT" ? colors.success.main :
+                                   currentStatus === "ABSENT" ? colors.danger.main :
+                                   colors.warning.main;
+                
                 return (
-                  <div
+                  <Card
                     key={student.id}
+                    variant="default"
+                    padding="lg"
                     style={{
-                      padding: 20,
-                      border: `2px solid ${
-                        currentStatus === "PRESENT" ? "#27ae60" :
-                        currentStatus === "ABSENT" ? "#e74c3c" :
-                        currentStatus === "EXCUSED" ? "#f39c12" : "#e0e0e0"
-                      }`,
-                      borderRadius: 8,
-                      background: "#f8f9fa"
+                      border: `2px solid ${statusColor}40`,
+                      background: `${statusColor}10`,
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 16 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: spacing.md }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>
+                        <div style={{ 
+                          fontWeight: typography.fontWeight.bold, 
+                          fontSize: typography.fontSize.lg, 
+                          marginBottom: spacing.xs,
+                          color: colors.text.primary,
+                        }}>
                           {student.fullName}
                         </div>
-                        <div style={{ fontSize: 13, color: "#666" }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.xs, 
+                          color: colors.text.muted,
+                        }}>
                           {student.programType || "No Program"} • {student.status}
                         </div>
                         {attendance && (
                           <div style={{ 
-                            fontSize: 12, 
-                            color: currentStatus === "PRESENT" ? "#27ae60" :
-                                   currentStatus === "ABSENT" ? "#e74c3c" : "#f39c12",
-                            fontWeight: 600,
-                            marginTop: 4
+                            fontSize: typography.fontSize.xs, 
+                            color: statusColor,
+                            fontWeight: typography.fontWeight.semibold,
+                            marginTop: spacing.xs,
                           }}>
                             Current Status: {currentStatus}
                           </div>
                         )}
                       </div>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        <button
+                      <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
+                        <Button
+                          variant={currentStatus === "PRESENT" ? "primary" : "utility"}
+                          size="sm"
                           onClick={async () => {
                             const remark = attendanceModalRemarks[student.id] || "";
                             await handleMarkAttendance(attendanceModalSession.id, student.id, "PRESENT", remark);
@@ -1284,43 +1271,26 @@ const AttendanceManagementPage: React.FC = () => {
                           }}
                           disabled={loading}
                           style={{
-                            padding: "10px 16px",
-                            background: currentStatus === "PRESENT" ? "#27ae60" : "#e0e0e0",
-                            color: currentStatus === "PRESENT" ? "white" : "#666",
-                            border: "none",
-                            borderRadius: 6,
-                            cursor: loading ? "not-allowed" : "pointer",
-                            fontSize: 13,
-                            fontWeight: 600,
-                            opacity: loading ? 0.6 : 1,
-                            transition: "all 0.2s"
+                            background: currentStatus === "PRESENT" ? colors.success.main : undefined,
                           }}
                         >
                           ✓ Present
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant={currentStatus === "ABSENT" ? "danger" : "utility"}
+                          size="sm"
                           onClick={async () => {
                             const remark = attendanceModalRemarks[student.id] || "";
                             await handleMarkAttendance(attendanceModalSession.id, student.id, "ABSENT", remark);
                             await handleOpenAttendanceModal(attendanceModalSession);
                           }}
                           disabled={loading}
-                          style={{
-                            padding: "10px 16px",
-                            background: currentStatus === "ABSENT" ? "#e74c3c" : "#e0e0e0",
-                            color: currentStatus === "ABSENT" ? "white" : "#666",
-                            border: "none",
-                            borderRadius: 6,
-                            cursor: loading ? "not-allowed" : "pointer",
-                            fontSize: 13,
-                            fontWeight: 600,
-                            opacity: loading ? 0.6 : 1,
-                            transition: "all 0.2s"
-                          }}
                         >
                           ✗ Absent
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant={currentStatus === "EXCUSED" ? "secondary" : "utility"}
+                          size="sm"
                           onClick={async () => {
                             const remark = attendanceModalRemarks[student.id] || "";
                             await handleMarkAttendance(attendanceModalSession.id, student.id, "EXCUSED", remark);
@@ -1328,24 +1298,21 @@ const AttendanceManagementPage: React.FC = () => {
                           }}
                           disabled={loading}
                           style={{
-                            padding: "10px 16px",
-                            background: currentStatus === "EXCUSED" ? "#f39c12" : "#e0e0e0",
-                            color: currentStatus === "EXCUSED" ? "white" : "#666",
-                            border: "none",
-                            borderRadius: 6,
-                            cursor: loading ? "not-allowed" : "pointer",
-                            fontSize: 13,
-                            fontWeight: 600,
-                            opacity: loading ? 0.6 : 1,
-                            transition: "all 0.2s"
+                            background: currentStatus === "EXCUSED" ? colors.warning.main : undefined,
                           }}
                         >
                           ~ Excused
-                        </button>
+                        </Button>
                       </div>
                     </div>
                     <div>
-                      <label style={{ display: "block", marginBottom: 8, fontSize: 14, fontWeight: 600, color: "#333" }}>
+                      <label style={{ 
+                        display: "block", 
+                        marginBottom: spacing.sm, 
+                        fontSize: typography.fontSize.sm, 
+                        fontWeight: typography.fontWeight.semibold, 
+                        color: colors.text.secondary,
+                      }}>
                         Review / Remarks
                       </label>
                       <textarea
@@ -1368,25 +1335,38 @@ const AttendanceManagementPage: React.FC = () => {
                         rows={3}
                         style={{
                           width: "100%",
-                          padding: "12px",
-                          border: "2px solid #e0e0e0",
-                          borderRadius: 6,
-                          fontSize: 14,
-                          fontFamily: "inherit",
-                          resize: "vertical"
+                          padding: spacing.sm,
+                          border: "2px solid rgba(255, 255, 255, 0.2)",
+                          borderRadius: borderRadius.lg,
+                          fontSize: typography.fontSize.sm,
+                          fontFamily: typography.fontFamily.primary,
+                          resize: "vertical",
+                          background: "rgba(255, 255, 255, 0.1)",
+                          color: colors.text.primary,
                         }}
                       />
-                      <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.xs, 
+                        color: colors.text.muted, 
+                        marginTop: spacing.xs,
+                      }}>
                         This review will be visible to the student on their dashboard
                       </div>
                     </div>
-                  </div>
+                  </Card>
                 );
               })}
             </div>
 
-            <div style={{ marginTop: 24, paddingTop: 20, borderTop: "2px solid #e0e0e0", display: "flex", gap: 12 }}>
-              <button
+            <div style={{ 
+              marginTop: spacing.lg, 
+              paddingTop: spacing.lg, 
+              borderTop: `1px solid rgba(255, 255, 255, 0.1)`, 
+              display: "flex", 
+              gap: spacing.md,
+            }}>
+              <Button
+                variant="primary"
                 onClick={async () => {
                   // Save all remarks
                   for (const student of students) {
@@ -1404,48 +1384,30 @@ const AttendanceManagementPage: React.FC = () => {
                   await handleOpenAttendanceModal(attendanceModalSession);
                 }}
                 disabled={loading}
-                style={{
-                  flex: 1,
-                  padding: "14px",
-                  background: "#1E40AF",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  cursor: loading ? "not-allowed" : "pointer",
-                  fontWeight: 600,
-                  fontSize: 15
-                }}
+                style={{ flex: 1 }}
               >
                 {loading ? "Saving..." : "💾 Save All Changes"}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={() => {
                   setShowAttendanceModal(false);
                   setAttendanceModalSession(null);
                   setAttendanceModalRemarks({});
                   loadSessions();
                 }}
-                style={{
-                  flex: 1,
-                  padding: "14px",
-                  background: "#ccc",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  fontSize: 15
-                }}
+                style={{ flex: 1 }}
               >
                 Close
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
-    </div>
+    </motion.main>
   );
 };
 
 export default AttendanceManagementPage;
+
 

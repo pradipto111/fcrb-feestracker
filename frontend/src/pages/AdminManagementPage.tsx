@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { api } from "../api/client";
+import { PageHeader } from "../components/ui/PageHeader";
+import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/design-tokens";
+import { pageVariants, cardVariants, primaryButtonWhileHover, primaryButtonWhileTap } from "../utils/motion";
 
 const AdminManagementPage: React.FC = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"centers" | "students">("centers");
   const [centers, setCenters] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
@@ -10,6 +16,11 @@ const AdminManagementPage: React.FC = () => {
   const [showStudentForm, setShowStudentForm] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Redirect non-admin users
+  if (!user || user.role !== "ADMIN") {
+    return <Navigate to="/" replace />;
+  }
 
   // Center form state
   const [centerForm, setCenterForm] = useState({
@@ -176,48 +187,70 @@ const AdminManagementPage: React.FC = () => {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url(/photo1.png)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundAttachment: "fixed"
-    }}>
-      <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 24, color: "#1E40AF" }}>FCRB Admin Management</h1>
-
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 16, marginBottom: 24, borderBottom: "2px solid #e0e0e0" }}>
-        <button
-          onClick={() => setActiveTab("centers")}
-          style={{
-            padding: "12px 24px",
-            background: "none",
-            border: "none",
-            borderBottom: activeTab === "centers" ? "3px solid #667eea" : "none",
-            color: activeTab === "centers" ? "#667eea" : "#666",
-            fontWeight: 600,
-            cursor: "pointer",
-            fontSize: 16
-          }}
-        >
-          🏢 Centers ({centers.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("students")}
-          style={{
-            padding: "12px 24px",
-            background: "none",
-            border: "none",
-            borderBottom: activeTab === "students" ? "3px solid #667eea" : "none",
-            color: activeTab === "students" ? "#667eea" : "#666",
-            fontWeight: 600,
-            cursor: "pointer",
-            fontSize: 16
-          }}
-        >
-          👥 Students ({students.length})
-        </button>
+    <motion.main
+      className="rv-page rv-page--admin"
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      {/* Floating Stars Background */}
+      <div className="rv-page-stars" aria-hidden="true">
+        <span className="rv-star" />
+        <span className="rv-star rv-star--delay1" />
+        <span className="rv-star rv-star--delay2" />
+        <span className="rv-star rv-star--delay3" />
+        <span className="rv-star rv-star--delay4" />
       </div>
+
+      <section className="rv-section-surface">
+        {/* Header */}
+        <header className="rv-section-header">
+          <div>
+            <h1 className="rv-page-title">FCRB Admin Management</h1>
+            <p className="rv-page-subtitle">Manage centers and students</p>
+          </div>
+        </header>
+
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: 16, marginBottom: 24, borderBottom: "2px solid rgba(255, 255, 255, 0.1)" }}>
+          <motion.button
+            onClick={() => setActiveTab("centers")}
+            style={{
+              padding: "12px 24px",
+              background: "none",
+              border: "none",
+              borderBottom: activeTab === "centers" ? "3px solid rgba(0, 224, 255, 0.7)" : "none",
+              color: activeTab === "centers" ? "var(--rv-text-secondary)" : "var(--rv-text-muted)",
+              fontWeight: 600,
+              cursor: "pointer",
+              fontSize: 16,
+              fontFamily: "Space Grotesk, sans-serif",
+            }}
+            whileHover={{ color: "var(--rv-text-secondary)" }}
+            whileTap={{ scale: 0.98 }}
+          >
+            🏢 Centers ({centers.length})
+          </motion.button>
+          <motion.button
+            onClick={() => setActiveTab("students")}
+            style={{
+              padding: "12px 24px",
+              background: "none",
+              border: "none",
+              borderBottom: activeTab === "students" ? "3px solid rgba(0, 224, 255, 0.7)" : "none",
+              color: activeTab === "students" ? "var(--rv-text-secondary)" : "var(--rv-text-muted)",
+              fontWeight: 600,
+              cursor: "pointer",
+              fontSize: 16,
+              fontFamily: "Space Grotesk, sans-serif",
+            }}
+            whileHover={{ color: "var(--rv-text-secondary)" }}
+            whileTap={{ scale: 0.98 }}
+          >
+            👥 Students ({students.length})
+          </motion.button>
+        </div>
 
       {/* Success/Error Messages */}
       {success && (
@@ -265,13 +298,7 @@ const AdminManagementPage: React.FC = () => {
 
           {/* Center Form */}
           {showCenterForm && (
-            <div style={{
-              background: "white",
-              padding: 32,
-              borderRadius: 12,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-              marginBottom: 24
-            }}>
+            <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg }}>
               <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>Create New Center</h2>
               <form onSubmit={handleCreateCenter} style={{ display: "grid", gap: 16 }}>
                 <div>
@@ -354,12 +381,12 @@ const AdminManagementPage: React.FC = () => {
                   Create Center
                 </button>
               </form>
-            </div>
+            </Card>
           )}
 
           {/* Centers List */}
           <div style={{
-            background: "white",
+            background: colors.surface.card,
             borderRadius: 12,
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
             overflow: "hidden"
@@ -427,7 +454,7 @@ const AdminManagementPage: React.FC = () => {
           {/* Student Form */}
           {showStudentForm && (
             <div style={{
-              background: "white",
+              background: colors.surface.card,
               padding: 32,
               borderRadius: 12,
               boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
@@ -706,7 +733,7 @@ const AdminManagementPage: React.FC = () => {
 
           {/* Students List */}
           <div style={{
-            background: "white",
+            background: colors.surface.card,
             borderRadius: 12,
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
             overflow: "hidden"
@@ -758,7 +785,8 @@ const AdminManagementPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+      </section>
+    </motion.main>
   );
 };
 

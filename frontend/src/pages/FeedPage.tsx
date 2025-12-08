@@ -2,6 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { PageHeader } from "../components/ui/PageHeader";
+import { Badge } from "../components/ui/Badge";
+import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import "../styles/animations.css";
 
 const FeedPage: React.FC = () => {
   const { user } = useAuth();
@@ -132,19 +138,21 @@ const FeedPage: React.FC = () => {
       } else {
         return (
           <div style={{
-            padding: 20,
-            background: "#f0f7ff",
-            borderRadius: 8,
-            textAlign: "center"
+            padding: spacing.lg,
+            background: "rgba(4, 61, 208, 0.1)",
+            borderRadius: borderRadius.lg,
+            textAlign: "center",
+            border: "1px solid rgba(4, 61, 208, 0.2)",
           }}>
             <a
               href={post.mediaUrl}
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                color: "#1E40AF",
+                color: colors.primary.light,
                 textDecoration: "none",
-                fontWeight: 600
+                fontWeight: typography.fontWeight.semibold,
+                ...typography.body,
               }}
             >
               🔗 Open Link: {post.mediaUrl}
@@ -157,98 +165,98 @@ const FeedPage: React.FC = () => {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url(/photo3.png)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundAttachment: "fixed"
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, color: "#1E40AF" }}>
-            📸 Feed
-          </h1>
-          <p style={{ color: "#666", margin: 0 }}>View posts, photos, and videos from sessions</p>
-        </div>
-        <button
-          onClick={() => navigate("/feed/create")}
-          style={{
-            padding: "12px 24px",
-            background: "#1E40AF",
-            color: "white",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-            fontWeight: 600,
-            fontSize: 14
-          }}
-        >
-          ➕ Create Post
-        </button>
-      </div>
+    <div>
+      <PageHeader
+        title="📸 Feed"
+        subtitle="View posts, photos, and videos from sessions"
+        actions={
+          <Button variant="primary" onClick={() => navigate("/feed/create")}>
+            ➕ Create Post
+          </Button>
+        }
+      />
 
       {error && (
-        <div style={{
-          padding: 12,
-          background: "#fee",
-          color: "#c33",
-          borderRadius: 8,
-          marginBottom: 16
+        <Card variant="outlined" padding="md" style={{
+          marginBottom: spacing.lg,
+          background: colors.danger.soft,
+          borderColor: colors.danger.main,
         }}>
-          {error}
-        </div>
+          <div style={{ color: colors.danger.main, ...typography.body }}>
+            {error}
+          </div>
+        </Card>
       )}
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: 48 }}>Loading...</div>
+        <Card variant="glass" padding="xl">
+          <div style={{ 
+            textAlign: "center", 
+            padding: spacing['3xl'],
+            color: colors.text.inverted,
+            ...typography.body,
+          }}>
+            Loading...
+          </div>
+        </Card>
       ) : posts.length === 0 ? (
-        <div style={{
-          background: "white",
-          padding: 48,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          textAlign: "center",
-          color: "#999"
-        }}>
-          No posts yet. Be the first to share something!
-        </div>
+        <Card variant="glass" padding="xl">
+          <div style={{
+            textAlign: "center",
+            padding: spacing['3xl'],
+            color: colors.text.muted,
+            ...typography.body,
+          }}>
+            No posts yet. Be the first to share something! 🎉
+          </div>
+        </Card>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          {posts.map(post => (
-            <div
+        <div style={{ display: "flex", flexDirection: "column", gap: spacing.lg }}>
+          {posts.map((post, index) => (
+            <Card
               key={post.id}
+              variant="glass"
+              padding="none"
               style={{
-                background: "white",
-                borderRadius: 12,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                overflow: "hidden"
+                overflow: "hidden",
+                animation: `fadeIn 0.6s ease-out ${index * 0.1}s both`,
               }}
             >
               {/* Post Header */}
-              <div style={{ padding: 16, borderBottom: "1px solid #e0e0e0" }}>
+              <div style={{ 
+                padding: spacing.lg, 
+                borderBottom: "1px solid rgba(255, 255, 255, 0.1)" 
+              }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: spacing.md, marginBottom: spacing.sm }}>
                       <div style={{
-                        width: 40,
-                        height: 40,
+                        width: 48,
+                        height: 48,
                         borderRadius: "50%",
-                        background: "#1E40AF",
-                        color: "white",
+                        background: `linear-gradient(135deg, ${colors.primary.main} 0%, ${colors.accent.main} 100%)`,
+                        color: colors.text.onPrimary,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontWeight: 700,
-                        fontSize: 16
+                        fontWeight: typography.fontWeight.bold,
+                        fontSize: typography.fontSize.lg,
+                        boxShadow: shadows.md,
                       }}>
                         {post.creator?.fullName?.charAt(0) || "?"}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: 16 }}>
+                        <div style={{ 
+                          ...typography.h5,
+                          color: colors.text.inverted,
+                          marginBottom: spacing.xs,
+                        }}>
                           {post.creator?.fullName || "Unknown"}
                         </div>
-                        <div style={{ fontSize: 12, color: "#666" }}>
+                        <div style={{ 
+                          ...typography.caption,
+                          color: colors.text.muted,
+                        }}>
                           {new Date(post.createdAt).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'long',
@@ -261,32 +269,32 @@ const FeedPage: React.FC = () => {
                       </div>
                     </div>
                     {post.title && (
-                      <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>
+                      <div style={{ 
+                        ...typography.h4,
+                        color: colors.text.inverted,
+                        marginBottom: spacing.sm,
+                      }}>
                         {post.title}
                       </div>
                     )}
                     {post.description && (
-                      <div style={{ fontSize: 14, color: "#666", marginTop: 8 }}>
+                      <div style={{ 
+                        ...typography.body,
+                        color: colors.text.muted,
+                        marginTop: spacing.sm,
+                      }}>
                         {post.description}
                       </div>
                     )}
                   </div>
                   {(user?.role === "ADMIN" || (post.createdByRole === user?.role && post.createdById === user?.id)) && (
-                    <button
+                    <Button
+                      variant="danger"
+                      size="sm"
                       onClick={() => handleDeletePost(post.id)}
-                      style={{
-                        padding: "6px 12px",
-                        background: "#e74c3c",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 6,
-                        cursor: "pointer",
-                        fontSize: 12,
-                        fontWeight: 600
-                      }}
                     >
                       🗑️ Delete
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -299,19 +307,24 @@ const FeedPage: React.FC = () => {
               )}
 
               {/* Comments Section */}
-              <div style={{ padding: 16 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
+              <div style={{ padding: spacing.lg }}>
+                <div style={{ 
+                  ...typography.h5,
+                  color: colors.text.inverted,
+                  marginBottom: spacing.md,
+                }}>
                   Comments ({post.comments?.length || 0})
                 </div>
 
                 {/* Comments List */}
                 {post.comments && post.comments.length > 0 && (
-                  <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ marginBottom: spacing.lg, display: "flex", flexDirection: "column", gap: spacing.md }}>
                     {post.comments.map((comment: any) => (
                       <div key={comment.id} style={{
-                        padding: 12,
-                        background: "#f8f9fa",
-                        borderRadius: 8
+                        padding: spacing.md,
+                        background: "rgba(255, 255, 255, 0.05)",
+                        borderRadius: borderRadius.lg,
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
                       }}>
                         {editingComment === comment.id ? (
                           <div>
@@ -320,56 +333,53 @@ const FeedPage: React.FC = () => {
                               onChange={(e) => setEditCommentText(e.target.value)}
                               style={{
                                 width: "100%",
-                                padding: 8,
-                                border: "2px solid #1E40AF",
-                                borderRadius: 6,
-                                fontSize: 14,
-                                marginBottom: 8
+                                padding: spacing.sm,
+                                border: `2px solid ${colors.primary.main}`,
+                                borderRadius: borderRadius.lg,
+                                fontSize: typography.fontSize.sm,
+                                marginBottom: spacing.sm,
+                                background: "rgba(255, 255, 255, 0.1)",
+                                color: colors.text.inverted,
+                                fontFamily: typography.fontFamily.primary,
                               }}
                               rows={2}
                             />
-                            <div style={{ display: "flex", gap: 8 }}>
-                              <button
+                            <div style={{ display: "flex", gap: spacing.sm }}>
+                              <Button
+                                variant="primary"
+                                size="sm"
                                 onClick={() => handleUpdateComment(comment.id)}
-                                style={{
-                                  padding: "6px 12px",
-                                  background: "#1E40AF",
-                                  color: "white",
-                                  border: "none",
-                                  borderRadius: 6,
-                                  cursor: "pointer",
-                                  fontSize: 12
-                                }}
                               >
                                 Save
-                              </button>
-                              <button
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => {
                                   setEditingComment(null);
                                   setEditCommentText("");
                                 }}
-                                style={{
-                                  padding: "6px 12px",
-                                  background: "#ccc",
-                                  color: "white",
-                                  border: "none",
-                                  borderRadius: 6,
-                                  cursor: "pointer",
-                                  fontSize: 12
-                                }}
                               >
                                 Cancel
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         ) : (
                           <div>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 4 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: spacing.xs }}>
                               <div>
-                                <div style={{ fontWeight: 600, fontSize: 14 }}>
+                                <div style={{ 
+                                  ...typography.body,
+                                  fontWeight: typography.fontWeight.semibold,
+                                  color: colors.text.inverted,
+                                  marginBottom: spacing.xs,
+                                }}>
                                   {comment.creator?.fullName || "Unknown"}
                                 </div>
-                                <div style={{ fontSize: 12, color: "#666" }}>
+                                <div style={{ 
+                                  ...typography.caption,
+                                  color: colors.text.muted,
+                                }}>
                                   {new Date(comment.createdAt).toLocaleDateString('en-US', {
                                     month: 'short',
                                     day: 'numeric',
@@ -379,42 +389,32 @@ const FeedPage: React.FC = () => {
                                 </div>
                               </div>
                               {(user?.role === "ADMIN" || (comment.createdByRole === user?.role && comment.createdById === user?.id)) && (
-                                <div style={{ display: "flex", gap: 8 }}>
-                                  <button
+                                <div style={{ display: "flex", gap: spacing.sm }}>
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
                                     onClick={() => {
                                       setEditingComment(comment.id);
                                       setEditCommentText(comment.content);
                                     }}
-                                    style={{
-                                      padding: "4px 8px",
-                                      background: "#1E40AF",
-                                      color: "white",
-                                      border: "none",
-                                      borderRadius: 4,
-                                      cursor: "pointer",
-                                      fontSize: 11
-                                    }}
                                   >
                                     Edit
-                                  </button>
-                                  <button
+                                  </Button>
+                                  <Button
+                                    variant="danger"
+                                    size="sm"
                                     onClick={() => handleDeleteComment(comment.id)}
-                                    style={{
-                                      padding: "4px 8px",
-                                      background: "#e74c3c",
-                                      color: "white",
-                                      border: "none",
-                                      borderRadius: 4,
-                                      cursor: "pointer",
-                                      fontSize: 11
-                                    }}
                                   >
                                     Delete
-                                  </button>
+                                  </Button>
                                 </div>
                               )}
                             </div>
-                            <div style={{ fontSize: 14, color: "#333" }}>
+                            <div style={{ 
+                              ...typography.body,
+                              color: colors.text.inverted,
+                              marginTop: spacing.sm,
+                            }}>
                               {comment.content}
                             </div>
                           </div>
@@ -432,34 +432,29 @@ const FeedPage: React.FC = () => {
                     placeholder="Write a comment..."
                     style={{
                       width: "100%",
-                      padding: 10,
-                      border: "2px solid #e0e0e0",
-                      borderRadius: 6,
-                      fontSize: 14,
-                      marginBottom: 8,
-                      resize: "vertical"
+                      padding: spacing.md,
+                      border: `2px solid rgba(255, 255, 255, 0.2)`,
+                      borderRadius: borderRadius.lg,
+                      fontSize: typography.fontSize.sm,
+                      marginBottom: spacing.sm,
+                      resize: "vertical",
+                      background: "rgba(255, 255, 255, 0.1)",
+                      color: colors.text.inverted,
+                      fontFamily: typography.fontFamily.primary,
                     }}
                     rows={2}
                   />
-                  <button
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={() => handleAddComment(post.id)}
                     disabled={!commentText[post.id]?.trim()}
-                    style={{
-                      padding: "8px 16px",
-                      background: commentText[post.id]?.trim() ? "#1E40AF" : "#ccc",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 6,
-                      cursor: commentText[post.id]?.trim() ? "pointer" : "not-allowed",
-                      fontSize: 13,
-                      fontWeight: 600
-                    }}
                   >
                     Add Comment
-                  </button>
+                  </Button>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

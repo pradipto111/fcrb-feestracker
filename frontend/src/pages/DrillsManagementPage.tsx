@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { PageHeader } from "../components/ui/PageHeader";
+import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 
 const DrillsManagementPage: React.FC = () => {
   const [videos, setVideos] = useState<any[]>([]);
@@ -175,22 +179,12 @@ const DrillsManagementPage: React.FC = () => {
   const allCategories = [...new Set([...defaultCategories, ...categories])].sort();
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url(/photo3.png)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundAttachment: "fixed"
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, color: "#1E40AF" }}>
-            🎥 Drills & Tutorials
-          </h1>
-          <p style={{ color: "#666", margin: 0 }}>Manage training videos and tutorials</p>
-        </div>
-        <button
-          onClick={() => {
+    <div>
+      <PageHeader
+        title="🎥 Drills & Tutorials"
+        subtitle="Manage training videos and tutorials"
+        actions={
+          <Button variant="primary" onClick={() => {
             setEditingVideo(null);
             setVideoForm({
               title: "",
@@ -201,44 +195,28 @@ const DrillsManagementPage: React.FC = () => {
               thumbnailUrl: ""
             });
             setShowCreateVideo(true);
-          }}
-          style={{
-            padding: "12px 24px",
-            background: "#1E40AF",
-            color: "white",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-            fontWeight: 600,
-            fontSize: 14
-          }}
-        >
-          ➕ Add Video
-        </button>
-      </div>
+          }}>
+            ➕ Add Video
+          </Button>
+        }
+      />
 
       {error && (
-        <div style={{
-          padding: 12,
-          background: "#fee",
-          color: "#c33",
-          borderRadius: 8,
-          marginBottom: 16
+        <Card variant="default" padding="md" style={{ 
+          marginBottom: spacing.md,
+          background: colors.danger.soft,
+          border: `1px solid ${colors.danger.main}40`,
         }}>
-          {error}
-        </div>
+          <p style={{ margin: 0, color: colors.danger.main }}>{error}</p>
+        </Card>
       )}
 
       {/* Filters */}
-      <div style={{
-        background: "white",
-        padding: 20,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        marginBottom: 24,
+      <Card variant="default" padding="lg" style={{
+        marginBottom: spacing.lg,
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
-        gap: 16
+        gap: spacing.md,
       }}>
         <div>
           <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
@@ -281,7 +259,7 @@ const DrillsManagementPage: React.FC = () => {
             <option value="INSTAGRAM">Instagram</option>
           </select>
         </div>
-      </div>
+      </Card>
 
       {/* Create/Edit Video Modal */}
       {showCreateVideo && (
@@ -297,16 +275,17 @@ const DrillsManagementPage: React.FC = () => {
           justifyContent: "center",
           zIndex: 1000
         }}>
-          <div style={{
-            background: "white",
-            padding: 32,
-            borderRadius: 12,
+          <Card variant="elevated" padding="xl" style={{
             maxWidth: 600,
             width: "95%",
             maxHeight: "90vh",
             overflowY: "auto"
           }}>
-            <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 20 }}>
+            <h2 style={{ 
+              ...typography.h2,
+              marginBottom: spacing.lg,
+              color: colors.text.primary,
+            }}>
               {editingVideo ? "Edit Video" : "Add New Video"}
             </h2>
             <form onSubmit={editingVideo ? handleUpdateVideo : handleCreateVideo}>
@@ -459,41 +438,50 @@ const DrillsManagementPage: React.FC = () => {
                 </button>
               </div>
             </form>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* Videos List */}
-      <div style={{
-        background: "white",
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-      }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>
+      <Card variant="default" padding="lg">
+        <h2 style={{ 
+          ...typography.h3,
+          marginBottom: spacing.md,
+          color: colors.text.primary,
+        }}>
           Videos ({videos.length})
         </h2>
         {loading ? (
-          <div style={{ textAlign: "center", padding: 48 }}>Loading...</div>
+          <div style={{ 
+            textAlign: "center", 
+            padding: spacing['3xl'],
+            color: colors.text.muted,
+            ...typography.body,
+          }}>
+            Loading...
+          </div>
         ) : videos.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 48, color: "#999" }}>
+          <div style={{ 
+            textAlign: "center", 
+            padding: spacing['3xl'],
+            color: colors.text.muted,
+            ...typography.body,
+          }}>
             No videos found. Add your first video to get started!
           </div>
         ) : (
           <div style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: 20
+            gap: spacing.lg,
           }}>
             {videos.map(video => (
-              <div
+              <Card
                 key={video.id}
+                variant="default"
+                padding="none"
                 style={{
-                  border: "2px solid #e0e0e0",
-                  borderRadius: 12,
                   overflow: "hidden",
-                  background: "white",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
                 }}
               >
                 {video.thumbnailUrl && (
@@ -531,85 +519,79 @@ const DrillsManagementPage: React.FC = () => {
                     </div>
                   </div>
                 )}
-                <div style={{ padding: 16 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
+                <div style={{ padding: spacing.md }}>
+                  <div style={{ 
+                    fontSize: typography.fontSize.base, 
+                    fontWeight: typography.fontWeight.bold, 
+                    marginBottom: spacing.sm,
+                    color: colors.text.primary,
+                  }}>
                     {video.title}
                   </div>
                   {video.description && (
-                    <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>
+                    <div style={{ 
+                      fontSize: typography.fontSize.xs, 
+                      color: colors.text.muted, 
+                      marginBottom: spacing.sm,
+                    }}>
                       {video.description.length > 100
                         ? `${video.description.substring(0, 100)}...`
                         : video.description}
                     </div>
                   )}
-                  <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: spacing.sm, marginBottom: spacing.md, flexWrap: "wrap" }}>
                     {video.category && (
                       <span style={{
-                        padding: "4px 8px",
-                        background: "#f0f7ff",
-                        color: "#1E40AF",
-                        borderRadius: 4,
-                        fontSize: 11,
-                        fontWeight: 600
+                        padding: `${spacing.xs} ${spacing.sm}`,
+                        background: colors.primary.soft,
+                        color: colors.primary.light,
+                        borderRadius: borderRadius.sm,
+                        fontSize: typography.fontSize.xs,
+                        fontWeight: typography.fontWeight.semibold,
                       }}>
                         {video.category}
                       </span>
                     )}
                     <span style={{
-                      padding: "4px 8px",
-                      background: "#f5f5f5",
-                      color: "#666",
-                      borderRadius: 4,
-                      fontSize: 11
+                      padding: `${spacing.xs} ${spacing.sm}`,
+                      background: "rgba(255, 255, 255, 0.1)",
+                      color: colors.text.muted,
+                      borderRadius: borderRadius.sm,
+                      fontSize: typography.fontSize.xs,
                     }}>
                       by {video.creator.fullName}
                     </span>
                   </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button
+                  <div style={{ display: "flex", gap: spacing.sm }}>
+                    <Button
+                      variant="primary"
+                      size="sm"
                       onClick={() => startEdit(video)}
-                      style={{
-                        flex: 1,
-                        padding: "8px",
-                        background: "#1E40AF",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 6,
-                        cursor: "pointer",
-                        fontSize: 12,
-                        fontWeight: 600
-                      }}
+                      style={{ flex: 1 }}
                     >
                       ✏️ Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
                       onClick={() => handleDeleteVideo(video.id)}
-                      style={{
-                        flex: 1,
-                        padding: "8px",
-                        background: "#e74c3c",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 6,
-                        cursor: "pointer",
-                        fontSize: 12,
-                        fontWeight: 600
-                      }}
+                      style={{ flex: 1 }}
                     >
                       🗑️ Delete
-                    </button>
+                    </Button>
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 };
 
 export default DrillsManagementPage;
+
 
 
 

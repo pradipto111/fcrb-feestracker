@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { Card } from "../components/ui/Card";
+import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 
 const StudentFixturesPage: React.FC = () => {
   const [myFixtures, setMyFixtures] = useState<any[]>([]);
@@ -46,18 +48,22 @@ const StudentFixturesPage: React.FC = () => {
   });
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url(/photo3.png)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundAttachment: "fixed"
-    }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, color: "#1E40AF" }}>
+    <div>
+      <div style={{ marginBottom: spacing.lg }}>
+        <h1 style={{ 
+          ...typography.h2,
+          marginBottom: spacing.sm,
+          color: colors.text.primary,
+        }}>
           ⚽ Fixtures
         </h1>
-        <p style={{ color: "#666", margin: 0 }}>View your upcoming matches and fixtures</p>
+        <p style={{ 
+          color: colors.text.muted, 
+          margin: 0,
+          ...typography.body,
+        }}>
+          View your upcoming matches and fixtures
+        </p>
       </div>
 
       {error && (
@@ -73,14 +79,10 @@ const StudentFixturesPage: React.FC = () => {
       )}
 
       {/* Tabs */}
-      <div style={{
-        background: "white",
-        padding: 8,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        marginBottom: 24,
+      <Card variant="default" padding="sm" style={{
+        marginBottom: spacing.lg,
         display: "flex",
-        gap: 8
+        gap: spacing.sm,
       }}>
         <button
           onClick={() => setShowMyFixtures(true)}
@@ -114,130 +116,181 @@ const StudentFixturesPage: React.FC = () => {
         >
           All Fixtures
         </button>
-      </div>
+      </Card>
 
       {/* My Fixtures Section */}
       {showMyFixtures && (
-        <div style={{
-          background: "white",
-          padding: 24,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-        }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>
+        <Card variant="default" padding="lg">
+          <h2 style={{ 
+            ...typography.h3,
+            marginBottom: spacing.md,
+            color: colors.text.primary,
+          }}>
             My Upcoming Fixtures
           </h2>
           {loading ? (
-            <div style={{ textAlign: "center", padding: 48 }}>Loading...</div>
+            <div style={{ 
+              textAlign: "center", 
+              padding: spacing['3xl'],
+              color: colors.text.muted,
+              ...typography.body,
+            }}>
+              Loading...
+            </div>
           ) : upcomingFixtures.length === 0 ? (
-            <div style={{ textAlign: "center", padding: 48, color: "#999" }}>
+            <div style={{ 
+              textAlign: "center", 
+              padding: spacing['3xl'], 
+              color: colors.text.muted,
+              ...typography.body,
+            }}>
               You don't have any upcoming fixtures
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
               {upcomingFixtures.map(fixture => {
                 const matchDate = new Date(fixture.matchDate);
-                // Get the current student's fixture player info
-                const playerInfo = fixture.players?.find((p: any) => {
-                  // We need to get the current student's ID - this will be handled by the API
-                  return p;
-                });
                 
                 return (
-                  <div
+                  <Card
                     key={fixture.id}
+                    variant="default"
+                    padding="lg"
                     style={{
-                      border: "3px solid #1E40AF",
-                      borderRadius: 12,
-                      padding: 24,
-                      background: "linear-gradient(135deg, #f0f7ff 0%, #e0efff 100%)",
+                      border: `2px solid ${colors.primary.main}`,
+                      background: `linear-gradient(135deg, ${colors.primary.soft}20 0%, ${colors.primary.soft}10 100%)`,
                       position: "relative"
                     }}
                   >
                     <div style={{
                       position: "absolute",
-                      top: 12,
-                      right: 12,
-                      padding: "6px 12px",
-                      background: "#1E40AF",
+                      top: spacing.md,
+                      right: spacing.md,
+                      padding: `${spacing.xs} ${spacing.md}`,
+                      background: colors.primary.main,
                       color: "white",
-                      borderRadius: 20,
-                      fontSize: 12,
-                      fontWeight: 600
+                      borderRadius: borderRadius.full,
+                      fontSize: typography.fontSize.xs,
+                      fontWeight: typography.fontWeight.semibold
                     }}>
                       YOU ARE SELECTED
                     </div>
                     
-                    <div style={{ marginBottom: 16 }}>
-                      <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, color: "#1E40AF" }}>
+                    <div style={{ marginBottom: spacing.md }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize['2xl'], 
+                        fontWeight: typography.fontWeight.bold, 
+                        marginBottom: spacing.sm, 
+                        color: colors.primary.light,
+                      }}>
                         {fixture.matchType}
                       </div>
-                      <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.lg, 
+                        fontWeight: typography.fontWeight.semibold, 
+                        marginBottom: spacing.xs,
+                        color: colors.text.primary,
+                      }}>
                         {matchDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                       </div>
-                      <div style={{ fontSize: 16, color: "#666", marginBottom: 8 }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.base, 
+                        color: colors.text.muted, 
+                        marginBottom: spacing.sm,
+                      }}>
                         ⏰ {fixture.matchTime}
                       </div>
                       {fixture.opponent && (
-                        <div style={{ fontSize: 18, fontWeight: 600, color: "#1E40AF", marginBottom: 4 }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.lg, 
+                          fontWeight: typography.fontWeight.semibold, 
+                          color: colors.primary.light, 
+                          marginBottom: spacing.xs,
+                        }}>
                           vs {fixture.opponent}
                         </div>
                       )}
                       {fixture.venue && (
-                        <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.sm, 
+                          color: colors.text.muted, 
+                          marginBottom: spacing.xs,
+                        }}>
                           📍 {fixture.venue}
                         </div>
                       )}
                     </div>
 
                     {fixture.players && fixture.players.length > 0 && (
-                      <div style={{
-                        padding: 12,
-                        background: "white",
-                        borderRadius: 8,
-                        marginTop: 12
-                      }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Your Details:</div>
+                      <Card variant="default" padding="md" style={{ marginTop: spacing.sm }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.sm, 
+                          fontWeight: typography.fontWeight.semibold, 
+                          marginBottom: spacing.sm,
+                          color: colors.text.primary,
+                        }}>
+                          Your Details:
+                        </div>
                         {fixture.players.map((fp: any) => (
-                          <div key={fp.id} style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>
+                          <div key={fp.id} style={{ 
+                            fontSize: typography.fontSize.xs, 
+                            color: colors.text.muted, 
+                            marginBottom: spacing.xs,
+                          }}>
                             {fp.position && `Position: ${fp.position} • `}
                             {fp.role && `Role: ${fp.role}`}
                             {fp.notes && (
-                              <div style={{ fontSize: 13, color: "#666", marginTop: 4, fontStyle: "italic" }}>
+                              <div style={{ 
+                                fontSize: typography.fontSize.xs, 
+                                color: colors.text.muted, 
+                                marginTop: spacing.xs, 
+                                fontStyle: "italic",
+                              }}>
                                 Notes: {fp.notes}
                               </div>
                             )}
                           </div>
                         ))}
-                      </div>
+                      </Card>
                     )}
 
                     {fixture.notes && (
                       <div style={{
-                        padding: 12,
-                        background: "#fff3cd",
-                        borderRadius: 8,
-                        marginTop: 12,
-                        fontSize: 13,
-                        color: "#856404"
+                        padding: spacing.md,
+                        background: colors.warning.soft,
+                        borderRadius: borderRadius.md,
+                        marginTop: spacing.sm,
+                        fontSize: typography.fontSize.xs,
+                        color: colors.warning.main
                       }}>
                         <strong>Match Notes:</strong> {fixture.notes}
                       </div>
                     )}
 
-                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: "2px solid #1E40AF" }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Squad ({fixture.players?.length || 0} players):</div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    <div style={{ 
+                      marginTop: spacing.md, 
+                      paddingTop: spacing.md, 
+                      borderTop: `2px solid ${colors.primary.main}`,
+                    }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.sm, 
+                        fontWeight: typography.fontWeight.semibold, 
+                        marginBottom: spacing.sm,
+                        color: colors.text.primary,
+                      }}>
+                        Squad ({fixture.players?.length || 0} players):
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: spacing.sm }}>
                         {fixture.players?.map((fp: any) => (
                           <div
                             key={fp.id}
                             style={{
-                              padding: "6px 12px",
-                              background: "#1E40AF",
+                              padding: `${spacing.xs} ${spacing.md}`,
+                              background: colors.primary.main,
                               color: "white",
-                              borderRadius: 6,
-                              fontSize: 12,
-                              fontWeight: 600
+                              borderRadius: borderRadius.md,
+                              fontSize: typography.fontSize.xs,
+                              fontWeight: typography.fontWeight.semibold
                             }}
                           >
                             {fp.student.fullName} (You)
@@ -245,58 +298,73 @@ const StudentFixturesPage: React.FC = () => {
                         ))}
                       </div>
                     </div>
-                  </div>
+                  </Card>
                 );
               })}
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {/* All Fixtures Section */}
       {!showMyFixtures && (
-        <div style={{
-          background: "white",
-          padding: 24,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-        }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>
+        <Card variant="default" padding="lg">
+          <h2 style={{ 
+            ...typography.h3,
+            marginBottom: spacing.md,
+            color: colors.text.primary,
+          }}>
             All Upcoming Fixtures
           </h2>
           {loading ? (
-            <div style={{ textAlign: "center", padding: 48 }}>Loading...</div>
+            <div style={{ 
+              textAlign: "center", 
+              padding: spacing['3xl'],
+              color: colors.text.muted,
+              ...typography.body,
+            }}>
+              Loading...
+            </div>
           ) : allFixtures.length === 0 ? (
-            <div style={{ textAlign: "center", padding: 48, color: "#999" }}>
+            <div style={{ 
+              textAlign: "center", 
+              padding: spacing['3xl'], 
+              color: colors.text.muted,
+              ...typography.body,
+            }}>
               No upcoming fixtures
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
               {allFixtures.map(fixture => {
                 const matchDate = new Date(fixture.matchDate);
                 const isSelected = myFixtures.some(f => f.id === fixture.id);
                 
                 return (
-                  <div
+                  <Card
                     key={fixture.id}
+                    variant="default"
+                    padding="lg"
                     style={{
-                      border: isSelected ? "3px solid #1E40AF" : "2px solid #e0e0e0",
-                      borderRadius: 8,
-                      padding: 20,
-                      background: isSelected ? "#f0f7ff" : "white"
+                      border: isSelected ? `2px solid ${colors.primary.main}` : `1px solid rgba(255, 255, 255, 0.1)`,
+                      background: isSelected ? `${colors.primary.soft}20` : undefined
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: spacing.md }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                          <div style={{ fontSize: 18, fontWeight: 700 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: spacing.md, marginBottom: spacing.sm }}>
+                          <div style={{ 
+                            fontSize: typography.fontSize.lg, 
+                            fontWeight: typography.fontWeight.bold,
+                            color: colors.text.primary,
+                          }}>
                             {fixture.matchType}
                           </div>
                           <div style={{
-                            padding: "4px 12px",
-                            borderRadius: 12,
-                            fontSize: 12,
-                            fontWeight: 600,
+                            padding: `${spacing.xs} ${spacing.md}`,
+                            borderRadius: borderRadius.full,
+                            fontSize: typography.fontSize.xs,
+                            fontWeight: typography.fontWeight.semibold,
                             background: getStatusColor(fixture.status) + "20",
                             color: getStatusColor(fixture.status)
                           }}>
@@ -304,53 +372,87 @@ const StudentFixturesPage: React.FC = () => {
                           </div>
                           {isSelected && (
                             <div style={{
-                              padding: "4px 12px",
-                              borderRadius: 12,
-                              fontSize: 12,
-                              fontWeight: 600,
-                              background: "#1E40AF",
+                              padding: `${spacing.xs} ${spacing.md}`,
+                              borderRadius: borderRadius.full,
+                              fontSize: typography.fontSize.xs,
+                              fontWeight: typography.fontWeight.semibold,
+                              background: colors.primary.main,
                               color: "white"
                             }}>
                               YOU ARE SELECTED
                             </div>
                           )}
                         </div>
-                        <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.base, 
+                          fontWeight: typography.fontWeight.semibold, 
+                          marginBottom: spacing.xs,
+                          color: colors.text.primary,
+                        }}>
                           {matchDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })} at {fixture.matchTime}
                         </div>
                         {fixture.opponent && (
-                          <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>
+                          <div style={{ 
+                            fontSize: typography.fontSize.sm, 
+                            color: colors.text.muted, 
+                            marginBottom: spacing.xs,
+                          }}>
                             vs {fixture.opponent}
                           </div>
                         )}
                         {fixture.venue && (
-                          <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>
+                          <div style={{ 
+                            fontSize: typography.fontSize.sm, 
+                            color: colors.text.muted, 
+                            marginBottom: spacing.xs,
+                          }}>
                             📍 {fixture.venue}
                           </div>
                         )}
                         {fixture.notes && (
-                          <div style={{ fontSize: 13, color: "#666", marginTop: 8, fontStyle: "italic" }}>
+                          <div style={{ 
+                            fontSize: typography.fontSize.xs, 
+                            color: colors.text.muted, 
+                            marginTop: spacing.sm, 
+                            fontStyle: "italic",
+                          }}>
                             {fixture.notes}
                           </div>
                         )}
-                        <div style={{ fontSize: 14, color: "#666", marginTop: 8 }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.sm, 
+                          color: colors.text.muted, 
+                          marginTop: spacing.sm,
+                        }}>
                           Players: {fixture.players?.length || 0} selected
                         </div>
                       </div>
                     </div>
                     
                     {fixture.players && fixture.players.length > 0 && (
-                      <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #e0e0e0" }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Squad:</div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      <div style={{ 
+                        marginTop: spacing.md, 
+                        paddingTop: spacing.md, 
+                        borderTop: `1px solid rgba(255, 255, 255, 0.1)`,
+                      }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.sm, 
+                          fontWeight: typography.fontWeight.semibold, 
+                          marginBottom: spacing.sm,
+                          color: colors.text.primary,
+                        }}>
+                          Squad:
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: spacing.sm }}>
                           {fixture.players.map((fp: any) => (
                             <div
                               key={fp.id}
                               style={{
-                                padding: "6px 12px",
-                                background: "#f8f9fa",
-                                borderRadius: 6,
-                                fontSize: 12
+                                padding: `${spacing.xs} ${spacing.md}`,
+                                background: "rgba(255, 255, 255, 0.05)",
+                                borderRadius: borderRadius.md,
+                                fontSize: typography.fontSize.xs,
+                                color: colors.text.secondary,
                               }}
                             >
                               {fp.student.fullName}
@@ -360,12 +462,12 @@ const StudentFixturesPage: React.FC = () => {
                         </div>
                       </div>
                     )}
-                  </div>
+                  </Card>
                 );
               })}
             </div>
           )}
-        </div>
+        </Card>
       )}
     </div>
   );

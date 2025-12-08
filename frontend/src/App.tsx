@@ -31,7 +31,13 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
 const DashboardSelector: React.FC = () => {
   const { user } = useAuth();
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div style={{ padding: '2rem', color: '#FFFFFF' }}>
+        <p>No user found. Redirecting to login...</p>
+      </div>
+    );
+  }
   if (user.role === "ADMIN") return <EnhancedAdminDashboard />;
   if (user.role === "STUDENT") return <StudentDashboard />;
   return <EnhancedCoachDashboard />;

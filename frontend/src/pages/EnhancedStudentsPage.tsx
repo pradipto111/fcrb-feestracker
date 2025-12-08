@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { api } from "../api/client";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
+import { PageHeader } from "../components/ui/PageHeader";
+import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { Table } from "../components/ui/Table";
+import { StatusChip } from "../components/ui/StatusChip";
+import { pageVariants, cardVariants, primaryButtonWhileHover, primaryButtonWhileTap } from "../utils/motion";
 
 const EnhancedStudentsPage: React.FC = () => {
   const [students, setStudents] = useState<any[]>([]);
@@ -159,73 +168,65 @@ const EnhancedStudentsPage: React.FC = () => {
   const statuses = ["ACTIVE", "TRIAL", "INACTIVE"];
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url(/photo2.png)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundAttachment: "fixed"
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 700, color: "#1E40AF" }}>FCRB Students</h1>
-        <button
-          onClick={loadData}
-          style={{
-            padding: "12px 24px",
-            background: "#667eea",
-            color: "white",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-            fontWeight: 600
-          }}
-        >
-          🔄 Refresh
-        </button>
+    <motion.main
+      className="rv-page rv-page--players"
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      {/* Floating Stars Background */}
+      <div className="rv-page-stars" aria-hidden="true">
+        <span className="rv-star" />
+        <span className="rv-star rv-star--delay1" />
+        <span className="rv-star rv-star--delay2" />
+        <span className="rv-star rv-star--delay3" />
+        <span className="rv-star rv-star--delay4" />
       </div>
 
-      {/* Filters */}
-      <div style={{
-        background: "white",
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        marginBottom: 24
-      }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 16 }}>
+      <section className="rv-section-surface">
+        {/* Header */}
+        <header className="rv-section-header">
           <div>
-            <label style={{ display: "block", marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
-              🔍 Search
-            </label>
-            <input
+            <h1 className="rv-page-title">👥 Players</h1>
+            <p className="rv-page-subtitle">Manage and view all academy players</p>
+          </div>
+          <motion.button
+            className="rv-btn rv-btn-secondary"
+            whileHover={{ scale: 1.02, boxShadow: "0 0 12px rgba(0, 224, 255, 0.2)" }}
+            whileTap={{ scale: 0.98 }}
+            onClick={loadData}
+          >
+            🔄 Refresh
+          </motion.button>
+        </header>
+
+        {/* Filters */}
+        <div className="rv-filter-bar">
+          <div className="rv-filter-field">
+            <label>🔍 Search</label>
+            <Input
               type="text"
               placeholder="Search by name, center, program, status..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
                 width: "100%",
-                padding: "12px 16px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 8,
-                fontSize: 14
+                padding: "0.55rem 0.7rem",
+                border: "1px solid var(--rv-border-subtle)",
+                borderRadius: "var(--rv-radius-sm)",
+                background: "rgba(3, 9, 28, 0.9)",
+                color: "var(--rv-text-body)",
+                fontSize: "0.86rem",
               }}
             />
           </div>
 
-          <div>
-            <label style={{ display: "block", marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
-              🏢 Center
-            </label>
+          <div className="rv-filter-field">
+            <label>🏢 Center</label>
             <select
               value={centerFilter}
               onChange={(e) => setCenterFilter(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "12px 16px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 8,
-                fontSize: 14
-              }}
             >
               <option value="">All Centers</option>
               {centers.map(c => (
@@ -234,20 +235,11 @@ const EnhancedStudentsPage: React.FC = () => {
             </select>
           </div>
 
-          <div>
-            <label style={{ display: "block", marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
-              📊 Status
-            </label>
+          <div className="rv-filter-field">
+            <label>📊 Status</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "12px 16px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 8,
-                fontSize: 14
-              }}
             >
               <option value="">All Statuses</option>
               {statuses.map(s => (
@@ -256,8 +248,14 @@ const EnhancedStudentsPage: React.FC = () => {
             </select>
           </div>
 
-          <div>
-            <label style={{ display: "block", marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
+          <div className="rv-filter-field">
+            <label style={{ 
+              display: "block", 
+              marginBottom: spacing.sm, 
+              ...typography.caption,
+              fontWeight: typography.fontWeight.semibold,
+              color: colors.text.secondary,
+            }}>
               🎯 Program
             </label>
             <select
@@ -265,10 +263,14 @@ const EnhancedStudentsPage: React.FC = () => {
               onChange={(e) => setProgramFilter(e.target.value)}
               style={{
                 width: "100%",
-                padding: "12px 16px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 8,
-                fontSize: 14
+                padding: `${spacing.sm} ${spacing.md}`,
+                border: "2px solid rgba(255, 255, 255, 0.2)",
+                borderRadius: borderRadius.lg,
+                fontSize: typography.fontSize.sm,
+                cursor: "pointer",
+                background: "rgba(255, 255, 255, 0.1)",
+                color: colors.text.primary,
+                fontFamily: typography.fontFamily.primary,
               }}
             >
               <option value="">All Programs</option>
@@ -280,113 +282,145 @@ const EnhancedStudentsPage: React.FC = () => {
         </div>
 
         {(searchTerm || centerFilter || statusFilter || programFilter) && (
-          <div style={{ marginTop: 16, display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ fontSize: 14, color: "#666" }}>
-              Showing {filteredStudents.length} of {students.length} students
+          <div style={{ marginTop: spacing.md, display: "flex", gap: spacing.sm, alignItems: "center" }}>
+            <span style={{ ...typography.caption, color: colors.text.muted }}>
+              Showing {filteredStudents.length} of {students.length} players
             </span>
-            <button
+            <Button
+              variant="utility"
+              size="sm"
               onClick={() => {
                 setSearchTerm("");
                 setCenterFilter("");
                 setStatusFilter("");
                 setProgramFilter("");
               }}
-              style={{
-                padding: "6px 12px",
-                background: "#f0f0f0",
-                border: "none",
-                borderRadius: 6,
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: 600
-              }}
             >
               Clear Filters
-            </button>
+            </Button>
           </div>
         )}
-      </div>
 
-      {error && (
-        <div style={{
-          padding: 16,
-          background: "#f8d7da",
-          color: "#721c24",
-          borderRadius: 8,
-          marginBottom: 16
+        {error && (
+        <Card variant="default" padding="md" style={{ 
+          marginBottom: spacing.md,
+          background: colors.danger.soft,
+          border: `1px solid ${colors.danger.main}40`,
         }}>
-          {error}
-        </div>
+          <p style={{ margin: 0, color: colors.danger.main }}>{error}</p>
+        </Card>
       )}
 
       {/* Students Table */}
-      <div style={{
-        background: "white",
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        overflow: "hidden"
-      }}>
+      <Card variant="default" padding="none" style={{ overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ background: "#f8f9fa", borderBottom: "2px solid #e0e0e0" }}>
-              <th style={{ padding: 16, textAlign: "left", fontWeight: 600 }}>Name</th>
-              <th style={{ padding: 16, textAlign: "left", fontWeight: 600 }}>Center</th>
-              <th style={{ padding: 16, textAlign: "left", fontWeight: 600 }}>Program</th>
-              <th style={{ padding: 16, textAlign: "left", fontWeight: 600 }}>Status</th>
-              <th style={{ padding: 16, textAlign: "right", fontWeight: 600 }}>Monthly Fee</th>
-              <th style={{ padding: 16, textAlign: "center", fontWeight: 600 }}>Actions</th>
+            <tr style={{ 
+              background: "rgba(255, 255, 255, 0.05)", 
+              borderBottom: `1px solid rgba(255, 255, 255, 0.1)` 
+            }}>
+              <th style={{ 
+                padding: spacing.md, 
+                textAlign: "left", 
+                ...typography.caption,
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.secondary,
+              }}>Name</th>
+              <th style={{ 
+                padding: spacing.md, 
+                textAlign: "left", 
+                ...typography.caption,
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.secondary,
+              }}>Center</th>
+              <th style={{ 
+                padding: spacing.md, 
+                textAlign: "left", 
+                ...typography.caption,
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.secondary,
+              }}>Program</th>
+              <th style={{ 
+                padding: spacing.md, 
+                textAlign: "left", 
+                ...typography.caption,
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.secondary,
+              }}>Status</th>
+              <th style={{ 
+                padding: spacing.md, 
+                textAlign: "right", 
+                ...typography.caption,
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.secondary,
+              }}>Monthly Fee</th>
+              <th style={{ 
+                padding: spacing.md, 
+                textAlign: "center", 
+                ...typography.caption,
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.secondary,
+              }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredStudents.map((student) => (
-              <tr key={student.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
-                <td style={{ padding: 16 }}>
+              <tr 
+                key={student.id} 
+                style={{ 
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                <td style={{ padding: spacing.md }}>
                   <Link
                     to={`/students/${student.id}`}
                     style={{
-                      fontWeight: 600,
-                      color: "#667eea",
-                      textDecoration: "none"
+                      ...typography.body,
+                      fontWeight: typography.fontWeight.semibold,
+                      color: colors.primary.light,
+                      textDecoration: "none",
                     }}
                   >
                     {student.fullName}
                   </Link>
                 </td>
-                <td style={{ padding: 16, color: "#666" }}>{student.centerName}</td>
-                <td style={{ padding: 16 }}>{student.programType || "-"}</td>
-                <td style={{ padding: 16 }}>
-                  <span style={{
-                    padding: "4px 12px",
-                    borderRadius: 12,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    background: student.status === "ACTIVE" ? "#27ae6020" :
-                               student.status === "TRIAL" ? "#f39c1220" : "#95a5a620",
-                    color: student.status === "ACTIVE" ? "#27ae60" :
-                          student.status === "TRIAL" ? "#f39c12" : "#95a5a6"
-                  }}>
-                    {student.status}
-                  </span>
+                <td style={{ padding: spacing.md, color: colors.text.muted }}>
+                  {student.centerName}
                 </td>
-                <td style={{ padding: 16, textAlign: "right", fontWeight: 600 }}>
+                <td style={{ padding: spacing.md, color: colors.text.primary }}>
+                  {student.programType || "-"}
+                </td>
+                <td style={{ padding: spacing.md }}>
+                  <StatusChip 
+                    status={student.status === "ACTIVE" ? "success" : 
+                           student.status === "TRIAL" ? "warning" : "muted"}
+                  >
+                    {student.status}
+                  </StatusChip>
+                </td>
+                <td style={{ 
+                  padding: spacing.md, 
+                  textAlign: "right", 
+                  fontWeight: typography.fontWeight.semibold,
+                  color: colors.text.primary,
+                }}>
                   ₹{student.monthlyFeeAmount.toLocaleString()}
                 </td>
-                <td style={{ padding: 16, textAlign: "center" }}>
-                  <button
+                <td style={{ padding: spacing.md, textAlign: "center" }}>
+                  <Button
+                    variant="utility"
+                    size="sm"
                     onClick={() => handleEditClick(student)}
-                    style={{
-                      padding: "6px 16px",
-                      background: "#667eea",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 6,
-                      cursor: "pointer",
-                      fontSize: 12,
-                      fontWeight: 600
-                    }}
                   >
                     ✏️ Edit
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -394,11 +428,16 @@ const EnhancedStudentsPage: React.FC = () => {
         </table>
 
         {filteredStudents.length === 0 && (
-          <div style={{ padding: 48, textAlign: "center", color: "#999" }}>
-            {students.length === 0 ? "No students yet" : "No students match the filters"}
+          <div style={{ 
+            padding: spacing['3xl'], 
+            textAlign: "center", 
+            color: colors.text.muted,
+            ...typography.body,
+          }}>
+            {students.length === 0 ? "No players yet" : "No players match the filters"}
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Edit Modal */}
       {showEditModal && editingStudent && (
@@ -415,16 +454,17 @@ const EnhancedStudentsPage: React.FC = () => {
           zIndex: 1000,
           padding: 24
         }}>
-          <div style={{
-            background: "white",
-            borderRadius: 12,
-            padding: 32,
+          <Card variant="elevated" padding="xl" style={{
             maxWidth: 800,
             width: "100%",
             maxHeight: "90vh",
             overflow: "auto"
           }}>
-            <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Edit Student</h2>
+            <h2 style={{ 
+              ...typography.h2,
+              marginBottom: spacing.lg,
+              color: colors.text.primary,
+            }}>Edit Player</h2>
             
             <form onSubmit={handleUpdateStudent} style={{ display: "grid", gap: 16 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -635,10 +675,11 @@ const EnhancedStudentsPage: React.FC = () => {
                 </button>
               </div>
             </form>
-          </div>
+          </Card>
         </div>
       )}
-    </div>
+      </section>
+    </motion.main>
   );
 };
 

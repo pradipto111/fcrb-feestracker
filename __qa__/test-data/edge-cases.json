@@ -1,0 +1,152 @@
+{
+  "players": {
+    "longNames": [
+      "A Very Long Name That Exceeds Normal Expectations For A Person's Full Name",
+      "John Michael Christopher Alexander Bartholomew Smith-Jones-Williams",
+      "محمد بن عبد الله بن عبد المطلب",
+      "José María García López de la Torre y Fernández"
+    ],
+    "shortNames": [
+      "A",
+      "Li",
+      "Jo"
+    ],
+    "specialCharacters": [
+      "O'Brien-Smith",
+      "Jean-Pierre",
+      "María José",
+      "Nguyễn Văn",
+      "José-María",
+      "St. John",
+      "D'Angelo",
+      "Test-User-123",
+      "User@Name#2024"
+    ],
+    "edgeAges": {
+      "youngest": 5,
+      "oldest": 18
+    },
+    "duplicateNames": [
+      "John Smith",
+      "John Smith",
+      "John Smith"
+    ],
+    "emptyFields": {
+      "parentName": "",
+      "parentPhoneNumber": "",
+      "email": "",
+      "notes": ""
+    },
+    "maxLength": {
+      "name": "A".repeat(200),
+      "phone": "1".repeat(20),
+      "email": "a".repeat(100) + "@example.com"
+    },
+    "emoji": "👤 Test User 😀",
+    "unicode": "测试用户 テストユーザー Тестовый пользователь"
+  },
+  "sessions": {
+    "past": "2020-01-01",
+    "current": "2024-01-15",
+    "future": "2030-12-31",
+    "overlapping": [
+      {
+        "startTime": "09:00",
+        "endTime": "10:30"
+      },
+      {
+        "startTime": "10:00",
+        "endTime": "11:30"
+      }
+    ],
+    "longProgramNames": [
+      "Under 10 Advanced Training Program for Elite Players",
+      "U13 Development Program - Advanced Tactics and Skills",
+      "Very Long Program Name That Might Break Layout"
+    ],
+    "emptySessions": {
+      "playerCount": 0
+    },
+    "singlePlayer": {
+      "playerCount": 1
+    },
+    "maxPlayers": {
+      "playerCount": 50
+    }
+  },
+  "attendance": {
+    "allPresent": {
+      "present": 100,
+      "absent": 0,
+      "excused": 0
+    },
+    "allAbsent": {
+      "present": 0,
+      "absent": 100,
+      "excused": 0
+    },
+    "partial": {
+      "present": 60,
+      "absent": 30,
+      "excused": 10
+    }
+  },
+  "payments": {
+    "zeroAmount": 0,
+    "largeAmount": 999999.99,
+    "decimalPrecision": 1234.56789,
+    "negativeAmount": -100,
+    "veryLargeAmount": 999999999.99
+  },
+  "textInputs": {
+    "empty": "",
+    "spacesOnly": "   ",
+    "maxLength": "A".repeat(1000),
+    "emoji": "😀😃😄😁😆😅",
+    "specialChars": "!@#$%^&*()_+-=[]{}|;':\",./<>?",
+    "unicode": "测试 テスト Тест",
+    "sqlInjection": "'; DROP TABLE students; --",
+    "xss": "<script>alert('XSS')</script>",
+    "newlines": "Line 1\nLine 2\nLine 3"
+  },
+  "filters": {
+    "noFilters": {},
+    "allFilters": {
+      "center": "all",
+      "status": "all",
+      "program": "all",
+      "search": ""
+    },
+    "invalidCombinations": {
+      "center": 99999,
+      "status": "INVALID_STATUS",
+      "program": "INVALID_PROGRAM"
+    }
+  },
+  "dates": {
+    "invalid": [
+      "2024-13-45",
+      "not-a-date",
+      "2024/01/01",
+      "01-01-2024"
+    ],
+    "edge": [
+      "1900-01-01",
+      "2100-12-31",
+      "0000-00-00"
+    ]
+  },
+  "times": {
+    "invalid": [
+      "25:00",
+      "12:60",
+      "not-a-time",
+      "12pm"
+    ],
+    "edge": [
+      "00:00",
+      "23:59"
+    ]
+  }
+}
+
