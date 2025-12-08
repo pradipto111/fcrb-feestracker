@@ -1,0 +1,490 @@
+/* ==================================================
+   RealVerse Design System - Shared Theme
+   Based on Attendance page canonical pattern
+   ================================================== */
+
+:root {
+  /* RealVerse Theme Colors */
+  --rv-bg: radial-gradient(circle at 0% 0%, #07112c 0%, #04081a 35%, #020313 100%);
+  --rv-surface: rgba(15, 27, 58, 0.9);
+  --rv-card: #141f3a;
+  --rv-card-soft: #172446;
+  --rv-border-subtle: rgba(255, 255, 255, 0.06);
+
+  /* Gradients */
+  --rv-primary-grad: linear-gradient(135deg, #00e0ff 0%, #0475ff 50%, #0b9fff 100%);
+  --rv-primary-grad-alt: linear-gradient(135deg, #ffb300 0%, #ff7a00 100%);
+
+  /* Text Colors */
+  --rv-text-primary: #ffffff;
+  --rv-text-secondary: #cde7ff;
+  --rv-text-body: #9fb4d1;
+  --rv-text-muted: rgba(255, 255, 255, 0.45);
+
+  /* Border Radius */
+  --rv-radius-lg: 20px;
+  --rv-radius-md: 14px;
+  --rv-radius-sm: 10px;
+}
+
+/* ==================================================
+   Page Shell
+   ================================================== */
+
+.rv-page {
+  position: relative;
+  min-height: 100vh;
+  padding: 2.5rem 2.5rem 3rem;
+  background: var(--rv-bg);
+  color: var(--rv-text-body);
+  overflow: hidden;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.rv-page-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.rv-star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  top: 10%;
+  left: 20%;
+  animation: rv-float-slow 7s ease-in-out infinite;
+}
+
+.rv-star--delay1 {
+  top: 70%;
+  left: 60%;
+  animation-delay: 1.8s;
+}
+
+.rv-star--delay2 {
+  top: 35%;
+  left: 80%;
+  animation-delay: 3.1s;
+}
+
+.rv-star--delay3 {
+  top: 50%;
+  left: 10%;
+  animation-delay: 2.3s;
+}
+
+.rv-star--delay4 {
+  top: 20%;
+  left: 90%;
+  animation-delay: 4.5s;
+}
+
+/* ==================================================
+   Section Surface
+   ================================================== */
+
+.rv-section-surface {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 2rem 2.2rem 2.4rem;
+  border-radius: var(--rv-radius-lg);
+  background: var(--rv-surface);
+  backdrop-filter: blur(22px);
+  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ==================================================
+   Section Header
+   ================================================== */
+
+.rv-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.6rem;
+  margin-bottom: 1.8rem;
+}
+
+.rv-page-title {
+  font-family: "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1.9rem;
+  letter-spacing: 0.02em;
+  color: var(--rv-text-primary);
+  margin: 0 0 0.35rem;
+}
+
+.rv-page-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--rv-text-muted);
+}
+
+/* ==================================================
+   Filter Bar
+   ================================================== */
+
+.rv-filter-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.7rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--rv-radius-md);
+  border: 1px solid var(--rv-border-subtle);
+}
+
+.rv-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.rv-filter-field label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--rv-text-muted);
+  font-weight: 600;
+}
+
+.rv-filter-field select,
+.rv-filter-field input {
+  border-radius: var(--rv-radius-sm);
+  border: 1px solid var(--rv-border-subtle);
+  background: rgba(3, 9, 28, 0.9);
+  color: var(--rv-text-body);
+  padding: 0.55rem 0.7rem;
+  font-size: 0.86rem;
+  outline: none;
+  font-family: "Inter", sans-serif;
+  transition: all 0.2s ease;
+}
+
+.rv-filter-field select:focus,
+.rv-filter-field input:focus {
+  border-color: rgba(0, 224, 255, 0.7);
+  box-shadow: 0 0 0 1px rgba(0, 224, 255, 0.5);
+}
+
+/* ==================================================
+   Cards
+   ================================================== */
+
+.rv-session-card,
+.rv-kpi-card,
+.rv-player-card,
+.rv-fixture-card,
+.rv-leaderboard-card {
+  border-radius: var(--rv-radius-md);
+  background: radial-gradient(circle at 0% 0%, #182a5d 0%, #121c3a 45%, #0d172e 100%);
+  padding: 1.1rem 1.2rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.55);
+  transition: box-shadow 160ms ease-out, transform 160ms ease-out;
+}
+
+.rv-session-card:hover,
+.rv-kpi-card:hover,
+.rv-player-card:hover,
+.rv-fixture-card:hover,
+.rv-leaderboard-card:hover {
+  box-shadow: 0 20px 38px rgba(0, 0, 0, 0.65);
+  transform: translateY(-1px);
+}
+
+.rv-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.8rem;
+  margin-bottom: 0.75rem;
+}
+
+.rv-card-title {
+  margin: 0;
+  font-family: "Space Grotesk", system-ui;
+  font-size: 1.05rem;
+  color: var(--rv-text-secondary);
+}
+
+.rv-card-meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--rv-text-muted);
+}
+
+.rv-card-middle {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.rv-card-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.2rem;
+}
+
+/* ==================================================
+   Progress Bar
+   ================================================== */
+
+.rv-session-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.rv-session-progress__label {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--rv-text-muted);
+}
+
+.rv-session-progress__bar {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.rv-session-progress__bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--rv-primary-grad);
+  box-shadow: 0 0 10px rgba(0, 224, 255, 0.4);
+  transition: width 0.3s ease;
+}
+
+.rv-session-progress__value {
+  font-size: 0.78rem;
+  color: var(--rv-text-secondary);
+}
+
+/* ==================================================
+   Status Pills
+   ================================================== */
+
+.rv-status-pill {
+  border-radius: 999px;
+  padding: 0.22rem 0.75rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-weight: 600;
+}
+
+.rv-status-pill--upcoming,
+.rv-status-pill--active {
+  background: rgba(0, 224, 255, 0.08);
+  color: #9ae6ff;
+  border-color: rgba(0, 224, 255, 0.5);
+}
+
+.rv-status-pill--live,
+.rv-status-pill--trial {
+  background: rgba(255, 94, 0, 0.12);
+  color: #ffd08a;
+  border-color: rgba(255, 181, 73, 0.9);
+}
+
+.rv-status-pill--completed,
+.rv-status-pill--inactive {
+  background: rgba(46, 213, 115, 0.12);
+  color: #a7f3c6;
+  border-color: rgba(46, 213, 115, 0.7);
+}
+
+/* ==================================================
+   Buttons
+   ================================================== */
+
+.rv-btn {
+  font-family: "Space Grotesk", system-ui;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.86rem;
+  padding: 0.55rem 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  font-weight: 600;
+  transition: all 160ms ease-out;
+}
+
+.rv-btn-primary {
+  background-image: var(--rv-primary-grad);
+  color: #04101f;
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.55);
+}
+
+.rv-btn-primary:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.65);
+}
+
+.rv-btn-primary--small {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+}
+
+.rv-btn-secondary {
+  background: transparent;
+  color: var(--rv-text-secondary);
+  border: 1px solid rgba(0, 224, 255, 0.35);
+}
+
+.rv-btn-secondary:hover {
+  background: rgba(0, 224, 255, 0.1);
+  border-color: rgba(0, 224, 255, 0.6);
+}
+
+.rv-btn-secondary--small {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.78rem;
+}
+
+.rv-btn-danger {
+  background: transparent;
+  color: #ff9f9f;
+  border: 1px solid rgba(255, 99, 132, 0.7);
+}
+
+.rv-btn-danger:hover {
+  background: rgba(255, 99, 132, 0.15);
+  border-color: rgba(255, 99, 132, 1);
+}
+
+.rv-btn-danger--small {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.78rem;
+}
+
+.rv-btn-utility {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--rv-text-body);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.78rem;
+  padding: 0.4rem 0.8rem;
+}
+
+.rv-btn-utility:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--rv-text-secondary);
+}
+
+/* ==================================================
+   Skeleton Loaders
+   ================================================== */
+
+.rv-session-card--skeleton,
+.rv-card--skeleton {
+  background: rgba(10, 18, 40, 0.9);
+  border-radius: var(--rv-radius-md);
+  padding: 1.1rem 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.rv-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.16) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: rv-skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: 999px;
+}
+
+.rv-skeleton-line {
+  height: 10px;
+  margin-bottom: 0.5rem;
+}
+
+.rv-skeleton-line--lg {
+  width: 60%;
+}
+
+.rv-skeleton-line--md {
+  width: 40%;
+}
+
+.rv-skeleton-bar {
+  margin-top: 0.5rem;
+  height: 6px;
+  width: 85%;
+}
+
+/* ==================================================
+   Empty State
+   ================================================== */
+
+.rv-empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--rv-text-secondary);
+}
+
+.rv-empty-state h2 {
+  margin-bottom: 0.5rem;
+  font-family: "Space Grotesk", system-ui;
+  color: var(--rv-text-primary);
+}
+
+.rv-empty-state p {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--rv-text-muted);
+}
+
+/* ==================================================
+   List Containers
+   ================================================== */
+
+.rv-session-list,
+.rv-player-list,
+.rv-fixture-list,
+.rv-leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ==================================================
+   Responsive
+   ================================================== */
+
+@media (max-width: 900px) {
+  .rv-section-surface {
+    padding: 1.5rem 1.3rem 1.9rem;
+  }
+
+  .rv-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .rv-filter-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .rv-card-actions {
+    flex-wrap: wrap;
+  }
+}
+

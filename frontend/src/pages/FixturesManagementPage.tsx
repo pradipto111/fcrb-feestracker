@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { api } from "../api/client";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { PageHeader } from "../components/ui/PageHeader";
+import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
+import { pageVariants, cardVariants, primaryButtonWhileHover, primaryButtonWhileTap } from "../utils/motion";
 
 const FixturesManagementPage: React.FC = () => {
   const [centers, setCenters] = useState<any[]>([]);
@@ -167,76 +173,68 @@ const FixturesManagementPage: React.FC = () => {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url(/photo3.png)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundAttachment: "fixed"
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, color: "#1E40AF" }}>
-            ⚽ Fixtures
-          </h1>
-          <p style={{ color: "#666", margin: 0 }}>Manage match fixtures and player selections</p>
-        </div>
-        <button
-          onClick={() => setShowCreateFixture(true)}
-          style={{
-            padding: "12px 24px",
-            background: "#1E40AF",
-            color: "white",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-            fontWeight: 600,
-            fontSize: 14
-          }}
-        >
-          ➕ Create Fixture
-        </button>
+    <motion.main
+      className="rv-page rv-page--fixtures"
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      {/* Floating Stars Background */}
+      <div className="rv-page-stars" aria-hidden="true">
+        <span className="rv-star" />
+        <span className="rv-star rv-star--delay1" />
+        <span className="rv-star rv-star--delay2" />
+        <span className="rv-star rv-star--delay3" />
+        <span className="rv-star rv-star--delay4" />
       </div>
+
+      <section className="rv-section-surface">
+        {/* Header */}
+        <header className="rv-section-header">
+          <div>
+            <h1 className="rv-page-title">⚽ Fixtures</h1>
+            <p className="rv-page-subtitle">Manage match fixtures and player selections</p>
+          </div>
+          <motion.button
+            className="rv-btn rv-btn-primary"
+            whileHover={primaryButtonWhileHover}
+            whileTap={primaryButtonWhileTap}
+            onClick={() => setShowCreateFixture(true)}
+          >
+            ➕ Create Fixture
+          </motion.button>
+        </header>
 
       {error && (
-        <div style={{
-          padding: 12,
-          background: "#fee",
-          color: "#c33",
-          borderRadius: 8,
-          marginBottom: 16
+        <Card variant="default" padding="md" style={{ 
+          marginBottom: spacing.md,
+          background: colors.danger.soft,
+          border: `1px solid ${colors.danger.main}40`,
         }}>
-          {error}
-        </div>
+          <p style={{ margin: 0, color: colors.danger.main }}>{error}</p>
+        </Card>
       )}
 
-      {/* Center Filter */}
-      <div style={{
-        background: "white",
-        padding: 20,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        marginBottom: 24
-      }}>
-        <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
-          Center
-        </label>
-        <select
-          value={selectedCenter || ""}
-          onChange={(e) => setSelectedCenter(Number(e.target.value))}
-          style={{
-            width: "100%",
-            padding: "8px 10px",
-            border: "2px solid #e0e0e0",
-            borderRadius: 6,
-            fontSize: 13
-          }}
-        >
-          {centers.map(center => (
-            <option key={center.id} value={center.id}>{center.name}</option>
-          ))}
-        </select>
-      </div>
+        {/* Center Filter */}
+        <div className="rv-filter-bar">
+          <div className="rv-filter-field">
+            <label>🏢 Center</label>
+            <select
+              value={selectedCenter || ""}
+              onChange={(e) => setSelectedCenter(Number(e.target.value))}
+              style={{
+                background: "rgba(255, 255, 255, 0.1)",
+                color: colors.text.primary,
+                fontFamily: typography.fontFamily.primary,
+              }}
+            >
+              {centers.map(center => (
+                <option key={center.id} value={center.id}>{center.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
       {/* Create Fixture Modal */}
       {showCreateFixture && (
@@ -252,16 +250,17 @@ const FixturesManagementPage: React.FC = () => {
           justifyContent: "center",
           zIndex: 1000
         }}>
-          <div style={{
-            background: "white",
-            padding: 32,
-            borderRadius: 12,
+          <Card variant="elevated" padding="xl" style={{
             maxWidth: 900,
             width: "95%",
             maxHeight: "90vh",
             overflowY: "auto"
           }}>
-            <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 20 }}>Create New Fixture</h2>
+            <h2 style={{ 
+              ...typography.h2,
+              marginBottom: spacing.lg,
+              color: colors.text.primary,
+            }}>Create New Fixture</h2>
             <form onSubmit={handleCreateFixture}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
                 <div>
@@ -555,110 +554,150 @@ const FixturesManagementPage: React.FC = () => {
                 </button>
               </div>
             </form>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* Fixtures List */}
-      <div style={{
-        background: "white",
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-      }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>
+      <Card variant="default" padding="lg">
+        <h2 style={{ 
+          ...typography.h3,
+          marginBottom: spacing.md,
+          color: colors.text.primary,
+        }}>
           Upcoming & Recent Fixtures
         </h2>
         {loading ? (
-          <div style={{ textAlign: "center", padding: 48 }}>Loading...</div>
+          <div style={{ 
+            textAlign: "center", 
+            padding: spacing['3xl'],
+            color: colors.text.muted,
+            ...typography.body,
+          }}>
+            Loading...
+          </div>
         ) : fixtures.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 48, color: "#999" }}>
+          <div style={{ 
+            textAlign: "center", 
+            padding: spacing['3xl'],
+            color: colors.text.muted,
+            ...typography.body,
+          }}>
             No fixtures found
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {fixtures.map(fixture => {
+          <div className="rv-fixture-list">
+            {fixtures.map((fixture, index) => {
               const matchDate = new Date(fixture.matchDate);
               const isUpcoming = new Date(fixture.matchDate) > new Date();
               
               return (
-                <div
+                <motion.div
                   key={fixture.id}
-                  style={{
-                    border: "2px solid #e0e0e0",
-                    borderRadius: 8,
-                    padding: 20,
-                    background: isUpcoming ? "#f0f7ff" : "white"
-                  }}
+                  custom={index}
+                  variants={cardVariants}
+                  initial="initial"
+                  animate="animate"
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 12 }}>
+                  <div className="rv-fixture-card">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: spacing.md }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                        <div style={{ fontSize: 20, fontWeight: 700 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: spacing.md, marginBottom: spacing.sm }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.lg, 
+                          fontWeight: typography.fontWeight.bold,
+                          color: colors.text.primary,
+                        }}>
                           {fixture.matchType}
                         </div>
                         <div style={{
-                          padding: "4px 12px",
-                          borderRadius: 12,
-                          fontSize: 12,
-                          fontWeight: 600,
+                          padding: `${spacing.xs} ${spacing.md}`,
+                          borderRadius: borderRadius.full,
+                          fontSize: typography.fontSize.xs,
+                          fontWeight: typography.fontWeight.semibold,
                           background: getStatusColor(fixture.status) + "20",
                           color: getStatusColor(fixture.status)
                         }}>
                           {fixture.status}
                         </div>
                       </div>
-                      <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.base, 
+                        fontWeight: typography.fontWeight.semibold, 
+                        marginBottom: spacing.xs,
+                        color: colors.text.primary,
+                      }}>
                         {matchDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {fixture.matchTime}
                       </div>
                       {fixture.opponent && (
-                        <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.sm, 
+                          color: colors.text.muted, 
+                          marginBottom: spacing.xs,
+                        }}>
                           vs {fixture.opponent}
                         </div>
                       )}
                       {fixture.venue && (
-                        <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.sm, 
+                          color: colors.text.muted, 
+                          marginBottom: spacing.xs,
+                        }}>
                           📍 {fixture.venue}
                         </div>
                       )}
                       {fixture.notes && (
-                        <div style={{ fontSize: 13, color: "#666", marginTop: 8, fontStyle: "italic" }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.xs, 
+                          color: colors.text.muted, 
+                          marginTop: spacing.sm, 
+                          fontStyle: "italic",
+                        }}>
                           {fixture.notes}
                         </div>
                       )}
-                      <div style={{ fontSize: 14, color: "#666", marginTop: 8 }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.sm, 
+                        color: colors.text.muted, 
+                        marginTop: spacing.sm,
+                      }}>
                         Players: {fixture.players?.length || 0} selected
                       </div>
                     </div>
-                    <button
+                    <Button
+                      variant="danger"
+                      size="sm"
                       onClick={() => handleDeleteFixture(fixture.id)}
-                      style={{
-                        padding: "8px 16px",
-                        background: "#e74c3c",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 6,
-                        cursor: "pointer",
-                        fontSize: 13,
-                        fontWeight: 600
-                      }}
                     >
                       Delete
-                    </button>
+                    </Button>
                   </div>
                   
                   {fixture.players && fixture.players.length > 0 && (
-                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #e0e0e0" }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Selected Players:</div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    <div style={{ 
+                      marginTop: spacing.md, 
+                      paddingTop: spacing.md, 
+                      borderTop: `1px solid rgba(255, 255, 255, 0.1)`,
+                    }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.sm, 
+                        fontWeight: typography.fontWeight.semibold, 
+                        marginBottom: spacing.sm,
+                        color: colors.text.secondary,
+                      }}>
+                        Selected Players:
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: spacing.sm }}>
                         {fixture.players.map((fp: any) => (
                           <div
                             key={fp.id}
                             style={{
-                              padding: "8px 12px",
-                              background: "#f8f9fa",
-                              borderRadius: 6,
-                              fontSize: 13
+                              padding: `${spacing.sm} ${spacing.md}`,
+                              background: "rgba(255, 255, 255, 0.1)",
+                              borderRadius: borderRadius.lg,
+                              fontSize: typography.fontSize.xs,
+                              color: colors.text.secondary,
                             }}
                           >
                             {fp.student.fullName}
@@ -669,17 +708,20 @@ const FixturesManagementPage: React.FC = () => {
                       </div>
                     </div>
                   )}
-                </div>
+                  </div>
+                </motion.div>
               );
             })}
           </div>
         )}
-      </div>
-    </div>
+      </Card>
+      </section>
+    </motion.main>
   );
 };
 
 export default FixturesManagementPage;
+
 
 
 

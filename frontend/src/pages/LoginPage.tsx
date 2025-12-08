@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { SpaceBackground } from "../components/ui/SpaceBackground";
+import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
+import { Card } from "../components/ui/Card";
+import { colors, typography, spacing, shadows } from "../theme/design-tokens";
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -17,7 +22,6 @@ const LoginPage: React.FC = () => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
     }, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -43,9 +47,16 @@ const LoginPage: React.FC = () => {
       justifyContent: "center",
       position: "relative",
       overflow: "hidden",
-      background: "#0F172A"
     }}>
-      {/* Background Slideshow */}
+      <SpaceBackground variant="full" style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+      }} />
+
+      {/* Background Image Slideshow */}
       {images.map((image, index) => (
         <div
           key={image}
@@ -58,223 +69,179 @@ const LoginPage: React.FC = () => {
             backgroundImage: `url(${image})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
-            opacity: currentImageIndex === index ? 1 : 0,
+            opacity: currentImageIndex === index ? 0.15 : 0,
             transition: "opacity 2s ease-in-out",
-            zIndex: 0
+            filter: "brightness(0.3) contrast(1.2)",
+            zIndex: 1,
           }}
         />
       ))}
-      
-      {/* Brand Gradient Overlay */}
+
+      {/* Dark Overlay */}
       <div style={{
         position: "absolute",
         top: 0,
         left: 0,
         width: "100%",
         height: "100%",
-        background: "linear-gradient(135deg, rgba(16, 185, 129, 0.85) 0%, rgba(5, 150, 105, 0.85) 100%)",
-        zIndex: 1
+        background: `linear-gradient(135deg, ${colors.space.deep} 0%, ${colors.space.dark} 100%)`,
+        opacity: 0.8,
+        zIndex: 2,
+      }} />
+
+      {/* Brand Gradient Accent */}
+      <div style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        background: `linear-gradient(135deg, rgba(4, 61, 208, 0.2) 0%, rgba(255, 169, 0, 0.1) 100%)`,
+        zIndex: 3,
       }} />
 
       {/* Login Card */}
-      <div style={{
-        background: "rgba(255, 255, 255, 0.98)",
-        padding: "48px",
-        borderRadius: "24px",
-        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-        width: "100%",
-        maxWidth: "440px",
-        position: "relative",
-        zIndex: 2,
-        backdropFilter: "blur(20px)",
-        border: "1px solid rgba(255,255,255,0.2)"
-      }}>
-        <div style={{ textAlign: "center", marginBottom: "40px" }}>
-          <img 
-            src="/fcrb-logo.png" 
-            alt="FC Real Bengaluru" 
-            style={{ 
-              width: 120, 
-              height: 120, 
-              margin: "0 auto 20px",
-              display: "block",
-              borderRadius: "16px",
-              background: "white",
-              padding: 8,
-              boxShadow: "0 10px 25px rgba(0,0,0,0.2)"
-            }} 
-          />
+      <Card
+        variant="glass"
+        padding="xl"
+        style={{
+          width: "100%",
+          maxWidth: "440px",
+          position: "relative",
+          zIndex: 10,
+          background: "rgba(31, 31, 31, 0.9)",
+          backdropFilter: "blur(20px)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+          boxShadow: shadows.glassDark,
+        }}
+      >
+        <div style={{ textAlign: "center", marginBottom: spacing.xl }}>
+          <div style={{
+            position: 'relative',
+            width: 120,
+            height: 120,
+            margin: `0 auto ${spacing.lg}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            {/* Animated glow rings */}
+            <div style={{
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              borderRadius: '50%',
+              border: `2px solid rgba(4, 61, 208, 0.4)`,
+              animation: 'logoOrbit 8s linear infinite',
+              opacity: 0.6,
+            }} />
+            <div style={{
+              position: 'absolute',
+              width: '85%',
+              height: '85%',
+              borderRadius: '50%',
+              border: `1px solid rgba(255, 169, 0, 0.4)`,
+              animation: 'logoOrbit 6s linear infinite reverse',
+              opacity: 0.4,
+            }} />
+            <img 
+              src="/fcrb-logo.png" 
+              alt="FC Real Bengaluru" 
+              className="logo-transparent-dark"
+              style={{ 
+                width: 100, 
+                height: 100,
+                objectFit: 'contain',
+                position: 'relative',
+                zIndex: 2,
+                animation: 'logoGlow 4s ease-in-out infinite, logoFloat 6s ease-in-out infinite',
+                filter: 'brightness(1.3) contrast(1.2) saturate(1.1) drop-shadow(0 0 12px rgba(4, 61, 208, 0.8)) drop-shadow(0 0 24px rgba(255, 169, 0, 0.6)) drop-shadow(0 0 36px rgba(4, 61, 208, 0.4))',
+                mixBlendMode: 'screen',
+                backgroundColor: 'transparent',
+              }} 
+            />
+          </div>
           <h1 style={{ 
-            fontSize: "2.5rem", 
-            fontWeight: 800, 
-            marginBottom: "8px",
-            fontFamily: "'Poppins', sans-serif",
-            background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+            ...typography.h1,
+            marginBottom: spacing.sm,
+            background: `linear-gradient(135deg, ${colors.accent.main} 0%, ${colors.primary.light} 100%)`,
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
-            letterSpacing: "-0.02em"
           }}>
             RealVerse
           </h1>
           <p style={{ 
-            color: "#64748B", 
-            fontSize: "15px",
-            fontWeight: 500
+            ...typography.body,
+            color: colors.text.muted,
+            marginBottom: spacing.xs,
           }}>
             FC Real Bengaluru Universe
           </p>
           <p style={{ 
-            color: "#94A3B8", 
-            fontSize: "13px",
-            marginTop: "4px"
+            ...typography.caption,
+            color: colors.text.muted,
+            fontSize: typography.fontSize.xs,
           }}>
             Your complete football academy management platform
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div>
-            <label style={{ 
-              display: "block", 
-              marginBottom: "8px", 
-              fontSize: "14px", 
-              fontWeight: 600,
-              color: "#1E293B"
-            }}>
-              Email
-            </label>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{
-                width: "100%",
-                padding: "14px 16px",
-                border: "2px solid #E2E8F0",
-                borderRadius: "10px",
-                fontSize: "15px",
-                outline: "none",
-                transition: "all 0.2s ease",
-                fontFamily: "'Inter', sans-serif"
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = "#10B981";
-                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(16, 185, 129, 0.1)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = "#E2E8F0";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            />
-          </div>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: spacing.lg }}>
+          <Input
+            type="email"
+            label="Email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            fullWidth
+            style={{
+              background: "rgba(255, 255, 255, 0.05)",
+              borderColor: "rgba(255, 255, 255, 0.2)",
+              color: colors.text.inverted,
+            }}
+          />
 
-          <div>
-            <label style={{ 
-              display: "block", 
-              marginBottom: "8px", 
-              fontSize: "14px", 
-              fontWeight: 600,
-              color: "#1E293B"
-            }}>
-              Password
-            </label>
-            <input
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{
-                width: "100%",
-                padding: "14px 16px",
-                border: "2px solid #E2E8F0",
-                borderRadius: "10px",
-                fontSize: "15px",
-                outline: "none",
-                transition: "all 0.2s ease",
-                fontFamily: "'Inter', sans-serif"
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = "#10B981";
-                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(16, 185, 129, 0.1)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = "#E2E8F0";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            />
-          </div>
+          <Input
+            type="password"
+            label="Password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            fullWidth
+            style={{
+              background: "rgba(255, 255, 255, 0.05)",
+              borderColor: "rgba(255, 255, 255, 0.2)",
+              color: colors.text.inverted,
+            }}
+          />
 
           {error && (
             <div style={{
-              padding: "12px 16px",
-              background: "#FEE2E2",
-              color: "#DC2626",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: 500,
-              border: "1px solid #FECACA"
+              padding: spacing.md,
+              background: colors.danger.soft,
+              color: colors.danger.main,
+              borderRadius: "12px",
+              fontSize: typography.fontSize.sm,
+              fontWeight: typography.fontWeight.medium,
+              border: `1px solid ${colors.danger.outline}`,
             }}>
               {error}
             </div>
           )}
 
-          <button
+          <Button
             type="submit"
+            variant="accent"
+            fullWidth
             disabled={loading}
-            style={{
-              padding: "16px 24px",
-              background: loading 
-                ? "#94A3B8" 
-                : "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-              color: "white",
-              border: "none",
-              borderRadius: "10px",
-              fontSize: "16px",
-              fontWeight: 600,
-              cursor: loading ? "not-allowed" : "pointer",
-              transition: "all 0.2s ease",
-              boxShadow: loading 
-                ? "none" 
-                : "0 10px 15px -3px rgba(16, 185, 129, 0.3)",
-              fontFamily: "'Inter', sans-serif"
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 15px 20px -3px rgba(16, 185, 129, 0.4)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 10px 15px -3px rgba(16, 185, 129, 0.3)";
-              }
-            }}
+            size="lg"
           >
-            {loading ? "Logging in..." : "Sign In"}
-          </button>
+            {loading ? "Signing in..." : "Sign In"}
+          </Button>
         </form>
-
-        <div style={{ 
-          marginTop: "32px", 
-          padding: "20px", 
-          background: "linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%)", 
-          borderRadius: "12px", 
-          fontSize: "12px",
-          border: "1px solid #E2E8F0"
-        }}>
-          <div style={{ fontWeight: 700, marginBottom: "8px", color: "#1E293B" }}>
-            Demo Credentials
-          </div>
-          <div style={{ color: "#64748B", lineHeight: "1.6" }}>
-            <div><strong>Admin:</strong> admin@feestrack.com / admin123</div>
-            <div style={{ marginTop: "4px" }}><strong>Coach:</strong> coach@feestrack.com / coach123</div>
-          </div>
-        </div>
-      </div>
+      </Card>
     </div>
   );
 };

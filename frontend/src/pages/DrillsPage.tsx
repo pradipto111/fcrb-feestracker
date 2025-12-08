@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { api } from "../api/client";
+import { Card } from "../components/ui/Card";
+import { Badge } from "../components/ui/Badge";
+import { PageHeader } from "../components/ui/PageHeader";
+import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { pageVariants, cardVariants, primaryButtonWhileHover, primaryButtonWhileTap } from "../utils/motion";
+import "../styles/animations.css";
 
 const DrillsPage: React.FC = () => {
   const [videos, setVideos] = useState<any[]>([]);
@@ -67,125 +74,156 @@ const DrillsPage: React.FC = () => {
   const allCategories = [...new Set([...defaultCategories, ...categories])].sort();
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url(/photo3.png)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundAttachment: "fixed"
-    }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, color: "#1E40AF" }}>
-          🎥 Drills & Tutorials
-        </h1>
-        <p style={{ color: "#666", margin: 0 }}>Watch training videos and tutorials to improve your skills</p>
+    <motion.main
+      className="rv-page rv-page--drills"
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      {/* Floating Stars Background */}
+      <div className="rv-page-stars" aria-hidden="true">
+        <span className="rv-star" />
+        <span className="rv-star rv-star--delay1" />
+        <span className="rv-star rv-star--delay2" />
+        <span className="rv-star rv-star--delay3" />
+        <span className="rv-star rv-star--delay4" />
       </div>
+
+      <section className="rv-section-surface">
+        {/* Header */}
+        <header className="rv-section-header">
+          <div>
+            <h1 className="rv-page-title">🎥 Drills & Tutorials</h1>
+            <p className="rv-page-subtitle">Watch training videos and tutorials to improve your skills</p>
+          </div>
+        </header>
 
       {error && (
-        <div style={{
-          padding: 12,
-          background: "#fee",
-          color: "#c33",
-          borderRadius: 8,
-          marginBottom: 16
+        <Card variant="outlined" padding="md" style={{
+          marginBottom: spacing.lg,
+          background: colors.danger.soft,
+          borderColor: colors.danger.main,
         }}>
-          {error}
-        </div>
+          <div style={{ color: colors.danger.main, ...typography.body }}>
+            {error}
+          </div>
+        </Card>
       )}
 
-      {/* Filters */}
-      <div style={{
-        background: "white",
-        padding: 20,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        marginBottom: 24,
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: 16
-      }}>
-        <div>
-          <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
-            Category
-          </label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              border: "2px solid #e0e0e0",
-              borderRadius: 6,
-              fontSize: 13
-            }}
-          >
-            <option value="">All Categories</option>
-            {allCategories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+        {/* Filters */}
+        <div className="rv-filter-bar">
+          <div className="rv-filter-field">
+            <label>📂 Category</label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              style={{
+                fontFamily: typography.fontFamily.primary,
+                background: colors.surface.bg,
+                color: colors.text.primary,
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = colors.primary.main;
+                e.currentTarget.style.boxShadow = `0 0 0 3px ${colors.primary.soft}`;
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = colors.border.light;
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              <option value="">All Categories</option>
+              {allCategories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={{ 
+              display: "block", 
+              marginBottom: spacing.sm, 
+              ...typography.caption,
+              fontWeight: typography.fontWeight.semibold,
+              color: colors.text.primary,
+            }}>
+              Platform
+            </label>
+            <select
+              value={selectedPlatform}
+              onChange={(e) => setSelectedPlatform(e.target.value)}
+              style={{
+                width: "100%",
+                padding: `${spacing.sm} ${spacing.md}`,
+                border: `2px solid ${colors.border.light}`,
+                borderRadius: borderRadius.lg,
+                fontSize: typography.fontSize.sm,
+                fontFamily: typography.fontFamily.primary,
+                background: colors.surface.bg,
+                color: colors.text.primary,
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = colors.primary.main;
+                e.currentTarget.style.boxShadow = `0 0 0 3px ${colors.primary.soft}`;
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = colors.border.light;
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              <option value="">All Platforms</option>
+              <option value="YOUTUBE">YouTube</option>
+              <option value="INSTAGRAM">Instagram</option>
+            </select>
+          </div>
         </div>
-        <div>
-          <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
-            Platform
-          </label>
-          <select
-            value={selectedPlatform}
-            onChange={(e) => setSelectedPlatform(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              border: "2px solid #e0e0e0",
-              borderRadius: 6,
-              fontSize: 13
-            }}
-          >
-            <option value="">All Platforms</option>
-            <option value="YOUTUBE">YouTube</option>
-            <option value="INSTAGRAM">Instagram</option>
-          </select>
-        </div>
-      </div>
 
       {/* Videos Grid */}
-      <div style={{
-        background: "white",
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-      }}>
-        {loading ? (
-          <div style={{ textAlign: "center", padding: 48 }}>Loading...</div>
-        ) : videos.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 48, color: "#999" }}>
-            No videos found. Check back later for new content!
-          </div>
-        ) : (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-            gap: 20
+      {loading ? (
+        <Card variant="elevated" padding="xl">
+          <div style={{ 
+            textAlign: "center", 
+            padding: spacing['3xl'],
+            color: colors.text.secondary,
+            ...typography.body,
           }}>
-            {videos.map(video => (
+            Loading videos...
+          </div>
+        </Card>
+      ) : videos.length === 0 ? (
+        <Card variant="elevated" padding="xl">
+          <div style={{ 
+            textAlign: "center", 
+            padding: spacing['3xl'],
+            color: colors.text.muted,
+            ...typography.body,
+          }}>
+            No videos found. Check back later for new content! 🎥
+          </div>
+        </Card>
+      ) : (
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+          gap: spacing.lg,
+        }}>
+          {videos.map((video, index) => (
+            <motion.div
+              key={video.id}
+              custom={index}
+              variants={cardVariants}
+              initial="initial"
+              animate="animate"
+            >
               <div
-                key={video.id}
+                className="rv-session-card"
                 onClick={() => openVideo(video)}
                 style={{
-                  border: "2px solid #e0e0e0",
-                  borderRadius: 12,
-                  overflow: "hidden",
-                  background: "white",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                   cursor: "pointer",
-                  transition: "transform 0.2s, box-shadow 0.2s"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+                  overflow: "hidden",
                 }}
               >
                 {video.thumbnailUrl ? (
@@ -232,25 +270,23 @@ const DrillsPage: React.FC = () => {
                         ▶️
                       </div>
                     </div>
-                    <div style={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      padding: "4px 8px",
-                      background: video.platform === "YOUTUBE" ? "#FF0000" : "#E4405F",
-                      color: "white",
-                      borderRadius: 4,
-                      fontSize: 10,
-                      fontWeight: 600
-                    }}>
+                    <Badge
+                      variant={video.platform === "YOUTUBE" ? "danger" : "accent"}
+                      size="sm"
+                      style={{
+                        position: "absolute",
+                        top: spacing.sm,
+                        right: spacing.sm,
+                      }}
+                    >
                       {video.platform}
-                    </div>
+                    </Badge>
                   </div>
                 ) : (
                   <div style={{
                     width: "100%",
                     height: 200,
-                    background: "linear-gradient(135deg, #1E40AF 0%, #1E3A8A 100%)",
+                    background: `linear-gradient(135deg, ${colors.primary.main} 0%, ${colors.primary.dark} 100%)`,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -260,46 +296,49 @@ const DrillsPage: React.FC = () => {
                     ▶️
                   </div>
                 )}
-                <div style={{ padding: 16 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
+                <div style={{ padding: spacing.lg }}>
+                  <div style={{ 
+                    ...typography.h5,
+                    marginBottom: spacing.sm,
+                    color: colors.text.primary,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                  }}>
                     {video.title}
                   </div>
                   {video.description && (
-                    <div style={{ fontSize: 13, color: "#666", marginBottom: 12 }}>
-                      {video.description.length > 100
-                        ? `${video.description.substring(0, 100)}...`
-                        : video.description}
+                    <div style={{ 
+                      ...typography.caption,
+                      color: colors.text.secondary, 
+                      marginBottom: spacing.md,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                    }}>
+                      {video.description}
                     </div>
                   )}
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
                     {video.category && (
-                      <span style={{
-                        padding: "4px 8px",
-                        background: "#f0f7ff",
-                        color: "#1E40AF",
-                        borderRadius: 4,
-                        fontSize: 11,
-                        fontWeight: 600
-                      }}>
+                      <Badge variant="primary" size="sm">
                         {video.category}
-                      </span>
+                      </Badge>
                     )}
-                    <span style={{
-                      padding: "4px 8px",
-                      background: "#f5f5f5",
-                      color: "#666",
-                      borderRadius: 4,
-                      fontSize: 11
-                    }}>
+                    <Badge variant="neutral" size="sm">
                       by {video.creator.fullName}
-                    </span>
+                    </Badge>
                   </div>
                 </div>
               </div>
+            </motion.div>
             ))}
           </div>
         )}
-      </div>
 
       {/* Video Modal */}
       {selectedVideo && (
@@ -309,66 +348,91 @@ const DrillsPage: React.FC = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(0,0,0,0.9)",
+          background: "rgba(0,0,0,0.95)",
+          backdropFilter: "blur(10px)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          zIndex: 1000,
-          padding: 20
+          zIndex: 2000,
+          padding: spacing.lg,
+          animation: "fadeIn 0.3s ease-out",
         }}
         onClick={closeVideo}
         >
-          <div style={{
-            background: "white",
-            borderRadius: 12,
-            maxWidth: 900,
-            width: "100%",
-            maxHeight: "90vh",
-            overflowY: "auto",
-            position: "relative"
-          }}
-          onClick={(e) => e.stopPropagation()}
+          <Card
+            variant="elevated"
+            padding="xl"
+            style={{
+              maxWidth: 1000,
+              width: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              position: "relative",
+              background: colors.space.dark,
+              border: `1px solid rgba(255, 255, 255, 0.1)`,
+              animation: "scaleIn 0.3s ease-out",
+            }}
+            onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={closeVideo}
               style={{
                 position: "absolute",
-                top: 16,
-                right: 16,
+                top: spacing.md,
+                right: spacing.md,
                 width: 40,
                 height: 40,
                 borderRadius: "50%",
-                background: "#e74c3c",
-                color: "white",
+                background: colors.danger.main,
+                color: colors.text.onPrimary,
                 border: "none",
                 cursor: "pointer",
-                fontSize: 20,
-                fontWeight: 700,
+                fontSize: typography.fontSize.lg,
+                fontWeight: typography.fontWeight.bold,
                 zIndex: 1001,
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center"
+                justifyContent: "center",
+                transition: "all 0.2s ease",
+                boxShadow: shadows.md,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "scale(1.1) rotate(90deg)";
+                e.currentTarget.style.boxShadow = shadows.lg;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1) rotate(0deg)";
+                e.currentTarget.style.boxShadow = shadows.md;
               }}
             >
               ✕
             </button>
-            <div style={{ padding: 24 }}>
-              <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>
+            <div>
+              <h2 style={{ 
+                ...typography.h2,
+                marginBottom: spacing.md,
+                color: colors.text.inverted,
+              }}>
                 {selectedVideo.title}
               </h2>
               {selectedVideo.description && (
-                <p style={{ fontSize: 14, color: "#666", marginBottom: 20 }}>
+                <p style={{ 
+                  ...typography.body,
+                  color: colors.text.muted, 
+                  marginBottom: spacing.lg,
+                }}>
                   {selectedVideo.description}
                 </p>
               )}
               <div style={{
                 position: "relative",
+                width: "100%",
                 paddingBottom: "56.25%", // 16:9 aspect ratio
                 height: 0,
                 overflow: "hidden",
-                borderRadius: 8,
-                marginBottom: 16,
-                background: "#000"
+                borderRadius: borderRadius.xl,
+                background: colors.space.deep,
+                marginBottom: spacing.lg,
               }}>
                 {selectedVideo.platform === "YOUTUBE" && selectedVideo.embedUrl ? (
                   <iframe
@@ -379,7 +443,8 @@ const DrillsPage: React.FC = () => {
                       left: 0,
                       width: "100%",
                       height: "100%",
-                      border: "none"
+                      border: "none",
+                      borderRadius: borderRadius.xl,
                     }}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
@@ -395,21 +460,33 @@ const DrillsPage: React.FC = () => {
                     alignItems: "center",
                     justifyContent: "center",
                     flexDirection: "column",
-                    color: "white"
+                    color: colors.text.inverted,
+                    background: `linear-gradient(135deg, ${colors.primary.main} 0%, ${colors.accent.main} 100%)`,
                   }}>
-                    <div style={{ fontSize: 48, marginBottom: 16 }}>📱</div>
-                    <div style={{ fontSize: 16, marginBottom: 8 }}>Instagram Video</div>
+                    <div style={{ fontSize: 48, marginBottom: spacing.md }}>📱</div>
+                    <div style={{ ...typography.h5, marginBottom: spacing.sm }}>Instagram Video</div>
                     <a
                       href={selectedVideo.videoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
-                        padding: "12px 24px",
-                        background: "#E4405F",
-                        color: "white",
-                        borderRadius: 8,
+                        padding: `${spacing.md} ${spacing.lg}`,
+                        background: `linear-gradient(135deg, ${colors.accent.main} 0%, ${colors.accent.dark} 100%)`,
+                        color: colors.text.onAccent,
+                        borderRadius: borderRadius.lg,
                         textDecoration: "none",
-                        fontWeight: 600
+                        fontWeight: typography.fontWeight.semibold,
+                        fontFamily: typography.fontFamily.primary,
+                        transition: "all 0.2s ease",
+                        boxShadow: shadows.md,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow = shadows.lg;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = shadows.md;
                       }}
                     >
                       Open in Instagram
@@ -417,44 +494,25 @@ const DrillsPage: React.FC = () => {
                   </div>
                 )}
               </div>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
                 {selectedVideo.category && (
-                  <span style={{
-                    padding: "6px 12px",
-                    background: "#f0f7ff",
-                    color: "#1E40AF",
-                    borderRadius: 6,
-                    fontSize: 12,
-                    fontWeight: 600
-                  }}>
+                  <Badge variant="primary" size="md">
                     {selectedVideo.category}
-                  </span>
+                  </Badge>
                 )}
-                <span style={{
-                  padding: "6px 12px",
-                  background: "#f5f5f5",
-                  color: "#666",
-                  borderRadius: 6,
-                  fontSize: 12
-                }}>
-                  by {selectedVideo.creator.fullName}
-                </span>
-                <span style={{
-                  padding: "6px 12px",
-                  background: selectedVideo.platform === "YOUTUBE" ? "#FF0000" : "#E4405F",
-                  color: "white",
-                  borderRadius: 6,
-                  fontSize: 12,
-                  fontWeight: 600
-                }}>
+                <Badge variant={selectedVideo.platform === "YOUTUBE" ? "danger" : "accent"} size="md">
                   {selectedVideo.platform}
-                </span>
+                </Badge>
+                <Badge variant="info" size="md">
+                  by {selectedVideo.creator.fullName}
+                </Badge>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
       )}
-    </div>
+      </section>
+    </motion.main>
   );
 };
 

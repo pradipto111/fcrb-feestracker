@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { PageHeader } from "../components/ui/PageHeader";
+import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
+import { pageVariants, cardVariants } from "../utils/motion";
 
 const LeaderboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -113,31 +119,30 @@ const LeaderboardPage: React.FC = () => {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh"
-    }}>
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ 
-          fontSize: "2.5rem", 
-          fontWeight: 800, 
-          marginBottom: "8px",
-          fontFamily: "'Poppins', sans-serif",
-          background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          letterSpacing: "-0.02em"
-        }}>
-          Most Hardworking Player
-        </h1>
-        <p style={{ 
-          color: "#64748B", 
-          margin: 0,
-          fontSize: "1rem",
-          fontWeight: 500
-        }}>
-          Center-wise leaderboard and achievements
-        </p>
+    <motion.main
+      className="rv-page rv-page--leaderboard"
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      {/* Floating Stars Background */}
+      <div className="rv-page-stars" aria-hidden="true">
+        <span className="rv-star" />
+        <span className="rv-star rv-star--delay1" />
+        <span className="rv-star rv-star--delay2" />
+        <span className="rv-star rv-star--delay3" />
+        <span className="rv-star rv-star--delay4" />
       </div>
+
+      <section className="rv-section-surface">
+        {/* Header */}
+        <header className="rv-section-header">
+          <div>
+            <h1 className="rv-page-title">🏆 Most Hardworking Player</h1>
+            <p className="rv-page-subtitle">Center-wise leaderboard and achievements</p>
+          </div>
+        </header>
 
       {error && (
         <div style={{
@@ -210,72 +215,42 @@ const LeaderboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* Filters */}
-      <div style={{
-        background: "white",
-        padding: 24,
-        borderRadius: "16px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-        marginBottom: 32,
-        border: "1px solid #E2E8F0",
-        display: "grid",
-        gridTemplateColumns: user?.role !== "STUDENT" ? "1fr 1fr" : "1fr",
-        gap: 16
-      }}>
-        {user?.role !== "STUDENT" && (
-          <div>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
-              Center
-            </label>
+        {/* Filters */}
+        <div className="rv-filter-bar" style={{
+          gridTemplateColumns: user?.role !== "STUDENT" ? "1fr 1fr" : "1fr",
+        }}>
+          {user?.role !== "STUDENT" && (
+            <div className="rv-filter-field">
+              <label>🏢 Center</label>
+              <select
+                value={selectedCenter || ""}
+                onChange={(e) => setSelectedCenter(Number(e.target.value))}
+              >
+                {centers.map(center => (
+                  <option key={center.id} value={center.id}>{center.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className="rv-filter-field">
+            <label>📅 Period</label>
             <select
-              value={selectedCenter || ""}
-              onChange={(e) => setSelectedCenter(Number(e.target.value))}
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 6,
-                fontSize: 13
-              }}
+              value={period}
+              onChange={(e) => setPeriod(e.target.value as any)}
             >
-              {centers.map(center => (
-                <option key={center.id} value={center.id}>{center.name}</option>
-              ))}
+              <option value="all">All Time</option>
+              <option value="weekly">This Week</option>
+              <option value="monthly">This Month</option>
             </select>
           </div>
-        )}
-        <div>
-          <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
-            Period
-          </label>
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value as any)}
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              border: "2px solid #e0e0e0",
-              borderRadius: 6,
-              fontSize: 13
-            }}
-          >
-            <option value="all">All Time</option>
-            <option value="weekly">This Week</option>
-            <option value="monthly">This Month</option>
-          </select>
         </div>
-      </div>
 
-      {/* Leaderboard */}
+        {/* Leaderboard */}
       {loading ? (
         <div style={{ textAlign: "center", padding: 48, color: "#64748B" }}>Loading...</div>
       ) : leaderboard ? (
-        <div style={{
-          background: "white",
-          padding: 32,
-          borderRadius: "16px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-          border: "1px solid #E2E8F0"
+        <Card variant="default" padding="lg" style={{
+          border: `1px solid rgba(255, 255, 255, 0.1)`,
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
             <h2 style={{ 
@@ -304,25 +279,24 @@ const LeaderboardPage: React.FC = () => {
               No rankings yet. Start voting after sessions!
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {leaderboard.leaderboard.map((entry: any) => (
-                <div
+            <div className="rv-leaderboard-list">
+              {leaderboard.leaderboard.map((entry: any, index: number) => (
+                <motion.div
                   key={entry.student.id}
-                  style={{
-                    padding: 20,
-                    border: entry.rank <= 3 ? "2px solid #10B981" : "1px solid #E2E8F0",
-                    borderRadius: "12px",
+                  custom={index}
+                  variants={cardVariants}
+                  initial="initial"
+                  animate="animate"
+                >
+                  <div className="rv-leaderboard-card" style={{
+                    border: entry.rank <= 3 ? "2px solid rgba(46, 213, 115, 0.7)" : "1px solid rgba(255, 255, 255, 0.1)",
                     background: entry.rank <= 3 
-                      ? "linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%)" 
-                      : "white",
+                      ? "radial-gradient(circle at 0% 0%, rgba(46, 213, 115, 0.15) 0%, #121c3a 45%, #0d172e 100%)" 
+                      : undefined,
                     display: "flex",
                     alignItems: "center",
                     gap: 20,
-                    transition: "all 0.2s ease",
-                    boxShadow: entry.rank <= 3 ? "0 4px 12px rgba(16, 185, 129, 0.15)" : "0 2px 4px rgba(0,0,0,0.05)"
-                  }}
-                  className="gamified-card"
-                >
+                  }}>
                   <div style={{
                     width: 56,
                     height: 56,
@@ -382,13 +356,15 @@ const LeaderboardPage: React.FC = () => {
                       {entry.studentVotes} student • {entry.coachVotes} coach votes
                     </div>
                   </div>
-                </div>
+                  </div>
+                </motion.div>
               ))}
             </div>
           )}
-        </div>
+        </Card>
       ) : null}
-    </div>
+      </section>
+    </motion.main>
   );
 };
 

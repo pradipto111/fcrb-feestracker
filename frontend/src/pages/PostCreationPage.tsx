@@ -2,6 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { PageHeader } from "../components/ui/PageHeader";
+import { Input } from "../components/ui/Input";
+import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 
 const PostCreationPage: React.FC = () => {
   const { user } = useAuth();
@@ -92,59 +97,47 @@ const PostCreationPage: React.FC = () => {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url(/photo3.png)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundAttachment: "fixed"
-    }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, color: "#1E40AF" }}>
-          📸 Create Post
-        </h1>
-        <p style={{ color: "#666", margin: 0 }}>
-          {user?.role === "STUDENT" 
-            ? "Share photos from sessions (requires approval)" 
-            : "Share photos, videos, or links from sessions"}
-        </p>
-      </div>
+    <div>
+      <PageHeader
+        title="📸 Create Post"
+        subtitle={user?.role === "STUDENT" 
+          ? "Share photos from sessions (requires approval)" 
+          : "Share photos, videos, or links from sessions"}
+      />
 
       {error && (
-        <div style={{
-          padding: 12,
-          background: "#fee",
-          color: "#c33",
-          borderRadius: 8,
-          marginBottom: 16
+        <Card variant="default" padding="md" style={{ 
+          marginBottom: spacing.md,
+          background: colors.danger.soft,
+          border: `1px solid ${colors.danger.main}40`,
         }}>
-          {error}
-        </div>
+          <p style={{ margin: 0, color: colors.danger.main }}>{error}</p>
+        </Card>
       )}
 
       {success && (
-        <div style={{
-          padding: 12,
-          background: "#dfd",
-          color: "#3a3",
-          borderRadius: 8,
-          marginBottom: 16
+        <Card variant="default" padding="md" style={{ 
+          marginBottom: spacing.md,
+          background: colors.success.soft,
+          border: `1px solid ${colors.success.main}40`,
         }}>
-          {success}
-        </div>
+          <p style={{ margin: 0, color: colors.success.main }}>{success}</p>
+        </Card>
       )}
 
-      <div style={{
-        background: "white",
-        padding: 32,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+      <Card variant="default" padding="xl" style={{
         maxWidth: 700,
         margin: "0 auto"
       }}>
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
+          <div style={{ marginBottom: spacing.lg }}>
+            <label style={{ 
+              display: "block", 
+              marginBottom: spacing.sm, 
+              ...typography.caption,
+              fontWeight: typography.fontWeight.semibold,
+              color: colors.text.secondary,
+            }}>
               Media Type *
             </label>
             <select
@@ -153,10 +146,14 @@ const PostCreationPage: React.FC = () => {
               required
               style={{
                 width: "100%",
-                padding: "10px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 6,
-                fontSize: 14
+                padding: `${spacing.sm} ${spacing.md}`,
+                border: "2px solid rgba(255, 255, 255, 0.2)",
+                borderRadius: borderRadius.lg,
+                fontSize: typography.fontSize.sm,
+                cursor: "pointer",
+                background: "rgba(255, 255, 255, 0.1)",
+                color: colors.text.primary,
+                fontFamily: typography.fontFamily.primary,
               }}
             >
               <option value="IMAGE">Image</option>
@@ -166,25 +163,28 @@ const PostCreationPage: React.FC = () => {
           </div>
 
           {postForm.mediaType === "IMAGE" && (
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
+            <div style={{ marginBottom: spacing.lg }}>
+              <label style={{ 
+                display: "block", 
+                marginBottom: spacing.sm, 
+                ...typography.caption,
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.secondary,
+              }}>
                 Image URL or Upload
               </label>
-              <input
+              <Input
                 type="url"
                 value={postForm.mediaUrl}
                 onChange={(e) => setPostForm({ ...postForm, mediaUrl: e.target.value })}
                 placeholder="https://example.com/image.jpg"
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  border: "2px solid #e0e0e0",
-                  borderRadius: 6,
-                  fontSize: 14,
-                  marginBottom: 8
-                }}
+                style={{ marginBottom: spacing.sm }}
               />
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xs, 
+                color: colors.text.muted, 
+                marginBottom: spacing.sm,
+              }}>
                 Or upload an image (will be converted to base64):
               </div>
               <input
@@ -193,10 +193,13 @@ const PostCreationPage: React.FC = () => {
                 onChange={handleFileUpload}
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  border: "2px solid #e0e0e0",
-                  borderRadius: 6,
-                  fontSize: 14
+                  padding: spacing.sm,
+                  border: "2px solid rgba(255, 255, 255, 0.2)",
+                  borderRadius: borderRadius.lg,
+                  fontSize: typography.fontSize.sm,
+                  background: "rgba(255, 255, 255, 0.1)",
+                  color: colors.text.primary,
+                  fontFamily: typography.fontFamily.primary,
                 }}
               />
               {postForm.mediaUrl && postForm.mediaUrl.startsWith("data:image") && (
@@ -216,73 +219,80 @@ const PostCreationPage: React.FC = () => {
           )}
 
           {postForm.mediaType === "VIDEO" && (
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
+            <div style={{ marginBottom: spacing.lg }}>
+              <label style={{ 
+                display: "block", 
+                marginBottom: spacing.sm, 
+                ...typography.caption,
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.secondary,
+              }}>
                 Video URL
               </label>
-              <input
+              <Input
                 type="url"
                 value={postForm.mediaUrl}
                 onChange={(e) => setPostForm({ ...postForm, mediaUrl: e.target.value })}
                 placeholder="https://example.com/video.mp4"
                 required
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  border: "2px solid #e0e0e0",
-                  borderRadius: 6,
-                  fontSize: 14
-                }}
               />
-              <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xs, 
+                color: colors.text.muted, 
+                marginTop: spacing.xs,
+              }}>
                 Note: For best results, use a direct video URL or upload to a video hosting service
               </div>
             </div>
           )}
 
           {postForm.mediaType === "LINK" && (
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
+            <div style={{ marginBottom: spacing.lg }}>
+              <label style={{ 
+                display: "block", 
+                marginBottom: spacing.sm, 
+                ...typography.caption,
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.secondary,
+              }}>
                 Link URL (YouTube or Instagram)
               </label>
-              <input
+              <Input
                 type="url"
                 value={postForm.mediaUrl}
                 onChange={(e) => setPostForm({ ...postForm, mediaUrl: e.target.value })}
                 placeholder="https://www.youtube.com/watch?v=... or https://www.instagram.com/reel/..."
                 required
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  border: "2px solid #e0e0e0",
-                  borderRadius: 6,
-                  fontSize: 14
-                }}
               />
             </div>
           )}
 
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
+          <div style={{ marginBottom: spacing.lg }}>
+            <label style={{ 
+              display: "block", 
+              marginBottom: spacing.sm, 
+              ...typography.caption,
+              fontWeight: typography.fontWeight.semibold,
+              color: colors.text.secondary,
+            }}>
               Title (optional)
             </label>
-            <input
+            <Input
               type="text"
               value={postForm.title}
               onChange={(e) => setPostForm({ ...postForm, title: e.target.value })}
               placeholder="Post title"
-              style={{
-                width: "100%",
-                padding: "10px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 6,
-                fontSize: 14
-              }}
             />
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
+          <div style={{ marginBottom: spacing.lg }}>
+            <label style={{ 
+              display: "block", 
+              marginBottom: spacing.sm, 
+              ...typography.caption,
+              fontWeight: typography.fontWeight.semibold,
+              color: colors.text.secondary,
+            }}>
               Description (optional)
             </label>
             <textarea
@@ -292,18 +302,27 @@ const PostCreationPage: React.FC = () => {
               rows={4}
               style={{
                 width: "100%",
-                padding: "10px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 6,
-                fontSize: 14,
-                resize: "vertical"
+                padding: spacing.sm,
+                border: "2px solid rgba(255, 255, 255, 0.2)",
+                borderRadius: borderRadius.lg,
+                fontSize: typography.fontSize.sm,
+                resize: "vertical",
+                background: "rgba(255, 255, 255, 0.1)",
+                color: colors.text.primary,
+                fontFamily: typography.fontFamily.primary,
               }}
             />
           </div>
 
           {user?.role !== "STUDENT" && centers.length > 0 && (
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
+            <div style={{ marginBottom: spacing.lg }}>
+              <label style={{ 
+                display: "block", 
+                marginBottom: spacing.sm, 
+                ...typography.caption,
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.secondary,
+              }}>
                 Center (optional)
               </label>
               <select
@@ -311,10 +330,14 @@ const PostCreationPage: React.FC = () => {
                 onChange={(e) => setPostForm({ ...postForm, centerId: e.target.value })}
                 style={{
                   width: "100%",
-                  padding: "10px",
-                  border: "2px solid #e0e0e0",
-                  borderRadius: 6,
-                  fontSize: 14
+                  padding: `${spacing.sm} ${spacing.md}`,
+                  border: "2px solid rgba(255, 255, 255, 0.2)",
+                  borderRadius: borderRadius.lg,
+                  fontSize: typography.fontSize.sm,
+                  cursor: "pointer",
+                  background: "rgba(255, 255, 255, 0.1)",
+                  color: colors.text.primary,
+                  fontFamily: typography.fontFamily.primary,
                 }}
               >
                 <option value="">Select Center (optional)</option>
@@ -326,60 +349,45 @@ const PostCreationPage: React.FC = () => {
           )}
 
           {user?.role === "STUDENT" && (
-            <div style={{
-              padding: 12,
-              background: "#fff3cd",
-              borderRadius: 8,
-              marginBottom: 20,
-              fontSize: 13,
-              color: "#856404"
+            <Card variant="default" padding="md" style={{
+              marginBottom: spacing.lg,
+              background: colors.warning.soft,
+              border: `1px solid ${colors.warning.main}40`,
             }}>
-              ⚠️ Your post will be submitted for approval. It will be visible to others only after a coach or admin approves it.
-            </div>
+              <p style={{ 
+                margin: 0, 
+                fontSize: typography.fontSize.sm,
+                color: colors.warning.dark,
+              }}>
+                ⚠️ Your post will be submitted for approval. It will be visible to others only after a coach or admin approves it.
+              </p>
+            </Card>
           )}
 
-          <div style={{ display: "flex", gap: 12 }}>
-            <button
+          <div style={{ display: "flex", gap: spacing.md }}>
+            <Button
               type="submit"
+              variant="primary"
               disabled={loading || !postForm.mediaUrl}
-              style={{
-                flex: 1,
-                padding: "12px",
-                background: (loading || !postForm.mediaUrl) ? "#ccc" : "#1E40AF",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                cursor: (loading || !postForm.mediaUrl) ? "not-allowed" : "pointer",
-                fontWeight: 600,
-                fontSize: 14
-              }}
+              style={{ flex: 1 }}
             >
               {loading ? "Creating..." : user?.role === "STUDENT" ? "Submit for Approval" : "Create Post"}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="secondary"
               onClick={() => navigate("/feed")}
-              style={{
-                flex: 1,
-                padding: "12px",
-                background: "#ccc",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                cursor: "pointer",
-                fontWeight: 600,
-                fontSize: 14
-              }}
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
+      </Card>
     </div>
   );
 };
 
 export default PostCreationPage;
+
 
 

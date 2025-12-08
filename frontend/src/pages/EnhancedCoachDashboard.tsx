@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { api } from "../api/client";
+import { Card } from "../components/ui/Card";
+import { KPICard } from "../components/ui/KPICard";
+import { Button } from "../components/ui/Button";
+import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
+import { pageVariants, cardVariants } from "../utils/motion";
 
 const EnhancedCoachDashboard: React.FC = () => {
   const [summary, setSummary] = useState<any>(null);
@@ -57,56 +63,101 @@ const EnhancedCoachDashboard: React.FC = () => {
     }
   };
 
-  if (error) return <p style={{ color: "#e74c3c" }}>Error: {error}</p>;
-  if (!summary) return <p>Loading...</p>;
-
-  // Calculate stats
-  const activeStudents = students.filter(s => s.status === "ACTIVE").length;
-  const trialStudents = students.filter(s => s.status === "TRIAL").length;
-  const totalPotentialRevenue = students.reduce((sum, s) => sum + s.monthlyFeeAmount, 0);
-  const totalExpected = summary.totalCollected + summary.approxOutstanding;
-
-  // Payment frequency breakdown
-  const frequencyBreakdown = students.reduce((acc: any, student) => {
-    const freq = student.paymentFrequency || 1;
-    const label = freq === 1 ? "Monthly" : 
-                  freq === 3 ? "Quarterly" : 
-                  freq === 6 ? "Half-yearly" : 
-                  freq === 12 ? "Yearly" : `${freq} months`;
-    acc[label] = (acc[label] || 0) + 1;
-    return acc;
-  }, {});
-
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url(/photo3.png)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundAttachment: "fixed"
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+    <motion.main
+      className="rv-page rv-page--coach-dashboard"
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      {/* Floating Stars Background */}
+      <div className="rv-page-stars" aria-hidden="true">
+        <span className="rv-star" />
+        <span className="rv-star rv-star--delay1" />
+        <span className="rv-star rv-star--delay2" />
+        <span className="rv-star rv-star--delay3" />
+        <span className="rv-star rv-star--delay4" />
+      </div>
+
+      <section className="rv-section-surface">
+        {/* Header */}
+        <header className="rv-section-header">
+          <div>
+            <h1 className="rv-page-title">FCRB Coach Dashboard</h1>
+            <p className="rv-page-subtitle">FC Real Bengaluru - Your centers overview</p>
+          </div>
+          <motion.button
+            className="rv-btn rv-btn-secondary"
+            whileHover={{ scale: 1.02, boxShadow: "0 0 12px rgba(0, 224, 255, 0.2)" }}
+            whileTap={{ scale: 0.98 }}
+            onClick={loadData}
+          >
+            🔄 Refresh
+          </motion.button>
+        </header>
+
+        {/* Error State */}
+        {error && (
+          <Card variant="default" padding="md" style={{ 
+            marginBottom: spacing.md,
+            background: colors.danger.soft,
+            border: `1px solid ${colors.danger.main}40`,
+          }}>
+            <p style={{ margin: 0, color: colors.danger.main }}>Error: {error}</p>
+          </Card>
+        )}
+
+        {/* Loading State */}
+        {!summary && !error && (
+          <div className="rv-empty-state">
+            <div className="rv-skeleton rv-skeleton-line rv-skeleton-line--lg" style={{ marginBottom: spacing.md }} />
+            <div className="rv-skeleton rv-skeleton-line rv-skeleton-line--md" />
+            <p style={{ marginTop: spacing.lg, color: colors.text.muted }}>Loading dashboard data...</p>
+          </div>
+        )}
+
+        {/* Content - Only render if data is loaded */}
+        {summary && !error && (() => {
+          // Calculate stats
+          const activeStudents = students.filter(s => s.status === "ACTIVE").length;
+          const trialStudents = students.filter(s => s.status === "TRIAL").length;
+          const totalPotentialRevenue = students.reduce((sum, s) => sum + s.monthlyFeeAmount, 0);
+          const totalExpected = summary.totalCollected + summary.approxOutstanding;
+
+          // Payment frequency breakdown
+          const frequencyBreakdown = students.reduce((acc: any, student) => {
+            const freq = student.paymentFrequency || 1;
+            const label = freq === 1 ? "Monthly" : 
+                          freq === 3 ? "Quarterly" : 
+                          freq === 6 ? "Half-yearly" : 
+                          freq === 12 ? "Yearly" : `${freq} months`;
+            acc[label] = (acc[label] || 0) + 1;
+            return acc;
+          }, {});
+
+          return (
+            <React.Fragment key="coach-dashboard-content">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
         <div>
-          <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, color: "#1E40AF" }}>
+          <h1 style={{ 
+            ...typography.h2,
+            marginBottom: spacing.sm,
+            color: colors.text.primary,
+          }}>
             FCRB Coach Dashboard
           </h1>
-          <p style={{ color: "#666", margin: 0 }}>FC Real Bengaluru - Your centers overview</p>
+          <p style={{ 
+            color: colors.text.muted, 
+            margin: 0,
+            ...typography.body,
+          }}>
+            FC Real Bengaluru - Your centers overview
+          </p>
         </div>
-        <button
-          onClick={loadData}
-          style={{
-            padding: "12px 24px",
-            background: "#1E40AF",
-            color: "white",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-            fontWeight: 600,
-            fontSize: 14
-          }}
-        >
+        <Button variant="secondary" onClick={loadData}>
           🔄 Refresh
-        </button>
+        </Button>
       </div>
 
       {/* Main Stats Cards */}
@@ -161,17 +212,23 @@ const EnhancedCoachDashboard: React.FC = () => {
       </div>
 
       {/* CHART 1: Revenue Collections */}
-      <div style={{
-        background: "white",
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        marginBottom: 24
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>💰 Revenue Collections</h2>
-            <p style={{ fontSize: 13, color: "#666", margin: "4px 0 0 0" }}>Total money collected by payment date</p>
+            <h2 style={{ 
+              ...typography.h3,
+              margin: 0,
+              color: colors.text.primary,
+            }}>
+              💰 Revenue Collections
+            </h2>
+            <p style={{ 
+              fontSize: typography.fontSize.xs, 
+              color: colors.text.muted, 
+              margin: `${spacing.xs} 0 0 0`,
+            }}>
+              Total money collected by payment date
+            </p>
           </div>
         </div>
 
@@ -186,7 +243,13 @@ const EnhancedCoachDashboard: React.FC = () => {
           borderRadius: 8
         }}>
           <div>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
+            <label style={{ 
+              display: "block", 
+              marginBottom: spacing.xs, 
+              fontWeight: typography.fontWeight.semibold, 
+              fontSize: typography.fontSize.xs,
+              color: colors.text.secondary,
+            }}>
               📅 Time Period
             </label>
             <select
@@ -194,11 +257,13 @@ const EnhancedCoachDashboard: React.FC = () => {
               onChange={(e) => setRevenueMonths(Number(e.target.value))}
               style={{
                 width: "100%",
-                padding: "8px 10px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 6,
-                fontSize: 13,
-                cursor: "pointer"
+                padding: `${spacing.sm} ${spacing.md}`,
+                border: `2px solid rgba(255, 255, 255, 0.2)`,
+                borderRadius: borderRadius.md,
+                fontSize: typography.fontSize.xs,
+                cursor: "pointer",
+                background: "rgba(255, 255, 255, 0.05)",
+                color: colors.text.primary,
               }}
             >
               <option value="3">Last 3 Months</option>
@@ -210,7 +275,13 @@ const EnhancedCoachDashboard: React.FC = () => {
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
+            <label style={{ 
+              display: "block", 
+              marginBottom: spacing.xs, 
+              fontWeight: typography.fontWeight.semibold, 
+              fontSize: typography.fontSize.xs,
+              color: colors.text.secondary,
+            }}>
               💳 Payment Mode
             </label>
             <select
@@ -218,11 +289,13 @@ const EnhancedCoachDashboard: React.FC = () => {
               onChange={(e) => setRevenuePaymentMode(e.target.value)}
               style={{
                 width: "100%",
-                padding: "8px 10px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 6,
-                fontSize: 13,
-                cursor: "pointer"
+                padding: `${spacing.sm} ${spacing.md}`,
+                border: `2px solid rgba(255, 255, 255, 0.2)`,
+                borderRadius: borderRadius.md,
+                fontSize: typography.fontSize.xs,
+                cursor: "pointer",
+                background: "rgba(255, 255, 255, 0.05)",
+                color: colors.text.primary,
               }}
             >
               <option value="all">All Modes</option>
@@ -233,22 +306,9 @@ const EnhancedCoachDashboard: React.FC = () => {
           </div>
 
           <div style={{ display: "flex", alignItems: "flex-end" }}>
-            <button
-              onClick={loadRevenueData}
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                background: "#1E40AF",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                cursor: "pointer",
-                fontWeight: 600,
-                fontSize: 13
-              }}
-            >
+            <Button variant="secondary" onClick={loadRevenueData} size="sm" style={{ width: "100%" }}>
               🔄 Refresh
-            </button>
+            </Button>
           </div>
         </div>
         {revenueData.length > 0 ? (
@@ -306,14 +366,32 @@ const EnhancedCoachDashboard: React.FC = () => {
                 );
               })}
             </div>
-            <div style={{ textAlign: "center", marginTop: 32, padding: 12, background: "#f8f9fa", borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
+            <div style={{ 
+              textAlign: "center", 
+              marginTop: spacing.lg, 
+              padding: spacing.md, 
+              background: "rgba(255, 255, 255, 0.05)", 
+              borderRadius: borderRadius.md,
+            }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xs, 
+                color: colors.text.muted, 
+                marginBottom: spacing.xs,
+              }}>
                 Total Revenue ({revenueMonths} months{revenuePaymentMode !== "all" && ` • ${revenuePaymentMode}`})
               </div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: "#1E40AF" }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xl, 
+                fontWeight: typography.fontWeight.bold, 
+                color: colors.primary.light,
+              }}>
                 ₹{revenueData.reduce((sum, m) => sum + m.amount, 0).toLocaleString()}
               </div>
-              <div style={{ fontSize: 11, color: "#999", marginTop: 4 }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xs, 
+                color: colors.text.muted, 
+                marginTop: spacing.xs,
+              }}>
                 Avg: ₹{Math.floor(revenueData.reduce((sum, m) => sum + m.amount, 0) / revenueMonths).toLocaleString()}/mo
               </div>
             </div>
@@ -323,20 +401,26 @@ const EnhancedCoachDashboard: React.FC = () => {
             No payment data available yet
           </div>
         )}
-      </div>
+      </Card>
 
       {/* CHART 2: Monthly Collections */}
-      <div style={{
-        background: "white",
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        marginBottom: 24
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>📊 Monthly Collections</h2>
-            <p style={{ fontSize: 13, color: "#666", margin: "4px 0 0 0" }}>Allocated monthly income (shows all months with payments, including future)</p>
+            <h2 style={{ 
+              ...typography.h3,
+              margin: 0,
+              color: colors.text.primary,
+            }}>
+              📊 Monthly Collections
+            </h2>
+            <p style={{ 
+              fontSize: typography.fontSize.xs, 
+              color: colors.text.muted, 
+              margin: `${spacing.xs} 0 0 0`,
+            }}>
+              Allocated monthly income (shows all months with payments, including future)
+            </p>
           </div>
         </div>
 
@@ -352,7 +436,13 @@ const EnhancedCoachDashboard: React.FC = () => {
         }}>
 
           <div>
-            <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
+            <label style={{ 
+              display: "block", 
+              marginBottom: spacing.xs, 
+              fontWeight: typography.fontWeight.semibold, 
+              fontSize: typography.fontSize.xs,
+              color: colors.text.secondary,
+            }}>
               💳 Payment Mode
             </label>
             <select
@@ -360,11 +450,13 @@ const EnhancedCoachDashboard: React.FC = () => {
               onChange={(e) => setMonthlyPaymentMode(e.target.value)}
               style={{
                 width: "100%",
-                padding: "8px 10px",
-                border: "2px solid #e0e0e0",
-                borderRadius: 6,
-                fontSize: 13,
-                cursor: "pointer"
+                padding: `${spacing.sm} ${spacing.md}`,
+                border: `2px solid rgba(255, 255, 255, 0.2)`,
+                borderRadius: borderRadius.md,
+                fontSize: typography.fontSize.xs,
+                cursor: "pointer",
+                background: "rgba(255, 255, 255, 0.05)",
+                color: colors.text.primary,
               }}
             >
               <option value="all">All Modes</option>
@@ -375,22 +467,9 @@ const EnhancedCoachDashboard: React.FC = () => {
           </div>
 
           <div style={{ display: "flex", alignItems: "flex-end" }}>
-            <button
-              onClick={loadMonthlyData}
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                background: "#43e97b",
-                color: "#000",
-                border: "none",
-                borderRadius: 6,
-                cursor: "pointer",
-                fontWeight: 700,
-                fontSize: 13
-              }}
-            >
+            <Button variant="secondary" onClick={loadMonthlyData} size="sm" style={{ width: "100%" }}>
               🔄 Refresh
-            </button>
+            </Button>
           </div>
         </div>
         {monthlyData.length > 0 ? (
@@ -448,35 +527,59 @@ const EnhancedCoachDashboard: React.FC = () => {
                 );
               })}
             </div>
-            <div style={{ textAlign: "center", marginTop: 32, padding: 12, background: "#f8f9fa", borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
+            <div style={{ 
+              textAlign: "center", 
+              marginTop: spacing.lg, 
+              padding: spacing.md, 
+              background: "rgba(255, 255, 255, 0.05)", 
+              borderRadius: borderRadius.md,
+            }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xs, 
+                color: colors.text.muted, 
+                marginBottom: spacing.xs,
+              }}>
                 Total Allocated ({monthlyData.length} months{monthlyPaymentMode !== "all" && ` • ${monthlyPaymentMode}`})
               </div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: "#43e97b" }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xl, 
+                fontWeight: typography.fontWeight.bold, 
+                color: colors.success.main,
+              }}>
                 ₹{monthlyData.reduce((sum, m) => sum + m.amount, 0).toLocaleString()}
               </div>
-              <div style={{ fontSize: 11, color: "#999", marginTop: 4 }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xs, 
+                color: colors.text.muted, 
+                marginTop: spacing.xs,
+              }}>
                 Avg: ₹{monthlyData.length > 0 ? Math.floor(monthlyData.reduce((sum, m) => sum + m.amount, 0) / monthlyData.length).toLocaleString() : 0}/mo
               </div>
             </div>
           </>
         ) : (
-          <div style={{ textAlign: "center", padding: 48, color: "#999" }}>
+          <div style={{ 
+            textAlign: "center", 
+            padding: spacing['3xl'], 
+            color: colors.text.muted,
+            ...typography.body,
+          }}>
             No payment data available yet
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Detailed Stats Section */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: spacing.lg, marginBottom: spacing.lg }}>
         {/* Collection Breakdown */}
-        <div style={{
-          background: "white",
-          padding: 24,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-        }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>📊 Collection Breakdown</h2>
+        <Card variant="default" padding="lg">
+          <h2 style={{ 
+            ...typography.h3,
+            marginBottom: spacing.md,
+            color: colors.text.primary,
+          }}>
+            📊 Collection Breakdown
+          </h2>
           <div style={{ display: "grid", gap: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 16, background: "#f8f9fa", borderRadius: 8 }}>
               <div>
@@ -508,16 +611,17 @@ const EnhancedCoachDashboard: React.FC = () => {
               <div style={{ fontSize: 48 }}>📈</div>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Student Status */}
-        <div style={{
-          background: "white",
-          padding: 24,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-        }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>👥 Students</h2>
+        <Card variant="default" padding="lg">
+          <h2 style={{ 
+            ...typography.h3,
+            marginBottom: spacing.md,
+            color: colors.text.primary,
+          }}>
+            👥 Students
+          </h2>
           <div style={{ display: "grid", gap: 12 }}>
             <div style={{ padding: 12, background: "#d4edda", borderRadius: 8 }}>
               <div style={{ fontSize: 12, color: "#155724", marginBottom: 4 }}>Active</div>
@@ -534,18 +638,18 @@ const EnhancedCoachDashboard: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Payment Frequency Distribution */}
-      <div style={{
-        background: "white",
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        marginBottom: 24
-      }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>📅 Payment Frequency Distribution</h2>
+      <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg }}>
+        <h2 style={{ 
+          ...typography.h3,
+          marginBottom: spacing.md,
+          color: colors.text.primary,
+        }}>
+          📅 Payment Frequency Distribution
+        </h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16 }}>
           {Object.entries(frequencyBreakdown).map(([label, count]: [string, any]) => (
             <div key={label} style={{
@@ -561,16 +665,17 @@ const EnhancedCoachDashboard: React.FC = () => {
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* Recent Students */}
-      <div style={{
-        background: "white",
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-      }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>📋 All Students</h2>
+      <Card variant="default" padding="lg">
+        <h2 style={{ 
+          ...typography.h3,
+          marginBottom: spacing.md,
+          color: colors.text.primary,
+        }}>
+          📋 All Students
+        </h2>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -616,8 +721,12 @@ const EnhancedCoachDashboard: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      </Card>
+            </React.Fragment>
+          );
+        })()}
+      </section>
+    </motion.main>
   );
 };
 

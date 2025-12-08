@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
+import { Button } from "./ui/Button";
+import { Badge } from "./ui/Badge";
 
 export const SystemDateSetter = () => {
   const { user } = useAuth();
@@ -90,19 +93,34 @@ export const SystemDateSetter = () => {
 
   return (
     <div style={{
-      backgroundColor: isCustomDate ? "rgba(255, 193, 7, 0.15)" : "rgba(255, 255, 255, 0.1)",
-      border: `1px solid ${isCustomDate ? "rgba(255, 193, 7, 0.4)" : "rgba(255, 255, 255, 0.2)"}`,
-      borderRadius: "8px",
-      padding: "12px",
-      fontSize: "11px",
-      color: "white"
+      backgroundColor: isCustomDate ? colors.warning.soft : "rgba(255, 255, 255, 0.1)",
+      border: `1px solid ${isCustomDate ? colors.warning.outline : "rgba(255, 255, 255, 0.2)"}`,
+      borderRadius: borderRadius.lg,
+      padding: spacing.sm,
+      fontSize: typography.fontSize.xs,
+      color: colors.text.inverted,
+      backdropFilter: "blur(10px)",
+      minWidth: '200px',
     }}>
-      <div style={{ fontWeight: "bold", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ 
+        fontWeight: typography.fontWeight.bold, 
+        marginBottom: spacing.sm, 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "space-between" 
+      }}>
         <span>🕐 Debug Date</span>
-        {isCustomDate && <span style={{ color: "#FFC107", fontSize: "9px", background: "rgba(255,193,7,0.2)", padding: "2px 6px", borderRadius: "4px" }}>CUSTOM</span>}
+        {isCustomDate && (
+          <Badge variant="warning" size="sm">CUSTOM</Badge>
+        )}
       </div>
       
-      <div style={{ marginBottom: "8px", fontSize: "10px", color: "#E0E7FF" }}>
+      <div style={{ 
+        marginBottom: spacing.sm, 
+        fontSize: typography.fontSize.xs, 
+        color: "rgba(255, 255, 255, 0.8)",
+        fontFamily: typography.fontFamily.primary,
+      }}>
         {new Date(systemDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
       </div>
       
@@ -114,63 +132,48 @@ export const SystemDateSetter = () => {
         title="Cannot go backwards from current system date"
         style={{
           width: "100%",
-          padding: "6px 8px",
-          border: "1px solid rgba(255,255,255,0.3)",
-          borderRadius: "4px",
-          fontSize: "10px",
-          marginBottom: "8px",
+          padding: `${spacing.xs} ${spacing.sm}`,
+          border: `1px solid rgba(255,255,255,0.3)`,
+          borderRadius: borderRadius.md,
+          fontSize: typography.fontSize.xs,
+          marginBottom: spacing.sm,
           background: "rgba(255,255,255,0.1)",
-          color: "white"
+          color: colors.text.inverted,
+          fontFamily: typography.fontFamily.primary,
         }}
       />
       
-      <div style={{ display: "flex", gap: "6px" }}>
-        <button
+      <div style={{ display: "flex", gap: spacing.xs }}>
+        <Button
           onClick={handleSetDate}
-          style={{
-            flex: 1,
-            padding: "6px 8px",
-            backgroundColor: "#10B981",
-            color: "#000",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontSize: "10px",
-            fontWeight: "700",
-            fontWeight: 600
-          }}
+          variant="success"
+          size="sm"
+          style={{ flex: 1 }}
           title="Set system date and refresh dashboards"
         >
           Set
-        </button>
+        </Button>
         {isCustomDate && (
-          <button
+          <Button
             onClick={handleResetDate}
-            style={{
-              flex: 1,
-              padding: "6px 8px",
-              backgroundColor: "#F97316",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "10px",
-              fontWeight: 600
-            }}
+            variant="danger"
+            size="sm"
+            style={{ flex: 1 }}
           >
             Reset
-          </button>
+          </Button>
         )}
       </div>
 
       {message && (
         <div style={{ 
-          marginTop: "8px", 
-          fontSize: "9px", 
-          color: message.includes("✅") ? "#10B981" : "#F97316",
+          marginTop: spacing.sm, 
+          fontSize: typography.fontSize.xs, 
+          color: message.includes("✅") ? colors.success.main : colors.danger.main,
           background: "rgba(0,0,0,0.2)",
-          padding: "4px 6px",
-          borderRadius: "4px"
+          padding: `${spacing.xs} ${spacing.sm}`,
+          borderRadius: borderRadius.md,
+          fontFamily: typography.fontFamily.primary,
         }}>
           {message}
         </div>

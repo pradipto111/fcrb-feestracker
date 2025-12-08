@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { api } from "../api/client";
+import { Card } from "../components/ui/Card";
+import { KPICard } from "../components/ui/KPICard";
+import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
+import { pageVariants, cardVariants } from "../utils/motion";
 
 const StudentAttendancePage: React.FC = () => {
   const [sessions, setSessions] = useState<any[]>([]);
@@ -72,184 +77,194 @@ const StudentAttendancePage: React.FC = () => {
     : "0";
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url(/photo3.png)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundAttachment: "fixed"
-    }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, color: "#1E40AF" }}>
-          📅 My Attendance
-        </h1>
-        <p style={{ color: "#666", margin: 0 }}>View your session attendance for the month</p>
+    <motion.main
+      className="rv-page rv-page--student-attendance"
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      {/* Floating Stars Background */}
+      <div className="rv-page-stars" aria-hidden="true">
+        <span className="rv-star" />
+        <span className="rv-star rv-star--delay1" />
+        <span className="rv-star rv-star--delay2" />
+        <span className="rv-star rv-star--delay3" />
+        <span className="rv-star rv-star--delay4" />
       </div>
 
-      {error && (
-        <div style={{
-          padding: 12,
-          background: "#fee",
-          color: "#c33",
-          borderRadius: 8,
-          marginBottom: 16
-        }}>
-          {error}
-        </div>
-      )}
+      <section className="rv-section-surface">
+        {/* Header */}
+        <header className="rv-section-header">
+          <div>
+            <h1 className="rv-page-title">📅 My Attendance</h1>
+            <p className="rv-page-subtitle">View your session attendance for the month</p>
+          </div>
+        </header>
 
-      {/* Statistics Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16, marginBottom: 24 }}>
-        <div style={{
-          background: "white",
-          padding: 20,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          textAlign: "center"
-        }}>
-          <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Total Sessions</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: "#1E40AF" }}>{stats.total}</div>
-        </div>
-        <div style={{
-          background: "white",
-          padding: 20,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          textAlign: "center"
-        }}>
-          <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Present</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: "#27ae60" }}>{stats.present}</div>
-        </div>
-        <div style={{
-          background: "white",
-          padding: 20,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          textAlign: "center"
-        }}>
-          <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Absent</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: "#e74c3c" }}>{stats.absent}</div>
-        </div>
-        <div style={{
-          background: "white",
-          padding: 20,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          textAlign: "center"
-        }}>
-          <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Attendance Rate</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: "#1E40AF" }}>{attendanceRate}%</div>
-        </div>
-      </div>
+        {/* Error State */}
+        {error && (
+          <Card variant="default" padding="md" style={{ 
+            marginBottom: spacing.md,
+            background: colors.danger.soft,
+            border: `1px solid ${colors.danger.main}40`,
+          }}>
+            <p style={{ margin: 0, color: colors.danger.main }}>Error: {error}</p>
+          </Card>
+        )}
 
-      {/* Filters */}
-      <div style={{
-        background: "white",
-        padding: 20,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        marginBottom: 24,
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-        gap: 16
-      }}>
-        <div>
-          <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
-            Month
-          </label>
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(Number(e.target.value))}
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              border: "2px solid #e0e0e0",
-              borderRadius: 6,
-              fontSize: 13
-            }}
-          >
-            {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-              <option key={month} value={month}>{getMonthName(month)}</option>
-            ))}
-          </select>
+        {/* Statistics Cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: spacing.md, marginBottom: spacing.lg }}>
+          <motion.div custom={0} variants={cardVariants} initial="initial" animate="animate">
+            <KPICard
+              title="Total Sessions"
+              value={stats.total.toString()}
+              variant="info"
+            />
+          </motion.div>
+          <motion.div custom={1} variants={cardVariants} initial="initial" animate="animate">
+            <KPICard
+              title="Present"
+              value={stats.present.toString()}
+              variant="success"
+            />
+          </motion.div>
+          <motion.div custom={2} variants={cardVariants} initial="initial" animate="animate">
+            <KPICard
+              title="Absent"
+              value={stats.absent.toString()}
+              variant="danger"
+            />
+          </motion.div>
+          <motion.div custom={3} variants={cardVariants} initial="initial" animate="animate">
+            <KPICard
+              title="Attendance Rate"
+              value={`${attendanceRate}%`}
+              variant="primary"
+            />
+          </motion.div>
         </div>
-        <div>
-          <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
-            Year
-          </label>
-          <input
-            type="number"
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              border: "2px solid #e0e0e0",
-              borderRadius: 6,
-              fontSize: 13
-            }}
-          />
+
+        {/* Filters */}
+        <div className="rv-filter-bar">
+          <div className="rv-filter-field">
+            <label>Month</label>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              style={{
+                background: "rgba(3, 9, 28, 0.9)",
+                color: colors.text.primary,
+                border: "1px solid var(--rv-border-subtle)",
+                borderRadius: "var(--rv-radius-sm)",
+                padding: "0.55rem 0.7rem",
+                fontSize: "0.86rem",
+              }}
+            >
+              {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                <option key={month} value={month}>{getMonthName(month)}</option>
+              ))}
+            </select>
+          </div>
+          <div className="rv-filter-field">
+            <label>Year</label>
+            <input
+              type="number"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              style={{
+                background: "rgba(3, 9, 28, 0.9)",
+                color: colors.text.primary,
+                border: "1px solid var(--rv-border-subtle)",
+                borderRadius: "var(--rv-radius-sm)",
+                padding: "0.55rem 0.7rem",
+                fontSize: "0.86rem",
+              }}
+            />
+          </div>
         </div>
-      </div>
 
       {/* Sessions List */}
-      <div style={{
-        background: "white",
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-      }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>
+      <Card variant="default" padding="lg">
+        <h2 style={{ 
+          ...typography.h3,
+          marginBottom: spacing.md,
+          color: colors.text.primary,
+        }}>
           Sessions for {getMonthName(selectedMonth)} {selectedYear}
         </h2>
         {loading ? (
-          <div style={{ textAlign: "center", padding: 48 }}>Loading...</div>
+          <div style={{ 
+            textAlign: "center", 
+            padding: spacing['3xl'],
+            color: colors.text.muted,
+            ...typography.body,
+          }}>
+            Loading...
+          </div>
         ) : sessions.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 48, color: "#999" }}>
+          <div style={{ 
+            textAlign: "center", 
+            padding: spacing['3xl'], 
+            color: colors.text.muted,
+            ...typography.body,
+          }}>
             No sessions found for this month
           </div>
         ) : (
-          <div style={{ display: "grid", gap: 12 }}>
+          <div style={{ display: "grid", gap: spacing.md }}>
             {sessions.map(session => {
               const sessionDate = new Date(session.sessionDate);
               const statusStyle = getStatusColor(session.attendanceStatus);
               
               return (
-                <div
+                <Card
                   key={session.id}
+                  variant="default"
+                  padding="md"
                   style={{
-                    border: "2px solid #e0e0e0",
-                    borderRadius: 8,
-                    padding: 16,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 12
+                    border: `1px solid rgba(255, 255, 255, 0.1)`,
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
-                        <div style={{ fontSize: 18, fontWeight: 700 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: spacing.md, marginBottom: spacing.sm }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.lg, 
+                          fontWeight: typography.fontWeight.bold,
+                          color: colors.text.primary,
+                        }}>
                           {sessionDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                         </div>
-                        <div style={{ fontSize: 16, color: "#666" }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.base, 
+                          color: colors.text.muted,
+                        }}>
                           {session.startTime} - {session.endTime}
                         </div>
                       </div>
-                      <div style={{ fontSize: 14, color: "#666" }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.sm, 
+                        color: colors.text.muted,
+                      }}>
                         {session.center.name} • Coach: {session.coach.fullName}
                       </div>
                       {session.notes && (
-                        <div style={{ fontSize: 13, color: "#999", marginTop: 4, fontStyle: "italic" }}>
+                        <div style={{ 
+                          fontSize: typography.fontSize.xs, 
+                          color: colors.text.muted, 
+                          marginTop: spacing.xs, 
+                          fontStyle: "italic",
+                        }}>
                           Session Notes: {session.notes}
                         </div>
                       )}
                     </div>
                     <div style={{
-                      padding: "8px 16px",
-                      borderRadius: 20,
-                      fontSize: 14,
-                      fontWeight: 600,
+                      padding: `${spacing.sm} ${spacing.md}`,
+                      borderRadius: borderRadius.full,
+                      fontSize: typography.fontSize.sm,
+                      fontWeight: typography.fontWeight.semibold,
                       ...statusStyle
                     }}>
                       {getStatusLabel(session.attendanceStatus)}
@@ -257,57 +272,131 @@ const StudentAttendancePage: React.FC = () => {
                   </div>
                   {session.attendanceNotes && (
                     <div style={{
-                      padding: 12,
-                      background: "#f8f9fa",
-                      borderRadius: 6,
-                      borderLeft: "4px solid #1E40AF"
+                      padding: spacing.md,
+                      background: "rgba(255, 255, 255, 0.05)",
+                      borderRadius: borderRadius.md,
+                      borderLeft: `4px solid ${colors.primary.main}`,
+                      marginTop: spacing.sm,
                     }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: "#666", marginBottom: 4 }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.xs, 
+                        fontWeight: typography.fontWeight.semibold, 
+                        color: colors.text.secondary, 
+                        marginBottom: spacing.xs,
+                      }}>
                         Coach Remarks:
                       </div>
-                      <div style={{ fontSize: 14, color: "#333" }}>
+                      <div style={{ 
+                        fontSize: typography.fontSize.sm, 
+                        color: colors.text.primary,
+                      }}>
                         {session.attendanceNotes}
                       </div>
                     </div>
                   )}
-                </div>
+                </Card>
               );
             })}
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Attendance Summary */}
       {sessions.length > 0 && (
-        <div style={{
-          background: "white",
-          padding: 24,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          marginTop: 24
-        }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Summary</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16 }}>
-            <div style={{ padding: 16, background: "#e8f5e9", borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Present</div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: "#27ae60" }}>{stats.present}</div>
+        <Card variant="default" padding="lg" style={{ marginTop: spacing.lg }}>
+          <h2 style={{ 
+            ...typography.h3,
+            marginBottom: spacing.md,
+            color: colors.text.primary,
+          }}>
+            Summary
+          </h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: spacing.md }}>
+            <div style={{ 
+              padding: spacing.md, 
+              background: colors.success.soft, 
+              borderRadius: borderRadius.md,
+            }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xs, 
+                color: colors.text.muted, 
+                marginBottom: spacing.xs,
+              }}>
+                Present
+              </div>
+              <div style={{ 
+                fontSize: typography.fontSize['2xl'], 
+                fontWeight: typography.fontWeight.bold, 
+                color: colors.success.main,
+              }}>
+                {stats.present}
+              </div>
             </div>
-            <div style={{ padding: 16, background: "#ffebee", borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Absent</div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: "#e74c3c" }}>{stats.absent}</div>
+            <div style={{ 
+              padding: spacing.md, 
+              background: colors.danger.soft, 
+              borderRadius: borderRadius.md,
+            }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xs, 
+                color: colors.text.muted, 
+                marginBottom: spacing.xs,
+              }}>
+                Absent
+              </div>
+              <div style={{ 
+                fontSize: typography.fontSize['2xl'], 
+                fontWeight: typography.fontWeight.bold, 
+                color: colors.danger.main,
+              }}>
+                {stats.absent}
+              </div>
             </div>
-            <div style={{ padding: 16, background: "#fff3e0", borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Excused</div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: "#f39c12" }}>{stats.excused}</div>
+            <div style={{ 
+              padding: spacing.md, 
+              background: colors.warning.soft, 
+              borderRadius: borderRadius.md,
+            }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xs, 
+                color: colors.text.muted, 
+                marginBottom: spacing.xs,
+              }}>
+                Excused
+              </div>
+              <div style={{ 
+                fontSize: typography.fontSize['2xl'], 
+                fontWeight: typography.fontWeight.bold, 
+                color: colors.warning.main,
+              }}>
+                {stats.excused}
+              </div>
             </div>
-            <div style={{ padding: 16, background: "#f5f5f5", borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Not Marked</div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: "#666" }}>{stats.notMarked}</div>
+            <div style={{ 
+              padding: spacing.md, 
+              background: "rgba(255, 255, 255, 0.05)", 
+              borderRadius: borderRadius.md,
+            }}>
+              <div style={{ 
+                fontSize: typography.fontSize.xs, 
+                color: colors.text.muted, 
+                marginBottom: spacing.xs,
+              }}>
+                Not Marked
+              </div>
+              <div style={{ 
+                fontSize: typography.fontSize['2xl'], 
+                fontWeight: typography.fontWeight.bold, 
+                color: colors.text.muted,
+              }}>
+                {stats.notMarked}
+              </div>
             </div>
           </div>
-        </div>
+        </Card>
       )}
-    </div>
+      </section>
+    </motion.main>
   );
 };
 
