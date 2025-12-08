@@ -107,3 +107,4 @@
 - Brand name consistently spelled as **RealVerse** throughout
 - No white backgrounds remain (all replaced with dark glass surfaces)
 
+
