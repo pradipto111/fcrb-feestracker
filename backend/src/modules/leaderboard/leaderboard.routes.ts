@@ -88,7 +88,7 @@ async function checkAndAwardBadges(stats: any) {
     where: { studentStatsId: stats.id },
     select: { badgeType: true }
   });
-  const existingBadgeTypes = existingBadges.map(b => b.badgeType);
+  const existingBadgeTypes = existingBadges.map((b: { badgeType: string }) => b.badgeType);
 
   // First vote badge
   if (stats.sessionsVoted === 1 && !existingBadgeTypes.includes("FIRST_VOTE")) {
@@ -277,7 +277,7 @@ router.get("/:centerId", authRequired, async (req, res) => {
   });
 
   // Add rank
-  const leaderboard = stats.map((stat, index) => ({
+  const leaderboard = stats.map((stat: any, index: number) => ({
     rank: index + 1,
     student: stat.student,
     totalPoints: stat.totalPoints,
@@ -363,7 +363,7 @@ router.get("/student/my-stats", authRequired, requireRole("STUDENT"), async (req
     where: { centerId: student.centerId },
     orderBy: { totalPoints: "desc" }
   });
-  const rank = allStats.findIndex(s => s.id === stats.id) + 1;
+  const rank = allStats.findIndex((s: any) => s.id === stats.id) + 1;
 
   res.json({
     student: {
@@ -437,7 +437,7 @@ router.get("/session/:sessionId/voted", authRequired, async (req, res) => {
 
   res.json({
     hasVoted: votes.length > 0,
-    votes: votes.map(v => ({
+    votes: votes.map((v: any) => ({
       votedForId: v.votedForId,
       points: v.points
     }))
@@ -458,7 +458,7 @@ async function checkWeeklyMonthlyBadges(centerId: number) {
   });
 
   if (weeklyTop && weeklyTop.weeklyPoints > 0) {
-    const hasWeeklyBadge = weeklyTop.badges.some(b => b.badgeType === "TOP_WEEKLY");
+    const hasWeeklyBadge = weeklyTop.badges.some((b: { badgeType: string }) => b.badgeType === "TOP_WEEKLY");
     if (!hasWeeklyBadge) {
       // Remove old weekly badges for this center
       await prisma.badge.deleteMany({
@@ -491,7 +491,7 @@ async function checkWeeklyMonthlyBadges(centerId: number) {
   });
 
   if (monthlyTop && monthlyTop.monthlyPoints > 0) {
-    const hasMonthlyBadge = monthlyTop.badges.some(b => b.badgeType === "TOP_MONTHLY");
+    const hasMonthlyBadge = monthlyTop.badges.some((b: { badgeType: string }) => b.badgeType === "TOP_MONTHLY");
     if (!hasMonthlyBadge) {
       // Remove old monthly badges for this center
       await prisma.badge.deleteMany({

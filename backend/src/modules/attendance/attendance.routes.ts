@@ -507,7 +507,7 @@ router.get("/student/attendance", authRequired, requireRole("STUDENT"), async (r
   });
 
   // Combine sessions with attendance status
-  const sessionsWithAttendance = allSessions.map(session => {
+  const sessionsWithAttendance = allSessions.map((session: any) => {
     const attendanceRecord = session.attendance[0];
     return {
       ...session,
