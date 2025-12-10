@@ -77,16 +77,27 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 // Seed products on startup (only if products table is empty)
 async function initializeShop() {
   try {
-    const productCount = await (prisma as any).product?.count() || 0;
+    // Check if product table exists and has data
+    if (!prisma.product) {
+      console.warn("⚠️  Product model not available. Please run: npx prisma generate");
+      return;
+    }
+    
+    const productCount = await prisma.product.count();
     if (productCount === 0) {
-      const { seedProducts } = require("./modules/shop/seed-products");
+      const { seedProducts } = await import("./modules/shop/seed-products");
       await seedProducts();
+    } else {
+      console.log(`✅ Shop initialized with ${productCount} products`);
     }
   } catch (error: any) {
-    if (error.message && error.message.includes("product")) {
-      console.warn("⚠️  Product model not found. Please run: npx prisma migrate dev && npx prisma generate");
+    // Silently handle table not existing - it's optional
+    if (error.code === 'P2021' || error.message?.includes('does not exist')) {
+      console.warn("⚠️  Product table not found. Run: npx prisma db push");
+    } else if (error.code === 'P2010') {
+      console.warn("⚠️  Database query failed. Ensure migrations are applied.");
     } else {
-      console.error("Failed to seed products:", error);
+      console.error("Failed to initialize shop:", error.message || error);
     }
   }
 }

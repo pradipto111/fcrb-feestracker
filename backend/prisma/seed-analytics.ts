@@ -670,12 +670,7 @@ async function main() {
 main()
   .catch((e) => {
     console.error("❌ Error seeding analytics data:", e);
-    // Exit with error code - process is available in Node.js runtime
-    // @ts-expect-error - process is a global in Node.js
-    if (typeof process !== 'undefined') {
-      // @ts-expect-error
-      process.exit(1);
-    }
+    process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();

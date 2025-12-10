@@ -3,6 +3,11 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function seedProducts() {
+  if (!prisma.product) {
+    console.warn("⚠️  Product model not available in Prisma client");
+    return;
+  }
+  
   const products = [
     {
       name: "FC Real Bengaluru Home Jersey 24/25",

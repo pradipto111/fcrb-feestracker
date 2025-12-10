@@ -10,7 +10,7 @@ datasource db {
 model Center {
   id            Int        @id @default(autoincrement())
   name          String
-  shortName      String    @unique // e.g., "3LOK", "DEPOT18"
+  shortName      String?   @unique // e.g., "3LOK", "DEPOT18" - Made optional for migration
   addressLine   String?
   locality      String?   // e.g., "Seegehalli", "Jayamahal"
   city          String?
