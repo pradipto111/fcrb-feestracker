@@ -8,21 +8,37 @@ datasource db {
 }
 
 model Center {
-  id         Int        @id @default(autoincrement())
-  name       String
-  location   String?
-  city       String?
-  address    String?
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  students   Student[]
-  coachLinks CoachCenter[]
-  payments   Payment[]
-  sessions   Session[]
-  fixtures   Fixture[]
-  posts      Post[]
-  votes      Vote[]
-  studentStats StudentStats[]
+  id            Int        @id @default(autoincrement())
+  name          String
+  shortName      String    @unique // e.g., "3LOK", "DEPOT18"
+  addressLine   String?
+  locality      String?   // e.g., "Seegehalli", "Jayamahal"
+  city          String?
+  state         String?
+  postalCode    String?
+  latitude      Float?    // For map pin placement
+  longitude     Float?    // For map pin placement
+  googleMapsUrl String?   // Direct link to Google Maps
+  isActive      Boolean   @default(true)
+  displayOrder  Int       @default(0) // For sorting in UI
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  // Legacy fields (kept for backward compatibility during migration)
+  location      String?
+  address       String?
+  // Relations
+  students      Student[]
+  coachLinks    CoachCenter[]
+  payments      Payment[]
+  sessions      Session[]
+  fixtures      Fixture[]
+  posts         Post[]
+  votes         Vote[]
+  studentStats  StudentStats[]
+  monthlyMetrics CentreMonthlyMetrics[]
+  @@index([shortName])
+  @@index([isActive])
+  @@index([displayOrder])
 }
 
 model Coach {
@@ -37,6 +53,9 @@ model Coach {
   sessions     Session[]
   fixtures     Fixture[]
   videos       Video[]
+  feedbacks    MonthlyFeedback[]
+  publishedFeedbacks MonthlyFeedback[] @relation("FeedbackPublisher")
+  progressRoadmaps ProgressRoadmap[] @relation("RoadmapUpdater")
 }
 
 model CoachCenter {
@@ -70,6 +89,10 @@ model Student {
   attendance Attendance[]
   fixturePlayers FixturePlayer[]
   stats    StudentStats[]
+  timelineEvents TimelineEvent[]
+  monthlyFeedbacks MonthlyFeedback[]
+  wellnessChecks WellnessCheck[]
+  progressRoadmap ProgressRoadmap?
 }
 
 model Payment {
@@ -115,6 +138,7 @@ model Session {
   coach       Coach       @relation(fields: [coachId], references: [id])
   attendance  Attendance[]
   votes       Vote[]
+  wellnessChecks WellnessCheck[]
   @@index([centerId])
   @@index([coachId])
   @@index([sessionDate])
@@ -163,19 +187,39 @@ model Fixture {
 }
 
 model FixturePlayer {
-  id        Int      @id @default(autoincrement())
-  fixtureId Int
-  studentId Int
-  position  String?  // e.g., "Forward", "Midfielder", "Defender", "Goalkeeper"
-  role      String?  // e.g., "Starting XI", "Substitute", "Reserve"
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  fixture   Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
-  student   Student  @relation(fields: [studentId], references: [id])
+  id              Int      @id @default(autoincrement())
+  fixtureId       Int
+  studentId       Int
+  position        String?  // e.g., "Forward", "Midfielder", "Defender", "Goalkeeper"
+  role            String?  // e.g., "Starting XI", "Substitute", "Reserve"
+  selectionStatus MatchSelectionStatus @default(NOT_SELECTED)
+  selectionReason MatchSelectionReason?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  fixture         Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  student         Student  @relation(fields: [studentId], references: [id])
   @@unique([fixtureId, studentId])
   @@index([fixtureId])
   @@index([studentId])
+  @@index([selectionStatus])
+}
+
+enum MatchSelectionStatus {
+  SELECTED
+  NOT_SELECTED
+  INJURED_UNAVAILABLE
+  RESERVE
+}
+
+enum MatchSelectionReason {
+  PERFORMANCE_BASED
+  TACTICAL_FIT
+  ATTENDANCE_REQUIREMENT
+  PHYSICAL_READINESS
+  SQUAD_ROTATION
+  INJURY_RECOVERY
+  OTHER
 }
 
 enum FixtureStatus {
@@ -328,4 +372,238 @@ enum BadgeType {
   PEER_FAVORITE     // Most student votes in a period
   CONSISTENT        // Voted for in 10+ different sessions
 }
+
+model WebsiteLead {
+  id                Int       @id @default(autoincrement())
+  source            String    @default("website_join") // e.g., "website_join", "utm_campaign"
+  playerName        String
+  playerDob         DateTime?
+  ageBracket        String?   // e.g., "U11", "U13", "U15", "U17", "U19", "U21", "Senior"
+  guardianName      String
+  phone             String
+  email             String
+  preferredCentre   String
+  programmeInterest String   // e.g., "Grassroots", "Development", "High Performance", "Women's Programme", "Goalkeeper Training"
+  playingPosition   String?   // e.g., "Forward", "Midfielder", "Defender", "Goalkeeper"
+  currentLevel      String    // e.g., "Beginner", "Academy", "School Team", "State Level", "District Level", "Other"
+  heardFrom         String    // e.g., "Referral", "Instagram", "Facebook", "Tournament", "Friend/Family", "Website", "Other"
+  notes             String?   // Free text from applicant
+  status            LeadStatus @default(NEW)
+  assignedTo        Int?      // Coach/Admin ID who is handling this lead
+  internalNotes     String?    // Internal notes for admin/coach
+  convertedPlayerId Int?      // If converted to actual Student
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  @@index([status])
+  @@index([preferredCentre])
+  @@index([programmeInterest])
+  @@index([createdAt])
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  CONVERTED
+  LOST
+}
+
+model Product {
+  id          Int       @id @default(autoincrement())
+  name        String
+  slug        String    @unique
+  description String?
+  images      String[]  // Array of image URLs
+  price       Int       // Price in paise (e.g., 299900 = ₹2999.00)
+  currency    String    @default("INR") // Currency code
+  sizes       String[]  // e.g., ["S", "M", "L", "XL"] for apparel
+  variants    Json?     // JSON for variant options (e.g., {"color": ["Blue", "Red"], "kit": ["Home", "Away"]})
+  stock       Int?      // Optional stock count
+  category    String?   // e.g., "Jersey", "Shorts", "Accessories"
+  tags        String[]  // Array of tags for filtering/search
+  displayOrder Int      @default(0) // For custom sorting in shop
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  orderItems  OrderItem[]
+  @@index([slug])
+  @@index([isActive])
+  @@index([category])
+  @@index([displayOrder])
+}
+
+model Order {
+  id                Int       @id @default(autoincrement())
+  orderNumber       String    @unique // Human-readable order number
+  items             OrderItem[]
+  subtotal          Int       // Subtotal in paise
+  shippingFee       Int       @default(0) // Shipping fee in paise
+  total             Int       // Total in paise
+  customerName      String
+  phone             String
+  email             String
+  shippingAddress   Json      // {addressLine1, addressLine2?, city, state, pincode, country}
+  status            OrderStatus @default(PENDING_PAYMENT)
+  paymentProvider   String?   // e.g., "razorpay"
+  paymentReference  String?   // Payment ID from provider
+  paymentData       Json?     // Full payment response from provider
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  @@index([status])
+  @@index([orderNumber])
+  @@index([email])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id          Int       @id @default(autoincrement())
+  orderId     Int
+  productId   Int
+  productName String   // Snapshot of product name
+  variant     String?   // Selected variant (e.g., "Blue - Home")
+  size        String?   // Selected size
+  quantity    Int
+  unitPrice   Int       // Price per unit in paise (snapshot)
+  totalPrice  Int       // Total for this line item in paise
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id])
+  @@index([orderId])
+  @@index([productId])
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  FAILED
+  CANCELLED
+  SHIPPED
+  DELIVERED
+}
+
+model TimelineEvent {
+  id          Int       @id @default(autoincrement())
+  studentId   Int
+  eventType   TimelineEventType
+  title       String
+  description String?
+  eventDate   DateTime
+  metadata    Json?     // Flexible JSON for event-specific data
+  createdByRole Role?   // ADMIN, COACH (null for auto-generated events)
+  createdById Int?     // Coach/Admin who created (null for auto-generated)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  @@index([studentId])
+  @@index([eventDate])
+  @@index([eventType])
+}
+
+enum TimelineEventType {
+  JOINED_ACADEMY
+  ATTENDANCE_MILESTONE
+  LEAGUE_PARTICIPATION
+  MATCH_APPEARANCE
+  PERFORMANCE_EVALUATION
+  PROMOTION
+  COACH_FEEDBACK
+  BADGE_EARNED
+  PAYMENT_MILESTONE
+  CUSTOM
+}
+
+model MonthlyFeedback {
+  id              Int       @id @default(autoincrement())
+  studentId       Int
+  coachId         Int       // Coach who wrote the feedback
+  month           Int       // 1-12
+  year            Int
+  strengths       String[]  // Array of 1-2 strength points
+  areasToImprove  String[]  // Array of 1-2 improvement areas
+  focusGoal       String    // One actionable focus goal
+  overallNote     String?   // Optional overall note
+  isPublished     Boolean   @default(false) // Admin must publish
+  publishedById   Int?      // Admin who published
+  publishedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  coach           Coach     @relation(fields: [coachId], references: [id])
+  publishedBy     Coach?    @relation("FeedbackPublisher", fields: [publishedById], references: [id])
+  @@unique([studentId, month, year])
+  @@index([studentId])
+  @@index([coachId])
+  @@index([year, month])
+  @@index([isPublished])
+}
+
+model WellnessCheck {
+  id              Int       @id @default(autoincrement())
+  studentId       Int
+  sessionId       Int?      // Optional: link to specific session
+  checkDate       DateTime  @default(now())
+  exertionLevel   Int       // 1-5 scale
+  muscleSoreness  Int?      // Optional: 1-5 scale
+  energyLevel     EnergyLevel
+  comment         String?   // Optional short comment
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  session         Session?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  @@unique([studentId, checkDate]) // One check per day
+  @@index([studentId])
+  @@index([checkDate])
+  @@index([sessionId])
+}
+
+enum EnergyLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model ProgressRoadmap {
+  id                    Int       @id @default(autoincrement())
+  studentId             Int       @unique // One roadmap per student
+  currentLevel          String    // e.g., "Youth League Squad"
+  nextPotentialLevel    String?   // e.g., "KSFA D Division"
+  attendanceRequirement String?   // e.g., "90% attendance for 3 months"
+  physicalBenchmark     String?   // e.g., "Pass fitness test"
+  tacticalRequirement   String?   // e.g., "Demonstrate positional understanding"
+  coachRecommendation   Boolean   @default(false)
+  isEligible            Boolean   @default(false) // Coach/admin flag
+  eligibilityNotes      String?   // Internal notes (not visible to student)
+  updatedByRole         Role      // Who last updated
+  updatedById           Int       // Coach/Admin who updated
+  updatedAt             DateTime  @updatedAt
+  createdAt             DateTime  @default(now())
+  student               Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  updatedBy             Coach      @relation("RoadmapUpdater", fields: [updatedById], references: [id])
+  @@index([studentId])
+  @@index([isEligible])
+}
+
+model CentreMonthlyMetrics {
+  id                Int       @id @default(autoincrement())
+  centreId          Int
+  year              Int
+  month             Int       // 1-12
+  totalPlayers      Int?      // Snapshot at end of month
+  activePlayers     Int?
+  churnedPlayers    Int?
+  residential       Int?
+  nonResidential    Int?
+  totalRevenue      Int?      // In paise
+  additionalRevenue Int?      // In paise
+  netRentalCharges  Int?      // In paise
+  coachingCosts      Int?      // In paise
+  otherExpenses      Int?      // In paise
+  netProfit          Int?      // Calculated: totalRevenue + additionalRevenue - netRentalCharges - coachingCosts - otherExpenses
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  centre            Center    @relation(fields: [centreId], references: [id], onDelete: Cascade)
+  @@unique([centreId, year, month])
+  @@index([centreId])
+  @@index([year, month])
+  @@index([centreId, year, month])
+}
+
 

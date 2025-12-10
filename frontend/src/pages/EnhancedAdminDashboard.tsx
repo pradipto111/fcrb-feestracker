@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { PageHeader } from "../components/ui/PageHeader";
 import { KPICard } from "../components/ui/KPICard";
@@ -10,12 +11,14 @@ import HeroSection from "../components/HeroSection";
 import { pageVariants, cardVariants } from "../utils/motion";
 
 const EnhancedAdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [summary, setSummary] = useState<any>(null);
   const [centers, setCenters] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [error, setError] = useState("");
+  const [clubSnapshot, setClubSnapshot] = useState<any>(null);
   
   // Chart 1 filters (Revenue)
   const [revenueMonths, setRevenueMonths] = useState(12);
@@ -28,7 +31,20 @@ const EnhancedAdminDashboard: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    loadClubSnapshot();
   }, []);
+
+  const loadClubSnapshot = async () => {
+    try {
+      const snapshot = await api.getAnalyticsOverview({
+        from: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(),
+        to: new Date().toISOString(),
+      });
+      setClubSnapshot(snapshot);
+    } catch (err: any) {
+      console.warn("Failed to load club snapshot:", err);
+    }
+  };
 
   useEffect(() => {
     loadRevenueData();
@@ -204,6 +220,61 @@ const EnhancedAdminDashboard: React.FC = () => {
                 </motion.div>
               </div>
 
+              {/* Club Snapshot */}
+              {clubSnapshot && (
+                <Card variant="elevated" padding="lg" style={{ marginBottom: spacing.xl }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
+                    <div>
+                      <h2 style={{ ...typography.h2, color: colors.text.primary, marginBottom: spacing.xs }}>
+                        Club Snapshot
+                      </h2>
+                      <p style={{ ...typography.caption, color: colors.text.muted }}>
+                        Overview across all centres (last 30 days)
+                      </p>
+                    </div>
+                    <Button variant="primary" onClick={() => navigate("/realverse/admin/analytics")}>
+                      View Full Analytics
+                    </Button>
+                  </div>
+                  <div style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", 
+                    gap: spacing.md 
+                  }}>
+                    <div style={{ textAlign: "center", padding: spacing.md }}>
+                      <div style={{ ...typography.h3, color: colors.primary.main, marginBottom: spacing.xs }}>
+                        {clubSnapshot.totalActivePlayers}
+                      </div>
+                      <div style={{ ...typography.caption, color: colors.text.muted }}>Active Players</div>
+                    </div>
+                    <div style={{ textAlign: "center", padding: spacing.md }}>
+                      <div style={{ ...typography.h3, color: colors.accent.main, marginBottom: spacing.xs }}>
+                        {clubSnapshot.totalCentres}
+                      </div>
+                      <div style={{ ...typography.caption, color: colors.text.muted }}>Centres</div>
+                    </div>
+                    <div style={{ textAlign: "center", padding: spacing.md }}>
+                      <div style={{ ...typography.h3, color: colors.success.main, marginBottom: spacing.xs }}>
+                        {clubSnapshot.avgClubAttendance}%
+                      </div>
+                      <div style={{ ...typography.caption, color: colors.text.muted }}>Avg Attendance</div>
+                    </div>
+                    <div style={{ textAlign: "center", padding: spacing.md }}>
+                      <div style={{ ...typography.h3, color: colors.success.main, marginBottom: spacing.xs }}>
+                        ₹{(clubSnapshot.monthlyRevenue / 100).toLocaleString()}
+                      </div>
+                      <div style={{ ...typography.caption, color: colors.text.muted }}>Monthly Revenue</div>
+                    </div>
+                    <div style={{ textAlign: "center", padding: spacing.md }}>
+                      <div style={{ ...typography.h3, color: colors.accent.main, marginBottom: spacing.xs }}>
+                        {clubSnapshot.totalTrials || 0}
+                      </div>
+                      <div style={{ ...typography.caption, color: colors.text.muted }}>Trials (Month)</div>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
               {/* CHART 1: Revenue Collections */}
               <Card variant="elevated" padding="lg" style={{ marginBottom: spacing.xl }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -241,14 +312,20 @@ const EnhancedAdminDashboard: React.FC = () => {
               onChange={(e) => setRevenueMonths(Number(e.target.value))}
               style={{
                 width: "100%",
-                padding: `${spacing.sm} ${spacing.md}`,
-                border: "2px solid rgba(255, 255, 255, 0.2)",
-                borderRadius: borderRadius.lg,
-                fontSize: typography.fontSize.sm,
+                padding: `${spacing.md} ${spacing.lg}`, // Increased padding: 16px vertical, 24px horizontal
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                borderRadius: borderRadius.md,
+                fontSize: typography.fontSize.base,
                 cursor: "pointer",
-                background: "rgba(255, 255, 255, 0.1)",
+                background: colors.surface.card,
                 color: colors.text.primary,
                 fontFamily: typography.fontFamily.primary,
+                boxSizing: 'border-box',
+                appearance: 'none',
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: `right ${spacing.md} center`,
+                paddingRight: spacing.xl,
               }}
             >
               <option value="3">Last 3 Months</option>

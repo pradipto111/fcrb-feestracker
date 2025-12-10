@@ -122,7 +122,44 @@ export const api = {
   getStudentProfile() {
     return request("/student/profile");
   },
+  getStudentTimeline() {
+    return request("/student/timeline");
+  },
+  // Monthly Feedback endpoints
+  getMyFeedback() {
+    return request("/feedback/student/my-feedback");
+  },
+  // Wellness Check endpoints
+  submitWellnessCheck(data: {
+    sessionId?: number;
+    exertionLevel: number;
+    muscleSoreness?: number;
+    energyLevel: "LOW" | "MEDIUM" | "HIGH";
+    comment?: string;
+  }) {
+    return request("/wellness/check", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+  getMyWellnessChecks(days?: number) {
+    const query = days ? `?days=${days}` : "";
+    return request(`/wellness/student/my-checks${query}`);
+  },
+  // Match Selection endpoints
+  getMyMatchSelections() {
+    return request("/match-selection/student/my-selections");
+  },
+  // Progress Roadmap endpoints
+  getMyProgressRoadmap() {
+    return request("/progress-roadmap/student/my-roadmap");
+  },
   // Admin - Center management
+  // Public: Get active centres for homepage map
+  getPublicCentres() {
+    return request("/centers/public");
+  },
+  // Authenticated: Get centres (admin/coach)
   getCenters() {
     return request("/centers");
   },
@@ -131,6 +168,30 @@ export const api = {
   },
   createCenter(data: any) {
     return request("/centers", {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+  },
+  updateCenter(id: number, data: any) {
+    return request(`/centers/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data)
+    });
+  },
+  deleteCenter(id: number) {
+    return request(`/centers/${id}`, {
+      method: "DELETE"
+    });
+  },
+  // Centre Metrics
+  getCentreMetrics(centreId: number, params?: { from?: string; to?: string }) {
+    const query = new URLSearchParams();
+    if (params?.from) query.set("from", params.from);
+    if (params?.to) query.set("to", params.to);
+    return request(`/centers/${centreId}/metrics?${query.toString()}`);
+  },
+  saveCentreMetrics(centreId: number, data: any) {
+    return request(`/centers/${centreId}/metrics`, {
       method: "POST",
       body: JSON.stringify(data)
     });
@@ -151,6 +212,12 @@ export const api = {
   // Coach management
   getCoaches() {
     return request("/coaches");
+  },
+  createCoach(data: { fullName: string; email: string; password: string; phoneNumber?: string; centerIds?: number[] }) {
+    return request("/coaches", {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
   },
   // System date management
   getSystemDate() {
@@ -414,6 +481,245 @@ export const api = {
   },
   checkVoted(sessionId: number) {
     return request(`/leaderboard/session/${sessionId}/voted`);
-  }
+  },
+  // Website Leads endpoints
+  createWebsiteLead(data: {
+    playerName: string;
+    playerDob?: string | null;
+    ageBracket?: string | null;
+    guardianName: string;
+    phone: string;
+    email: string;
+    preferredCentre: string;
+    programmeInterest: string;
+    playingPosition?: string | null;
+    currentLevel: string;
+    heardFrom: string;
+    notes?: string | null;
+  }) {
+    return request("/leads", {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+  },
+  getLeads(params?: { status?: string; centre?: string; programme?: string; fromDate?: string; toDate?: string }) {
+    const query = new URLSearchParams();
+    if (params?.status) query.set("status", params.status);
+    if (params?.centre) query.set("centre", params.centre);
+    if (params?.programme) query.set("programme", params.programme);
+    if (params?.fromDate) query.set("fromDate", params.fromDate);
+    if (params?.toDate) query.set("toDate", params.toDate);
+    return request(`/leads?${query.toString()}`);
+  },
+  getLead(id: number) {
+    return request(`/leads/${id}`);
+  },
+  updateLead(id: number, data: {
+    status?: string;
+    assignedTo?: number | null;
+    internalNotes?: string | null;
+  }) {
+    return request(`/leads/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data)
+    });
+  },
+  convertLeadToPlayer(leadId: number) {
+    return request(`/leads/${leadId}/convert`, {
+      method: "POST"
+    });
+  },
+  // Shop endpoints
+  getProducts() {
+    return request("/shop/products");
+  },
+  getProduct(slug: string) {
+    return request(`/shop/products/${slug}`);
+  },
+  createOrder(data: {
+    items: Array<{ productId: number; quantity: number; variant?: string; size?: string }>;
+    customerName: string;
+    phone: string;
+    email: string;
+    shippingAddress: any;
+  }) {
+    return request("/shop/orders/create", {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+  },
+  verifyPayment(orderId: number, data: { paymentId: string; signature: string; razorpayOrderId: string }) {
+    return request(`/shop/orders/${orderId}/verify`, {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+  },
+  getOrder(orderNumber: string) {
+    return request(`/shop/orders/${orderNumber}`);
+  },
+  // Admin merchandise endpoints
+  getAdminProducts(params?: { category?: string; search?: string }) {
+    const query = new URLSearchParams();
+    if (params?.category) query.set("category", params.category);
+    if (params?.search) query.set("search", params.search);
+    return request(`/admin/merch?${query.toString()}`);
+  },
+  getAdminProduct(id: number) {
+    return request(`/admin/merch/${id}`);
+  },
+  createProduct(data: {
+    name: string;
+    slug: string;
+    description?: string;
+    images: string[];
+    price: number;
+    currency?: string;
+    sizes?: string[];
+    variants?: any;
+    stock?: number | null;
+    category?: string;
+    tags?: string[];
+    displayOrder?: number;
+    isActive?: boolean;
+  }) {
+    return request("/admin/merch", {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+  },
+  updateProduct(id: number, data: {
+    name?: string;
+    slug?: string;
+    description?: string;
+    images?: string[];
+    price?: number;
+    currency?: string;
+    sizes?: string[];
+    variants?: any;
+    stock?: number | null;
+    category?: string;
+    tags?: string[];
+    displayOrder?: number;
+    isActive?: boolean;
+  }) {
+    return request(`/admin/merch/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data)
+    });
+  },
+  deleteProduct(id: number) {
+    return request(`/admin/merch/${id}`, {
+      method: "DELETE"
+    });
+  },
+  getProductCategories() {
+    return request("/admin/merch/categories");
+  },
+
+  // Analytics APIs
+  // Admin Analytics
+  getAdminAnalyticsSummary(params?: { centerId?: string; startDate?: string; endDate?: string }) {
+    const query = new URLSearchParams();
+    if (params?.centerId) query.append("centerId", params.centerId);
+    if (params?.startDate) query.append("startDate", params.startDate);
+    if (params?.endDate) query.append("endDate", params.endDate);
+    return request(`/analytics/admin/summary?${query.toString()}`);
+  },
+  getAdminAttendanceAnalytics(params?: { centerId?: string; groupBy?: "week" | "month" }) {
+    const query = new URLSearchParams();
+    if (params?.centerId) query.append("centerId", params.centerId);
+    if (params?.groupBy) query.append("groupBy", params.groupBy);
+    return request(`/analytics/admin/attendance?${query.toString()}`);
+  },
+  getAdminAttendanceByCentre() {
+    return request("/analytics/admin/attendance-by-centre");
+  },
+  getAdminPipeline() {
+    return request("/analytics/admin/pipeline");
+  },
+  getAdminFinance(params?: { months?: string }) {
+    const query = new URLSearchParams();
+    if (params?.months) query.append("months", params.months);
+    return request(`/analytics/admin/finance?${query.toString()}`);
+  },
+  getAdminSessions(params?: { centerId?: string }) {
+    const query = new URLSearchParams();
+    if (params?.centerId) query.append("centerId", params.centerId);
+    return request(`/analytics/admin/sessions?${query.toString()}`);
+  },
+  getAdminMatches() {
+    return request("/analytics/admin/matches");
+  },
+
+  // Coach Analytics
+  getCoachAnalyticsSummary() {
+    return request("/analytics/coach/summary");
+  },
+  getCoachPlayerEngagement() {
+    return request("/analytics/coach/player-engagement");
+  },
+  getCoachWellness() {
+    return request("/analytics/coach/wellness");
+  },
+  getCoachFeedbackQueue() {
+    return request("/analytics/coach/feedback-queue");
+  },
+
+  // Player Analytics
+  getPlayerAnalyticsSummary() {
+    return request("/analytics/player/summary");
+  },
+  getPlayerAttendance() {
+    return request("/analytics/player/attendance");
+  },
+  getPlayerWellness(params?: { weeks?: string }) {
+    const query = new URLSearchParams();
+    if (params?.weeks) query.append("weeks", params.weeks);
+    return request(`/analytics/player/wellness?${query.toString()}`);
+  },
+  getPlayerMatches() {
+    return request("/analytics/player/matches");
+  },
+  getPlayerProgress() {
+    return request("/analytics/player/progress");
+  },
+  // New Analytics Endpoints
+  getAnalyticsOverview(params?: { from?: string; to?: string }) {
+    const query = new URLSearchParams();
+    if (params?.from) query.set("from", params.from);
+    if (params?.to) query.set("to", params.to);
+    return request(`/analytics/overview?${query.toString()}`);
+  },
+  getAnalyticsCentres(params?: { from?: string; to?: string }) {
+    const query = new URLSearchParams();
+    if (params?.from) query.set("from", params.from);
+    if (params?.to) query.set("to", params.to);
+    return request(`/analytics/centres?${query.toString()}`);
+  },
+  getCentreAnalytics(centreId: number, params?: { from?: string; to?: string }) {
+    const query = new URLSearchParams();
+    if (params?.from) query.set("from", params.from);
+    if (params?.to) query.set("to", params.to);
+    return request(`/analytics/centres/${centreId}?${query.toString()}`);
+  },
+  getCentreAttendanceBreakdown(centreId: number, params?: { from?: string; to?: string; groupBy?: string }) {
+    const query = new URLSearchParams();
+    if (params?.from) query.set("from", params.from);
+    if (params?.to) query.set("to", params.to);
+    if (params?.groupBy) query.set("groupBy", params.groupBy);
+    return request(`/analytics/centres/${centreId}/attendance-breakdown?${query.toString()}`);
+  },
+  getCentrePaymentsBreakdown(centreId: number, params?: { from?: string; to?: string }) {
+    const query = new URLSearchParams();
+    if (params?.from) query.set("from", params.from);
+    if (params?.to) query.set("to", params.to);
+    return request(`/analytics/centres/${centreId}/payments-breakdown?${query.toString()}`);
+  },
+  getCentreTrialsBreakdown(centreId: number, params?: { from?: string; to?: string }) {
+    const query = new URLSearchParams();
+    if (params?.from) query.set("from", params.from);
+    if (params?.to) query.set("to", params.to);
+    return request(`/analytics/centres/${centreId}/trials-breakdown?${query.toString()}`);
+  },
 };
 

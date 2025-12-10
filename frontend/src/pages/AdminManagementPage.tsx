@@ -326,10 +326,13 @@ const AdminManagementPage: React.FC = () => {
                       placeholder="e.g., Andheri West"
                       style={{
                         width: "100%",
-                        padding: "12px 16px",
-                        border: "2px solid #e0e0e0",
+                        padding: "16px 20px", // Increased padding: 16px vertical, 20px horizontal
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: 8,
-                        fontSize: 14
+                        fontSize: 16,
+                        background: "#141F3A",
+                        color: "#FFFFFF",
+                        boxSizing: 'border-box',
                       }}
                     />
                   </div>
@@ -341,10 +344,13 @@ const AdminManagementPage: React.FC = () => {
                       placeholder="e.g., Mumbai"
                       style={{
                         width: "100%",
-                        padding: "12px 16px",
-                        border: "2px solid #e0e0e0",
+                        padding: "16px 20px", // Increased padding: 16px vertical, 20px horizontal
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: 8,
-                        fontSize: 14
+                        fontSize: 16,
+                        background: "#141F3A",
+                        color: "#FFFFFF",
+                        boxSizing: 'border-box',
                       }}
                     />
                   </div>
@@ -472,10 +478,13 @@ const AdminManagementPage: React.FC = () => {
                       placeholder="Student's full name"
                       style={{
                         width: "100%",
-                        padding: "12px 16px",
-                        border: "2px solid #e0e0e0",
+                        padding: "16px 20px", // Increased padding: 16px vertical, 20px horizontal
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: 8,
-                        fontSize: 14
+                        fontSize: 16,
+                        background: "#141F3A",
+                        color: "#FFFFFF",
+                        boxSizing: 'border-box',
                       }}
                     />
                   </div>
@@ -487,10 +496,13 @@ const AdminManagementPage: React.FC = () => {
                       onChange={(e) => setStudentForm({ ...studentForm, dateOfBirth: e.target.value })}
                       style={{
                         width: "100%",
-                        padding: "12px 16px",
-                        border: "2px solid #e0e0e0",
+                        padding: "16px 20px", // Increased padding: 16px vertical, 20px horizontal
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: 8,
-                        fontSize: 14
+                        fontSize: 16,
+                        background: "#141F3A",
+                        color: "#FFFFFF",
+                        boxSizing: 'border-box',
                       }}
                     />
                   </div>
@@ -505,10 +517,13 @@ const AdminManagementPage: React.FC = () => {
                       placeholder="Student's phone"
                       style={{
                         width: "100%",
-                        padding: "12px 16px",
-                        border: "2px solid #e0e0e0",
+                        padding: "16px 20px", // Increased padding: 16px vertical, 20px horizontal
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: 8,
-                        fontSize: 14
+                        fontSize: 16,
+                        background: "#141F3A",
+                        color: "#FFFFFF",
+                        boxSizing: 'border-box',
                       }}
                     />
                   </div>
@@ -521,10 +536,13 @@ const AdminManagementPage: React.FC = () => {
                       placeholder="student@example.com"
                       style={{
                         width: "100%",
-                        padding: "12px 16px",
-                        border: "2px solid #e0e0e0",
+                        padding: "16px 20px", // Increased padding: 16px vertical, 20px horizontal
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: 8,
-                        fontSize: 14
+                        fontSize: 16,
+                        background: "#141F3A",
+                        color: "#FFFFFF",
+                        boxSizing: 'border-box',
                       }}
                     />
                   </div>
@@ -540,10 +558,13 @@ const AdminManagementPage: React.FC = () => {
                       placeholder="Optional - for student portal access"
                       style={{
                         width: "100%",
-                        padding: "12px 16px",
-                        border: "2px solid #e0e0e0",
+                        padding: "16px 20px", // Increased padding: 16px vertical, 20px horizontal
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: 8,
-                        fontSize: 14
+                        fontSize: 16,
+                        background: "#141F3A",
+                        color: "#FFFFFF",
+                        boxSizing: 'border-box',
                       }}
                     />
                   </div>
@@ -561,10 +582,13 @@ const AdminManagementPage: React.FC = () => {
                       placeholder="Parent/Guardian name"
                       style={{
                         width: "100%",
-                        padding: "12px 16px",
-                        border: "2px solid #e0e0e0",
+                        padding: "16px 20px", // Increased padding: 16px vertical, 20px horizontal
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: 8,
-                        fontSize: 14
+                        fontSize: 16,
+                        background: "#141F3A",
+                        color: "#FFFFFF",
+                        boxSizing: 'border-box',
                       }}
                     />
                   </div>
@@ -576,10 +600,13 @@ const AdminManagementPage: React.FC = () => {
                       placeholder="Parent's phone"
                       style={{
                         width: "100%",
-                        padding: "12px 16px",
-                        border: "2px solid #e0e0e0",
+                        padding: "16px 20px", // Increased padding: 16px vertical, 20px horizontal
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: 8,
-                        fontSize: 14
+                        fontSize: 16,
+                        background: "#141F3A",
+                        color: "#FFFFFF",
+                        boxSizing: 'border-box',
                       }}
                     />
                   </div>
@@ -594,10 +621,13 @@ const AdminManagementPage: React.FC = () => {
                       onChange={(e) => setStudentForm({ ...studentForm, centerId: e.target.value })}
                       style={{
                         width: "100%",
-                        padding: "12px 16px",
-                        border: "2px solid #e0e0e0",
+                        padding: "16px 20px", // Increased padding: 16px vertical, 20px horizontal
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: 8,
-                        fontSize: 14
+                        fontSize: 16,
+                        background: "#141F3A",
+                        color: "#FFFFFF",
+                        boxSizing: 'border-box',
                       }}
                     >
                       <option value="">Select Academy</option>
@@ -615,10 +645,13 @@ const AdminManagementPage: React.FC = () => {
                       onChange={(e) => setStudentForm({ ...studentForm, programType: e.target.value })}
                       style={{
                         width: "100%",
-                        padding: "12px 16px",
-                        border: "2px solid #e0e0e0",
+                        padding: "16px 20px", // Increased padding: 16px vertical, 20px horizontal
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: 8,
-                        fontSize: 14
+                        fontSize: 16,
+                        background: "#141F3A",
+                        color: "#FFFFFF",
+                        boxSizing: 'border-box',
                       }}
                     >
                       <option value="">Select Program</option>
@@ -637,10 +670,13 @@ const AdminManagementPage: React.FC = () => {
                       onChange={(e) => setStudentForm({ ...studentForm, joiningDate: e.target.value })}
                       style={{
                         width: "100%",
-                        padding: "12px 16px",
-                        border: "2px solid #e0e0e0",
+                        padding: "16px 20px", // Increased padding: 16px vertical, 20px horizontal
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: 8,
-                        fontSize: 14
+                        fontSize: 16,
+                        background: "#141F3A",
+                        color: "#FFFFFF",
+                        boxSizing: 'border-box',
                       }}
                     />
                   </div>
@@ -657,10 +693,13 @@ const AdminManagementPage: React.FC = () => {
                       placeholder="e.g., 5000"
                       style={{
                         width: "100%",
-                        padding: "12px 16px",
-                        border: "2px solid #e0e0e0",
+                        padding: "16px 20px", // Increased padding: 16px vertical, 20px horizontal
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: 8,
-                        fontSize: 14
+                        fontSize: 16,
+                        background: "#141F3A",
+                        color: "#FFFFFF",
+                        boxSizing: 'border-box',
                       }}
                     />
                   </div>
@@ -672,10 +711,13 @@ const AdminManagementPage: React.FC = () => {
                       onChange={(e) => setStudentForm({ ...studentForm, paymentFrequency: e.target.value })}
                       style={{
                         width: "100%",
-                        padding: "12px 16px",
-                        border: "2px solid #e0e0e0",
+                        padding: "16px 20px", // Increased padding: 16px vertical, 20px horizontal
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: 8,
-                        fontSize: 14
+                        fontSize: 16,
+                        background: "#141F3A",
+                        color: "#FFFFFF",
+                        boxSizing: 'border-box',
                       }}
                     >
                       <option value="1">Monthly (1 month)</option>
@@ -700,10 +742,13 @@ const AdminManagementPage: React.FC = () => {
                       onChange={(e) => setStudentForm({ ...studentForm, status: e.target.value })}
                       style={{
                         width: "100%",
-                        padding: "12px 16px",
-                        border: "2px solid #e0e0e0",
+                        padding: "16px 20px", // Increased padding: 16px vertical, 20px horizontal
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: 8,
-                        fontSize: 14
+                        fontSize: 16,
+                        background: "#141F3A",
+                        color: "#FFFFFF",
+                        boxSizing: 'border-box',
                       }}
                     >
                       <option value="ACTIVE">Active</option>

@@ -10,7 +10,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
     "prisma:seed": "ts-node prisma/seed-clean.ts",
-    "prisma:seed:full": "ts-node prisma/seed.ts"
+    "prisma:seed:full": "ts-node prisma/seed.ts",
+    "prisma:seed:analytics": "ts-node prisma/seed-analytics.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",

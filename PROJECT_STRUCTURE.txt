@@ -1,0 +1,561 @@
+FC REAL BENGALURU - REALVERSE PROJECT STRUCTURE
+================================================
+Generated: 2025-01-09
+Last Updated: 2025-01-09 (Added Brochure System)
+
+fcrb-feestracker/
+│
+├── 📄 ROOT DOCUMENTATION
+│   ├── README.md                          # Main project documentation
+│   ├── WINDOWS_SETUP.md                   # Windows setup instructions
+│   ├── GITHUB_CHECKLIST.md               # Git push checklist
+│   ├── DEPLOYMENT_GUIDE.md                # Deployment instructions
+│   ├── RENDER_DEPLOY.md                   # Render.com deployment guide
+│   ├── RAILWAY_DEPLOY.md                  # Railway.app deployment guide
+│   ├── DIRECTORY_STRUCTURE.txt            # Legacy directory structure
+│   ├── CENTRES_MIGRATION_GUIDE.md         # Centres migration guide
+│   ├── FIX_DATABASE_ERRORS.md              # Database error fixes
+│   ├── MIGRATION_INSTRUCTIONS.md          # Migration instructions
+│   ├── MERCHANDISE_IMPLEMENTATION.md      # Shop implementation docs
+│   ├── REALVERSE_UI_REDESIGN.md           # UI redesign documentation
+│   ├── UNIFIED_THEME_REFACTOR.md          # Theme refactor docs
+│   ├── UI_IMPROVEMENTS_SUMMARY.md         # UI improvements summary
+│   ├── render.yaml                        # Render.com config
+│   └── railway.json                       # Railway.app config
+│
+├── 🔧 ROOT SCRIPTS
+│   ├── apply-updates.sh                   # Update script
+│   ├── reset-clean.sh                     # Reset script
+│   ├── reset-system-date.sh               # Reset system date
+│   ├── restart-servers.sh                 # Restart servers
+│   ├── setup-macos.sh                     # macOS setup
+│   ├── update-for-students.sh             # Student update script
+│   ├── INSTALL_AND_RUN.sh                 # Install and run script
+│   ├── START_BACKEND.sh                    # Start backend script
+│   ├── START_FRONTEND.sh                  # Start frontend script
+│   ├── LAUNCH_COMMANDS.txt                # Launch commands reference
+│   └── RESET_DATE_COMMAND.txt             # Reset date command
+│
+├── 📁 ASSETS
+│   └── assets/
+│       ├── web-logo-header (2).png        # FC Real Bengaluru logo
+│       ├── photo1.png                      # Hero image 1
+│       ├── photo2.png                     # Hero image 2
+│       ├── photo3.png                     # Hero image 3
+│       ├── FCRB kids' .mp4                 # Video asset
+│       └── DSC*.ARW                        # Raw photo files (56 files)
+│
+├── 🧪 QA & TESTING
+│   └── __qa__/
+│       ├── qa-summary.md                  # QA summary
+│       └── test-data/
+│           └── edge-cases.json            # Edge case test data
+│
+├── 🖥️  BACKEND (Node.js + Express + TypeScript + Prisma)
+│   └── backend/
+│       │
+│       ├── 📦 CONFIGURATION
+│       │   ├── package.json               # Dependencies & scripts
+│       │   ├── package-lock.json          # Lock file
+│       │   ├── tsconfig.json              # TypeScript config
+│       │   ├── run-migration.sh          # Migration script (Unix)
+│       │   └── run-migration.bat          # Migration script (Windows)
+│       │
+│       ├── 🗄️  DATABASE (Prisma)
+│       │   └── prisma/
+│       │       ├── schema.prisma          # Database schema (all models)
+│       │       ├── seed.ts                # Full seed script
+│       │       ├── seed-clean.ts          # Clean seed script
+│       │       ├── seed-simple.ts         # Simple seed script
+│       │       ├── seed-centres.ts        # Centres seed script
+│       │       ├── migrate-students-to-3lok.ts  # Student migration script
+│       │       └── migrations/
+│       │           ├── 20251128080518_initial/
+│       │           │   └── migration.sql
+│       │           ├── 20251207121708_add_attendance_tracker/
+│       │           │   └── migration.sql
+│       │           ├── 20251207142908_add_fixtures/
+│       │           │   └── migration.sql
+│       │           ├── 20251207191153_add_videos_table/
+│       │           │   └── migration.sql
+│       │           ├── 20251207192131_add_posts_and_comments/
+│       │           │   └── migration.sql
+│       │           ├── 20251207193816_add_leaderboard_voting_system/
+│       │           │   └── migration.sql
+│       │           ├── 20251209225649_add_leads_and_shop/
+│       │           │   └── migration.sql
+│       │           └── migration_lock.toml
+│       │
+│       ├── 💻 SOURCE CODE
+│       │   └── src/
+│       │       │
+│       │       ├── 🔧 CORE FILES
+│       │       │   ├── index.ts           # Express app entry point
+│       │       │   └── config.ts          # Configuration loader
+│       │       │
+│       │       ├── 🔐 AUTHENTICATION
+│       │       │   ├── auth/
+│       │       │   │   ├── auth.middleware.ts    # Auth middleware
+│       │       │   │   └── auth.routes.ts         # Auth routes (login, register)
+│       │       │
+│       │       ├── 📝 TYPE DEFINITIONS
+│       │       │   └── types/
+│       │       │       └── express.d.ts   # Express type extensions
+│       │       │
+│       │       ├── 🛠️  UTILITIES
+│       │       │   └── utils/
+│       │       │       ├── system-date.ts         # System date utility
+│       │       │       └── sync-coach-centers.ts  # Coach-center sync
+│       │       │
+│       │       └── 📦 MODULES (Feature Routes)
+│       │           ├── admin/
+│       │           │   └── admin.routes.ts        # Admin merchandise CRUD
+│       │           ├── attendance/
+│       │           │   └── attendance.routes.ts   # Attendance management
+│       │           ├── centers/
+│       │           │   └── centers.routes.ts     # Centres CRUD + public API
+│       │           ├── coaches/
+│       │           │   └── coaches.routes.ts      # Coach management
+│       │           ├── dashboard/
+│       │           │   └── dashboard.routes.ts   # Dashboard analytics
+│       │           ├── fixtures/
+│       │           │   └── fixtures.routes.ts    # Fixtures management
+│       │           ├── leaderboard/
+│       │           │   └── leaderboard.routes.ts # Leaderboard & stats
+│       │           ├── leads/
+│       │           │   └── leads.routes.ts       # Website leads management
+│       │           ├── payments/
+│       │           │   └── payments.routes.ts     # Payment tracking
+│       │           ├── posts/
+│       │           │   ├── posts.routes.ts       # Social feed posts
+│       │           │   └── comments.routes.ts    # Post comments
+│       │           ├── shop/
+│       │           │   ├── shop.routes.ts        # Public shop API
+│       │           │   └── seed-products.ts      # Product seed script
+│       │           ├── students/
+│       │           │   ├── students.routes.ts            # Student CRUD
+│       │           │   └── student-dashboard.routes.ts    # Student dashboard API
+│       │           ├── system/
+│       │           │   └── system.routes.ts      # System date management
+│       │           └── videos/
+│       │               └── videos.routes.ts      # Drills & tutorials
+│       │
+│       └── 📦 BUILD OUTPUT
+│           └── dist/                      # Compiled JavaScript (generated)
+│
+├── 🎨 FRONTEND (React + TypeScript + Vite)
+│   └── frontend/
+│       │
+│       ├── 📦 CONFIGURATION
+│       │   ├── package.json               # Dependencies & scripts
+│       │   ├── package-lock.json          # Lock file
+│       │   ├── tsconfig.json              # TypeScript config
+│       │   ├── vite.config.ts             # Vite build config
+│       │   └── index.html                 # HTML entry point
+│       │
+│       ├── 🖼️  PUBLIC ASSETS
+│       │   └── public/
+│       │       ├── fcrb-logo.png          # FC Real Bengaluru logo
+│       │       ├── fcrb-video.mp4         # Hero video
+│       │       ├── photo1.png             # Hero image 1
+│       │       ├── photo2.png             # Hero image 2
+│       │       └── photo3.png             # Hero image 3
+│       │
+│       ├── 💻 SOURCE CODE
+│       │   └── src/
+│       │       │
+│       │       ├── 🔧 CORE FILES
+│       │       │   ├── main.tsx           # React entry point
+│       │       │   └── App.tsx            # Routing configuration
+│       │       │
+│       │       ├── 🌐 API CLIENT
+│       │       │   └── api/
+│       │       │       └── client.ts      # Centralized API wrapper
+│       │       │
+│       │       ├── 🔄 STATE MANAGEMENT
+│       │       │   └── context/
+│       │       │       ├── AuthContext.tsx        # Authentication state
+│       │       │       └── CartContext.tsx        # Shopping cart state
+│       │       │
+│       │       ├── 🎨 THEME & STYLING
+│       │       │   ├── theme/
+│       │       │   │   ├── design-tokens.ts       # Design tokens (colors, spacing, etc.)
+│       │       │   │   └── theme-provider.tsx     # Theme provider component
+│       │       │   ├── styles/
+│       │       │   │   ├── animations.css        # CSS animations
+│       │       │   │   ├── RealVerseTheme.css    # RealVerse theme styles
+│       │       │   │   └── design-system.ts      # Design system utilities
+│       │       │   └── index.css                 # Global styles
+│       │       │
+│       │       ├── 🧩 REUSABLE COMPONENTS
+│       │       │   └── components/
+│       │       │       ├── AppShell.tsx           # RealVerse app shell (sidebar, nav)
+│       │       │       ├── Layout.tsx             # Layout wrapper
+│       │       │       ├── PublicHeader.tsx       # Public site header
+│       │       │       ├── HeroSection.tsx       # Hero section component
+│       │       │       ├── OurCentresSection.tsx # Centres map section
+│       │       │       ├── SystemDateSetter.tsx  # System date setter (admin)
+│       │       │       └── ui/                   # UI component library
+│       │       │           ├── Animations.tsx     # Animation components
+│       │       │           ├── Badge.tsx          # Badge component
+│       │       │           ├── Button.tsx         # Button component
+│       │       │           ├── Card.tsx           # Card component
+│       │       │           ├── Input.tsx          # Input component
+│       │       │           ├── KPICard.tsx        # KPI card component
+│       │       │           ├── PageHeader.tsx     # Page header component
+│       │       │           ├── ProgressBar.tsx    # Progress bar component
+│       │       │           ├── SpaceBackground.tsx # Space background component
+│       │       │           ├── StatusChip.tsx     # Status chip component
+│       │       │           └── Table.tsx          # Table component
+│       │       │
+│       │       ├── 📄 PAGES
+│       │       │   └── pages/
+│       │       │       │
+│       │       │       ├── 🌐 PUBLIC PAGES
+│       │       │       │   ├── LandingPage.tsx           # Homepage / landing page
+│       │       │       │   ├── BrochurePage.tsx          # Club brochure page (PDF-ready)
+│       │       │       │   ├── RealVerseJoinPage.tsx    # RealVerse entry page
+│       │       │       │   ├── ShopPage.tsx              # Shop listing page
+│       │       │       │   ├── ProductDetailPage.tsx     # Product detail page
+│       │       │       │   ├── CartPage.tsx              # Shopping cart page
+│       │       │       │   ├── CheckoutPage.tsx          # Checkout page
+│       │       │       │   └── OrderConfirmationPage.tsx # Order confirmation
+│       │       │       │
+│       │       │       ├── 🔐 AUTHENTICATION
+│       │       │       │   └── LoginPage.tsx             # RealVerse login page
+│       │       │       │
+│       │       │       ├── 📊 DASHBOARDS
+│       │       │       │   ├── EnhancedAdminDashboard.tsx    # Admin dashboard
+│       │       │       │   ├── EnhancedCoachDashboard.tsx    # Coach dashboard
+│       │       │       │   └── StudentDashboard.tsx         # Student dashboard
+│       │       │       │
+│       │       │       ├── 👥 USER MANAGEMENT
+│       │       │       │   ├── AdminManagementPage.tsx       # Admin user management
+│       │       │       │   ├── EnhancedStudentsPage.tsx      # Students list (admin/coach)
+│       │       │       │   ├── StudentDetailPage.tsx         # Student detail page
+│       │       │       │   └── StudentsPage.tsx             # Legacy students page
+│       │       │       │
+│       │       │       ├── 📍 CENTRES MANAGEMENT
+│       │       │       │   ├── CentresManagementPage.tsx     # Centres list (admin)
+│       │       │       │   ├── CentreFormPage.tsx            # Centre create/edit form
+│       │       │       │   └── CenterDetailPage.tsx          # Centre detail page
+│       │       │       │
+│       │       │       ├── 📅 ATTENDANCE
+│       │       │       │   ├── AttendanceManagementPage.tsx  # Attendance management (admin/coach)
+│       │       │       │   └── StudentAttendancePage.tsx     # Student attendance view
+│       │       │       │
+│       │       │       ├── ⚽ FIXTURES
+│       │       │       │   ├── FixturesManagementPage.tsx    # Fixtures management (admin/coach)
+│       │       │       │   └── StudentFixturesPage.tsx        # Student fixtures view
+│       │       │       │
+│       │       │       ├── 🎥 DRILLS & TUTORIALS
+│       │       │       │   ├── DrillsPage.tsx                # Drills listing (all users)
+│       │       │       │   └── DrillsManagementPage.tsx      # Drills management (admin/coach)
+│       │       │       │
+│       │       │       ├── 📸 SOCIAL FEED
+│       │       │       │   ├── FeedPage.tsx                  # Social feed (all users)
+│       │       │       │   ├── PostCreationPage.tsx          # Create post
+│       │       │       │   └── PostApprovalPage.tsx          # Approve posts (admin/coach)
+│       │       │       │
+│       │       │       ├── 🏆 LEADERBOARD & VOTING
+│       │       │       │   ├── LeaderboardPage.tsx           # Leaderboard (all users)
+│       │       │       │   └── VotingPage.tsx                # Voting page (all users)
+│       │       │       │
+│       │       │       ├── 🛍️  MERCHANDISE (ADMIN)
+│       │       │       │   ├── MerchandiseListPage.tsx       # Merchandise list
+│       │       │       │   └── MerchandiseFormPage.tsx       # Merchandise create/edit
+│       │       │       │
+│       │       │       ├── 📋 WEBSITE LEADS (ADMIN)
+│       │       │       │   └── WebsiteLeadsPage.tsx          # Website leads management
+│       │       │       │
+│       │       │       └── ❌ ERROR PAGES
+│       │       │           └── NotFound.tsx                  # 404 page
+│       │       │
+│       │       ├── 📊 DATA
+│       │       │   └── data/
+│       │       │       └── club.ts                           # Club data & placeholders
+│       │       │
+│       │       └── 🛠️  UTILITIES
+│       │           └── utils/
+│       │               └── motion.ts                         # Framer Motion utilities
+│       │
+│       └── 📝 DOCUMENTATION
+│           └── REALVERSE_UI_POLISH.md     # UI polish documentation
+
+
+DATABASE MODELS (Prisma Schema)
+================================
+Located in: backend/prisma/schema.prisma
+
+1. Center
+   - Core fields: id, name, shortName, addressLine, locality, city, state, postalCode
+   - Map fields: latitude, longitude, googleMapsUrl
+   - UI fields: isActive, displayOrder
+   - Legacy fields: location, address (for backward compatibility)
+   - Relations: students, coachLinks, payments, sessions, fixtures, posts, votes, studentStats
+
+2. Coach
+   - Fields: id, fullName, email, passwordHash, role, createdAt, updatedAt
+   - Relations: centers, sessions, fixtures, videos
+
+3. CoachCenter
+   - Fields: id, coachId, centerId
+   - Relations: coach, center
+
+4. Student
+   - Fields: id, fullName, dateOfBirth, phoneNumber, parentName, parentPhoneNumber
+   - Auth: email, passwordHash
+   - Centre: centerId
+   - Fees: monthlyFeeAmount, paymentFrequency
+   - Status: status (ACTIVE, INACTIVE, TRIAL)
+   - Relations: center, payments, attendance, fixturePlayers, stats
+
+5. Payment
+   - Fields: id, studentId, centerId, amount, paymentDate, paymentMode
+   - Reference: upiOrTxnReference, notes
+   - Relations: student, center
+
+6. Session
+   - Fields: id, centerId, coachId, sessionDate, startTime, endTime, notes
+   - Relations: center, coach, attendance, votes
+
+7. Attendance
+   - Fields: id, sessionId, studentId, status (PRESENT, ABSENT, EXCUSED), notes
+   - Relations: session, student
+
+8. Fixture
+   - Fields: id, centerId, coachId, matchType, opponent, matchDate, matchTime, venue
+   - Status: status (UPCOMING, ONGOING, COMPLETED, CANCELLED, POSTPONED)
+   - Relations: center, coach, players
+
+9. FixturePlayer
+   - Fields: id, fixtureId, studentId, position, role, notes
+   - Relations: fixture, student
+
+10. Video
+    - Fields: id, title, description, videoUrl, platform, category, thumbnailUrl
+    - Relations: creator (coach)
+
+11. Post
+    - Fields: id, title, description, mediaType, mediaUrl, platform, centerId
+    - Approval: approvalStatus, approvedById, approvedAt
+    - Relations: center, comments
+
+12. Comment
+    - Fields: id, postId, content, createdByRole, createdById
+    - Relations: post
+
+13. Vote
+    - Fields: id, sessionId, voterRole, voterId, votedForId, points, centerId
+    - Relations: session, center
+
+14. StudentStats
+    - Fields: id, studentId, centerId, totalPoints, studentVotes, coachVotes
+    - Streaks: currentStreak, longestStreak
+    - Periods: weeklyPoints, monthlyPoints, lastVotedAt
+    - Relations: student, center, badges
+
+15. Badge
+    - Fields: id, studentStatsId, badgeType, earnedAt
+    - Relations: studentStats
+
+16. WebsiteLead
+    - Fields: id, source, playerName, playerDob, ageBracket, guardianName, phone, email
+    - Centre: preferredCentre, programmeInterest, playingPosition, currentLevel
+    - Status: status (NEW, CONTACTED, CONVERTED, LOST)
+    - Relations: assignedTo, convertedPlayerId
+
+17. Product
+    - Fields: id, name, slug, description, images, price, currency, sizes, variants
+    - Stock: stock, isActive
+    - UI: category, tags, displayOrder
+    - Relations: orderItems
+
+18. Order
+    - Fields: id, orderNumber, subtotal, shippingFee, total
+    - Customer: customerName, phone, email, shippingAddress
+    - Payment: status, paymentProvider, paymentReference, paymentData
+    - Relations: items
+
+19. OrderItem
+    - Fields: id, orderId, productId, productName, variant, size, quantity
+    - Pricing: unitPrice, totalPrice
+    - Relations: order, product
+
+
+API ENDPOINTS
+=============
+Backend Base URL: http://localhost:4000 (or configured VITE_API_URL)
+
+AUTHENTICATION
+  POST   /auth/login              # Login
+  POST   /auth/register           # Register (if enabled)
+
+PUBLIC ENDPOINTS (No Auth Required)
+  GET    /centers/public          # Get active centres for homepage map
+  GET    /shop/products           # Get active products
+  GET    /shop/products/:slug     # Get product by slug
+  POST   /leads                   # Create website lead
+
+AUTHENTICATED ENDPOINTS (Auth Required)
+  GET    /centers                 # Get centres (admin: all, coach: assigned)
+  POST   /centers                 # Create centre (admin only)
+  PUT    /centers/:id             # Update centre (admin only)
+  DELETE /centers/:id             # Delete centre (admin only)
+  GET    /centers/:id             # Get centre details (admin only)
+
+  GET    /students                # Get students (admin/coach)
+  POST   /students                # Create student (admin only)
+  PUT    /students/:id            # Update student (admin only)
+  DELETE /students/:id            # Delete student (admin only)
+  GET    /students/:id            # Get student details
+
+  GET    /attendance              # Get attendance records
+  POST   /attendance              # Create attendance record
+  PUT    /attendance/:id          # Update attendance record
+
+  GET    /fixtures                # Get fixtures
+  POST   /fixtures                # Create fixture
+  PUT    /fixtures/:id            # Update fixture
+  DELETE /fixtures/:id            # Delete fixture
+
+  GET    /videos                  # Get videos/drills
+  POST   /videos                  # Create video (admin/coach)
+  PUT    /videos/:id              # Update video (admin/coach)
+  DELETE /videos/:id              # Delete video (admin/coach)
+
+  GET    /posts                   # Get posts
+  POST   /posts                   # Create post
+  PUT    /posts/:id               # Update post
+  DELETE /posts/:id               # Delete post
+  POST   /posts/:id/approve       # Approve post (admin/coach)
+
+  GET    /leaderboard             # Get leaderboard
+  POST   /votes                   # Submit vote
+
+  GET    /admin/leads             # Get website leads (admin only)
+  GET    /admin/leads/:id         # Get lead details (admin only)
+  PUT    /admin/leads/:id         # Update lead (admin only)
+  POST   /admin/leads/:id/convert # Convert lead to player (admin only)
+
+  GET    /admin/merch             # Get all products (admin only)
+  GET    /admin/merch/:id         # Get product details (admin only)
+  POST   /admin/merch             # Create product (admin only)
+  PUT    /admin/merch/:id         # Update product (admin only)
+  DELETE /admin/merch/:id         # Delete product (admin only)
+  PUT    /admin/merch/:id/toggle-active # Toggle product active status (admin only)
+
+  POST   /shop/orders/create      # Create order (public, but requires cart)
+  POST   /shop/orders/:orderId/verify # Verify payment (public)
+  GET    /shop/orders/:orderNumber # Get order details (public)
+
+  GET    /dashboard               # Get dashboard summary (admin/coach)
+  GET    /student/dashboard       # Get student dashboard data
+  GET    /student/profile         # Get student profile
+  GET    /student/attendance      # Get student attendance
+
+  GET    /system/date             # Get system date (admin only)
+  PUT    /system/date             # Set system date (admin only)
+
+
+FRONTEND ROUTES
+===============
+Base URL: http://localhost:5173 (Vite dev server)
+
+PUBLIC ROUTES
+  /                              # Landing page (homepage)
+  /brochure                      # Club brochure page (with PDF download)
+  /shop                          # Shop listing
+  /shop/:slug                    # Product detail page
+  /cart                          # Shopping cart
+  /checkout                      # Checkout page
+  /order-confirmation/:orderNumber # Order confirmation
+  /realverse/join                # RealVerse Academy entry page
+  /realverse/login               # RealVerse login page
+
+REALVERSE ROUTES (Auth Required)
+  /realverse                     # Dashboard (role-based redirect)
+  /realverse/students            # Students list (admin/coach)
+  /realverse/students/:id        # Student detail (admin/coach)
+  /realverse/attendance          # Attendance management (admin/coach)
+  /realverse/my-attendance       # My attendance (student)
+  /realverse/fixtures            # Fixtures management (admin/coach)
+  /realverse/my-fixtures         # My fixtures (student)
+  /realverse/drills              # Drills & tutorials (all users)
+  /realverse/drills/manage       # Manage videos (admin/coach)
+  /realverse/feed                # Social feed (all users)
+  /realverse/feed/approve        # Approve posts (admin/coach)
+  /realverse/leaderboard         # Leaderboard (all users)
+  /realverse/admin               # Admin dashboard
+  /realverse/admin/leads         # Website leads (admin)
+  /realverse/admin/merch         # Merchandise management (admin)
+  /realverse/admin/merch/new     # Create product (admin)
+  /realverse/admin/merch/:id/edit # Edit product (admin)
+  /realverse/admin/centres       # Centres management (admin)
+  /realverse/admin/centres/new   # Create centre (admin)
+  /realverse/admin/centres/:id/edit # Edit centre (admin)
+
+
+KEY FEATURES
+============
+✅ Public Landing Page with "Our Centres" map
+✅ Club Brochure System (12-section brochure with PDF export)
+✅ RealVerse Academy entry flow
+✅ Website Leads system
+✅ Shopping cart & checkout with Razorpay
+✅ Admin merchandise management
+✅ Admin centres management
+✅ Student/Coach/Admin dashboards
+✅ Attendance tracking
+✅ Fixtures management
+✅ Drills & tutorials
+✅ Social feed with approval workflow
+✅ Leaderboard & voting system
+✅ Payment tracking
+✅ System date setter (for testing)
+
+
+TECH STACK
+==========
+Backend:
+  - Node.js + Express.js
+  - TypeScript
+  - Prisma ORM
+  - PostgreSQL
+  - JWT Authentication
+  - bcryptjs
+
+Frontend:
+  - React 18
+  - TypeScript
+  - Vite
+  - React Router DOM
+  - Framer Motion
+  - Context API (Auth, Cart)
+  - jsPDF (PDF generation)
+  - html2canvas (PDF export)
+
+
+ENVIRONMENT VARIABLES
+=====================
+Backend (.env):
+  DATABASE_URL=postgresql://...
+  JWT_SECRET=...
+  PORT=4000
+  NODE_ENV=development|production
+
+Frontend (.env):
+  VITE_API_URL=http://localhost:4000
+
+
+NOTES
+=====
+- All RealVerse routes are under /realverse prefix
+- Public site routes are at root level (/)
+- Admin routes are under /realverse/admin
+- Centres data is now fully database-driven (no hardcoding)
+- Logo file: frontend/public/fcrb-logo.png
+- Migration required for full centres features: npx prisma migrate dev --name add_centre_fields
+- Brochure system: /brochure page with PDF export functionality (uses jsPDF + html2canvas)
+- Brochure CTA section added to homepage hero section
+

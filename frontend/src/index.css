@@ -62,6 +62,12 @@ h1, h2, h3, h4, h5, h6 {
   transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* Loading Spinner Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* Custom Scrollbar - Space Theme */
 ::-webkit-scrollbar {
   width: 10px;
@@ -87,6 +93,75 @@ h1, h2, h3, h4, h5, h6 {
   color: #FFFFFF;
 }
 
+/* Global Form Element Styling - Ensure visibility and proper padding */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="tel"],
+input[type="url"],
+select,
+textarea {
+  padding: 16px 20px !important; /* Minimum 16px vertical, 20px horizontal for proper spacing */
+  font-size: 16px !important;
+  font-family: 'Inter', sans-serif !important;
+  color: #FFFFFF !important;
+  background: #141F3A !important; /* Visible background */
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 8px !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  transition: all 0.2s ease !important;
+  line-height: 1.5 !important;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="datetime-local"]:focus,
+input[type="tel"]:focus,
+input[type="url"]:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--color-primary-blue) !important;
+  outline-offset: 2px !important;
+  border-color: var(--color-primary-blue) !important;
+  box-shadow: 0 0 0 3px rgba(4, 61, 208, 0.1) !important;
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+input[type="number"]::placeholder,
+input[type="tel"]::placeholder,
+input[type="url"]::placeholder,
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+  opacity: 1 !important;
+}
+
+select {
+  appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 16px center !important;
+  padding-right: 48px !important; /* Extra padding for dropdown arrow */
+  cursor: pointer !important;
+}
+
+/* Ensure labels have proper spacing */
+label {
+  display: block !important;
+  margin-bottom: 8px !important;
+  font-weight: 600 !important;
+  color: #FFFFFF !important;
+  font-size: 14px !important;
+}
+
 /* Focus States */
 button:focus,
 input:focus,
@@ -96,30 +171,34 @@ textarea:focus {
   outline-offset: 2px;
 }
 
-/* Logo white background removal - Optimized for circular FC Real Bengaluru logo */
+/* Logo styling - Full transparency, preserve original colors exactly */
 img[src="/fcrb-logo.png"],
 img[src*="fcrb-logo"] {
   background: transparent !important;
+  background-color: transparent !important;
+  /* Ensure no white backgrounds show through */
+  background-image: none !important;
 }
 
-/* Remove white background using screen blend mode for dark backgrounds */
+/* Transparent logo - display exactly as provided, no white backgrounds */
 .logo-transparent-dark {
-  mix-blend-mode: screen;
   background: transparent !important;
-  /* Enhance colors and remove white */
-  filter: brightness(1.3) contrast(1.2) saturate(1.1);
-  /* Ensure circular logos maintain aspect ratio */
+  background-color: transparent !important;
+  background-image: none !important;
   object-fit: contain;
-  border-radius: 50%;
+  /* No filters, no blend modes - display logo exactly as provided */
+  /* Preserve all original colors: royal blue, white, golden orange, light green */
+  /* Ensure PNG transparency is respected */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
-/* Additional filter to better remove white backgrounds */
-.logo-transparent-dark::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: transparent;
-  mix-blend-mode: screen;
+/* Ensure parent containers don't add white backgrounds */
+.logo-transparent-dark,
+.logo-transparent-dark::before,
+.logo-transparent-dark::after {
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 /* Glassmorphism Card Hover Effect */
@@ -152,6 +231,36 @@ img[src*="fcrb-logo"] {
 
   h1 {
     font-size: 1.875rem !important; /* 30px */
+  }
+}
+
+/* Responsive flex containers */
+@media (min-width: 768px) {
+  .responsive-flex-row {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+  
+  .responsive-flex-row > *:first-child {
+    max-width: 400px;
+  }
+  
+  .responsive-flex-row > *:last-child {
+    width: auto !important;
+  }
+  
+  .responsive-grid-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  .responsive-flex-row button {
+    width: auto !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .responsive-flex-row button {
+    width: 100% !important;
   }
 
   h2 {

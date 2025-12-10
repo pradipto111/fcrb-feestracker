@@ -15,6 +15,18 @@ import videosRoutes from "./modules/videos/videos.routes";
 import postsRoutes from "./modules/posts/posts.routes";
 import commentsRoutes from "./modules/posts/comments.routes";
 import leaderboardRoutes from "./modules/leaderboard/leaderboard.routes";
+import leadsRoutes from "./modules/leads/leads.routes";
+import shopRoutes from "./modules/shop/shop.routes";
+import adminRoutes from "./modules/admin/admin.routes";
+import timelineRoutes from "./modules/students/timeline.routes";
+import feedbackRoutes from "./modules/students/feedback.routes";
+import wellnessRoutes from "./modules/students/wellness.routes";
+import matchSelectionRoutes from "./modules/students/match-selection.routes";
+import progressRoadmapRoutes from "./modules/students/progress-roadmap.routes";
+import analyticsRoutes from "./modules/analytics/analytics.routes";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 const app = express();
 
@@ -46,6 +58,15 @@ app.use("/videos", videosRoutes);
 app.use("/posts", postsRoutes);
 app.use("/comments", commentsRoutes);
 app.use("/leaderboard", leaderboardRoutes);
+app.use("/leads", leadsRoutes);
+app.use("/shop", shopRoutes);
+app.use("/admin", adminRoutes);
+app.use("/timeline", timelineRoutes);
+app.use("/feedback", feedbackRoutes);
+app.use("/wellness", wellnessRoutes);
+app.use("/match-selection", matchSelectionRoutes);
+app.use("/progress-roadmap", progressRoadmapRoutes);
+app.use("/analytics", analyticsRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -53,10 +74,28 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(500).json({ message: err.message || "Internal server error" });
 });
 
+// Seed products on startup (only if products table is empty)
+async function initializeShop() {
+  try {
+    const productCount = await (prisma as any).product?.count() || 0;
+    if (productCount === 0) {
+      const { seedProducts } = require("./modules/shop/seed-products");
+      await seedProducts();
+    }
+  } catch (error: any) {
+    if (error.message && error.message.includes("product")) {
+      console.warn("⚠️  Product model not found. Please run: npx prisma migrate dev && npx prisma generate");
+    } else {
+      console.error("Failed to seed products:", error);
+    }
+  }
+}
+
 // Start server
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, "0.0.0.0", async () => {
   console.log(`✅ Backend listening on http://localhost:${PORT}`);
   console.log(`✅ Backend also accessible on http://0.0.0.0:${PORT}`);
+  await initializeShop();
 }).on("error", (err: any) => {
   if (err.code === "EADDRINUSE") {
     console.error(`❌ Port ${PORT} is already in use. Please stop the other process or change the PORT in .env`);
