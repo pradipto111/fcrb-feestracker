@@ -4,26 +4,39 @@ import { motion } from "framer-motion";
 import { api } from "../api/client";
 import { Card } from "../components/ui/Card";
 import { KPICard } from "../components/ui/KPICard";
+import PlayerDevelopmentTimeline from "../components/PlayerDevelopmentTimeline";
+import MonthlyFeedback from "../components/MonthlyFeedback";
+import WellnessCheck from "../components/WellnessCheck";
+import MatchSelectionPanel from "../components/MatchSelectionPanel";
+import ProgressRoadmap from "../components/ProgressRoadmap";
+import PlayerIdentityHeader from "../components/PlayerIdentityHeader";
+import NextStepSnapshot from "../components/NextStepSnapshot";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 import { pageVariants, cardVariants } from "../utils/motion";
 
 const StudentDashboard: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [attendanceData, setAttendanceData] = useState<any>(null);
+  const [timelineData, setTimelineData] = useState<any>(null);
+  const [roadmapData, setRoadmapData] = useState<any>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [dashboardData, attendance] = await Promise.all([
+        const [dashboardData, attendance, timeline, roadmap] = await Promise.all([
           api.getStudentDashboard(),
           api.getStudentAttendance({
             month: new Date().getMonth() + 1,
             year: new Date().getFullYear()
-          })
+          }),
+          api.getStudentTimeline().catch(() => ({ events: [] })),
+          api.getMyProgressRoadmap().catch(() => null) // Gracefully handle if endpoint doesn't exist yet
         ]);
         setData(dashboardData);
         setAttendanceData(attendance);
+        setTimelineData(timeline);
+        setRoadmapData(roadmap);
       } catch (err: any) {
         setError(err.message);
       }
@@ -72,192 +85,91 @@ const StudentDashboard: React.FC = () => {
         {/* Content - Only render if data is loaded */}
         {data && !error && (() => {
           const { student, payments, summary } = data;
+          
+          // Calculate attendance rate
+          const attendanceRate = attendanceData?.summary?.attendanceRate;
+          
+          // Get current level from roadmap
+          const currentLevel = roadmapData?.currentLevel;
+          
           return (
             <React.Fragment key="student-dashboard-content">
-      {/* Header */}
-      <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg }}>
-        <h1 style={{ 
-          ...typography.h2,
-          marginBottom: spacing.sm,
-          color: colors.text.primary,
-        }}>
-          Welcome to FCRB, {student.fullName}!
-        </h1>
-        <p style={{ 
-          color: colors.text.muted, 
-          fontSize: typography.fontSize.base,
-        }}>
-          {student.center.name} - {student.programType}
-        </p>
-      </Card>
+      {/* SECTION 1: Player Identity & Status Header */}
+      <PlayerIdentityHeader
+        student={student}
+        attendanceRate={attendanceRate}
+        currentLevel={currentLevel}
+      />
 
-      {/* Summary Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: spacing.lg, marginBottom: spacing.lg }}>
-        <KPICard
-          title="Monthly Fee"
-          value={`₹${student.monthlyFeeAmount.toLocaleString()}`}
-          variant="primary"
-        />
-        <KPICard
-          title="Total Paid"
-          value={`₹${summary.totalPaid.toLocaleString()}`}
-          subtitle={`${summary.paymentCount} payments`}
-          variant="success"
-        />
-        <KPICard
-          title="Total Due"
-          value={`₹${summary.totalDue.toLocaleString()}`}
-          subtitle={`${summary.monthsSinceJoining} months`}
-          variant="warning"
-        />
-        <KPICard
-          title="Outstanding"
-          value={`₹${Math.abs(summary.outstanding).toLocaleString()}`}
-          subtitle={summary.outstanding > 0 ? "Due" : summary.outstanding < 0 ? "Advance" : "Paid"}
-          variant={summary.outstanding > 0 ? "danger" : "success"}
-        />
-      </div>
+      {/* SECTION 2: "What's Next for Me?" Snapshot */}
+      <NextStepSnapshot roadmap={roadmapData} />
 
-      {/* Student Info */}
-      <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg }}>
-        <h2 style={{ 
-          ...typography.h3,
-          marginBottom: spacing.md,
-          color: colors.text.primary,
-        }}>
-          Your Information
-        </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 16 }}>
-          <div>
-            <div style={{ 
-              fontSize: typography.fontSize.xs, 
-              color: colors.text.muted, 
-              marginBottom: spacing.xs,
-            }}>
-              Email
-            </div>
-            <div style={{ 
-              fontSize: typography.fontSize.base, 
-              fontWeight: typography.fontWeight.semibold,
-              color: colors.text.primary,
-            }}>
-              {student.email || "-"}
-            </div>
-          </div>
-          <div>
-            <div style={{ 
-              fontSize: typography.fontSize.xs, 
-              color: colors.text.muted, 
-              marginBottom: spacing.xs,
-            }}>
-              Phone
-            </div>
-            <div style={{ 
-              fontSize: typography.fontSize.base, 
-              fontWeight: typography.fontWeight.semibold,
-              color: colors.text.primary,
-            }}>
-              {student.phoneNumber || "-"}
-            </div>
-          </div>
-          <div>
-            <div style={{ 
-              fontSize: typography.fontSize.xs, 
-              color: colors.text.muted, 
-              marginBottom: spacing.xs,
-            }}>
-              Date of Birth
-            </div>
-            <div style={{ 
-              fontSize: typography.fontSize.base, 
-              fontWeight: typography.fontWeight.semibold,
-              color: colors.text.primary,
-            }}>
-              {student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : "-"}
-            </div>
-          </div>
-          <div>
-            <div style={{ 
-              fontSize: typography.fontSize.xs, 
-              color: colors.text.muted, 
-              marginBottom: spacing.xs,
-            }}>
-              Joining Date
-            </div>
-            <div style={{ 
-              fontSize: typography.fontSize.base, 
-              fontWeight: typography.fontWeight.semibold,
-              color: colors.text.primary,
-            }}>
-              {student.joiningDate ? new Date(student.joiningDate).toLocaleDateString() : "-"}
-            </div>
-          </div>
-          <div>
-            <div style={{ 
-              fontSize: typography.fontSize.xs, 
-              color: colors.text.muted, 
-              marginBottom: spacing.xs,
-            }}>
-              Status
-            </div>
-            <div style={{ 
-              fontSize: typography.fontSize.base, 
-              fontWeight: typography.fontWeight.semibold,
-            }}>
-              <span style={{
-                padding: `${spacing.xs} ${spacing.md}`,
-                borderRadius: borderRadius.full,
-                fontSize: typography.fontSize.xs,
-                fontWeight: typography.fontWeight.semibold,
-                background: student.status === "ACTIVE" 
-                  ? colors.success.soft 
-                  : student.status === "TRIAL" 
-                  ? colors.warning.soft 
-                  : colors.text.muted + "40",
-                color: student.status === "ACTIVE" 
-                  ? colors.success.main 
-                  : student.status === "TRIAL" 
-                  ? colors.warning.main 
-                  : colors.text.muted
-              }}>
-                {student.status}
-              </span>
-            </div>
-          </div>
-          <div>
-            <div style={{ 
-              fontSize: typography.fontSize.xs, 
-              color: colors.text.muted, 
-              marginBottom: spacing.xs,
-            }}>
-              Center
-            </div>
-            <div style={{ 
-              fontSize: typography.fontSize.base, 
-              fontWeight: typography.fontWeight.semibold,
-              color: colors.text.primary,
-            }}>
-              {student.center.name}
-            </div>
-            <div style={{ 
-              fontSize: typography.fontSize.xs, 
-              color: colors.text.muted,
-            }}>
-              {student.center.city}
-            </div>
-          </div>
+      {/* SECTION 3: Progress Roadmap (Pathway Ladder) */}
+      <ProgressRoadmap />
+
+      {/* SECTION 4: Recent Coach Feedback */}
+      <MonthlyFeedback />
+
+      {/* SECTION 5: Player Development Timeline */}
+      {timelineData && (
+        <div style={{ marginBottom: spacing.lg }}>
+          <PlayerDevelopmentTimeline 
+            events={timelineData.events || []} 
+            loading={!timelineData}
+          />
         </div>
-      </Card>
+      )}
 
-      {/* Payment History */}
+      {/* SECTION 6: Match Exposure & Selection Panel */}
+      <MatchSelectionPanel />
+
+      {/* SECTION 7: Training Load & Wellness */}
+      <WellnessCheck />
+
+      {/* Additional Info Section (Collapsible/Minimized) */}
       <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg }}>
         <h2 style={{ 
           ...typography.h3,
           marginBottom: spacing.md,
           color: colors.text.primary,
         }}>
-          Payment History
+          Payment Summary
         </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: spacing.lg, marginBottom: spacing.lg }}>
+          <KPICard
+            title="Monthly Fee"
+            value={`₹${student.monthlyFeeAmount.toLocaleString()}`}
+            variant="primary"
+          />
+          <KPICard
+            title="Total Paid"
+            value={`₹${summary.totalPaid.toLocaleString()}`}
+            subtitle={`${summary.paymentCount} payments`}
+            variant="success"
+          />
+          <KPICard
+            title="Total Due"
+            value={`₹${summary.totalDue.toLocaleString()}`}
+            subtitle={`${summary.monthsSinceJoining} months`}
+            variant="warning"
+          />
+          <KPICard
+            title="Outstanding"
+            value={`₹${Math.abs(summary.outstanding).toLocaleString()}`}
+            subtitle={summary.outstanding > 0 ? "Due" : summary.outstanding < 0 ? "Advance" : "Paid"}
+            variant={summary.outstanding > 0 ? "danger" : "success"}
+          />
+        </div>
+        
+        {/* Payment History Table */}
+        <div style={{ marginTop: spacing.lg }}>
+          <h3 style={{ 
+            ...typography.h4,
+            marginBottom: spacing.md,
+            color: colors.text.primary,
+          }}>
+            Payment History
+          </h3>
         {summary.lastPaymentDate && (
           <p style={{ 
             color: colors.text.muted, 
@@ -370,7 +282,30 @@ const StudentDashboard: React.FC = () => {
             </div>
           )}
         </div>
+        </div>
       </Card>
+
+      {/* Progress Roadmap */}
+      <ProgressRoadmap />
+
+      {/* Player Development Timeline */}
+      {timelineData && (
+        <div style={{ marginBottom: spacing.lg }}>
+          <PlayerDevelopmentTimeline 
+            events={timelineData.events || []} 
+            loading={!timelineData}
+          />
+        </div>
+      )}
+
+      {/* Monthly Feedback */}
+      <MonthlyFeedback />
+
+      {/* Match Selection Panel */}
+      <MatchSelectionPanel />
+
+      {/* Training Load & Wellness Check */}
+      <WellnessCheck />
 
       {/* Recent Attendance */}
       {attendanceData && attendanceData.sessions && attendanceData.sessions.length > 0 && (

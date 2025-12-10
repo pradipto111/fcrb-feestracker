@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { SystemDateSetter } from "./SystemDateSetter";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
 import "../styles/animations.css";
 
@@ -32,18 +31,21 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const isActive = (path: string) => location.pathname === path;
 
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: '📊', roles: ['ADMIN', 'COACH', 'STUDENT'] },
-    { path: '/students', label: 'Players', icon: '👥', roles: ['ADMIN', 'COACH'] },
-    { path: '/attendance', label: 'Attendance', icon: '📅', roles: ['ADMIN', 'COACH'] },
-    { path: '/my-attendance', label: 'My Attendance', icon: '📅', roles: ['STUDENT'] },
-    { path: '/fixtures', label: 'Fixtures', icon: '⚽', roles: ['ADMIN', 'COACH'] },
-    { path: '/my-fixtures', label: 'My Fixtures', icon: '⚽', roles: ['STUDENT'] },
-    { path: '/drills', label: 'Drills & Tutorials', icon: '🎥', roles: ['ADMIN', 'COACH', 'STUDENT'] },
-    { path: '/drills/manage', label: 'Manage Videos', icon: '🎬', roles: ['ADMIN', 'COACH'] },
-    { path: '/feed', label: 'Feed', icon: '📸', roles: ['ADMIN', 'COACH', 'STUDENT'] },
-    { path: '/feed/approve', label: 'Approve Posts', icon: '✅', roles: ['ADMIN', 'COACH'] },
-    { path: '/leaderboard', label: 'Leaderboard', icon: '🏆', roles: ['ADMIN', 'COACH', 'STUDENT'] },
-    { path: '/admin', label: 'Admin', icon: '⚙️', roles: ['ADMIN'] },
+    { path: '/realverse', label: 'Dashboard', icon: '📊', roles: ['ADMIN', 'COACH', 'STUDENT'] },
+    { path: '/realverse/students', label: 'Players', icon: '👥', roles: ['ADMIN', 'COACH'] },
+    { path: '/realverse/attendance', label: 'Attendance', icon: '📅', roles: ['ADMIN', 'COACH'] },
+    { path: '/realverse/my-attendance', label: 'My Attendance', icon: '📅', roles: ['STUDENT'] },
+    { path: '/realverse/fixtures', label: 'Fixtures', icon: '⚽', roles: ['ADMIN', 'COACH'] },
+    { path: '/realverse/my-fixtures', label: 'My Fixtures', icon: '⚽', roles: ['STUDENT'] },
+    { path: '/realverse/drills', label: 'Drills & Tutorials', icon: '🎥', roles: ['ADMIN', 'COACH', 'STUDENT'] },
+    { path: '/realverse/drills/manage', label: 'Manage Videos', icon: '🎬', roles: ['ADMIN', 'COACH'] },
+    { path: '/realverse/feed', label: 'Feed', icon: '📸', roles: ['ADMIN', 'COACH', 'STUDENT'] },
+    { path: '/realverse/feed/approve', label: 'Approve Posts', icon: '✅', roles: ['ADMIN', 'COACH'] },
+    { path: '/realverse/leaderboard', label: 'Leaderboard', icon: '🏆', roles: ['ADMIN', 'COACH', 'STUDENT'] },
+    { path: '/realverse/admin', label: 'Admin', icon: '⚙️', roles: ['ADMIN'] },
+    { path: '/realverse/admin/leads', label: 'Website Leads', icon: '📋', roles: ['ADMIN'] },
+    { path: '/realverse/admin/merch', label: 'Merchandise', icon: '🛍️', roles: ['ADMIN'] },
+    { path: '/realverse/admin/centres', label: 'Centres', icon: '📍', roles: ['ADMIN'] },
   ];
 
   const filteredNavItems = navItems.filter(item => 
@@ -112,10 +114,6 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
                   width: 40, 
                   height: 40,
                   objectFit: 'contain',
-                  animation: 'logoGlow 4s ease-in-out infinite, logoFloat 6s ease-in-out infinite',
-                  filter: 'brightness(1.3) contrast(1.2) saturate(1.1) drop-shadow(0 0 8px rgba(4, 61, 208, 0.6)) drop-shadow(0 0 16px rgba(255, 169, 0, 0.4))',
-                  mixBlendMode: 'screen',
-                  backgroundColor: 'transparent',
                 }} 
               />
             </div>
@@ -245,10 +243,6 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
                   objectFit: 'contain',
                   position: 'relative',
                   zIndex: 2,
-                  animation: 'logoGlow 4s ease-in-out infinite, logoFloat 6s ease-in-out infinite',
-                  filter: 'brightness(1.3) contrast(1.2) saturate(1.1) drop-shadow(0 0 12px rgba(4, 61, 208, 0.8)) drop-shadow(0 0 24px rgba(255, 169, 0, 0.6)) drop-shadow(0 0 36px rgba(4, 61, 208, 0.4))',
-                  mixBlendMode: 'screen',
-                  backgroundColor: 'transparent',
                 }} 
               />
             </div>
@@ -428,15 +422,6 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
               gap: spacing.md,
               flexWrap: 'wrap',
             }}>
-              {/* System Date Setter - Moved to Top */}
-              {user?.role === 'ADMIN' && (
-                <div style={{
-                  animation: 'fadeIn 0.6s ease-out 0.2s both',
-                }}>
-                  <SystemDateSetter />
-                </div>
-              )}
-              
               <div style={{
                 fontSize: typography.fontSize.sm,
                 color: colors.text.inverted,

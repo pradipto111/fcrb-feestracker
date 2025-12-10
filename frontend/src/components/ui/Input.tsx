@@ -18,16 +18,17 @@ export const Input: React.FC<InputProps> = ({
 }) => {
   const inputStyle: React.CSSProperties = {
     width: fullWidth ? '100%' : 'auto',
-    padding: `${spacing.md} ${spacing.lg}`,
+    padding: `${spacing.md} ${spacing.lg}`, // 16px vertical, 24px horizontal - proper spacing from borders
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.primary,
-    color: colors.text.inverted,
-    background: 'rgba(255, 255, 255, 0.1)',
-    border: `2px solid ${error ? colors.danger.main : 'rgba(255, 255, 255, 0.2)'}`,
-    borderRadius: borderRadius.lg,
+    color: colors.text.primary,
+    background: colors.surface.card, // Visible background
+    border: `1px solid ${error ? colors.danger.main : 'rgba(255, 255, 255, 0.2)'}`, // Visible border
+    borderRadius: borderRadius.md,
     outline: 'none',
     transition: 'all 0.2s ease',
-    backdropFilter: 'blur(10px)',
+    boxSizing: 'border-box', // Ensure padding is included in width
+    lineHeight: typography.lineHeight.normal, // Proper line height for text
     ...style,
   };
 
@@ -42,9 +43,8 @@ export const Input: React.FC<InputProps> = ({
             marginBottom: spacing.sm,
             fontSize: typography.fontSize.sm,
             fontWeight: typography.fontWeight.semibold,
-            color: colors.text.inverted,
+            color: colors.text.primary,
             fontFamily: typography.fontFamily.primary,
-            textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
           }}
         >
           {label}
@@ -77,7 +77,6 @@ export const Input: React.FC<InputProps> = ({
             fontSize: typography.fontSize.sm,
             color: colors.danger.light,
             fontFamily: typography.fontFamily.primary,
-            textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
           }}
         >
           {error}
@@ -90,7 +89,6 @@ export const Input: React.FC<InputProps> = ({
             fontSize: typography.fontSize.sm,
             color: colors.text.muted,
             fontFamily: typography.fontFamily.primary,
-            textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
           }}
         >
           {helperText}

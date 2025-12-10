@@ -31,7 +31,7 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       await login(email, password);
-      navigate("/");
+      navigate("/realverse");
     } catch (err: any) {
       setError(err.message || "Login failed");
     } finally {
@@ -154,10 +154,6 @@ const LoginPage: React.FC = () => {
                 objectFit: 'contain',
                 position: 'relative',
                 zIndex: 2,
-                animation: 'logoGlow 4s ease-in-out infinite, logoFloat 6s ease-in-out infinite',
-                filter: 'brightness(1.3) contrast(1.2) saturate(1.1) drop-shadow(0 0 12px rgba(4, 61, 208, 0.8)) drop-shadow(0 0 24px rgba(255, 169, 0, 0.6)) drop-shadow(0 0 36px rgba(4, 61, 208, 0.4))',
-                mixBlendMode: 'screen',
-                backgroundColor: 'transparent',
               }} 
             />
           </div>
@@ -172,10 +168,11 @@ const LoginPage: React.FC = () => {
           </h1>
           <p style={{ 
             ...typography.body,
+            fontSize: typography.fontSize.sm,
             color: colors.text.muted,
             marginBottom: spacing.xs,
           }}>
-            FC Real Bengaluru Universe
+            You're accessing RealVerse Academy – the FC Real Bengaluru player & parent portal.
           </p>
           <p style={{ 
             ...typography.caption,

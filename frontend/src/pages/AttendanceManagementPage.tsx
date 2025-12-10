@@ -82,7 +82,7 @@ const AttendanceManagementPage: React.FC = () => {
       });
       setSessions(sessionsData);
       // Initialize remarks from existing attendance records
-      const remarks: Record<number, string> = {};
+      const remarks: Record<string, string> = {};
       sessionsData.forEach((session: any) => {
         session.attendance?.forEach((att: any) => {
           const key = `${session.id}-${att.studentId}`;
@@ -456,7 +456,7 @@ const AttendanceManagementPage: React.FC = () => {
           justifyContent: "center",
           zIndex: 1000
         }}>
-          <Card variant="elevated" padding="xl" style={{
+          <Card variant="elevated" padding="lg" style={{
             maxWidth: 500,
             width: "90%",
             maxHeight: "90vh",
@@ -599,7 +599,7 @@ const AttendanceManagementPage: React.FC = () => {
           justifyContent: "center",
           zIndex: 1000
         }}>
-          <Card variant="elevated" padding="xl" style={{
+          <Card variant="elevated" padding="lg" style={{
             maxWidth: 800,
             width: "90%",
             maxHeight: "90vh",
@@ -1140,7 +1140,7 @@ const AttendanceManagementPage: React.FC = () => {
           justifyContent: "center",
           zIndex: 2000
         }}>
-          <Card variant="elevated" padding="xl" style={{
+          <Card variant="elevated" padding="lg" style={{
             maxWidth: 900,
             width: "95%",
             maxHeight: "90vh",
