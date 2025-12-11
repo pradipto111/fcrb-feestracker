@@ -10,7 +10,7 @@ services:
     runtime: node
     plan: free
     rootDir: backend
-    buildCommand: npm install && npx prisma generate && npm run build && npx prisma migrate deploy && npm run prisma:seed:production
+    buildCommand: npm install && npx prisma generate && npm run build && bash deploy-migrations.sh && npm run prisma:seed:production
     startCommand: npm start
     envVars:
       - key: DATABASE_URL
