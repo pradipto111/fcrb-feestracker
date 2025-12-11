@@ -116,3 +116,4 @@ app.listen(PORT, "0.0.0.0", async () => {
   process.exit(1);
 });
 
+// Migration applied: 20251211053654_add_center_shortname
