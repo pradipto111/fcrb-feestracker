@@ -272,7 +272,7 @@ const AcademyReportContent: React.FC<{ data: AcademyReportData }> = ({ data }) =
                       <td style={{ padding: "10px", border: "1px solid #ddd" }}>
                         {comp.competition}
                       </td>
-                      <td style={{ padding: "10px", border: "1px solid #ddd" }>{comp.matches}</td>
+                      <td style={{ padding: "10px", border: "1px solid #ddd" }}>{comp.matches}</td>
                     </tr>
                   ))}
                 </tbody>
