@@ -1753,7 +1753,6 @@ router.get(
                 gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
                 lte: new Date(),
               },
-              status: "PAID",
             },
             _sum: { amount: true },
           });
