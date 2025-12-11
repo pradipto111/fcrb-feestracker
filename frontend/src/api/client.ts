@@ -305,6 +305,17 @@ export const api = {
       body: JSON.stringify(data)
     });
   },
+  // Public fixtures for landing page (no auth required)
+  getPublicFixtures() {
+    return fetch(`${API_BASE}/fixtures/public`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      mode: 'cors',
+    }).then(res => {
+      if (!res.ok) throw new Error("Failed to fetch fixtures");
+      return res.json();
+    });
+  },
   getFixtures(params?: { centerId?: number; fromDate?: string; toDate?: string; status?: string; upcoming?: boolean }) {
     const query = new URLSearchParams();
     if (params?.centerId) query.set("centerId", params.centerId.toString());

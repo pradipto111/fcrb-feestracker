@@ -140,7 +140,7 @@ const PublicHeader: React.FC = () => {
                 color: colors.text.muted,
               }}
             >
-              Building Champions
+              Chase Your Legacy
             </div>
           </div>
         </Link>
@@ -278,15 +278,15 @@ const PublicHeader: React.FC = () => {
           </Link>
         </nav>
 
-        {/* CTAs */}
+        {/* CTAs - Ordered by importance: Secondary actions → Primary action */}
         <div
           style={{
             display: !isMobile ? "flex" : "none",
             alignItems: "center",
-            gap: spacing.md,
+            gap: spacing.sm,
           }}
         >
-          {/* Cart Icon */}
+          {/* Cart Icon - Utility action */}
           <Link
             to="/cart"
             style={{
@@ -294,20 +294,22 @@ const PublicHeader: React.FC = () => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 40,
-              height: 40,
-              background: "rgba(255, 255, 255, 0.1)",
+              width: 36,
+              height: 36,
+              background: "rgba(255, 255, 255, 0.08)",
               borderRadius: borderRadius.md,
               textDecoration: "none",
-              color: colors.text.primary,
-              fontSize: typography.fontSize.xl,
+              color: colors.text.muted,
+              fontSize: "16px",
               transition: "all 0.2s ease",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.15)";
+              e.currentTarget.style.color = colors.text.primary;
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+              e.currentTarget.style.color = colors.text.muted;
             }}
           >
             🛒
@@ -318,14 +320,14 @@ const PublicHeader: React.FC = () => {
                   top: -4,
                   right: -4,
                   background: colors.accent.main,
-                  color: colors.text.onPrimary,
+                  color: colors.charcoal,
                   borderRadius: "50%",
-                  width: 20,
-                  height: 20,
+                  width: 18,
+                  height: 18,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: typography.fontSize.xs,
+                  fontSize: "10px",
                   fontWeight: typography.fontWeight.bold,
                 }}
               >
@@ -334,28 +336,89 @@ const PublicHeader: React.FC = () => {
             )}
           </Link>
 
+          {/* Vertical Divider */}
+          <div style={{ 
+            width: 1, 
+            height: 24, 
+            background: "rgba(255, 255, 255, 0.15)",
+            margin: `0 ${spacing.xs}`,
+          }} />
+
+          {/* Our Brochure - Tertiary/Text link */}
+          <Link
+            to="/brochure"
+            style={{
+              ...typography.body,
+              fontSize: "13px",
+              fontWeight: typography.fontWeight.medium,
+              padding: `6px 12px`,
+              color: colors.text.muted,
+              textDecoration: "none",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = colors.text.primary;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = colors.text.muted;
+            }}
+          >
+            Our Brochure
+          </Link>
+
+          {/* Login - Secondary action */}
+          <Link
+            to="/login"
+            style={{
+              ...typography.body,
+              fontSize: "13px",
+              fontWeight: typography.fontWeight.medium,
+              padding: `8px 16px`,
+              borderRadius: borderRadius.md,
+              background: "transparent",
+              color: colors.text.secondary,
+              textDecoration: "none",
+              border: `1px solid rgba(255, 255, 255, 0.25)`,
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+              e.currentTarget.style.color = colors.text.primary;
+              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = colors.text.secondary;
+              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
+            }}
+          >
+            Login
+          </Link>
+
+          {/* Join RealVerse Academy - Primary CTA with highest visibility */}
           <Link
             to="/realverse/join"
             style={{
               ...typography.body,
-              fontSize: typography.fontSize.sm,
-              fontWeight: typography.fontWeight.semibold,
-              padding: `${spacing.sm} ${spacing.lg}`,
-              borderRadius: borderRadius.lg,
-              background: `linear-gradient(135deg, ${colors.primary.main} 0%, ${colors.primary.light} 100%)`,
-              color: colors.text.onPrimary,
+              fontSize: "14px",
+              fontWeight: typography.fontWeight.bold,
+              padding: `10px 24px`,
+              borderRadius: borderRadius.md,
+              background: `linear-gradient(135deg, ${colors.accent.main} 0%, #FFB82E 100%)`,
+              color: colors.charcoal,
               textDecoration: "none",
-              boxShadow: `0 4px 20px rgba(4, 61, 208, 0.4)`,
               transition: "all 0.2s ease",
               border: "none",
+              boxShadow: `0 4px 16px rgba(255, 169, 0, 0.35)`,
+              letterSpacing: "0.02em",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = `0 6px 30px rgba(4, 61, 208, 0.6)`;
+              e.currentTarget.style.boxShadow = `0 6px 24px rgba(255, 169, 0, 0.5)`;
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = `0 4px 20px rgba(4, 61, 208, 0.4)`;
+              e.currentTarget.style.boxShadow = `0 4px 16px rgba(255, 169, 0, 0.35)`;
             }}
           >
             Join RealVerse Academy
@@ -477,6 +540,23 @@ const PublicHeader: React.FC = () => {
             Shop
           </Link>
 
+          {/* Our Brochure */}
+          <Link
+            to="/brochure"
+            onClick={() => setIsMobileMenuOpen(false)}
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.base,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.text.secondary,
+              textDecoration: "none",
+              padding: spacing.md,
+              borderRadius: borderRadius.md,
+            }}
+          >
+            Our Brochure
+          </Link>
+
           {/* Cart */}
           <Link
             to="/cart"
@@ -491,28 +571,68 @@ const PublicHeader: React.FC = () => {
               borderRadius: borderRadius.md,
               display: "flex",
               alignItems: "center",
-              gap: spacing.sm,
+              justifyContent: "space-between",
             }}
           >
-            Cart {getItemCount() > 0 && `(${getItemCount()})`}
+            <span>Cart</span>
+            {getItemCount() > 0 && (
+              <span style={{
+                background: colors.accent.main,
+                color: colors.charcoal,
+                borderRadius: "12px",
+                padding: "2px 8px",
+                fontSize: typography.fontSize.xs,
+                fontWeight: typography.fontWeight.bold,
+              }}>
+                {getItemCount()}
+              </span>
+            )}
           </Link>
 
-          {/* Join RealVerse Academy */}
+          {/* Divider */}
+          <div style={{ 
+            height: 1, 
+            background: "rgba(255, 255, 255, 0.1)", 
+            margin: `${spacing.sm} 0` 
+          }} />
+
+          {/* Login - Secondary */}
+          <Link
+            to="/login"
+            onClick={() => setIsMobileMenuOpen(false)}
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.base,
+              fontWeight: typography.fontWeight.medium,
+              padding: spacing.md,
+              borderRadius: borderRadius.md,
+              background: "transparent",
+              color: colors.text.secondary,
+              textDecoration: "none",
+              textAlign: "center",
+              border: `1px solid rgba(255, 255, 255, 0.25)`,
+            }}
+          >
+            Login
+          </Link>
+
+          {/* Join RealVerse Academy - Primary CTA with highest visibility */}
           <Link
             to="/realverse/join"
             onClick={() => setIsMobileMenuOpen(false)}
             style={{
               ...typography.body,
               fontSize: typography.fontSize.base,
-              fontWeight: typography.fontWeight.semibold,
-              padding: spacing.md,
-              borderRadius: borderRadius.lg,
-              background: `linear-gradient(135deg, ${colors.primary.main} 0%, ${colors.primary.light} 100%)`,
-              color: colors.text.onPrimary,
+              fontWeight: typography.fontWeight.bold,
+              padding: `${spacing.md} ${spacing.lg}`,
+              borderRadius: borderRadius.md,
+              background: `linear-gradient(135deg, ${colors.accent.main} 0%, #FFB82E 100%)`,
+              color: colors.charcoal,
               textDecoration: "none",
               textAlign: "center",
-              boxShadow: `0 4px 20px rgba(4, 61, 208, 0.4)`,
               marginTop: spacing.sm,
+              boxShadow: `0 4px 16px rgba(255, 169, 0, 0.35)`,
+              letterSpacing: "0.02em",
             }}
           >
             Join RealVerse Academy

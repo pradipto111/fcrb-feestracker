@@ -5,6 +5,62 @@ import { authRequired, requireRole } from "../../auth/auth.middleware";
 const prisma = new PrismaClient();
 const router = Router();
 
+// PUBLIC: Get fixtures for landing page (no auth required)
+router.get("/public", async (req, res) => {
+  try {
+    const now = new Date();
+    
+    // Get upcoming fixtures (next 10)
+    const upcomingFixtures = await prisma.fixture.findMany({
+      where: {
+        status: "UPCOMING",
+        matchDate: { gte: now }
+      },
+      include: {
+        center: {
+          select: { name: true, shortName: true }
+        }
+      },
+      orderBy: { matchDate: "asc" },
+      take: 10
+    });
+
+    // Get recent completed fixtures (last 10)
+    const recentResults = await prisma.fixture.findMany({
+      where: {
+        status: "COMPLETED"
+      },
+      include: {
+        center: {
+          select: { name: true, shortName: true }
+        }
+      },
+      orderBy: { matchDate: "desc" },
+      take: 10
+    });
+
+    // Transform to simpler format for public display
+    const transformFixture = (f: any) => ({
+      id: f.id,
+      opponent: f.opponent || "TBD",
+      matchDate: f.matchDate,
+      matchTime: f.matchTime,
+      venue: f.venue || "TBD",
+      matchType: f.matchType,
+      status: f.status,
+      center: f.center?.shortName || f.center?.name || "FCRB"
+    });
+
+    res.json({
+      upcoming: upcomingFixtures.map(transformFixture),
+      results: recentResults.map(transformFixture)
+    });
+  } catch (error: any) {
+    console.error("Error fetching public fixtures:", error);
+    res.status(500).json({ message: "Failed to fetch fixtures" });
+  }
+});
+
 // Helper function to get coach's center IDs
 async function getCoachCenterIds(coachId: number): Promise<number[]> {
   const coachCenters = await prisma.coachCenter.findMany({

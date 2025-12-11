@@ -33,19 +33,19 @@ export interface NewsItem {
 
 export const clubInfo = {
   name: "FC Real Bengaluru",
-  tagline: "Building Bengaluru's Next Generation of Footballers",
+  tagline: "Chase Your Legacy",
   description: "FC Real Bengaluru is a professional football club dedicated to developing young talent and competing at the highest levels of Indian football. Our academy provides a comprehensive pathway from grassroots to professional football.",
   philosophy: "We believe in developing not just skilled footballers, but well-rounded individuals who embody discipline, teamwork, and excellence both on and off the pitch.",
-  founded: 2020,
+  founded: 2024,
   stats: {
     playersTrained: 500,
     centers: 3,
     teams: 8,
-    yearsActive: 4,
+    yearsActive: 1,
   },
   contact: {
     email: "info@fcrealbengaluru.com",
-    phone: "+91 98765 43210",
+    phone: "+91 8660843598",
     address: "Bengaluru, Karnataka, India",
   },
   social: {

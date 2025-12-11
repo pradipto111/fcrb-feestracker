@@ -1,48 +1,160 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
+import { motion, useScroll, useTransform, useInView, AnimatePresence } from "framer-motion";
 import PublicHeader from "../components/PublicHeader";
 import OurCentresSection from "../components/OurCentresSection";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
+import { api } from "../api/client";
 import {
   clubInfo,
   teams,
-  mockFixtures,
   mockNews,
   academyFeatures,
-  Fixture,
   NewsItem,
 } from "../data/club";
 
+// Interface for fixtures from API
+interface PublicFixture {
+  id: number;
+  opponent: string;
+  matchDate: string;
+  matchTime: string;
+  venue: string;
+  matchType: string;
+  status: string;
+  center: string;
+}
+
+// Animation variants for different effects
+const fadeInUp = {
+  hidden: { opacity: 0, y: 60 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.8,
+      ease: [0.25, 0.46, 0.45, 0.94]
+    }
+  }
+};
+
+const fadeInLeft = {
+  hidden: { opacity: 0, x: -60 },
+  visible: { 
+    opacity: 1, 
+    x: 0,
+    transition: {
+      duration: 0.8,
+      ease: [0.25, 0.46, 0.45, 0.94]
+    }
+  }
+};
+
+const fadeInRight = {
+  hidden: { opacity: 0, x: 60 },
+  visible: { 
+    opacity: 1, 
+    x: 0,
+    transition: {
+      duration: 0.8,
+      ease: [0.25, 0.46, 0.45, 0.94]
+    }
+  }
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: { 
+    opacity: 1, 
+    scale: 1,
+    transition: {
+      duration: 0.6,
+      ease: [0.25, 0.46, 0.45, 0.94]
+    }
+  }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.2
+    }
+  }
+};
+
+// Animated Section Wrapper
+const AnimatedSection: React.FC<{
+  children: React.ReactNode;
+  id?: string;
+  style?: React.CSSProperties;
+  delay?: number;
+}> = ({ children, id, style, delay = 0 }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+  return (
+    <motion.section
+      ref={ref}
+      id={id}
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+      variants={fadeInUp}
+      transition={{ delay }}
+      style={style}
+    >
+      {children}
+    </motion.section>
+  );
+};
+
 const LandingPage: React.FC = () => {
-  const [upcomingFixtures, setUpcomingFixtures] = useState<Fixture[]>([]);
-  const [recentResults, setRecentResults] = useState<Fixture[]>([]);
+  const [upcomingFixtures, setUpcomingFixtures] = useState<PublicFixture[]>([]);
+  const [recentResults, setRecentResults] = useState<PublicFixture[]>([]);
+  const [fixturesLoading, setFixturesLoading] = useState(true);
+  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
+  const heroRef = useRef(null);
+
+  const { scrollYProgress } = useScroll();
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
+  const heroScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.95]);
 
   const heroCopyOptions = [
     {
-      headline: "Bengaluru’s next wave of footballers starts here.",
-      subhead:
-        "A professional club and academy built to take local talent from first touch to fierce competition.",
+      headline: "Every Great Journey Begins With a Single Step",
+      subhead: "From your first touch to fierce competition. FC Real Bengaluru is where passion meets professionalism, where dreams take shape.",
     },
     {
-      headline: "Train in Bengaluru. Compete everywhere.",
-      subhead:
-        "FC Real Bengaluru gives every committed player a clear pathway from academy sessions to senior football.",
+      headline: "Train Like Champions. Play With Heart.",
+      subhead: "Professional coaching, structured pathways, and competitive exposure across Bengaluru. Your legacy starts here.",
     },
     {
-      headline: "Serious football. Clear pathways. Real Bengaluru.",
-      subhead:
-        "Structured training, honest feedback, and competitive minutes for players who want to grow the right way.",
+      headline: "This Is Where Legacies Are Born",
+      subhead: "Join Bengaluru's fastest-growing football club. Structured training, honest feedback, and a clear pathway from academy to senior football.",
     },
   ];
 
+  // Fetch fixtures from API
   useEffect(() => {
-    // Separate fixtures into upcoming and completed
-    const upcoming = mockFixtures.filter((f) => f.status === "upcoming");
-    const completed = mockFixtures.filter((f) => f.status === "completed");
-    setUpcomingFixtures(upcoming);
-    setRecentResults(completed);
+    const loadFixtures = async () => {
+      try {
+        setFixturesLoading(true);
+        const data = await api.getPublicFixtures();
+        setUpcomingFixtures(data.upcoming || []);
+        setRecentResults(data.results || []);
+      } catch (error) {
+        console.error("Failed to load fixtures:", error);
+        setUpcomingFixtures([]);
+        setRecentResults([]);
+      } finally {
+        setFixturesLoading(false);
+      }
+    };
+    loadFixtures();
   }, []);
 
   // Handle scroll to section when navigating from other pages
@@ -59,6 +171,14 @@ const LandingPage: React.FC = () => {
     }
   }, []);
 
+  // Auto-rotate hero text
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentHeroIndex((prev) => (prev + 1) % heroCopyOptions.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -70,25 +190,29 @@ const LandingPage: React.FC = () => {
         minHeight: "100vh",
         background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,
         color: colors.text.primary,
+        overflowX: "hidden",
       }}
     >
       <PublicHeader />
 
-      {/* Hero Section */}
-      <section
+      {/* Hero Section with Parallax */}
+      <motion.section
+        ref={heroRef}
         id="hero"
         style={{
           position: "relative",
-          minHeight: "90vh",
+          minHeight: "100vh",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           paddingTop: "80px",
           overflow: "hidden",
+          opacity: heroOpacity,
+          scale: heroScale,
         }}
       >
-        {/* Background Image */}
-        <div
+        {/* Animated Background Image with Parallax */}
+        <motion.div
           style={{
             position: "absolute",
             top: 0,
@@ -101,10 +225,13 @@ const LandingPage: React.FC = () => {
             opacity: 0.3,
             filter: "brightness(0.4) contrast(1.2)",
           }}
+          initial={{ scale: 1.2 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
         />
 
         {/* Gradient Overlay */}
-        <div
+        <motion.div
           style={{
             position: "absolute",
             top: 0,
@@ -113,7 +240,46 @@ const LandingPage: React.FC = () => {
             bottom: 0,
             background: `linear-gradient(135deg, rgba(4, 61, 208, 0.4) 0%, rgba(255, 169, 0, 0.3) 100%)`,
           }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1 }}
         />
+
+        {/* Floating Particles Effect */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: "none",
+          }}
+        >
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              style={{
+                position: "absolute",
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                width: `${Math.random() * 4 + 2}px`,
+                height: `${Math.random() * 4 + 2}px`,
+                borderRadius: "50%",
+                background: "rgba(255, 255, 255, 0.3)",
+              }}
+              animate={{
+                y: [0, -30, 0],
+                opacity: [0.3, 0.8, 0.3],
+              }}
+              transition={{
+                duration: Math.random() * 3 + 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+            />
+          ))}
+        </div>
 
         {/* Content */}
         <div
@@ -126,55 +292,110 @@ const LandingPage: React.FC = () => {
             textAlign: "center",
           }}
         >
-          <h1
-            style={{
-              ...typography.display,
-              fontSize: "clamp(2.5rem, 5vw, 4rem)",
-              marginBottom: spacing.lg,
-              color: colors.text.primary,
-              textShadow: "0 4px 20px rgba(0, 0, 0, 0.5)",
-              lineHeight: 1.2,
-            }}
-          >
-            {heroCopyOptions[0].headline}
-          </h1>
-          <p
-            style={{
-              ...typography.h4,
-              fontSize: "clamp(1.125rem, 2vw, 1.5rem)",
-              marginBottom: spacing["2xl"],
-              color: colors.text.secondary,
-              maxWidth: "800px",
-              margin: `0 auto ${spacing["2xl"]}`,
-              textShadow: "0 2px 10px rgba(0, 0, 0, 0.5)",
-            }}
-          >
-            {heroCopyOptions[0].subhead}
-          </p>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentHeroIndex}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.8 }}
+            >
+              <motion.h1
+                style={{
+                  ...typography.display,
+                  fontSize: "clamp(2.5rem, 5vw, 4.5rem)",
+                  marginBottom: spacing.lg,
+                  color: colors.text.primary,
+                  textShadow: "0 4px 20px rgba(0, 0, 0, 0.5)",
+                  lineHeight: 1.2,
+                  fontWeight: 900,
+                }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                {heroCopyOptions[currentHeroIndex].headline}
+              </motion.h1>
+              <motion.p
+                style={{
+                  ...typography.h4,
+                  fontSize: "clamp(1.125rem, 2vw, 1.5rem)",
+                  marginBottom: spacing["2xl"],
+                  color: colors.text.secondary,
+                  maxWidth: "800px",
+                  margin: `0 auto ${spacing["2xl"]}`,
+                  textShadow: "0 2px 10px rgba(0, 0, 0, 0.5)",
+                  lineHeight: 1.6,
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
+                {heroCopyOptions[currentHeroIndex].subhead}
+              </motion.p>
+            </motion.div>
+          </AnimatePresence>
 
           {/* CTAs */}
-          <div
+          <motion.div
             style={{
               display: "flex",
               gap: spacing.lg,
               justifyContent: "center",
               flexWrap: "wrap",
             }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
           >
             <Link to="/realverse/join" style={{ textDecoration: "none" }}>
-              <Button variant="primary" size="lg">
-                Join RealVerse Academy
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button variant="primary" size="lg">
+                  Join RealVerse Academy
+                </Button>
+              </motion.div>
             </Link>
             <a href="#academy" style={{ textDecoration: "none" }}>
-              <Button variant="secondary" size="lg">
-                Explore Academy
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button variant="secondary" size="lg">
+                  Explore Academy
+                </Button>
+              </motion.div>
             </a>
-          </div>
+          </motion.div>
+
+          {/* Hero Indicators */}
+          <motion.div
+            style={{
+              display: "flex",
+              gap: spacing.xs,
+              justifyContent: "center",
+              marginTop: spacing["2xl"],
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+          >
+            {heroCopyOptions.map((_, idx) => (
+              <motion.div
+                key={idx}
+                onClick={() => setCurrentHeroIndex(idx)}
+                style={{
+                  width: currentHeroIndex === idx ? 32 : 12,
+                  height: 12,
+                  borderRadius: 6,
+                  background:
+                    currentHeroIndex === idx ? colors.accent.main : "rgba(255, 255, 255, 0.3)",
+                  cursor: "pointer",
+                }}
+                whileHover={{ scale: 1.2 }}
+                transition={{ duration: 0.3 }}
+              />
+            ))}
+          </motion.div>
 
           {/* Brochure CTA Section */}
-          <div
+          <motion.div
             style={{
               marginTop: spacing["3xl"],
               padding: spacing["2xl"],
@@ -185,6 +406,9 @@ const LandingPage: React.FC = () => {
               maxWidth: "800px",
               margin: `${spacing["3xl"]} auto 0`,
             }}
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 1 }}
           >
             <h3
               style={{
@@ -216,15 +440,17 @@ const LandingPage: React.FC = () => {
               }}
             >
               <Link to="/brochure" style={{ textDecoration: "none" }}>
-                <Button variant="secondary" size="md">
-                  View Club Brochure
-                </Button>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button variant="secondary" size="md">
+                    View Club Brochure
+                  </Button>
+                </motion.div>
               </Link>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Stats Strip */}
-          <div
+          {/* Stats Strip with Animation */}
+          <motion.div
             style={{
               display: "flex",
               gap: spacing["2xl"],
@@ -232,6 +458,9 @@ const LandingPage: React.FC = () => {
               marginTop: spacing["3xl"],
               flexWrap: "wrap",
             }}
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
           >
             {[
               { label: "Years Active", value: clubInfo.stats.yearsActive },
@@ -239,7 +468,7 @@ const LandingPage: React.FC = () => {
               { label: "Training Centers", value: clubInfo.stats.centers },
               { label: "Teams", value: clubInfo.stats.teams },
             ].map((stat, idx) => (
-              <div
+              <motion.div
                 key={idx}
                 style={{
                   textAlign: "center",
@@ -250,17 +479,31 @@ const LandingPage: React.FC = () => {
                   border: "1px solid rgba(255, 255, 255, 0.1)",
                   minWidth: "150px",
                 }}
+                variants={scaleIn}
+                whileHover={{ 
+                  scale: 1.05,
+                  background: "rgba(255, 255, 255, 0.08)",
+                  borderColor: colors.accent.main,
+                }}
               >
-                <div
+                <motion.div
                   style={{
                     ...typography.h2,
                     fontSize: typography.fontSize["3xl"],
                     color: colors.accent.main,
                     marginBottom: spacing.xs,
                   }}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ 
+                    delay: 1.2 + idx * 0.1, 
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 10
+                  }}
                 >
                   {stat.value}+
-                </div>
+                </motion.div>
                 <div
                   style={{
                     ...typography.caption,
@@ -271,14 +514,42 @@ const LandingPage: React.FC = () => {
                 >
                   {stat.label}
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
+
+          {/* Scroll Indicator */}
+          <motion.div
+            style={{
+              marginTop: spacing["3xl"],
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: spacing.sm,
+              color: colors.text.muted,
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 1.5 }}
+          >
+            <div style={{ ...typography.caption, fontSize: typography.fontSize.sm }}>
+              Scroll to explore
+            </div>
+            <motion.div
+              animate={{ y: [0, 10, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              style={{
+                fontSize: typography.fontSize.xl,
+              }}
+            >
+              ↓
+            </motion.div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* About the Club */}
-      <section
+      <AnimatedSection
         id="club"
         style={{
           padding: `${spacing["4xl"]} ${spacing.xl}`,
@@ -286,7 +557,7 @@ const LandingPage: React.FC = () => {
           margin: "0 auto",
         }}
       >
-        <div
+        <motion.div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
@@ -295,7 +566,24 @@ const LandingPage: React.FC = () => {
           }}
         >
           {/* Text Content */}
-          <div>
+          <motion.div variants={fadeInLeft}>
+            <motion.div
+              style={{
+                display: "inline-block",
+                padding: `${spacing.xs} ${spacing.md}`,
+                background: `linear-gradient(135deg, ${colors.primary.main}20 0%, ${colors.accent.main}20 100%)`,
+                borderRadius: borderRadius.full,
+                marginBottom: spacing.lg,
+              }}
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <span style={{ ...typography.overline, color: colors.accent.main }}>
+                OUR STORY
+              </span>
+            </motion.div>
             <h2
               style={{
                 ...typography.h1,
@@ -330,7 +618,7 @@ const LandingPage: React.FC = () => {
               pathway into senior football. The focus is steady growth: technical detail, tactical awareness,
               physical readiness, and the mentality to compete.
             </p>
-            <ul
+            <motion.ul
               style={{
                 listStyle: "none",
                 padding: 0,
@@ -339,14 +627,18 @@ const LandingPage: React.FC = () => {
                 flexDirection: "column",
                 gap: spacing.md,
               }}
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
             >
               {[
                 "Structured club + academy model with squads from grassroots to senior levels",
                 "Qualified coaching staff, session plans, and seasonal periodisation",
                 "Regular league and tournament exposure across Bengaluru and beyond",
-                "Transparent pathways into senior football with clear expectations for players and parents",
+                "Transparent pathways into senior football with clear expectations",
               ].map((point, idx) => (
-                <li
+                <motion.li
                   key={idx}
                   style={{
                     display: "flex",
@@ -354,32 +646,38 @@ const LandingPage: React.FC = () => {
                     gap: spacing.md,
                     color: colors.text.secondary,
                   }}
+                  variants={fadeInUp}
                 >
-                  <span
+                  <motion.span
                     style={{
                       color: colors.accent.main,
                       fontSize: typography.fontSize.xl,
                       marginTop: "2px",
                     }}
+                    whileHover={{ scale: 1.3, rotate: 360 }}
+                    transition={{ duration: 0.3 }}
                   >
                     ✓
-                  </span>
+                  </motion.span>
                   <span>{point}</span>
-                </li>
+                </motion.li>
               ))}
-            </ul>
-          </div>
+            </motion.ul>
+          </motion.div>
 
           {/* Image */}
-          <div
+          <motion.div
             style={{
               position: "relative",
               borderRadius: borderRadius["2xl"],
               overflow: "hidden",
               boxShadow: shadows["2xl"],
             }}
+            variants={fadeInRight}
+            whileHover={{ scale: 1.02 }}
+            transition={{ duration: 0.3 }}
           >
-            <img
+            <motion.img
               src="/photo2.png"
               alt="FC Real Bengaluru Team"
               style={{
@@ -387,8 +685,12 @@ const LandingPage: React.FC = () => {
                 height: "auto",
                 display: "block",
               }}
+              initial={{ scale: 1.1 }}
+              whileInView={{ scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
             />
-            <div
+            <motion.div
               style={{
                 position: "absolute",
                 bottom: 0,
@@ -397,6 +699,10 @@ const LandingPage: React.FC = () => {
                 background: `linear-gradient(to top, rgba(5, 11, 32, 0.9) 0%, transparent 100%)`,
                 padding: spacing.xl,
               }}
+              initial={{ y: 100 }}
+              whileInView={{ y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
             >
               <div
                 style={{
@@ -404,15 +710,15 @@ const LandingPage: React.FC = () => {
                   color: colors.text.primary,
                 }}
               >
-                Building Champions Since {clubInfo.founded}
+                Founded in {clubInfo.founded}
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      </AnimatedSection>
 
       {/* Teams & Pathways */}
-      <section
+      <AnimatedSection
         id="teams"
         style={{
           padding: `${spacing["4xl"]} ${spacing.xl}`,
@@ -420,116 +726,147 @@ const LandingPage: React.FC = () => {
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <h2
-            style={{
-              ...typography.h1,
-              textAlign: "center",
-              marginBottom: spacing.xl,
-              color: colors.text.primary,
-            }}
+          <motion.div
+            style={{ textAlign: "center", marginBottom: spacing["2xl"] }}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
           >
-            Teams & Pathways
-          </h2>
-          <p
-            style={{
-              ...typography.body,
-              textAlign: "center",
-              color: colors.text.muted,
-              marginBottom: spacing["2xl"],
-              maxWidth: "700px",
-              margin: `0 auto ${spacing["2xl"]}`,
-            }}
-          >
-            From grassroots programs to senior competition, we offer structured pathways for players
-            at every level.
-          </p>
+            <motion.div
+              style={{
+                display: "inline-block",
+                padding: `${spacing.xs} ${spacing.md}`,
+                background: `linear-gradient(135deg, ${colors.primary.main}20 0%, ${colors.accent.main}20 100%)`,
+                borderRadius: borderRadius.full,
+                marginBottom: spacing.lg,
+              }}
+            >
+              <span style={{ ...typography.overline, color: colors.accent.main }}>
+                YOUR PATHWAY
+              </span>
+            </motion.div>
+            <h2
+              style={{
+                ...typography.h1,
+                marginBottom: spacing.xl,
+                color: colors.text.primary,
+              }}
+            >
+              Teams & Pathways
+            </h2>
+            <p
+              style={{
+                ...typography.body,
+                color: colors.text.muted,
+                maxWidth: "700px",
+                margin: `0 auto`,
+              }}
+            >
+              From grassroots programs to senior competition, we offer structured pathways for players
+              at every level.
+            </p>
+          </motion.div>
 
-          <div
+          <motion.div
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
               gap: spacing.xl,
             }}
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
           >
-            {teams.map((team) => (
-              <Card key={team.id} variant="elevated" padding="lg">
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: spacing.md,
-                    height: "100%",
-                  }}
-                >
-                  {team.ageGroup && (
-                    <div
+            {teams.map((team, idx) => (
+              <motion.div
+                key={team.id}
+                variants={scaleIn}
+                whileHover={{ 
+                  y: -10,
+                  boxShadow: "0 20px 40px rgba(255, 169, 0, 0.2)",
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card variant="elevated" padding="lg">
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: spacing.md,
+                      height: "100%",
+                    }}
+                  >
+                    {team.ageGroup && (
+                      <motion.div
+                        style={{
+                          ...typography.overline,
+                          color: colors.accent.main,
+                          marginBottom: spacing.xs,
+                        }}
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: idx * 0.05 }}
+                      >
+                        {team.ageGroup}
+                      </motion.div>
+                    )}
+                    <h3
                       style={{
-                        ...typography.overline,
-                        color: colors.accent.main,
+                        ...typography.h3,
+                        color: colors.text.primary,
                         marginBottom: spacing.xs,
                       }}
                     >
-                      {team.ageGroup}
+                      {team.name}
+                    </h3>
+                    <div
+                      style={{
+                        ...typography.caption,
+                        color: colors.accent.main,
+                        marginBottom: spacing.sm,
+                        fontWeight: typography.fontWeight.semibold,
+                      }}
+                    >
+                      {team.tagline}
                     </div>
-                  )}
-                  <h3
-                    style={{
-                      ...typography.h3,
-                      color: colors.text.primary,
-                      marginBottom: spacing.xs,
-                    }}
-                  >
-                    {team.name}
-                  </h3>
-                  <div
-                    style={{
-                      ...typography.caption,
-                      color: colors.accent.main,
-                      marginBottom: spacing.sm,
-                      fontWeight: typography.fontWeight.semibold,
-                    }}
-                  >
-                    {team.tagline}
+                    <p
+                      style={{
+                        ...typography.body,
+                        color: colors.text.muted,
+                        flex: 1,
+                        fontSize: typography.fontSize.sm,
+                      }}
+                    >
+                      {team.description}
+                    </p>
+                    <motion.a
+                      href="#academy"
+                      style={{
+                        ...typography.body,
+                        fontSize: typography.fontSize.sm,
+                        color: colors.primary.light,
+                        textDecoration: "none",
+                        fontWeight: typography.fontWeight.semibold,
+                        marginTop: spacing.md,
+                        display: "inline-block",
+                      }}
+                      whileHover={{ x: 5, color: colors.primary.main }}
+                    >
+                      Learn more →
+                    </motion.a>
                   </div>
-                  <p
-                    style={{
-                      ...typography.body,
-                      color: colors.text.muted,
-                      flex: 1,
-                      fontSize: typography.fontSize.sm,
-                    }}
-                  >
-                    {team.description}
-                  </p>
-                  <a
-                    href="#academy"
-                    style={{
-                      ...typography.body,
-                      fontSize: typography.fontSize.sm,
-                      color: colors.primary.light,
-                      textDecoration: "none",
-                      fontWeight: typography.fontWeight.semibold,
-                      marginTop: spacing.md,
-                      display: "inline-block",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = colors.primary.main;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = colors.primary.light;
-                    }}
-                  >
-                    Learn more →
-                  </a>
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* Academy & Training */}
-      <section
+      <AnimatedSection
         id="academy"
         style={{
           padding: `${spacing["4xl"]} ${spacing.xl}`,
@@ -537,37 +874,59 @@ const LandingPage: React.FC = () => {
           margin: "0 auto",
         }}
       >
-        <h2
-          style={{
-            ...typography.h1,
-            textAlign: "center",
-            marginBottom: spacing.xl,
-            color: colors.text.primary,
-          }}
+        <motion.div
+          style={{ textAlign: "center", marginBottom: spacing["2xl"] }}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
         >
-          Academy & Training
-        </h2>
-        <p
-          style={{
-            ...typography.body,
-            textAlign: "center",
-            color: colors.text.muted,
-            marginBottom: spacing["2xl"],
-            maxWidth: "700px",
-            margin: `0 auto ${spacing["2xl"]}`,
-          }}
-        >
-          Our academy is designed for steady, long-term growth. Sessions build from fundamentals to match realism,
-          keeping players challenged without skipping steps.
-        </p>
+          <motion.div
+            style={{
+              display: "inline-block",
+              padding: `${spacing.xs} ${spacing.md}`,
+              background: `linear-gradient(135deg, ${colors.primary.main}20 0%, ${colors.accent.main}20 100%)`,
+              borderRadius: borderRadius.full,
+              marginBottom: spacing.lg,
+            }}
+          >
+            <span style={{ ...typography.overline, color: colors.accent.main }}>
+              PROFESSIONAL DEVELOPMENT
+            </span>
+          </motion.div>
+          <h2
+            style={{
+              ...typography.h1,
+              marginBottom: spacing.xl,
+              color: colors.text.primary,
+            }}
+          >
+            Academy & Training
+          </h2>
+          <p
+            style={{
+              ...typography.body,
+              color: colors.text.muted,
+              maxWidth: "700px",
+              margin: `0 auto`,
+            }}
+          >
+            Our academy is designed for steady, long-term growth. Sessions build from fundamentals to match realism,
+            keeping players challenged without skipping steps.
+          </p>
+        </motion.div>
 
-        <div
+        <motion.div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
             gap: spacing.xl,
             marginBottom: spacing["2xl"],
           }}
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
         >
           {[
             {
@@ -583,91 +942,122 @@ const LandingPage: React.FC = () => {
               desc: "Planned friendlies, leagues, and tournaments so players test their training in real match scenarios.",
             },
           ].map((block, idx) => (
-            <Card key={idx} variant="outlined" padding="lg">
-              <h4
-                style={{
-                  ...typography.h4,
-                  color: colors.text.primary,
-                  marginBottom: spacing.sm,
-                }}
-              >
-                {block.title}
-              </h4>
-              <p
-                style={{
-                  ...typography.body,
-                  color: colors.text.muted,
-                  fontSize: typography.fontSize.sm,
-                  lineHeight: 1.6,
-                }}
-              >
-                {block.desc}
-              </p>
-            </Card>
+            <motion.div key={idx} variants={fadeInUp}>
+              <Card variant="outlined" padding="lg">
+                <motion.div
+                  initial={{ width: 0 }}
+                  whileInView={{ width: "100%" }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8, delay: idx * 0.2 }}
+                  style={{
+                    height: 4,
+                    background: `linear-gradient(90deg, ${colors.primary.main} 0%, ${colors.accent.main} 100%)`,
+                    borderRadius: 2,
+                    marginBottom: spacing.md,
+                  }}
+                />
+                <h4
+                  style={{
+                    ...typography.h4,
+                    color: colors.text.primary,
+                    marginBottom: spacing.sm,
+                  }}
+                >
+                  {block.title}
+                </h4>
+                <p
+                  style={{
+                    ...typography.body,
+                    color: colors.text.muted,
+                    fontSize: typography.fontSize.sm,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {block.desc}
+                </p>
+              </Card>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
-        {/* Our Centres Section - Replaced old Training Centers */}
+        {/* Our Centres Section */}
         <OurCentresSection />
 
         {/* Academy Features */}
-        <div
+        <motion.div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
             gap: spacing.lg,
+            marginTop: spacing["2xl"],
           }}
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
         >
           {academyFeatures.map((feature, idx) => (
-            <Card key={idx} variant="outlined" padding="lg">
-              <div
-                style={{
-                  fontSize: typography.fontSize["4xl"],
-                  marginBottom: spacing.md,
-                }}
-              >
-                {feature.icon}
-              </div>
-              <h4
-                style={{
-                  ...typography.h4,
-                  color: colors.text.primary,
-                  marginBottom: spacing.xs,
-                }}
-              >
-                {feature.title}
-              </h4>
-              <p
-                style={{
-                  ...typography.body,
-                  color: colors.text.muted,
-                  fontSize: typography.fontSize.sm,
-                }}
-              >
-                {feature.description}
-              </p>
-            </Card>
+            <motion.div key={idx} variants={scaleIn}>
+              <Card variant="outlined" padding="lg">
+                <motion.div
+                  style={{
+                    fontSize: typography.fontSize["4xl"],
+                    marginBottom: spacing.md,
+                  }}
+                  whileHover={{ scale: 1.2, rotate: 10 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {feature.icon}
+                </motion.div>
+                <h4
+                  style={{
+                    ...typography.h4,
+                    color: colors.text.primary,
+                    marginBottom: spacing.xs,
+                  }}
+                >
+                  {feature.title}
+                </h4>
+                <p
+                  style={{
+                    ...typography.body,
+                    color: colors.text.muted,
+                    fontSize: typography.fontSize.sm,
+                  }}
+                >
+                  {feature.description}
+                </p>
+              </Card>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
-        <div style={{ textAlign: "center", marginTop: spacing["2xl"] }}>
+        <motion.div 
+          style={{ textAlign: "center", marginTop: spacing["2xl"] }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
           <a href="#contact" style={{ textDecoration: "none" }}>
-            <Button variant="primary" size="lg">
-              Explore Academy Programmes
-            </Button>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button variant="primary" size="lg">
+                Explore Academy Programmes
+              </Button>
+            </motion.div>
           </a>
-        </div>
-      </section>
+        </motion.div>
+      </AnimatedSection>
 
       {/* RealVerse Feature Highlight */}
-      <section
+      <AnimatedSection
         style={{
           padding: `${spacing["4xl"]} ${spacing.xl}`,
           background: "rgba(255, 255, 255, 0.02)",
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <div
+          <motion.div
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
@@ -676,7 +1066,20 @@ const LandingPage: React.FC = () => {
             }}
           >
             {/* Content */}
-            <div>
+            <motion.div variants={fadeInLeft}>
+              <motion.div
+                style={{
+                  display: "inline-block",
+                  padding: `${spacing.xs} ${spacing.md}`,
+                  background: `linear-gradient(135deg, ${colors.primary.main}20 0%, ${colors.accent.main}20 100%)`,
+                  borderRadius: borderRadius.full,
+                  marginBottom: spacing.lg,
+                }}
+              >
+                <span style={{ ...typography.overline, color: colors.accent.main }}>
+                  DIGITAL PLATFORM
+                </span>
+              </motion.div>
               <h2
                 style={{
                   ...typography.h1,
@@ -698,7 +1101,7 @@ const LandingPage: React.FC = () => {
                 RealVerse keeps players, parents, and coaches aligned. It is the single source of truth for schedules,
                 attendance, communication, and progress—so development stays organised and transparent.
               </p>
-              <ul
+              <motion.ul
                 style={{
                   listStyle: "none",
                   padding: 0,
@@ -707,6 +1110,10 @@ const LandingPage: React.FC = () => {
                   flexDirection: "column",
                   gap: spacing.md,
                 }}
+                variants={staggerContainer}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
               >
                 {[
                   "Attendance tracking and accountability for every session",
@@ -714,7 +1121,7 @@ const LandingPage: React.FC = () => {
                   "Clear fees and payments with no surprises",
                   "Central record of player milestones and communication",
                 ].map((feature, idx) => (
-                  <li
+                  <motion.li
                     key={idx}
                     style={{
                       display: "flex",
@@ -722,77 +1129,93 @@ const LandingPage: React.FC = () => {
                       gap: spacing.md,
                       color: colors.text.secondary,
                     }}
+                    variants={fadeInUp}
                   >
-                    <span
+                    <motion.span
                       style={{
                         color: colors.primary.light,
                         fontSize: typography.fontSize.xl,
                         marginTop: "2px",
                       }}
+                      whileHover={{ x: 5 }}
                     >
                       →
-                    </span>
+                    </motion.span>
                     <span>{feature}</span>
-                  </li>
+                  </motion.li>
                 ))}
-              </ul>
+              </motion.ul>
               <Link to="/realverse" style={{ textDecoration: "none" }}>
-                <Button variant="primary" size="lg">
-                  Join RealVerse
-                </Button>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button variant="primary" size="lg">
+                    Join RealVerse
+                  </Button>
+                </motion.div>
               </Link>
-            </div>
+            </motion.div>
 
             {/* Visual */}
-            <Card variant="elevated" padding="none">
-              <div
-                style={{
-                  padding: spacing.xl,
-                  background: `linear-gradient(135deg, ${colors.primary.main}20 0%, ${colors.accent.main}20 100%)`,
-                  borderRadius: borderRadius.xl,
-                  minHeight: "400px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexDirection: "column",
-                  gap: spacing.lg,
-                }}
-              >
-                <div
+            <motion.div variants={fadeInRight}>
+              <Card variant="elevated" padding="none">
+                <motion.div
                   style={{
-                    fontSize: typography.fontSize["6xl"],
-                    marginBottom: spacing.md,
+                    padding: spacing.xl,
+                    background: `linear-gradient(135deg, ${colors.primary.main}20 0%, ${colors.accent.main}20 100%)`,
+                    borderRadius: borderRadius.xl,
+                    minHeight: "400px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexDirection: "column",
+                    gap: spacing.lg,
                   }}
+                  whileHover={{ scale: 1.02 }}
                 >
-                  📊
-                </div>
-                <div
-                  style={{
-                    ...typography.h3,
-                    color: colors.text.primary,
-                    textAlign: "center",
-                  }}
-                >
-                  RealVerse Dashboard
-                </div>
-                <div
-                  style={{
-                    ...typography.body,
-                    color: colors.text.muted,
-                    textAlign: "center",
-                    maxWidth: "300px",
-                  }}
-                >
-                  Your complete football management platform
-                </div>
-              </div>
-            </Card>
-          </div>
+                  <motion.div
+                    style={{
+                      fontSize: typography.fontSize["6xl"],
+                      marginBottom: spacing.md,
+                    }}
+                    animate={{ 
+                      rotate: [0, 5, -5, 0],
+                      scale: [1, 1.1, 1]
+                    }}
+                    transition={{ 
+                      duration: 3, 
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  >
+                    📊
+                  </motion.div>
+                  <div
+                    style={{
+                      ...typography.h3,
+                      color: colors.text.primary,
+                      textAlign: "center",
+                    }}
+                  >
+                    RealVerse Dashboard
+                  </div>
+                  <div
+                    style={{
+                      ...typography.body,
+                      color: colors.text.muted,
+                      textAlign: "center",
+                      maxWidth: "300px",
+                    }}
+                  >
+                    Your complete football management platform
+                  </div>
+                </motion.div>
+              </Card>
+            </motion.div>
+          </motion.div>
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* Fixtures & Results */}
-      <section
+      <AnimatedSection
         id="fixtures"
         style={{
           padding: `${spacing["4xl"]} ${spacing.xl}`,
@@ -800,26 +1223,49 @@ const LandingPage: React.FC = () => {
           margin: "0 auto",
         }}
       >
-        <h2
-          style={{
-            ...typography.h1,
-            textAlign: "center",
-            marginBottom: spacing.xl,
-            color: colors.text.primary,
-          }}
+        <motion.div
+          style={{ textAlign: "center", marginBottom: spacing["2xl"] }}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
         >
-          Fixtures & Results
-        </h2>
+          <motion.div
+            style={{
+              display: "inline-block",
+              padding: `${spacing.xs} ${spacing.md}`,
+              background: `linear-gradient(135deg, ${colors.primary.main}20 0%, ${colors.accent.main}20 100%)`,
+              borderRadius: borderRadius.full,
+              marginBottom: spacing.lg,
+            }}
+          >
+            <span style={{ ...typography.overline, color: colors.accent.main }}>
+              COMPETITIVE FOOTBALL
+            </span>
+          </motion.div>
+          <h2
+            style={{
+              ...typography.h1,
+              color: colors.text.primary,
+            }}
+          >
+            Fixtures & Results
+          </h2>
+        </motion.div>
 
-        <div
+        <motion.div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
             gap: spacing["2xl"],
           }}
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
         >
           {/* Upcoming Fixtures */}
-          <div>
+          <motion.div variants={fadeInLeft}>
             <h3
               style={{
                 ...typography.h3,
@@ -829,51 +1275,7 @@ const LandingPage: React.FC = () => {
             >
               Upcoming Fixtures
             </h3>
-            {upcomingFixtures.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
-                {upcomingFixtures.map((fixture) => (
-                  <Card key={fixture.id} variant="elevated" padding="md">
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        gap: spacing.md,
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            ...typography.overline,
-                            color: colors.accent.main,
-                            marginBottom: spacing.xs,
-                          }}
-                        >
-                          {formatDate(fixture.date)} • {fixture.time}
-                        </div>
-                        <div
-                          style={{
-                            ...typography.h4,
-                            color: colors.text.primary,
-                            marginBottom: spacing.xs,
-                          }}
-                        >
-                          vs {fixture.opponent}
-                        </div>
-                        <div
-                          style={{
-                            ...typography.caption,
-                            color: colors.text.muted,
-                          }}
-                        >
-                          {fixture.competition} • {fixture.venue}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
+            {fixturesLoading ? (
               <Card variant="outlined" padding="lg">
                 <div
                   style={{
@@ -882,14 +1284,108 @@ const LandingPage: React.FC = () => {
                     textAlign: "center",
                   }}
                 >
-                  No upcoming fixtures scheduled
+                  Loading fixtures...
                 </div>
               </Card>
+            ) : upcomingFixtures.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
+                {upcomingFixtures.map((fixture, idx) => (
+                  <motion.div
+                    key={fixture.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.1 }}
+                  >
+                    <Card variant="elevated" padding="md">
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          gap: spacing.md,
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div
+                            style={{
+                              ...typography.overline,
+                              color: colors.accent.main,
+                              marginBottom: spacing.xs,
+                            }}
+                          >
+                            {formatDate(fixture.matchDate)} • {fixture.matchTime}
+                          </div>
+                          <div
+                            style={{
+                              ...typography.h4,
+                              color: colors.text.primary,
+                              marginBottom: spacing.xs,
+                            }}
+                          >
+                            vs {fixture.opponent}
+                          </div>
+                          <div
+                            style={{
+                              ...typography.caption,
+                              color: colors.text.muted,
+                            }}
+                          >
+                            {fixture.matchType} • {fixture.venue}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <Card variant="elevated" padding="xl">
+                <motion.div
+                  style={{
+                    textAlign: "center",
+                    padding: spacing.lg,
+                  }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                >
+                  <motion.div 
+                    style={{ 
+                      fontSize: "48px", 
+                      marginBottom: spacing.md,
+                      opacity: 0.6,
+                    }}
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    ⚽
+                  </motion.div>
+                  <div
+                    style={{
+                      ...typography.h4,
+                      color: colors.text.primary,
+                      marginBottom: spacing.sm,
+                    }}
+                  >
+                    Stay Tuned for Upcoming Matches
+                  </div>
+                  <div
+                    style={{
+                      ...typography.body,
+                      color: colors.text.muted,
+                      fontSize: typography.fontSize.sm,
+                    }}
+                  >
+                    New fixtures will be announced soon
+                  </div>
+                </motion.div>
+              </Card>
             )}
-          </div>
+          </motion.div>
 
           {/* Recent Results */}
-          <div>
+          <motion.div variants={fadeInRight}>
             <h3
               style={{
                 ...typography.h3,
@@ -899,62 +1395,7 @@ const LandingPage: React.FC = () => {
             >
               Recent Results
             </h3>
-            {recentResults.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
-                {recentResults.map((result) => (
-                  <Card key={result.id} variant="elevated" padding="md">
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        gap: spacing.md,
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            ...typography.overline,
-                            color: colors.text.muted,
-                            marginBottom: spacing.xs,
-                          }}
-                        >
-                          {formatDate(result.date)}
-                        </div>
-                        <div
-                          style={{
-                            ...typography.h4,
-                            color: colors.text.primary,
-                            marginBottom: spacing.xs,
-                          }}
-                        >
-                          vs {result.opponent}
-                        </div>
-                        <div
-                          style={{
-                            ...typography.caption,
-                            color: colors.text.muted,
-                          }}
-                        >
-                          {result.competition} • {result.venue}
-                        </div>
-                      </div>
-                      {result.score && (
-                        <div
-                          style={{
-                            ...typography.h3,
-                            color: colors.accent.main,
-                            fontWeight: typography.fontWeight.bold,
-                          }}
-                        >
-                          {result.score}
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
+            {fixturesLoading ? (
               <Card variant="outlined" padding="lg">
                 <div
                   style={{
@@ -963,16 +1404,110 @@ const LandingPage: React.FC = () => {
                     textAlign: "center",
                   }}
                 >
-                  No recent results available
+                  Loading results...
                 </div>
               </Card>
+            ) : recentResults.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
+                {recentResults.map((result, idx) => (
+                  <motion.div
+                    key={result.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.1 }}
+                  >
+                    <Card variant="elevated" padding="md">
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          gap: spacing.md,
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div
+                            style={{
+                              ...typography.overline,
+                              color: colors.text.muted,
+                              marginBottom: spacing.xs,
+                            }}
+                          >
+                            {formatDate(result.matchDate)}
+                          </div>
+                          <div
+                            style={{
+                              ...typography.h4,
+                              color: colors.text.primary,
+                              marginBottom: spacing.xs,
+                            }}
+                          >
+                            vs {result.opponent}
+                          </div>
+                          <div
+                            style={{
+                              ...typography.caption,
+                              color: colors.text.muted,
+                            }}
+                          >
+                            {result.matchType} • {result.venue}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <Card variant="elevated" padding="xl">
+                <motion.div
+                  style={{
+                    textAlign: "center",
+                    padding: spacing.lg,
+                  }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                >
+                  <motion.div 
+                    style={{ 
+                      fontSize: "48px", 
+                      marginBottom: spacing.md,
+                      opacity: 0.6,
+                    }}
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    🏆
+                  </motion.div>
+                  <div
+                    style={{
+                      ...typography.h4,
+                      color: colors.text.primary,
+                      marginBottom: spacing.sm,
+                    }}
+                  >
+                    Results Coming Soon
+                  </div>
+                  <div
+                    style={{
+                      ...typography.body,
+                      color: colors.text.muted,
+                      fontSize: typography.fontSize.sm,
+                    }}
+                  >
+                    Match results will appear here
+                  </div>
+                </motion.div>
+              </Card>
             )}
-          </div>
-        </div>
-      </section>
+          </motion.div>
+        </motion.div>
+      </AnimatedSection>
 
       {/* News / Stories */}
-      <section
+      <AnimatedSection
         id="news"
         style={{
           padding: `${spacing["4xl"]} ${spacing.xl}`,
@@ -980,112 +1515,142 @@ const LandingPage: React.FC = () => {
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <h2
-            style={{
-              ...typography.h1,
-              textAlign: "center",
-              marginBottom: spacing.xl,
-              color: colors.text.primary,
-            }}
+          <motion.div
+            style={{ textAlign: "center", marginBottom: spacing["2xl"] }}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
           >
-            Latest News & Updates
-          </h2>
-          <div
+            <motion.div
+              style={{
+                display: "inline-block",
+                padding: `${spacing.xs} ${spacing.md}`,
+                background: `linear-gradient(135deg, ${colors.primary.main}20 0%, ${colors.accent.main}20 100%)`,
+                borderRadius: borderRadius.full,
+                marginBottom: spacing.lg,
+              }}
+            >
+              <span style={{ ...typography.overline, color: colors.accent.main }}>
+                STAY UPDATED
+              </span>
+            </motion.div>
+            <h2
+              style={{
+                ...typography.h1,
+                color: colors.text.primary,
+              }}
+            >
+              Latest News & Updates
+            </h2>
+          </motion.div>
+          <motion.div
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
               gap: spacing.xl,
             }}
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
           >
-            {mockNews.map((news) => (
-              <Card key={news.id} variant="elevated" padding="none">
-                {news.imageUrl && (
-                  <div
-                    style={{
-                      width: "100%",
-                      height: "200px",
-                      overflow: "hidden",
-                      borderRadius: `${borderRadius.xl} ${borderRadius.xl} 0 0`,
-                    }}
-                  >
-                    <img
-                      src={news.imageUrl}
-                      alt={news.title}
+            {mockNews.map((news, idx) => (
+              <motion.div
+                key={news.id}
+                variants={scaleIn}
+                whileHover={{ y: -10 }}
+              >
+                <Card variant="elevated" padding="none">
+                  {news.imageUrl && (
+                    <motion.div
                       style={{
                         width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
+                        height: "200px",
+                        overflow: "hidden",
+                        borderRadius: `${borderRadius.xl} ${borderRadius.xl} 0 0`,
                       }}
-                    />
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <img
+                        src={news.imageUrl}
+                        alt={news.title}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </motion.div>
+                  )}
+                  <div style={{ padding: spacing.lg }}>
+                    <div
+                      style={{
+                        ...typography.overline,
+                        color: colors.accent.main,
+                        marginBottom: spacing.xs,
+                      }}
+                    >
+                      {news.category} • {formatDate(news.date)}
+                    </div>
+                    <h3
+                      style={{
+                        ...typography.h4,
+                        color: colors.text.primary,
+                        marginBottom: spacing.sm,
+                      }}
+                    >
+                      {news.title}
+                    </h3>
+                    <p
+                      style={{
+                        ...typography.body,
+                        color: colors.text.muted,
+                        fontSize: typography.fontSize.sm,
+                        marginBottom: spacing.md,
+                      }}
+                    >
+                      {news.summary}
+                    </p>
+                    <motion.a
+                      href="#"
+                      style={{
+                        ...typography.body,
+                        fontSize: typography.fontSize.sm,
+                        color: colors.primary.light,
+                        textDecoration: "none",
+                        fontWeight: typography.fontWeight.semibold,
+                      }}
+                      whileHover={{ x: 5, color: colors.primary.main }}
+                    >
+                      Read more →
+                    </motion.a>
                   </div>
-                )}
-                <div style={{ padding: spacing.lg }}>
-                  <div
-                    style={{
-                      ...typography.overline,
-                      color: colors.accent.main,
-                      marginBottom: spacing.xs,
-                    }}
-                  >
-                    {news.category} • {formatDate(news.date)}
-                  </div>
-                  <h3
-                    style={{
-                      ...typography.h4,
-                      color: colors.text.primary,
-                      marginBottom: spacing.sm,
-                    }}
-                  >
-                    {news.title}
-                  </h3>
-                  <p
-                    style={{
-                      ...typography.body,
-                      color: colors.text.muted,
-                      fontSize: typography.fontSize.sm,
-                      marginBottom: spacing.md,
-                    }}
-                  >
-                    {news.summary}
-                  </p>
-                  <a
-                    href="#"
-                    style={{
-                      ...typography.body,
-                      fontSize: typography.fontSize.sm,
-                      color: colors.primary.light,
-                      textDecoration: "none",
-                      fontWeight: typography.fontWeight.semibold,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = colors.primary.main;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = colors.primary.light;
-                    }}
-                  >
-                    Read more →
-                  </a>
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* CTA Strip */}
-      <section
+      <AnimatedSection
         style={{
           padding: `${spacing["4xl"]} ${spacing.xl}`,
           background: `linear-gradient(135deg, ${colors.primary.main}20 0%, ${colors.accent.main}20 100%)`,
         }}
       >
-        <div
+        <motion.div
           style={{
             maxWidth: "800px",
             margin: "0 auto",
             textAlign: "center",
           }}
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
         >
           <h2
             style={{
@@ -1094,7 +1659,7 @@ const LandingPage: React.FC = () => {
               color: colors.text.primary,
             }}
           >
-            Ready to start your journey with FC Real Bengaluru?
+            Ready to Chase Your Legacy?
           </h2>
           <p
             style={{
@@ -1107,27 +1672,39 @@ const LandingPage: React.FC = () => {
             Join our academy, connect with RealVerse, and become part of Bengaluru's football
             future.
           </p>
-          <div
+          <motion.div
             style={{
               display: "flex",
               gap: spacing.lg,
               justifyContent: "center",
               flexWrap: "wrap",
             }}
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
           >
-            <Link to="/realverse/join" style={{ textDecoration: "none" }}>
-              <Button variant="primary" size="lg">
-                Join RealVerse Academy
-              </Button>
-            </Link>
-            <a href="#academy" style={{ textDecoration: "none" }}>
-              <Button variant="secondary" size="lg">
-                Explore Academy
-              </Button>
-            </a>
-          </div>
-        </div>
-      </section>
+            <motion.div variants={scaleIn}>
+              <Link to="/realverse/join" style={{ textDecoration: "none" }}>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button variant="primary" size="lg">
+                    Join RealVerse Academy
+                  </Button>
+                </motion.div>
+              </Link>
+            </motion.div>
+            <motion.div variants={scaleIn}>
+              <a href="#academy" style={{ textDecoration: "none" }}>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button variant="secondary" size="lg">
+                    Explore Academy
+                  </Button>
+                </motion.div>
+              </a>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      </AnimatedSection>
 
       {/* Footer */}
       <footer
@@ -1139,16 +1716,20 @@ const LandingPage: React.FC = () => {
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <div
+          <motion.div
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
               gap: spacing["2xl"],
               marginBottom: spacing["2xl"],
             }}
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
           >
             {/* Club Info */}
-            <div>
+            <motion.div variants={fadeInUp}>
               <div style={{ display: "flex", alignItems: "center", gap: spacing.md, marginBottom: spacing.lg }}>
                 <img
                   src="/fcrb-logo.png"
@@ -1169,6 +1750,15 @@ const LandingPage: React.FC = () => {
                   >
                     FC Real Bengaluru
                   </div>
+                  <div
+                    style={{
+                      ...typography.caption,
+                      color: colors.accent.main,
+                      fontSize: typography.fontSize.xs,
+                    }}
+                  >
+                    {clubInfo.tagline}
+                  </div>
                 </div>
               </div>
               <p
@@ -1181,10 +1771,10 @@ const LandingPage: React.FC = () => {
               >
                 {clubInfo.contact.address}
               </p>
-            </div>
+            </motion.div>
 
             {/* Quick Links */}
-            <div>
+            <motion.div variants={fadeInUp}>
               <h4
                 style={{
                   ...typography.h5,
@@ -1207,7 +1797,7 @@ const LandingPage: React.FC = () => {
                   { label: "RealVerse", href: "/realverse" },
                   { label: "Contact", href: "/#contact" },
                 ].map((link, idx) => (
-                  <a
+                  <motion.a
                     key={idx}
                     href={link.href}
                     style={{
@@ -1217,21 +1807,16 @@ const LandingPage: React.FC = () => {
                       textDecoration: "none",
                       transition: "color 0.2s ease",
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = colors.text.secondary;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = colors.text.muted;
-                    }}
+                    whileHover={{ x: 5, color: colors.text.secondary }}
                   >
                     {link.label}
-                  </a>
+                  </motion.a>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
             {/* Contact */}
-            <div>
+            <motion.div variants={fadeInUp}>
               <h4
                 style={{
                   ...typography.h5,
@@ -1267,10 +1852,10 @@ const LandingPage: React.FC = () => {
                   {clubInfo.contact.phone}
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Social */}
-            <div>
+            <motion.div variants={fadeInUp}>
               <h4
                 style={{
                   ...typography.h5,
@@ -1291,7 +1876,7 @@ const LandingPage: React.FC = () => {
                   { name: "YouTube", href: clubInfo.social.youtube, icon: "▶️" },
                   { name: "Facebook", href: clubInfo.social.facebook, icon: "👥" },
                 ].map((social, idx) => (
-                  <a
+                  <motion.a
                     key={idx}
                     href={social.href}
                     target="_blank"
@@ -1308,30 +1893,31 @@ const LandingPage: React.FC = () => {
                       fontSize: typography.fontSize.lg,
                       transition: "all 0.2s ease",
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
-                      e.currentTarget.style.transform = "translateY(0)";
+                    whileHover={{ 
+                      scale: 1.1,
+                      background: "rgba(255, 255, 255, 0.2)",
+                      y: -5
                     }}
                     title={social.name}
                   >
                     {social.icon}
-                  </a>
+                  </motion.a>
                 ))}
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           {/* Copyright */}
-          <div
+          <motion.div
             style={{
               paddingTop: spacing.xl,
               borderTop: `1px solid rgba(255, 255, 255, 0.1)`,
               textAlign: "center",
             }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
           >
             <p
               style={{
@@ -1342,7 +1928,7 @@ const LandingPage: React.FC = () => {
             >
               © {new Date().getFullYear()} FC Real Bengaluru. All rights reserved.
             </p>
-          </div>
+          </motion.div>
         </div>
       </footer>
     </div>
@@ -1350,4 +1936,3 @@ const LandingPage: React.FC = () => {
 };
 
 export default LandingPage;
-
