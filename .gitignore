@@ -38,7 +38,7 @@ lerna-debug.log*
 *.sw?
 
 # Prisma
-backend/prisma/migrations/
+# backend/prisma/migrations/  # COMMENTED OUT - migrations need to be tracked
 
 # Build outputs
 *.tsbuildinfo
