@@ -1,10 +1,13 @@
 -- AlterTable Center - Add all missing columns
+-- Note: Using quoted table names for case-sensitive matching
+
 -- Add shortName column if it doesn't exist
 DO $$ 
 BEGIN 
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'Center' 
+        WHERE table_schema = 'public'
+        AND table_name = 'Center' 
         AND column_name = 'shortName'
     ) THEN
         ALTER TABLE "Center" ADD COLUMN "shortName" TEXT;
@@ -16,7 +19,8 @@ DO $$
 BEGIN 
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'Center' 
+        WHERE table_schema = 'public'
+        AND table_name = 'Center' 
         AND column_name = 'addressLine'
     ) THEN
         ALTER TABLE "Center" ADD COLUMN "addressLine" TEXT;
@@ -28,7 +32,8 @@ DO $$
 BEGIN 
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'Center' 
+        WHERE table_schema = 'public'
+        AND table_name = 'Center' 
         AND column_name = 'locality'
     ) THEN
         ALTER TABLE "Center" ADD COLUMN "locality" TEXT;
@@ -40,7 +45,8 @@ DO $$
 BEGIN 
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'Center' 
+        WHERE table_schema = 'public'
+        AND table_name = 'Center' 
         AND column_name = 'state'
     ) THEN
         ALTER TABLE "Center" ADD COLUMN "state" TEXT;
@@ -52,7 +58,8 @@ DO $$
 BEGIN 
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'Center' 
+        WHERE table_schema = 'public'
+        AND table_name = 'Center' 
         AND column_name = 'postalCode'
     ) THEN
         ALTER TABLE "Center" ADD COLUMN "postalCode" TEXT;
@@ -64,7 +71,8 @@ DO $$
 BEGIN 
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'Center' 
+        WHERE table_schema = 'public'
+        AND table_name = 'Center' 
         AND column_name = 'latitude'
     ) THEN
         ALTER TABLE "Center" ADD COLUMN "latitude" DOUBLE PRECISION;
@@ -76,7 +84,8 @@ DO $$
 BEGIN 
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'Center' 
+        WHERE table_schema = 'public'
+        AND table_name = 'Center' 
         AND column_name = 'longitude'
     ) THEN
         ALTER TABLE "Center" ADD COLUMN "longitude" DOUBLE PRECISION;
@@ -88,7 +97,8 @@ DO $$
 BEGIN 
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'Center' 
+        WHERE table_schema = 'public'
+        AND table_name = 'Center' 
         AND column_name = 'googleMapsUrl'
     ) THEN
         ALTER TABLE "Center" ADD COLUMN "googleMapsUrl" TEXT;
@@ -100,7 +110,8 @@ DO $$
 BEGIN 
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'Center' 
+        WHERE table_schema = 'public'
+        AND table_name = 'Center' 
         AND column_name = 'isActive'
     ) THEN
         ALTER TABLE "Center" ADD COLUMN "isActive" BOOLEAN NOT NULL DEFAULT true;
@@ -112,52 +123,57 @@ DO $$
 BEGIN 
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'Center' 
+        WHERE table_schema = 'public'
+        AND table_name = 'Center' 
         AND column_name = 'displayOrder'
     ) THEN
         ALTER TABLE "Center" ADD COLUMN "displayOrder" INTEGER NOT NULL DEFAULT 0;
     END IF;
 END $$;
 
--- CreateIndex (if not exists)
+-- CreateIndex for shortName unique (if not exists)
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_indexes 
-        WHERE indexname = 'Center_shortName_key'
+        WHERE schemaname = 'public'
+        AND indexname = 'Center_shortName_key'
     ) THEN
         CREATE UNIQUE INDEX "Center_shortName_key" ON "Center"("shortName");
     END IF;
 END $$;
 
--- CreateIndex (if not exists)
+-- CreateIndex for shortName (if not exists)
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_indexes 
-        WHERE indexname = 'Center_shortName_idx'
+        WHERE schemaname = 'public'
+        AND indexname = 'Center_shortName_idx'
     ) THEN
         CREATE INDEX "Center_shortName_idx" ON "Center"("shortName");
     END IF;
 END $$;
 
--- CreateIndex (if not exists)
+-- CreateIndex for isActive (if not exists)
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_indexes 
-        WHERE indexname = 'Center_isActive_idx'
+        WHERE schemaname = 'public'
+        AND indexname = 'Center_isActive_idx'
     ) THEN
         CREATE INDEX "Center_isActive_idx" ON "Center"("isActive");
     END IF;
 END $$;
 
--- CreateIndex (if not exists)
+-- CreateIndex for displayOrder (if not exists)
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_indexes 
-        WHERE indexname = 'Center_displayOrder_idx'
+        WHERE schemaname = 'public'
+        AND indexname = 'Center_displayOrder_idx'
     ) THEN
         CREATE INDEX "Center_displayOrder_idx" ON "Center"("displayOrder");
     END IF;
