@@ -244,7 +244,7 @@ export async function getFactPayments(filters?: CentreAnalyticsFilters) {
     date: p.paymentDate,
     amount: p.amount,
     currency: "INR",
-    status: p.status,
+    status: "PAID", // Payment model doesn't have status field
     payment_method: p.paymentMode || null,
   }));
 }
@@ -451,7 +451,7 @@ export async function getCentreDailySummary(centreId: number, dateRange: DateRan
   });
 
   // Process trials
-  leads.forEach((lead) => {
+  leads.forEach((lead: any) => {
     const dateKey = lead.trial_date.toISOString().split("T")[0];
     if (dailyMap[dateKey]) {
       dailyMap[dateKey].number_of_trials += 1;
@@ -507,7 +507,7 @@ export async function calculateCentreMetrics(centreId: number, dateRange: DateRa
 
   // Calculate trial conversion
   const totalTrials = leads.length;
-  const convertedTrials = leads.filter((l) => l.converted_to_player).length;
+  const convertedTrials = leads.filter((l: any) => l.converted_to_player).length;
   const trialConversionRate = totalTrials > 0 ? (convertedTrials / totalTrials) * 100 : 0;
 
   // Calculate sessions per player

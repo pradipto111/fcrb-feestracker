@@ -1246,7 +1246,6 @@ router.get(
                 gte: dateRange.from,
                 lte: dateRange.to,
               },
-              status: "PAID",
             },
             _sum: { amount: true },
           });
@@ -1260,7 +1259,7 @@ router.get(
             activePlayers,
             sessions,
             attendanceRate,
-            revenue: payments._sum.amount || 0,
+            revenue: payments._sum?.amount || 0,
           };
         })
       );
@@ -1355,7 +1354,6 @@ router.get(
                 gte: dateRange.from,
                 lte: dateRange.to,
               },
-              status: "PAID",
             },
             _sum: { amount: true },
           });
@@ -1366,7 +1364,7 @@ router.get(
             activePlayers,
             attendanceRate,
             sessions: sessions.length,
-            revenue: revenue._sum.amount || 0,
+            revenue: revenue._sum?.amount || 0,
           };
         })
       );
@@ -1490,7 +1488,6 @@ router.get(
             gte: dateRange.from,
             lte: dateRange.to,
           },
-          status: "PAID",
         },
         include: {
           student: true,
@@ -1498,7 +1495,7 @@ router.get(
       });
 
       payments.forEach((payment) => {
-        const program = payment.student.programType || "Unknown";
+        const program = payment.student?.programType || "Unknown";
         if (programBreakdown[program]) {
           programBreakdown[program].revenue += payment.amount;
         }
@@ -1543,12 +1540,11 @@ router.get(
             gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
             lte: new Date(),
           },
-          status: "PAID",
         },
         _sum: { amount: true },
       });
 
-      const outstandingDues = Math.max(0, expectedMonthly - (collectedThisMonth._sum.amount || 0));
+      const outstandingDues = Math.max(0, expectedMonthly - (collectedThisMonth._sum?.amount || 0));
 
       // Get trials
       const trials = await (prisma as any).websiteLead?.findMany({
@@ -1722,13 +1718,8 @@ router.get(
           monthly[key] = { paid: 0, pending: 0, overdue: 0 };
         }
 
-        if (payment.status === "PAID") {
-          monthly[key].paid += payment.amount;
-        } else if (payment.status === "PENDING") {
-          monthly[key].pending += payment.amount;
-        } else if (payment.status === "OVERDUE") {
-          monthly[key].overdue += payment.amount;
-        }
+        // All payments are considered paid since Payment model doesn't have status field
+        monthly[key].paid += payment.amount;
       });
 
       const data = Object.entries(monthly).map(([month, amounts]) => ({
@@ -1767,14 +1758,14 @@ router.get(
             _sum: { amount: true },
           });
 
-          const outstanding = Math.max(0, student.monthlyFeeAmount - (paidThisMonth._sum.amount || 0));
+          const outstanding = Math.max(0, student.monthlyFeeAmount - (paidThisMonth._sum?.amount || 0));
 
           return {
             playerId: student.id,
             playerName: student.fullName,
             programType: student.programType,
             monthlyFee: student.monthlyFeeAmount,
-            paid: paidThisMonth._sum.amount || 0,
+            paid: paidThisMonth._sum?.amount || 0,
             outstanding,
           };
         })

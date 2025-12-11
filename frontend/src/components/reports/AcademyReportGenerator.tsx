@@ -154,7 +154,7 @@ const AcademyReportContent: React.FC<{ data: AcademyReportData }> = ({ data }) =
               Avg Attendance %
             </div>
             <div style={{ fontSize: "24px", fontWeight: "bold" }}>
-              {data.summary?.avgAttendance || 0}%
+              {`${data.summary?.avgAttendance || 0}%`}
             </div>
           </div>
           <div style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px" }}>
@@ -178,7 +178,7 @@ const AcademyReportContent: React.FC<{ data: AcademyReportData }> = ({ data }) =
               Fee Collection %
             </div>
             <div style={{ fontSize: "24px", fontWeight: "bold" }}>
-              {data.summary?.feeCollectionRate || 0}%
+              {`${data.summary?.feeCollectionRate || 0}%`}
             </div>
           </div>
           <div style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px" }}>
@@ -234,7 +234,7 @@ const AcademyReportContent: React.FC<{ data: AcademyReportData }> = ({ data }) =
         </h3>
         <p style={{ fontSize: "14px", lineHeight: "1.6", color: "#333" }}>
           Attendance data shows {data.attendanceData.length} periods tracked. Average attendance
-          rate is {data.summary?.avgAttendance || 0}%.
+          rate is {`${data.summary?.avgAttendance || 0}%`}.
         </p>
       </div>
 

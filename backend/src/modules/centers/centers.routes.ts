@@ -153,7 +153,7 @@ router.post("/", authRequired, requireRole("ADMIN"), async (req, res) => {
     const centerData: any = {
       name,
       location: locality || name, // Fallback to name if locality not provided
-      address: addressLine || address,
+      address: addressLine || "",
       city: city || "Bengaluru",
     };
 
@@ -237,24 +237,6 @@ router.post("/", authRequired, requireRole("ADMIN"), async (req, res) => {
       // Re-throw if it's a different error
       throw createError;
     }
-    
-    // Automatically assign ALL coaches to the new center
-    const coaches = await prisma.coach.findMany({
-      where: { role: "COACH" },
-    });
-    
-    for (const coach of coaches) {
-      await prisma.coachCenter.create({
-        data: {
-          coachId: coach.id,
-          centerId: center.id,
-        },
-      }).catch(() => {
-        // Ignore if already exists
-      });
-    }
-    
-    res.status(201).json(center);
   } catch (error: any) {
     console.error("Error creating centre:", error);
     res.status(500).json({ message: error.message || "Failed to create centre" });
