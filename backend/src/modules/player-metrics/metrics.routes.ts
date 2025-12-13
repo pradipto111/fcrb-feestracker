@@ -18,12 +18,12 @@ import {
   CreateSnapshotPayload,
 } from "./metrics.service";
 import { Role, MetricSourceContext, PlayerPosition } from "@prisma/client";
-import calibrationRoutes from "./calibration.routes";
+// import calibrationRoutes from "./calibration.routes"; // TODO: Fix TypeScript errors before enabling
 
 const router = Router();
 
 // Mount calibration routes
-router.use("/calibration", calibrationRoutes);
+// router.use("/calibration", calibrationRoutes); // TODO: Fix TypeScript errors before enabling
 
 /**
  * POST /player-metrics/snapshots
