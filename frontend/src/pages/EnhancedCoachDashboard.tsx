@@ -869,6 +869,7 @@ const EnhancedCoachDashboard: React.FC = () => {
           </table>
         </div>
       </Card>
+        </div>
             </React.Fragment>
           );
         })()}
