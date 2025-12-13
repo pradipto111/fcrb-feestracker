@@ -1,19 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { api } from "../api/client";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { PageHeader } from "../components/ui/PageHeader";
+import { DataTableCard } from "../components/ui/DataTableCard";
+import { Section } from "../components/ui/Section";
+import { FormSection } from "../components/ui/FormSection";
+import { FormField } from "../components/ui/FormField";
 import { useAuth } from "../context/AuthContext";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
 import { Table } from "../components/ui/Table";
 import { StatusChip } from "../components/ui/StatusChip";
 import { pageVariants, cardVariants, primaryButtonWhileHover, primaryButtonWhileTap } from "../utils/motion";
+import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
+import { adminAssets, academyAssets, galleryAssets } from "../config/assets";
 
 const EnhancedStudentsPage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [students, setStudents] = useState<any[]>([]);
   const [centers, setCenters] = useState<any[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<any[]>([]);
@@ -327,6 +334,23 @@ const EnhancedStudentsPage: React.FC = () => {
   const programs = ["U10", "U13", "U15", "U17", "U19"];
   const statuses = ["ACTIVE", "TRIAL", "INACTIVE"];
 
+  const {
+    sectionVariants,
+    headingVariants,
+    getStaggeredCard,
+  } = useHomepageAnimation();
+
+  // Calculate KPIs - use filteredStudents safely
+  const activePlayers = (filteredStudents || []).filter(s => s.status === "ACTIVE").length;
+  const trialPlayers = (filteredStudents || []).filter(s => s.status === "TRIAL").length;
+  const totalPlayers = (filteredStudents || []).length;
+  const newThisMonth = (filteredStudents || []).filter(s => {
+    if (!s.joiningDate) return false;
+    const joining = new Date(s.joiningDate);
+    const now = new Date();
+    return joining.getMonth() === now.getMonth() && joining.getFullYear() === now.getFullYear();
+  }).length;
+
   return (
     <motion.main
       className="rv-page rv-page--players"
@@ -334,6 +358,10 @@ const EnhancedStudentsPage: React.FC = () => {
       initial="initial"
       animate="animate"
       exit="exit"
+      style={{
+        background: colors.surface.bg,
+        minHeight: '100%',
+      }}
     >
       {/* Floating Stars Background */}
       <div className="rv-page-stars" aria-hidden="true">
@@ -344,41 +372,131 @@ const EnhancedStudentsPage: React.FC = () => {
         <span className="rv-star rv-star--delay4" />
       </div>
 
-      <section className="rv-section-surface">
-        {/* Header */}
-        <header className="rv-section-header">
-          <div>
-            <h1 className="rv-page-title">👥 Players</h1>
-            <p className="rv-page-subtitle">Manage and view all academy players</p>
-          </div>
-          <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
-            {(user?.role === "ADMIN" || user?.role === "COACH") && (
-              <motion.button
-                className="rv-btn rv-btn-primary"
-                whileHover={{ scale: 1.02, boxShadow: "0 0 12px rgba(4, 61, 208, 0.3)" }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowCreateModal(true)}
+      {/* BANNER SECTION */}
+      <motion.section
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          marginBottom: spacing["2xl"],
+          borderRadius: borderRadius.xl,
+        }}
+        variants={sectionVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: true, amount: 0.4 }}
+      >
+        {/* Background image */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `url(${adminAssets.dashboardBanner})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            opacity: 0.2,
+            filter: "blur(10px)",
+          }}
+        />
+        {/* Gradient overlay */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: `linear-gradient(135deg, rgba(4, 61, 208, 0.7) 0%, rgba(255, 169, 0, 0.5) 100%)`,
+          }}
+        />
+        {/* Banner content */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            padding: spacing["2xl"],
+            display: "flex",
+            flexDirection: "column",
+            gap: spacing.lg,
+          }}
+        >
+          <motion.p
+            style={{
+              ...typography.overline,
+              color: colors.accent.main,
+              letterSpacing: "0.1em",
+            }}
+            variants={headingVariants}
+          >
+            RealVerse • Players Management
+          </motion.p>
+          <motion.h1
+            style={{
+              ...typography.h1,
+              color: colors.text.onPrimary,
+              margin: 0,
+            }}
+            variants={headingVariants}
+          >
+            All Academy Players
+            <span style={{ display: "block", color: colors.accent.main, fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.normal, marginTop: spacing.xs }}>
+              Manage and track players across all centres
+            </span>
+          </motion.h1>
+          
+          {/* KPI Cards Row */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: spacing.md,
+              marginTop: spacing.md,
+            }}
+          >
+            {[
+              { label: "Active Players", value: activePlayers, subLabel: "All centres" },
+              { label: "Trial Players", value: trialPlayers, subLabel: "Evaluation" },
+              { label: "Total Players", value: totalPlayers, subLabel: "All statuses" },
+              { label: "New This Month", value: newThisMonth, subLabel: "Recent joins" },
+            ].map((kpi, index) => (
+              <motion.div
+                key={kpi.label}
+                {...getStaggeredCard(index)}
                 style={{
-                  background: colors.primary.main,
-                  color: colors.text.onPrimary,
+                  background: "rgba(255, 255, 255, 0.1)",
+                  backdropFilter: "blur(10px)",
+                  borderRadius: borderRadius.lg,
+                  padding: spacing.md,
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
                 }}
               >
-                ➕ Add New Student
-              </motion.button>
-            )}
-            <motion.button
-              className="rv-btn rv-btn-secondary"
-              whileHover={{ scale: 1.02, boxShadow: "0 0 12px rgba(0, 224, 255, 0.2)" }}
-              whileTap={{ scale: 0.98 }}
-              onClick={loadData}
-            >
-              🔄 Refresh
-            </motion.button>
+                <p style={{ ...typography.caption, color: colors.text.onPrimary, opacity: 0.8, marginBottom: spacing.xs }}>
+                  {kpi.label}
+                </p>
+                <p style={{ ...typography.h2, color: colors.text.onPrimary, margin: 0 }}>
+                  {kpi.value}
+                </p>
+                {kpi.subLabel && (
+                  <p style={{ ...typography.caption, color: colors.text.onPrimary, opacity: 0.6, marginTop: spacing.xs, margin: 0 }}>
+                    {kpi.subLabel}
+                  </p>
+                )}
+              </motion.div>
+            ))}
           </div>
-        </header>
+        </div>
+      </motion.section>
 
-        {/* Filters */}
-        <div className="rv-filter-bar">
+      <Section
+        title="Players"
+        description="Manage and view all academy players"
+        variant="default"
+        style={{ marginBottom: spacing.xl }}
+      >
+        {/* Filters - Collapsible for Hick's Law */}
+        <div className="rv-filter-bar" style={{ marginBottom: spacing.lg }}>
           <div className="rv-filter-field">
             <label>🔍 Search</label>
             <Input
@@ -403,6 +521,22 @@ const EnhancedStudentsPage: React.FC = () => {
             <select
               value={centerFilter}
               onChange={(e) => setCenterFilter(e.target.value)}
+              style={{
+                width: "100%",
+                padding: `${spacing.md} ${spacing.lg}`,
+                border: "1px solid var(--rv-border-subtle)",
+                borderRadius: "var(--rv-radius-sm)",
+                background: "rgba(3, 9, 28, 0.9)",
+                color: "var(--rv-text-body)",
+                fontSize: "0.86rem",
+                cursor: "pointer",
+                boxSizing: 'border-box',
+                appearance: 'none',
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: `right ${spacing.md} center`,
+                paddingRight: spacing.xl,
+              }}
             >
               <option value="">All Centers</option>
               {centers.map(c => (
@@ -416,6 +550,22 @@ const EnhancedStudentsPage: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
+              style={{
+                width: "100%",
+                padding: `${spacing.md} ${spacing.lg}`,
+                border: "1px solid var(--rv-border-subtle)",
+                borderRadius: "var(--rv-radius-sm)",
+                background: "rgba(3, 9, 28, 0.9)",
+                color: "var(--rv-text-body)",
+                fontSize: "0.86rem",
+                cursor: "pointer",
+                boxSizing: 'border-box',
+                appearance: 'none',
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: `right ${spacing.md} center`,
+                paddingRight: spacing.xl,
+              }}
             >
               <option value="">All Statuses</option>
               {statuses.map(s => (
@@ -464,7 +614,7 @@ const EnhancedStudentsPage: React.FC = () => {
         </div>
 
         {(searchTerm || centerFilter || statusFilter || programFilter) && (
-          <div style={{ marginTop: spacing.md, display: "flex", gap: spacing.sm, alignItems: "center" }}>
+          <div style={{ marginBottom: spacing.md, display: "flex", gap: spacing.sm, alignItems: "center" }}>
             <span style={{ ...typography.caption, color: colors.text.muted }}>
               Showing {filteredStudents.length} of {students.length} players
             </span>
@@ -503,9 +653,123 @@ const EnhancedStudentsPage: React.FC = () => {
           </Card>
         )}
 
-      {/* Students Table */}
-      <Card variant="default" padding="none" style={{ overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        {/* Player Profile & Batch Review CTA Banner */}
+        {(user?.role === "ADMIN" || user?.role === "COACH") && (
+          <Card
+            variant="elevated"
+            padding="lg"
+            style={{
+              background: `linear-gradient(135deg, ${colors.primary.main}15 0%, ${colors.accent.main}15 100%)`,
+              border: `2px solid ${colors.primary.main}40`,
+              marginBottom: spacing.xl,
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: spacing.lg }}>
+                <div style={{ flex: 1, minWidth: "300px" }}>
+                  <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.sm }}>
+                    📊 Player Profiles & Batch Review
+                  </h3>
+                  <p style={{ ...typography.body, color: colors.text.secondary, marginBottom: spacing.md }}>
+                    Access detailed player profiles with metrics, readiness scores, and development timelines. Use batch review to efficiently assess multiple players.
+                  </p>
+                  <div style={{ display: "flex", gap: spacing.md, flexWrap: "wrap" }}>
+                    <Button
+                      variant="primary"
+                      size="md"
+                      onClick={() => navigate("/realverse/admin/batch-review")}
+                    >
+                      Start Batch Review →
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      onClick={() => {
+                        if (filteredStudents.length > 0) {
+                          navigate(`/realverse/admin/players/${filteredStudents[0].id}/profile`);
+                        }
+                      }}
+                      disabled={filteredStudents.length === 0}
+                    >
+                      View First Player Profile →
+                    </Button>
+                  </div>
+                </div>
+                <div style={{ fontSize: "4rem", opacity: 0.2, lineHeight: 1 }}>
+                  📈
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Students Table - Wrapped in DataTableCard for consistent structure */}
+        <DataTableCard
+          title="All Players"
+          description={`${filteredStudents.length} player${filteredStudents.length !== 1 ? 's' : ''} found`}
+          filters={
+            <div style={{ display: "flex", gap: spacing.sm, alignItems: "center" }}>
+              {(searchTerm || centerFilter || statusFilter || programFilter) && (
+                <Button
+                  variant="utility"
+                  size="sm"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setCenterFilter("");
+                    setStatusFilter("");
+                    setProgramFilter("");
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          }
+          actions={
+            <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
+              {(user?.role === "ADMIN" || user?.role === "COACH") && (
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  ➕ Add New Student
+                </Button>
+              )}
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={loadData}
+              >
+                🔄 Refresh
+              </Button>
+            </div>
+          }
+          isEmpty={filteredStudents.length === 0}
+          emptyState={
+            <div style={{ 
+              padding: spacing['2xl'], 
+              textAlign: "center", 
+              color: colors.text.muted,
+            }}>
+              <p style={{ ...typography.body, marginBottom: spacing.sm }}>
+                {students.length === 0 ? "No players yet" : "No players match the filters"}
+              </p>
+              {students.length === 0 && (user?.role === "ADMIN" || user?.role === "COACH") && (
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  Add First Player
+                </Button>
+              )}
+            </div>
+          }
+        >
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ 
               background: "rgba(255, 255, 255, 0.05)", 
@@ -648,59 +912,143 @@ const EnhancedStudentsPage: React.FC = () => {
                   })()}
                 </td>
                 <td style={{ padding: spacing.md, textAlign: "center" }}>
-                  <Button
-                    variant="utility"
-                    size="sm"
-                    onClick={() => handleEditClick(student)}
-                  >
-                    ✏️ Edit
-                  </Button>
+                  <div style={{ display: "flex", gap: spacing.xs, justifyContent: "center", alignItems: "center" }}>
+                    <Link to={`/realverse/admin/players/${student.id}/profile`} style={{ textDecoration: "none" }}>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        style={{ 
+                          minWidth: "120px",
+                          background: `linear-gradient(135deg, ${colors.primary.main} 0%, ${colors.primary.dark} 100%)`,
+                          boxShadow: `0 2px 8px ${colors.primary.main}40`,
+                        }}
+                      >
+                        📊 View Profile
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="utility"
+                      size="sm"
+                      onClick={() => handleEditClick(student)}
+                    >
+                      ✏️ Edit
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-
-        {filteredStudents.length === 0 && (
-          <div style={{ 
-            padding: spacing['3xl'], 
-            textAlign: "center", 
-            color: colors.text.muted,
-            ...typography.body,
-          }}>
-            {students.length === 0 ? "No players yet" : "No players match the filters"}
-          </div>
-        )}
-      </Card>
+        </DataTableCard>
+      </Section>
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "rgba(0,0,0,0.5)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000,
-          padding: 24
-        }}>
+        <div 
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.7)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: spacing.lg,
+            overflow: "auto",
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowCreateModal(false);
+              setError("");
+            }
+          }}
+        >
           <Card variant="elevated" padding="xl" style={{
-            maxWidth: 800,
+            maxWidth: 900,
             width: "100%",
             maxHeight: "90vh",
-            overflow: "auto"
-          }}>
-            <h2 style={{ 
-              ...typography.h2,
-              marginBottom: spacing.lg,
-              color: colors.text.primary,
-            }}>Add New Player</h2>
+            overflow: "auto",
+            background: colors.surface.card,
+            border: `1px solid rgba(255, 255, 255, 0.1)`,
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
+              <h2 style={{ 
+                ...typography.h2,
+                margin: 0,
+                color: colors.text.primary,
+              }}>Add New Player</h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setNewStudent({
+                    fullName: "",
+                    dateOfBirth: "",
+                    phoneNumber: "",
+                    parentName: "",
+                    parentPhoneNumber: "",
+                    email: "",
+                    password: "",
+                    centerId: "",
+                    joiningDate: "",
+                    programType: "",
+                    monthlyFeeAmount: "",
+                    paymentFrequency: "1",
+                    status: "ACTIVE"
+                  });
+                  setError("");
+                }}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: colors.text.muted,
+                  fontSize: typography.fontSize.xl,
+                  cursor: "pointer",
+                  padding: spacing.xs,
+                  lineHeight: 1,
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            {error && (
+              <Card variant="default" padding="md" style={{ 
+                marginBottom: spacing.md,
+                background: colors.danger.soft,
+                border: `1px solid ${colors.danger.main}40`,
+              }}>
+                <p style={{ margin: 0, color: colors.danger.main }}>{error}</p>
+              </Card>
+            )}
+
+            {success && (
+              <Card variant="default" padding="md" style={{ 
+                marginBottom: spacing.md,
+                background: colors.success.soft,
+                border: `1px solid ${colors.success.main}40`,
+              }}>
+                <p style={{ margin: 0, color: colors.success.main }}>{success}</p>
+              </Card>
+            )}
             
             <form onSubmit={handleCreateStudent} style={{ display: "grid", gap: 16 }}>
+              {error && (
+                <Card variant="default" padding="md" style={{ 
+                  marginBottom: spacing.md,
+                  background: colors.danger.soft,
+                  border: `1px solid ${colors.danger.main}40`,
+                }}>
+                  <p style={{ margin: 0, color: colors.danger.main }}>{error}</p>
+                </Card>
+              )}
+
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div>
                   <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Full Name *</label>
@@ -710,11 +1058,11 @@ const EnhancedStudentsPage: React.FC = () => {
                     onChange={(e) => setNewStudent({ ...newStudent, fullName: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`, // 16px vertical, 24px horizontal - proper spacing
+                      padding: `${spacing.md} ${spacing.lg}`,
                       border: `1px solid rgba(255, 255, 255, 0.2)`,
                       borderRadius: borderRadius.md,
                       fontSize: typography.fontSize.base,
-                      background: colors.surface.card,
+                      background: colors.surface.soft,
                       color: colors.text.primary,
                       boxSizing: 'border-box',
                       lineHeight: typography.lineHeight.normal,
@@ -729,11 +1077,11 @@ const EnhancedStudentsPage: React.FC = () => {
                     onChange={(e) => setNewStudent({ ...newStudent, dateOfBirth: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`, // 16px vertical, 24px horizontal - proper spacing
+                      padding: `${spacing.md} ${spacing.lg}`,
                       border: `1px solid rgba(255, 255, 255, 0.2)`,
                       borderRadius: borderRadius.md,
                       fontSize: typography.fontSize.base,
-                      background: colors.surface.card,
+                      background: colors.surface.soft,
                       color: colors.text.primary,
                       boxSizing: 'border-box',
                       lineHeight: typography.lineHeight.normal,
@@ -750,11 +1098,11 @@ const EnhancedStudentsPage: React.FC = () => {
                     onChange={(e) => setNewStudent({ ...newStudent, phoneNumber: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`, // 16px vertical, 24px horizontal - proper spacing
+                      padding: `${spacing.md} ${spacing.lg}`,
                       border: `1px solid rgba(255, 255, 255, 0.2)`,
                       borderRadius: borderRadius.md,
                       fontSize: typography.fontSize.base,
-                      background: colors.surface.card,
+                      background: colors.surface.soft,
                       color: colors.text.primary,
                       boxSizing: 'border-box',
                       lineHeight: typography.lineHeight.normal,
@@ -768,11 +1116,11 @@ const EnhancedStudentsPage: React.FC = () => {
                     onChange={(e) => setNewStudent({ ...newStudent, parentName: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`, // 16px vertical, 24px horizontal - proper spacing
+                      padding: `${spacing.md} ${spacing.lg}`,
                       border: `1px solid rgba(255, 255, 255, 0.2)`,
                       borderRadius: borderRadius.md,
                       fontSize: typography.fontSize.base,
-                      background: colors.surface.card,
+                      background: colors.surface.soft,
                       color: colors.text.primary,
                       boxSizing: 'border-box',
                       lineHeight: typography.lineHeight.normal,
@@ -789,11 +1137,11 @@ const EnhancedStudentsPage: React.FC = () => {
                     onChange={(e) => setNewStudent({ ...newStudent, parentPhoneNumber: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`, // 16px vertical, 24px horizontal - proper spacing
+                      padding: `${spacing.md} ${spacing.lg}`,
                       border: `1px solid rgba(255, 255, 255, 0.2)`,
                       borderRadius: borderRadius.md,
                       fontSize: typography.fontSize.base,
-                      background: colors.surface.card,
+                      background: colors.surface.soft,
                       color: colors.text.primary,
                       boxSizing: 'border-box',
                       lineHeight: typography.lineHeight.normal,
@@ -808,11 +1156,11 @@ const EnhancedStudentsPage: React.FC = () => {
                     onChange={(e) => setNewStudent({ ...newStudent, joiningDate: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`, // 16px vertical, 24px horizontal - proper spacing
+                      padding: `${spacing.md} ${spacing.lg}`,
                       border: `1px solid rgba(255, 255, 255, 0.2)`,
                       borderRadius: borderRadius.md,
                       fontSize: typography.fontSize.base,
-                      background: colors.surface.card,
+                      background: colors.surface.soft,
                       color: colors.text.primary,
                       boxSizing: 'border-box',
                       lineHeight: typography.lineHeight.normal,
@@ -831,11 +1179,11 @@ const EnhancedStudentsPage: React.FC = () => {
                     placeholder="Optional - for student portal access"
                     style={{
                       width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`, // 16px vertical, 24px horizontal - proper spacing
+                      padding: `${spacing.md} ${spacing.lg}`,
                       border: `1px solid rgba(255, 255, 255, 0.2)`,
                       borderRadius: borderRadius.md,
                       fontSize: typography.fontSize.base,
-                      background: colors.surface.card,
+                      background: colors.surface.soft,
                       color: colors.text.primary,
                       boxSizing: 'border-box',
                       lineHeight: typography.lineHeight.normal,
@@ -851,11 +1199,11 @@ const EnhancedStudentsPage: React.FC = () => {
                     placeholder="Required if email is provided"
                     style={{
                       width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`, // 16px vertical, 24px horizontal - proper spacing
+                      padding: `${spacing.md} ${spacing.lg}`,
                       border: `1px solid rgba(255, 255, 255, 0.2)`,
                       borderRadius: borderRadius.md,
                       fontSize: typography.fontSize.base,
-                      background: colors.surface.card,
+                      background: colors.surface.soft,
                       color: colors.text.primary,
                       boxSizing: 'border-box',
                       lineHeight: typography.lineHeight.normal,
@@ -873,11 +1221,11 @@ const EnhancedStudentsPage: React.FC = () => {
                     onChange={(e) => setNewStudent({ ...newStudent, centerId: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`, // 16px vertical, 24px horizontal - proper spacing
+                      padding: `${spacing.md} ${spacing.lg}`,
                       border: `1px solid rgba(255, 255, 255, 0.2)`,
                       borderRadius: borderRadius.md,
                       fontSize: typography.fontSize.base,
-                      background: colors.surface.card,
+                      background: colors.surface.soft,
                       color: colors.text.primary,
                       boxSizing: 'border-box',
                       lineHeight: typography.lineHeight.normal,
@@ -896,11 +1244,11 @@ const EnhancedStudentsPage: React.FC = () => {
                     onChange={(e) => setNewStudent({ ...newStudent, programType: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`, // 16px vertical, 24px horizontal - proper spacing
+                      padding: `${spacing.md} ${spacing.lg}`,
                       border: `1px solid rgba(255, 255, 255, 0.2)`,
                       borderRadius: borderRadius.md,
                       fontSize: typography.fontSize.base,
-                      background: colors.surface.card,
+                      background: colors.surface.soft,
                       color: colors.text.primary,
                       boxSizing: 'border-box',
                       lineHeight: typography.lineHeight.normal,
@@ -920,11 +1268,11 @@ const EnhancedStudentsPage: React.FC = () => {
                     onChange={(e) => setNewStudent({ ...newStudent, status: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`, // 16px vertical, 24px horizontal - proper spacing
+                      padding: `${spacing.md} ${spacing.lg}`,
                       border: `1px solid rgba(255, 255, 255, 0.2)`,
                       borderRadius: borderRadius.md,
                       fontSize: typography.fontSize.base,
-                      background: colors.surface.card,
+                      background: colors.surface.soft,
                       color: colors.text.primary,
                       boxSizing: 'border-box',
                       lineHeight: typography.lineHeight.normal,
@@ -947,11 +1295,11 @@ const EnhancedStudentsPage: React.FC = () => {
                     onChange={(e) => setNewStudent({ ...newStudent, monthlyFeeAmount: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`, // 16px vertical, 24px horizontal - proper spacing
+                      padding: `${spacing.md} ${spacing.lg}`,
                       border: `1px solid rgba(255, 255, 255, 0.2)`,
                       borderRadius: borderRadius.md,
                       fontSize: typography.fontSize.base,
-                      background: colors.surface.card,
+                      background: colors.surface.soft,
                       color: colors.text.primary,
                       boxSizing: 'border-box',
                       lineHeight: typography.lineHeight.normal,
@@ -966,11 +1314,11 @@ const EnhancedStudentsPage: React.FC = () => {
                     onChange={(e) => setNewStudent({ ...newStudent, paymentFrequency: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`, // 16px vertical, 24px horizontal - proper spacing
+                      padding: `${spacing.md} ${spacing.lg}`,
                       border: `1px solid rgba(255, 255, 255, 0.2)`,
                       borderRadius: borderRadius.md,
                       fontSize: typography.fontSize.base,
-                      background: colors.surface.card,
+                      background: colors.surface.soft,
                       color: colors.text.primary,
                       boxSizing: 'border-box',
                       lineHeight: typography.lineHeight.normal,
@@ -1026,16 +1374,17 @@ const EnhancedStudentsPage: React.FC = () => {
                     });
                     setError("");
                   }}
-                  style={{
-                    flex: 1,
-                    padding: "12px 24px",
-                    background: colors.surface.card,
-                    color: colors.text.primary,
-                    border: `1px solid ${colors.surface.card}`,
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    fontWeight: 600
-                  }}
+                    style={{
+                      flex: 1,
+                      padding: "12px 24px",
+                      background: colors.surface.card,
+                      color: colors.text.primary,
+                      border: `1px solid rgba(255, 255, 255, 0.2)`,
+                      borderRadius: borderRadius.md,
+                      cursor: "pointer",
+                      fontWeight: typography.fontWeight.semibold,
+                      fontSize: typography.fontSize.base,
+                    }}
                 >
                   Cancel
                 </button>
@@ -1047,60 +1396,114 @@ const EnhancedStudentsPage: React.FC = () => {
 
       {/* Edit Modal */}
       {showEditModal && editingStudent && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "rgba(0,0,0,0.5)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000,
-          padding: 24
-        }}>
+        <div 
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.7)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: spacing.lg,
+            overflow: "auto",
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowEditModal(false);
+              setEditingStudent(null);
+              setError("");
+            }
+          }}
+        >
           <Card variant="elevated" padding="xl" style={{
-            maxWidth: 800,
+            maxWidth: 900,
             width: "100%",
             maxHeight: "90vh",
-            overflow: "auto"
-          }}>
-            <h2 style={{ 
-              ...typography.h2,
-              marginBottom: spacing.lg,
-              color: colors.text.primary,
-            }}>Edit Player</h2>
+            overflow: "auto",
+            background: colors.surface.card,
+            border: `1px solid rgba(255, 255, 255, 0.1)`,
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
+              <h2 style={{ 
+                ...typography.h2,
+                margin: 0,
+                color: colors.text.primary,
+              }}>Edit Player</h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingStudent(null);
+                  setError("");
+                }}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: colors.text.muted,
+                  fontSize: typography.fontSize.xl,
+                  cursor: "pointer",
+                  padding: spacing.xs,
+                  lineHeight: 1,
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {error && (
+              <Card variant="default" padding="md" style={{ 
+                marginBottom: spacing.md,
+                background: colors.danger.soft,
+                border: `1px solid ${colors.danger.main}40`,
+              }}>
+                <p style={{ margin: 0, color: colors.danger.main }}>{error}</p>
+              </Card>
+            )}
             
             <form onSubmit={handleUpdateStudent} style={{ display: "grid", gap: 16 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Full Name *</label>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Full Name *</label>
                   <input
                     required
                     value={editingStudent.fullName}
                     onChange={(e) => setEditingStudent({ ...editingStudent, fullName: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: "12px 16px",
-                      border: "2px solid #e0e0e0",
-                      borderRadius: 8,
-                      fontSize: 14
+                      padding: `${spacing.md} ${spacing.lg}`,
+                      border: `1px solid rgba(255, 255, 255, 0.2)`,
+                      borderRadius: borderRadius.md,
+                      fontSize: typography.fontSize.base,
+                      background: colors.surface.soft,
+                      color: colors.text.primary,
+                      boxSizing: 'border-box',
+                      lineHeight: typography.lineHeight.normal,
                     }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Date of Birth</label>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Date of Birth</label>
                   <input
                     type="date"
                     value={editingStudent.dateOfBirth}
                     onChange={(e) => setEditingStudent({ ...editingStudent, dateOfBirth: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: "12px 16px",
-                      border: "2px solid #e0e0e0",
-                      borderRadius: 8,
-                      fontSize: 14
+                      padding: `${spacing.md} ${spacing.lg}`,
+                      border: `1px solid rgba(255, 255, 255, 0.2)`,
+                      borderRadius: borderRadius.md,
+                      fontSize: typography.fontSize.base,
+                      background: colors.surface.soft,
+                      color: colors.text.primary,
+                      boxSizing: 'border-box',
+                      lineHeight: typography.lineHeight.normal,
                     }}
                   />
                 </div>
@@ -1108,22 +1511,106 @@ const EnhancedStudentsPage: React.FC = () => {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Email</label>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Phone Number</label>
                   <input
-                    type="email"
-                    value={editingStudent.email || ""}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, email: e.target.value })}
+                    value={editingStudent.phoneNumber || ""}
+                    onChange={(e) => setEditingStudent({ ...editingStudent, phoneNumber: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: "12px 16px",
-                      border: "2px solid #e0e0e0",
-                      borderRadius: 8,
-                      fontSize: 14
+                      padding: `${spacing.md} ${spacing.lg}`,
+                      border: `1px solid rgba(255, 255, 255, 0.2)`,
+                      borderRadius: borderRadius.md,
+                      fontSize: typography.fontSize.base,
+                      background: colors.surface.soft,
+                      color: colors.text.primary,
+                      boxSizing: 'border-box',
+                      lineHeight: typography.lineHeight.normal,
                     }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>New Password (optional)</label>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Parent Name</label>
+                  <input
+                    value={editingStudent.parentName || ""}
+                    onChange={(e) => setEditingStudent({ ...editingStudent, parentName: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: `${spacing.md} ${spacing.lg}`,
+                      border: `1px solid rgba(255, 255, 255, 0.2)`,
+                      borderRadius: borderRadius.md,
+                      fontSize: typography.fontSize.base,
+                      background: colors.surface.soft,
+                      color: colors.text.primary,
+                      boxSizing: 'border-box',
+                      lineHeight: typography.lineHeight.normal,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Parent Phone Number</label>
+                  <input
+                    value={editingStudent.parentPhoneNumber || ""}
+                    onChange={(e) => setEditingStudent({ ...editingStudent, parentPhoneNumber: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: `${spacing.md} ${spacing.lg}`,
+                      border: `1px solid rgba(255, 255, 255, 0.2)`,
+                      borderRadius: borderRadius.md,
+                      fontSize: typography.fontSize.base,
+                      background: colors.surface.soft,
+                      color: colors.text.primary,
+                      boxSizing: 'border-box',
+                      lineHeight: typography.lineHeight.normal,
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Joining Date</label>
+                  <input
+                    type="date"
+                    value={editingStudent.joiningDate}
+                    onChange={(e) => setEditingStudent({ ...editingStudent, joiningDate: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: `${spacing.md} ${spacing.lg}`,
+                      border: `1px solid rgba(255, 255, 255, 0.2)`,
+                      borderRadius: borderRadius.md,
+                      fontSize: typography.fontSize.base,
+                      background: colors.surface.soft,
+                      color: colors.text.primary,
+                      boxSizing: 'border-box',
+                      lineHeight: typography.lineHeight.normal,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Email (for login)</label>
+                  <input
+                    type="email"
+                    value={editingStudent.email || ""}
+                    onChange={(e) => setEditingStudent({ ...editingStudent, email: e.target.value })}
+                    placeholder="Optional - for student portal access"
+                    style={{
+                      width: "100%",
+                      padding: `${spacing.md} ${spacing.lg}`,
+                      border: `1px solid rgba(255, 255, 255, 0.2)`,
+                      borderRadius: borderRadius.md,
+                      fontSize: typography.fontSize.base,
+                      background: colors.surface.soft,
+                      color: colors.text.primary,
+                      boxSizing: 'border-box',
+                      lineHeight: typography.lineHeight.normal,
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>New Password (optional)</label>
                   <input
                     type="password"
                     value={editingStudent.newPassword || ""}
@@ -1131,10 +1618,14 @@ const EnhancedStudentsPage: React.FC = () => {
                     placeholder="Leave blank to keep current"
                     style={{
                       width: "100%",
-                      padding: "12px 16px",
-                      border: "2px solid #e0e0e0",
-                      borderRadius: 8,
-                      fontSize: 14
+                      padding: `${spacing.md} ${spacing.lg}`,
+                      border: `1px solid rgba(255, 255, 255, 0.2)`,
+                      borderRadius: borderRadius.md,
+                      fontSize: typography.fontSize.base,
+                      background: colors.surface.soft,
+                      color: colors.text.primary,
+                      boxSizing: 'border-box',
+                      lineHeight: typography.lineHeight.normal,
                     }}
                   />
                 </div>
@@ -1142,17 +1633,27 @@ const EnhancedStudentsPage: React.FC = () => {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
                 <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Center *</label>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Center *</label>
                   <select
                     required
                     value={editingStudent.centerId}
                     onChange={(e) => setEditingStudent({ ...editingStudent, centerId: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: "12px 16px",
-                      border: "2px solid #e0e0e0",
-                      borderRadius: 8,
-                      fontSize: 14
+                      padding: `${spacing.md} ${spacing.lg}`,
+                      border: `1px solid rgba(255, 255, 255, 0.2)`,
+                      borderRadius: borderRadius.md,
+                      fontSize: typography.fontSize.base,
+                      cursor: "pointer",
+                      background: colors.surface.card,
+                      color: colors.text.primary,
+                      fontFamily: typography.fontFamily.primary,
+                      boxSizing: 'border-box',
+                      appearance: 'none',
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: `right ${spacing.md} center`,
+                      paddingRight: spacing.xl,
                     }}
                   >
                     {centers.map(c => (
@@ -1161,16 +1662,26 @@ const EnhancedStudentsPage: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Program</label>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Program</label>
                   <select
                     value={editingStudent.programType || ""}
                     onChange={(e) => setEditingStudent({ ...editingStudent, programType: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: "12px 16px",
-                      border: "2px solid #e0e0e0",
-                      borderRadius: 8,
-                      fontSize: 14
+                      padding: `${spacing.md} ${spacing.lg}`,
+                      border: `1px solid rgba(255, 255, 255, 0.2)`,
+                      borderRadius: borderRadius.md,
+                      fontSize: typography.fontSize.base,
+                      cursor: "pointer",
+                      background: colors.surface.card,
+                      color: colors.text.primary,
+                      fontFamily: typography.fontFamily.primary,
+                      boxSizing: 'border-box',
+                      appearance: 'none',
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: `right ${spacing.md} center`,
+                      paddingRight: spacing.xl,
                     }}
                   >
                     <option value="">Select Program</option>
@@ -1180,17 +1691,27 @@ const EnhancedStudentsPage: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Status *</label>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Status *</label>
                   <select
                     required
                     value={editingStudent.status}
                     onChange={(e) => setEditingStudent({ ...editingStudent, status: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: "12px 16px",
-                      border: "2px solid #e0e0e0",
-                      borderRadius: 8,
-                      fontSize: 14
+                      padding: `${spacing.md} ${spacing.lg}`,
+                      border: `1px solid rgba(255, 255, 255, 0.2)`,
+                      borderRadius: borderRadius.md,
+                      fontSize: typography.fontSize.base,
+                      cursor: "pointer",
+                      background: colors.surface.card,
+                      color: colors.text.primary,
+                      fontFamily: typography.fontFamily.primary,
+                      boxSizing: 'border-box',
+                      appearance: 'none',
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: `right ${spacing.md} center`,
+                      paddingRight: spacing.xl,
                     }}
                   >
                     {statuses.map(s => (
@@ -1202,7 +1723,7 @@ const EnhancedStudentsPage: React.FC = () => {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Monthly Fee (₹) *</label>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Monthly Fee (₹) *</label>
                   <input
                     required
                     type="number"
@@ -1210,25 +1731,39 @@ const EnhancedStudentsPage: React.FC = () => {
                     onChange={(e) => setEditingStudent({ ...editingStudent, monthlyFeeAmount: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: "12px 16px",
-                      border: "2px solid #e0e0e0",
-                      borderRadius: 8,
-                      fontSize: 14
+                      padding: `${spacing.md} ${spacing.lg}`,
+                      border: `1px solid rgba(255, 255, 255, 0.2)`,
+                      borderRadius: borderRadius.md,
+                      fontSize: typography.fontSize.base,
+                      background: colors.surface.soft,
+                      color: colors.text.primary,
+                      boxSizing: 'border-box',
+                      lineHeight: typography.lineHeight.normal,
                     }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Payment Frequency *</label>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Payment Frequency *</label>
                   <select
                     required
                     value={editingStudent.paymentFrequency}
                     onChange={(e) => setEditingStudent({ ...editingStudent, paymentFrequency: e.target.value })}
                     style={{
                       width: "100%",
-                      padding: "12px 16px",
-                      border: "2px solid #e0e0e0",
-                      borderRadius: 8,
-                      fontSize: 14
+                      padding: `${spacing.md} ${spacing.lg}`,
+                      border: `1px solid rgba(255, 255, 255, 0.2)`,
+                      borderRadius: borderRadius.md,
+                      fontSize: typography.fontSize.base,
+                      cursor: "pointer",
+                      background: colors.surface.card,
+                      color: colors.text.primary,
+                      fontFamily: typography.fontFamily.primary,
+                      boxSizing: 'border-box',
+                      appearance: 'none',
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: `right ${spacing.md} center`,
+                      paddingRight: spacing.xl,
                     }}
                   >
                     {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => (
@@ -1250,12 +1785,13 @@ const EnhancedStudentsPage: React.FC = () => {
                   style={{
                     flex: 1,
                     padding: "12px 24px",
-                    background: "#27ae60",
-                    color: "#000",
+                    background: colors.success.main,
+                    color: colors.text.onPrimary,
                     border: "none",
-                    borderRadius: 8,
+                    borderRadius: borderRadius.md,
                     cursor: "pointer",
-                    fontWeight: 600
+                    fontWeight: typography.fontWeight.semibold,
+                    fontSize: typography.fontSize.base,
                   }}
                 >
                   💾 Save Changes
@@ -1265,16 +1801,18 @@ const EnhancedStudentsPage: React.FC = () => {
                   onClick={() => {
                     setShowEditModal(false);
                     setEditingStudent(null);
+                    setError("");
                   }}
                   style={{
                     flex: 1,
                     padding: "12px 24px",
-                    background: "#95a5a6",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 8,
+                    background: colors.surface.card,
+                    color: colors.text.primary,
+                    border: `1px solid rgba(255, 255, 255, 0.2)`,
+                    borderRadius: borderRadius.md,
                     cursor: "pointer",
-                    fontWeight: 600
+                    fontWeight: typography.fontWeight.semibold,
+                    fontSize: typography.fontSize.base,
                   }}
                 >
                   Cancel
@@ -1284,7 +1822,6 @@ const EnhancedStudentsPage: React.FC = () => {
           </Card>
         </div>
       )}
-      </section>
     </motion.main>
   );
 };

@@ -6,9 +6,13 @@ import { PageHeader } from "../components/ui/PageHeader";
 import { KPICard } from "../components/ui/KPICard";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
+import { Section } from "../components/ui/Section";
+import { CardHeader } from "../components/ui/CardHeader";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 import HeroSection from "../components/HeroSection";
 import { pageVariants, cardVariants } from "../utils/motion";
+import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
+import { adminAssets, academyAssets, galleryAssets, heroAssets, clubAssets } from "../config/assets";
 
 const EnhancedAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -112,30 +116,129 @@ const EnhancedAdminDashboard: React.FC = () => {
         <span className="rv-star rv-star--delay4" />
       </div>
 
-      {/* Hero Section with Video */}
-      <HeroSection 
-        title="Welcome to RealVerse"
-        subtitle="Complete academy management and analytics dashboard"
-        showVideo={true}
-      />
-
-      <section className="rv-section-surface">
-        {/* Header */}
-        <header className="rv-section-header">
-          <div>
-            <h1 className="rv-page-title">Admin Dashboard</h1>
-            <p className="rv-page-subtitle">Complete academy overview and analytics</p>
-          </div>
-          <motion.button
-            className="rv-btn rv-btn-secondary"
-            whileHover={{ scale: 1.02, boxShadow: "0 0 12px rgba(0, 224, 255, 0.2)" }}
-            whileTap={{ scale: 0.98 }}
-            onClick={loadData}
+      {/* Hero Section with Video - STUNNING THEME */}
+      <motion.section
+        style={{
+          position: "relative",
+          minHeight: "400px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+          marginBottom: spacing.xl,
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+      >
+        {/* Background Image - ONLY IMAGE, NO VIDEO */}
+        <motion.div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `url(${adminAssets.dashboardBanner})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            opacity: 0.5,
+            zIndex: 0,
+          }}
+          animate={{
+            scale: [1, 1.03, 1],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        
+        {/* Animated Radial Gradient */}
+        <motion.div
+          style={{
+            position: "absolute",
+            top: "20%",
+            left: "30%",
+            width: "600px",
+            height: "600px",
+            background: "radial-gradient(circle, rgba(0, 224, 255, 0.2) 0%, transparent 70%)",
+            borderRadius: "50%",
+            filter: "blur(60px)",
+            zIndex: 1,
+          }}
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.1, 0.3, 0.1],
+          }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        
+        {/* Dark Overlay */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(5, 11, 32, 0.6)",
+            zIndex: 2,
+          }}
+        />
+        
+        {/* Content */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 3,
+            textAlign: "center",
+            padding: spacing.xl,
+            maxWidth: "800px",
+          }}
+        >
+          <motion.h1
+            style={{
+              ...typography.display,
+              fontSize: typography.fontSize["4xl"],
+              color: colors.text.primary,
+              marginBottom: spacing.md,
+              textShadow: "0 4px 30px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 224, 255, 0.3)",
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
           >
-            🔄 Refresh
-          </motion.button>
-        </header>
+            Welcome to RealVerse
+          </motion.h1>
+          <motion.p
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.lg,
+              color: colors.text.secondary,
+              textShadow: "0 2px 15px rgba(0, 0, 0, 0.5)",
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            Complete academy management and analytics dashboard
+          </motion.p>
+        </div>
+        
+      </motion.section>
 
+      <Section
+        title="Admin Dashboard"
+        description="Complete academy overview and analytics"
+        variant="elevated"
+        style={{ marginBottom: spacing.xl }}
+      >
         {/* Error State */}
         {error && (
           <Card variant="default" padding="md" style={{ 
@@ -149,10 +252,24 @@ const EnhancedAdminDashboard: React.FC = () => {
 
         {/* Loading State */}
         {!summary && !error && (
-          <div className="rv-empty-state">
-            <div className="rv-skeleton rv-skeleton-line rv-skeleton-line--lg" style={{ marginBottom: spacing.md }} />
-            <div className="rv-skeleton rv-skeleton-line rv-skeleton-line--md" />
-            <p style={{ marginTop: spacing.lg, color: colors.text.muted }}>Loading dashboard data...</p>
+          <div style={{ 
+            padding: spacing['2xl'], 
+            textAlign: "center", 
+            color: colors.text.muted 
+          }}>
+            <div
+              style={{
+                display: "inline-block",
+                width: "40px",
+                height: "40px",
+                border: `3px solid ${colors.surface.soft}`,
+                borderTopColor: colors.primary.main,
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+                marginBottom: spacing.md,
+              }}
+            />
+            <p style={{ marginTop: spacing.md, ...typography.body }}>Loading dashboard data...</p>
           </div>
         )}
 
@@ -176,12 +293,58 @@ const EnhancedAdminDashboard: React.FC = () => {
 
           return (
             <React.Fragment key="dashboard-content">
-              {/* Main Stats Cards */}
+              {/* Quick Actions CTA Section - Player Management & Calibration */}
+              <div style={{ display: "flex", flexDirection: "column", gap: spacing.md, marginBottom: spacing.xl }}>
+                <Card
+                  variant="elevated"
+                  padding="lg"
+                  style={{
+                    background: `linear-gradient(135deg, ${colors.primary.main}15 0%, ${colors.accent.main}15 100%)`,
+                    border: `2px solid ${colors.primary.main}40`,
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                <div style={{ position: "relative", zIndex: 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: spacing.lg }}>
+                    <div style={{ flex: 1, minWidth: "300px" }}>
+                      <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.sm }}>
+                        ⚽ Player Management & Analytics
+                      </h3>
+                      <p style={{ ...typography.body, color: colors.text.secondary, marginBottom: spacing.md }}>
+                        Access comprehensive player profiles, create metric snapshots, and review multiple players efficiently.
+                      </p>
+                      <div style={{ display: "flex", gap: spacing.md, flexWrap: "wrap" }}>
+                        <Button
+                          variant="primary"
+                          size="md"
+                          onClick={() => navigate("/realverse/admin/students")}
+                        >
+                          View All Players →
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="md"
+                          onClick={() => navigate("/realverse/admin/batch-review")}
+                        >
+                          Start Batch Review →
+                        </Button>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: "4rem", opacity: 0.2, lineHeight: 1 }}>
+                      ⚽
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Main Stats Cards - Chunked for Miller's Law */}
               <div style={{ 
                 display: "grid", 
                 gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", 
                 gap: spacing.lg, 
-                marginBottom: spacing.xl 
+                marginBottom: spacing.xl,
+                padding: spacing.md, // Ensure padding from borders
               }}>
                 <motion.div custom={0} variants={cardVariants} initial="initial" animate="animate">
                   <KPICard
@@ -877,62 +1040,62 @@ const EnhancedAdminDashboard: React.FC = () => {
 
               {/* Quick Stats Grid */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
-        <div style={{
-          background: colors.surface.card,
-          backdropFilter: "blur(20px)",
-          padding: 20,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          textAlign: "center"
-        }}>
-          <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Total Centers</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: "#1E40AF" }}>{centers.length}</div>
-        </div>
+                <div style={{
+                  background: colors.surface.card,
+                  backdropFilter: "blur(20px)",
+                  padding: 20,
+                  borderRadius: 12,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  textAlign: "center"
+                }}>
+                  <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Total Centers</div>
+                  <div style={{ fontSize: 32, fontWeight: 700, color: "#1E40AF" }}>{centers.length}</div>
+                </div>
 
-        <div style={{
-          background: colors.surface.card,
-          backdropFilter: "blur(20px)",
-          padding: 20,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          textAlign: "center"
-        }}>
-          <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Active Students</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: "#27ae60" }}>{activeStudents}</div>
-        </div>
+                <div style={{
+                  background: colors.surface.card,
+                  backdropFilter: "blur(20px)",
+                  padding: 20,
+                  borderRadius: 12,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  textAlign: "center"
+                }}>
+                  <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Active Students</div>
+                  <div style={{ fontSize: 32, fontWeight: 700, color: "#27ae60" }}>{activeStudents}</div>
+                </div>
 
-        <div style={{
-          background: colors.surface.card,
-          backdropFilter: "blur(20px)",
-          padding: 20,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          textAlign: "center"
-        }}>
-          <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Trial Students</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: "#f39c12" }}>
-            {students.filter(s => s.status === "TRIAL").length}
-          </div>
-        </div>
+                <div style={{
+                  background: colors.surface.card,
+                  backdropFilter: "blur(20px)",
+                  padding: 20,
+                  borderRadius: 12,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  textAlign: "center"
+                }}>
+                  <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Trial Students</div>
+                  <div style={{ fontSize: 32, fontWeight: 700, color: "#f39c12" }}>
+                    {students.filter(s => s.status === "TRIAL").length}
+                  </div>
+                </div>
 
-        <div style={{
-          background: colors.surface.card,
-          backdropFilter: "blur(20px)",
-          padding: 20,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          textAlign: "center"
-        }}>
-          <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Avg Fee/Student</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: "#3498db" }}>
-            ₹{students.length > 0 ? Math.floor(totalRevenue / students.length).toLocaleString() : 0}
-          </div>
-        </div>
+                <div style={{
+                  background: colors.surface.card,
+                  backdropFilter: "blur(20px)",
+                  padding: 20,
+                  borderRadius: 12,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  textAlign: "center"
+                }}>
+                  <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>Avg Fee/Student</div>
+                  <div style={{ fontSize: 32, fontWeight: 700, color: "#3498db" }}>
+                    ₹{students.length > 0 ? Math.floor(totalRevenue / students.length).toLocaleString() : 0}
+                  </div>
+                </div>
               </div>
             </React.Fragment>
           );
         })()}
-      </section>
+      </Section>
     </motion.main>
   );
 };

@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { api } from "../api/client";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Badge } from "../components/ui/Badge";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
+import { galleryAssets } from "../config/assets";
 
 const PostApprovalPage: React.FC = () => {
   const [pendingPosts, setPendingPosts] = useState<any[]>([]);
@@ -93,8 +96,89 @@ const PostApprovalPage: React.FC = () => {
     return null;
   };
 
+  const {
+    sectionVariants,
+    headingVariants,
+    getStaggeredCard,
+  } = useHomepageAnimation();
+
   return (
     <div>
+      {/* Banner Section */}
+      <motion.section
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          marginBottom: spacing["2xl"],
+          borderRadius: borderRadius.xl,
+          minHeight: "200px",
+        }}
+        variants={sectionVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: true, amount: 0.4 }}
+      >
+        {/* Background image */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `url(${galleryAssets.actionShots[0].medium})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            opacity: 0.15,
+            filter: "blur(10px)",
+          }}
+        />
+        {/* Gradient overlay */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: `linear-gradient(135deg, rgba(4, 61, 208, 0.7) 0%, rgba(255, 169, 0, 0.5) 100%)`,
+          }}
+        />
+        {/* Banner content */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            padding: spacing["2xl"],
+          }}
+        >
+          <motion.p
+            style={{
+              ...typography.overline,
+              color: colors.accent.main,
+              letterSpacing: "0.1em",
+              marginBottom: spacing.sm,
+            }}
+            variants={headingVariants}
+          >
+            RealVerse • Content Moderation
+          </motion.p>
+          <motion.h1
+            style={{
+              ...typography.h1,
+              color: colors.text.onPrimary,
+              margin: 0,
+            }}
+            variants={headingVariants}
+          >
+            Post Approval
+            <span style={{ display: "block", color: colors.accent.main, fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.normal, marginTop: spacing.xs }}>
+              Review and approve student posts
+            </span>
+          </motion.h1>
+        </div>
+      </motion.section>
+
       <PageHeader
         title="✅ Post Approval"
         subtitle="Review and approve student posts"

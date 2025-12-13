@@ -1,14 +1,22 @@
 import React, { useState } from "react";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { adminAssets } from "../config/assets";
 
 interface HeroSectionProps {
   title: string;
   subtitle?: string;
   showVideo?: boolean;
+  backgroundImage?: string;
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({ title, subtitle, showVideo = false }) => {
+const HeroSection: React.FC<HeroSectionProps> = ({ 
+  title, 
+  subtitle, 
+  showVideo = false,
+  backgroundImage 
+}) => {
   const [videoPlaying, setVideoPlaying] = useState(false);
+  const bgImage = backgroundImage || adminAssets.dashboardBanner;
 
   return (
     <div style={{
@@ -27,7 +35,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ title, subtitle, showVideo = 
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundImage: "url(/photo1.png)",
+        backgroundImage: `url(${bgImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         opacity: 0.2,

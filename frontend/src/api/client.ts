@@ -732,5 +732,106 @@ export const api = {
     if (params?.to) query.set("to", params.to);
     return request(`/analytics/centres/${centreId}/trials-breakdown?${query.toString()}`);
   },
+  // Player Metrics API
+  getMyLatestMetricSnapshot() {
+    return request("/player-metrics/snapshots/my/latest");
+  },
+  getMyMetricSnapshots(params?: { limit?: number; offset?: number; sourceContext?: string }) {
+    const query = new URLSearchParams();
+    if (params?.limit) query.set("limit", params.limit.toString());
+    if (params?.offset) query.set("offset", params.offset.toString());
+    if (params?.sourceContext) query.set("sourceContext", params.sourceContext);
+    return request(`/player-metrics/snapshots/my?${query.toString()}`);
+  },
+  getMyMetricTimeline(metricKey: string, limit?: number) {
+    const query = new URLSearchParams();
+    if (limit) query.set("limit", limit.toString());
+    return request(`/player-metrics/timeline/my/${metricKey}?${query.toString()}`);
+  },
+  getMyPositionalSuitability() {
+    return request("/player-metrics/positional/my");
+  },
+  getMetricDefinitions() {
+    return request("/player-metrics/definitions");
+  },
+  getStudentSnapshots(studentId: number, params?: { limit?: number; offset?: number; sourceContext?: string }) {
+    const query = new URLSearchParams();
+    if (params?.limit) query.set("limit", params.limit.toString());
+    if (params?.offset) query.set("offset", params.offset.toString());
+    if (params?.sourceContext) query.set("sourceContext", params.sourceContext);
+    return request(`/player-metrics/snapshots/${studentId}?${query.toString()}`);
+  },
+  getMyCoachNotes(limit?: number) {
+    const query = new URLSearchParams();
+    if (limit) query.set("limit", limit.toString());
+    return request(`/player-metrics/notes/my?${query.toString()}`);
+  },
+  // Admin/Coach endpoints for viewing student metrics
+  getStudentMetricSnapshot(studentId: number) {
+    return request(`/player-metrics/snapshots/${studentId}/latest`);
+  },
+  getStudentPositionalSuitability(studentId: number) {
+    return request(`/player-metrics/positional/${studentId}`);
+  },
+  // Coach Calibration APIs
+  getCoachScoringProfile(coachId: number, refresh?: boolean) {
+    const query = refresh ? '?refresh=true' : '';
+    return request(`/player-metrics/calibration/profile/${coachId}${query}`);
+  },
+  getAllCoachProfiles() {
+    return request('/player-metrics/calibration/profiles/all');
+  },
+  getContextualAverages(metricKey: string, filters?: {
+    centerId?: number;
+    position?: string;
+    ageGroup?: string;
+    seasonId?: string;
+  }) {
+    const query = new URLSearchParams();
+    if (filters?.centerId) query.set('centerId', filters.centerId.toString());
+    if (filters?.position) query.set('position', filters.position);
+    if (filters?.ageGroup) query.set('ageGroup', filters.ageGroup);
+    if (filters?.seasonId) query.set('seasonId', filters.seasonId);
+    return request(`/player-metrics/calibration/averages/${metricKey}?${query.toString()}`);
+  },
+  getCalibrationHints(payload: {
+    metricKey: string;
+    value: number;
+    studentId?: number;
+    centerId?: number;
+    position?: string;
+    ageGroup?: string;
+  }) {
+    return request('/player-metrics/calibration/hints', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  refreshCoachProfile(coachId: number) {
+    return request(`/player-metrics/calibration/profile/${coachId}/refresh`, {
+      method: 'POST',
+    });
+  },
+  // Multi-Coach Consensus APIs (admin only)
+  getPlayerConsensus(studentId: number, anonymize: boolean = true) {
+    return request(`/player-metrics/calibration/consensus/player/${studentId}?anonymize=${anonymize}`);
+  },
+  getMultiCoachPlayers(minCoaches: number = 2) {
+    return request(`/player-metrics/calibration/consensus/players?minCoaches=${minCoaches}`);
+  },
+  // Create player metric snapshot (COACH/ADMIN only)
+  createPlayerMetricSnapshot(payload: {
+    studentId: number;
+    sourceContext: string;
+    notes?: string;
+    values: Array<{ metricKey: string; valueNumber: number; comment?: string }>;
+    positional?: Array<{ position: string; suitability: number; comment?: string }>;
+    traits?: Array<{ traitKey: string; score: number }>;
+  }) {
+    return request("/player-metrics/snapshots", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
 };
 

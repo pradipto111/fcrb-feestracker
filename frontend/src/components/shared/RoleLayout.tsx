@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation, Outlet } from "react-router-dom";
+import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
+import { colors, typography, spacing, borderRadius, shadows } from "../../theme/design-tokens";
 
 interface NavItem {
   path: string;
@@ -108,8 +108,15 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
   getProfileInfo,
 }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/realverse/login");
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -209,6 +216,46 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
                   </Link>
                 );
               })}
+
+              {/* Logout Button for Mobile */}
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setMobileMenuOpen(false);
+                }}
+                style={{
+                  width: "100%",
+                  marginTop: spacing.md,
+                  padding: spacing.md,
+                  background: `linear-gradient(135deg, ${colors.danger.main} 0%, ${colors.danger.dark} 100%)`,
+                  color: colors.text.onPrimary,
+                  border: "none",
+                  borderRadius: borderRadius.lg,
+                  cursor: "pointer",
+                  fontSize: typography.fontSize.sm,
+                  fontWeight: typography.fontWeight.semibold,
+                  fontFamily: typography.fontFamily.primary,
+                  transition: "all 0.2s ease",
+                  boxShadow: shadows.md,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: spacing.sm,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = shadows.lg;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = shadows.md;
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+                </svg>
+                Logout
+              </button>
             </div>
           )}
         </div>
@@ -235,7 +282,17 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
           position: "sticky",
           top: 0,
           height: "100vh",
+          maxHeight: "100vh",
           overflowY: "auto",
+          overflowX: "hidden",
+          WebkitOverflowScrolling: "touch" as any,
+          overscrollBehavior: "contain",
+          scrollbarWidth: "thin",
+          scrollbarColor: `${colors.primary.main}40 ${colors.surface.section}`,
+          // Smooth scrolling
+          scrollBehavior: "smooth",
+          // Prevent content shift when scrollbar appears
+          scrollbarGutter: "stable",
         }}
       >
         {/* Club Identity Block */}
@@ -278,7 +335,19 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
         )}
 
         {/* Navigation CTAs */}
-        <nav style={{ display: "flex", flexDirection: "column", gap: spacing.xs, flex: 1 }}>
+        <nav 
+          style={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: spacing.xs, 
+            flex: 1,
+            minHeight: 0, // Important for flex scrolling
+            overflowY: "auto",
+            overflowX: "hidden",
+            // Ensure smooth scrolling within nav
+            scrollBehavior: "smooth",
+          }}
+        >
           {Object.entries(groupedItems).map(([section, items]) => (
             <div key={section}>
               {section !== "main" && (
@@ -342,10 +411,57 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
             </div>
           ))}
         </nav>
+
+        {/* Logout Button - Desktop */}
+        <div style={{ marginTop: "auto", paddingTop: spacing.lg, borderTop: `1px solid ${colors.surface.soft}` }}>
+          <button
+            onClick={handleLogout}
+            style={{
+              width: "100%",
+              padding: spacing.md,
+              background: `linear-gradient(135deg, ${colors.danger.main} 0%, ${colors.danger.dark} 100%)`,
+              color: colors.text.onPrimary,
+              border: "none",
+              borderRadius: borderRadius.lg,
+              cursor: "pointer",
+              fontSize: typography.fontSize.sm,
+              fontWeight: typography.fontWeight.semibold,
+              fontFamily: typography.fontFamily.primary,
+              transition: "all 0.2s ease",
+              boxShadow: shadows.md,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: spacing.sm,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = shadows.lg;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = shadows.md;
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+            </svg>
+            Logout
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}
-      <main style={{ flex: 1, padding: spacing.xl, overflowY: "auto", background: colors.surface.bg }}>
+      <main style={{ 
+        flex: 1, 
+        padding: spacing.xl, 
+        overflowY: "auto", 
+        overflowX: "hidden",
+        background: colors.surface.bg,
+        minHeight: "100vh",
+        width: "100%",
+        boxSizing: "border-box",
+      }}>
         <Outlet />
       </main>
     </div>

@@ -25,6 +25,34 @@
 
 html {
   scroll-behavior: smooth;
+  /* Ensure no horizontal scroll */
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Global UX Fixes - Laws of UX Compliance */
+
+/* Ensure all containers respect padding and don't allow text to touch borders */
+* {
+  box-sizing: border-box;
+}
+
+/* Consistent text readability - max width for text blocks */
+.text-readable {
+  max-width: 75ch;
+  line-height: 1.6;
+}
+
+/* Ensure tables are always in padded containers */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Minimum tap targets for accessibility (Fitts's Law) */
+button, a, [role="button"] {
+  min-height: 40px;
+  min-width: 40px;
 }
 
 body {
@@ -36,6 +64,9 @@ body {
   background: var(--color-space-deep);
   color: #FFFFFF;
   line-height: 1.5;
+  /* Ensure no horizontal scroll */
+  overflow-x: hidden;
+  width: 100%;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -85,6 +116,54 @@ h1, h2, h3, h4, h5, h6 {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-accent-orange);
+}
+
+/* Sidebar Scroll Fix - Ensure scroll wheel works and smooth UX */
+aside[style*="overflow-y: auto"],
+aside[style*="overflowY: auto"] {
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+  will-change: scroll-position !important;
+  /* Ensure scroll events are captured */
+  pointer-events: auto !important;
+  /* Smooth scrolling */
+  scroll-behavior: smooth !important;
+  /* Prevent content shift */
+  scrollbar-gutter: stable !important;
+}
+
+/* Ensure scrollable containers can receive wheel events */
+[style*="overflow-y: auto"],
+[style*="overflowY: auto"] {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar styling for sidebars */
+aside::-webkit-scrollbar {
+  width: 8px;
+}
+
+aside::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+aside::-webkit-scrollbar-thumb {
+  background: rgba(4, 61, 208, 0.3);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+aside::-webkit-scrollbar-thumb:hover {
+  background: rgba(4, 61, 208, 0.5);
+}
+
+/* Firefox scrollbar */
+aside {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(4, 61, 208, 0.3) transparent;
 }
 
 /* Selection */

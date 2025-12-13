@@ -56,7 +56,7 @@ export const Input: React.FC<InputProps> = ({
           ...inputStyle,
           ...(isFocused
             ? {
-                borderColor: error ? colors.danger.main : colors.primary.main,
+                border: `1px solid ${error ? colors.danger.main : colors.primary.main}`,
                 boxShadow: `0 0 0 3px ${error ? colors.danger.soft : colors.primary.soft}`,
               }
             : {}),

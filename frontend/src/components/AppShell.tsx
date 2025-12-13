@@ -70,6 +70,17 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
     backdropFilter: 'blur(10px)',
   });
 
+  // Hide sidebar for students, coaches, and admins (they use their own layouts instead)
+  const isStudentRoute = location.pathname.startsWith('/realverse/student') ||
+    location.pathname.startsWith('/realverse/my-attendance') ||
+    location.pathname.startsWith('/realverse/my-fixtures') ||
+    location.pathname.startsWith('/realverse/drills') ||
+    location.pathname.startsWith('/realverse/feed') ||
+    location.pathname.startsWith('/realverse/leaderboard');
+  const isCoachRoute = location.pathname.startsWith('/realverse/coach');
+  const isAdminRoute = location.pathname.startsWith('/realverse/admin');
+  const shouldHideSidebar = isStudentRoute || isCoachRoute || isAdminRoute;
+  
   return (
     <div style={{ 
       display: 'flex', 
@@ -161,7 +172,8 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
         </header>
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Hidden for students (they use StudentLayout) */}
+      {!shouldHideSidebar && (
       <aside style={{
         position: isMobile ? 'fixed' : 'relative',
         left: 0,
@@ -174,13 +186,19 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
         display: 'flex',
         flexDirection: 'column',
         overflowY: 'auto',
+        overflowX: 'hidden',
+        WebkitOverflowScrolling: 'touch' as any,
+        overscrollBehavior: 'contain',
+        scrollbarWidth: 'thin',
+        scrollbarColor: `${colors.primary.main}40 ${colors.surface.section}`,
+        scrollBehavior: 'smooth',
+        scrollbarGutter: 'stable',
         zIndex: 1000,
         boxShadow: shadows.glassDark,
         backdropFilter: 'blur(20px)',
         borderRight: '1px solid rgba(255, 255, 255, 0.1)',
         transition: 'transform 0.3s ease',
         transform: isMobile && !isMobileMenuOpen ? 'translateX(-100%)' : 'translateX(0)',
-        overflow: 'hidden',
       }}>
         {/* Space Background Particles */}
         <div style={{
@@ -372,9 +390,10 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
           </button>
         </div>
       </aside>
+      )}
 
       {/* Mobile Overlay */}
-      {isMobile && isMobileMenuOpen && (
+      {isMobile && isMobileMenuOpen && !shouldHideSidebar && (
         <div
           onClick={closeMobileMenu}
           style={{
@@ -392,7 +411,7 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
       {/* Main Content Area */}
       <div style={{
-        marginLeft: isMobile ? 0 : 280,
+        marginLeft: isMobile ? 0 : (shouldHideSidebar ? 0 : 280),
         marginTop: isMobile ? 64 : 0,
         flex: 1,
         minHeight: '100vh',

@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { Card } from "../components/ui/Card";
 import { KPICard } from "../components/ui/KPICard";
 import { Button } from "../components/ui/Button";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 import { pageVariants, cardVariants } from "../utils/motion";
+import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
+import { centresAssets, adminAssets, heroAssets, clubAssets } from "../config/assets";
 
 const EnhancedCoachDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [summary, setSummary] = useState<any>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [revenueData, setRevenueData] = useState<any[]>([]);
@@ -80,23 +84,123 @@ const EnhancedCoachDashboard: React.FC = () => {
         <span className="rv-star rv-star--delay4" />
       </div>
 
-      <section className="rv-section-surface">
-        {/* Header */}
-        <header className="rv-section-header">
-          <div>
-            <h1 className="rv-page-title">FCRB Coach Dashboard</h1>
-            <p className="rv-page-subtitle">FC Real Bengaluru - Your centers overview</p>
-          </div>
-          <motion.button
-            className="rv-btn rv-btn-secondary"
-            whileHover={{ scale: 1.02, boxShadow: "0 0 12px rgba(0, 224, 255, 0.2)" }}
-            whileTap={{ scale: 0.98 }}
-            onClick={loadData}
+      {/* BANNER SECTION - STUNNING THEME */}
+      <motion.section
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          marginBottom: spacing["2xl"],
+          borderRadius: borderRadius.xl,
+          minHeight: "350px",
+        }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        {/* Background image - ONLY IMAGE, NO VIDEO */}
+        <motion.div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `url(${centresAssets.genericPitchBg})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            opacity: 0.4,
+            filter: "blur(6px)",
+            zIndex: 0,
+          }}
+          animate={{
+            scale: [1, 1.02, 1],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        
+        {/* Animated Radial Gradient */}
+        <motion.div
+          style={{
+            position: "absolute",
+            top: "20%",
+            left: "25%",
+            width: "500px",
+            height: "500px",
+            background: "radial-gradient(circle, rgba(0, 224, 255, 0.2) 0%, transparent 70%)",
+            borderRadius: "50%",
+            filter: "blur(50px)",
+            zIndex: 1,
+          }}
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.1, 0.3, 0.1],
+          }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        
+        {/* Gradient overlay */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: `linear-gradient(135deg, rgba(4, 61, 208, 0.7) 0%, rgba(255, 169, 0, 0.5) 100%)`,
+            zIndex: 2,
+          }}
+        />
+        
+        {/* Banner content */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            padding: spacing["2xl"],
+            display: "flex",
+            flexDirection: "column",
+            gap: spacing.lg,
+          }}
+        >
+          <p
+            style={{
+              ...typography.overline,
+              color: colors.accent.main,
+              letterSpacing: "0.1em",
+              margin: 0,
+            }}
           >
-            🔄 Refresh
-          </motion.button>
-        </header>
+            RealVerse • Coach Dashboard
+          </p>
+          <h1
+            style={{
+              ...typography.h1,
+              color: colors.text.onPrimary,
+              margin: 0,
+            }}
+          >
+            FCRB Coach Dashboard
+            <span style={{ display: "block", color: colors.accent.main, fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.normal, marginTop: spacing.xs }}>
+              FC Real Bengaluru - Your centers overview
+            </span>
+          </h1>
+        </div>
+      </motion.section>
 
+      <Section
+        title="FCRB Coach Dashboard"
+        description="FC Real Bengaluru - Your centers overview"
+        variant="elevated"
+        style={{ marginBottom: spacing.xl }}
+      >
         {/* Error State */}
         {error && (
           <Card variant="default" padding="md" style={{ 
@@ -110,10 +214,24 @@ const EnhancedCoachDashboard: React.FC = () => {
 
         {/* Loading State */}
         {!summary && !error && (
-          <div className="rv-empty-state">
-            <div className="rv-skeleton rv-skeleton-line rv-skeleton-line--lg" style={{ marginBottom: spacing.md }} />
-            <div className="rv-skeleton rv-skeleton-line rv-skeleton-line--md" />
-            <p style={{ marginTop: spacing.lg, color: colors.text.muted }}>Loading dashboard data...</p>
+          <div style={{ 
+            padding: spacing['2xl'], 
+            textAlign: "center", 
+            color: colors.text.muted 
+          }}>
+            <div
+              style={{
+                display: "inline-block",
+                width: "40px",
+                height: "40px",
+                border: `3px solid ${colors.surface.soft}`,
+                borderTopColor: colors.primary.main,
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+                marginBottom: spacing.md,
+              }}
+            />
+            <p style={{ marginTop: spacing.md, ...typography.body }}>Loading dashboard data...</p>
           </div>
         )}
 
@@ -138,30 +256,59 @@ const EnhancedCoachDashboard: React.FC = () => {
 
           return (
             <React.Fragment key="coach-dashboard-content">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
-        <div>
-          <h1 style={{ 
-            ...typography.h2,
-            marginBottom: spacing.sm,
-            color: colors.text.primary,
-          }}>
-            FCRB Coach Dashboard
-          </h1>
-          <p style={{ 
-            color: colors.text.muted, 
-            margin: 0,
-            ...typography.body,
-          }}>
-            FC Real Bengaluru - Your centers overview
-          </p>
-        </div>
-        <Button variant="secondary" onClick={loadData}>
-          🔄 Refresh
-        </Button>
-      </div>
+              {/* Quick Actions CTA Section - Player Management & Calibration */}
+        <div style={{ display: "flex", flexDirection: "column", gap: spacing.md, marginBottom: spacing.xl }}>
+          <Card
+            variant="elevated"
+            padding="lg"
+            style={{
+              background: `linear-gradient(135deg, ${colors.primary.main}15 0%, ${colors.accent.main}15 100%)`,
+              border: `2px solid ${colors.primary.main}40`,
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: spacing.lg }}>
+              <div style={{ flex: 1, minWidth: "300px" }}>
+                <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.sm }}>
+                  ⚽ Player Profiles & Batch Review
+                </h3>
+                <p style={{ ...typography.body, color: colors.text.secondary, marginBottom: spacing.md }}>
+                  Access detailed player profiles, create metric snapshots, and efficiently review multiple players in batch mode.
+                </p>
+                <div style={{ display: "flex", gap: spacing.md, flexWrap: "wrap" }}>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={() => navigate("/realverse/admin/students")}
+                  >
+                    View All Players →
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={() => navigate("/realverse/admin/batch-review")}
+                  >
+                    Start Batch Review →
+                  </Button>
+                </div>
+              </div>
+              <div style={{ fontSize: "4rem", opacity: 0.2, lineHeight: 1 }}>
+                ⚽
+              </div>
+            </div>
+          </div>
+        </Card>
 
-      {/* Main Stats Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 24, marginBottom: 24 }}>
+        {/* Main Stats Cards - Chunked for Miller's Law */}
+        <div style={{ 
+          display: "grid", 
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
+          gap: spacing.lg, 
+          marginBottom: spacing.xl,
+          padding: spacing.md, // Ensure padding from borders
+        }}>
         <div style={{
           background: "linear-gradient(135deg, #1E40AF 0%, #1E3A8A 100%)",
           padding: 24,
@@ -725,7 +872,7 @@ const EnhancedCoachDashboard: React.FC = () => {
             </React.Fragment>
           );
         })()}
-      </section>
+      </Section>
     </motion.main>
   );
 };

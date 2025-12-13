@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import PublicHeader from "../components/PublicHeader";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { api } from "../api/client";
 import { useCart } from "../context/CartContext";
+import { shopAssets } from "../config/assets";
 
 interface Product {
   id: number;
@@ -193,8 +195,25 @@ const ProductDetailPage: React.FC = () => {
         minHeight: "100vh",
         background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,
         color: colors.text.primary,
+        position: "relative",
       }}
     >
+      {/* Subtle background texture */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: `url(${shopAssets.jerseys[0]})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.03,
+          filter: "blur(20px)",
+          pointerEvents: "none",
+        }}
+      />
       <PublicHeader />
       <div
         style={{
@@ -202,6 +221,8 @@ const ProductDetailPage: React.FC = () => {
           margin: "0 auto",
           padding: `${spacing["4xl"]} ${spacing.xl}`,
           paddingTop: "120px",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         <div

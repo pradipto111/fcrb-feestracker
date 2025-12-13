@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { api } from "../api/client";
 import { Card } from "../components/ui/Card";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
+import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
+import { matchAssets } from "../config/assets";
 
 const StudentFixturesPage: React.FC = () => {
   const [myFixtures, setMyFixtures] = useState<any[]>([]);
@@ -47,36 +50,30 @@ const StudentFixturesPage: React.FC = () => {
     return matchDate > new Date() && f.status === "UPCOMING";
   });
 
-  return (
-    <div>
-      <div style={{ marginBottom: spacing.lg }}>
-        <h1 style={{ 
-          ...typography.h2,
-          marginBottom: spacing.sm,
-          color: colors.text.primary,
-        }}>
-          ⚽ Fixtures
-        </h1>
-        <p style={{ 
-          color: colors.text.muted, 
-          margin: 0,
-          ...typography.body,
-        }}>
-          View your upcoming matches and fixtures
-        </p>
-      </div>
+  const {
+    sectionVariants,
+    headingVariants,
+    getStaggeredCard,
+  } = useHomepageAnimation();
 
-      {error && (
-        <div style={{
-          padding: 12,
-          background: "#fee",
-          color: "#c33",
-          borderRadius: 8,
-          marginBottom: 16
-        }}>
-          {error}
-        </div>
-      )}
+  return (
+    <div style={{ maxWidth: "1400px", margin: "0 auto", padding: spacing.md }}>
+      {/* Page Header */}
+      <Section
+        title="My Fixtures"
+        description="View your upcoming matches and fixtures"
+        variant="default"
+        style={{ marginBottom: spacing.xl }}
+      >
+        {error && (
+          <Card variant="default" padding="md" style={{ 
+            marginBottom: spacing.md,
+            background: colors.danger.soft,
+            border: `1px solid ${colors.danger.main}40`,
+          }}>
+            <p style={{ margin: 0, color: colors.danger.main }}>{error}</p>
+          </Card>
+        )}
 
       {/* Tabs */}
       <Card variant="default" padding="sm" style={{
@@ -469,6 +466,7 @@ const StudentFixturesPage: React.FC = () => {
           )}
         </Card>
       )}
+      </Section>
     </div>
   );
 };

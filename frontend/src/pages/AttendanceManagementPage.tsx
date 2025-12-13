@@ -8,6 +8,8 @@ import { Button } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 import { pageVariants, cardVariants, primaryButtonWhileHover, primaryButtonWhileTap } from "../utils/motion";
+import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
+import { academyAssets, adminAssets } from "../config/assets";
 
 const AttendanceManagementPage: React.FC = () => {
   const { user } = useAuth();
@@ -344,14 +346,157 @@ const AttendanceManagementPage: React.FC = () => {
     return date.toLocaleString('default', { month: 'long' });
   };
 
+  const {
+    sectionVariants,
+    headingVariants,
+    getStaggeredCard,
+  } = useHomepageAnimation();
+
+  // Calculate KPIs - use arrays safely
+  const totalSessions = (sessions || []).length;
+  const sessionsThisMonth = (sessions || []).filter(s => {
+    if (!s.sessionDate) return false;
+    const sessionDate = new Date(s.sessionDate);
+    return sessionDate.getMonth() + 1 === selectedMonth && sessionDate.getFullYear() === selectedYear;
+  }).length;
+  const totalStudents = (students || []).length;
+  const attendanceRate = (sessions || []).length > 0 
+    ? (sessions || []).reduce((acc, s) => {
+        const present = s.attendance?.filter((a: any) => a.status === "PRESENT").length || 0;
+        const total = s.attendance?.length || 0;
+        return acc + (total > 0 ? (present / total) * 100 : 0);
+      }, 0) / (sessions || []).length
+    : 0;
+
   return (
     <motion.main
       variants={pageVariants}
       initial="initial"
       animate="animate"
       exit="exit"
-      style={{ position: 'relative' }}
+      style={{ 
+        position: 'relative',
+        background: colors.surface.bg,
+        minHeight: '100%',
+      }}
     >
+      {/* BANNER SECTION */}
+      <motion.section
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          marginBottom: spacing["2xl"],
+          borderRadius: borderRadius.xl,
+        }}
+        variants={sectionVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: true, amount: 0.4 }}
+      >
+        {/* Background image */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `url(${academyAssets.trainingShot})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            opacity: 0.2,
+            filter: "blur(10px)",
+          }}
+        />
+        {/* Gradient overlay */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: `linear-gradient(135deg, rgba(4, 61, 208, 0.7) 0%, rgba(255, 169, 0, 0.5) 100%)`,
+          }}
+        />
+        {/* Banner content */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            padding: spacing["2xl"],
+            display: "flex",
+            flexDirection: "column",
+            gap: spacing.lg,
+          }}
+        >
+          <motion.p
+            style={{
+              ...typography.overline,
+              color: colors.accent.main,
+              letterSpacing: "0.1em",
+            }}
+            variants={headingVariants}
+          >
+            RealVerse • Attendance Management
+          </motion.p>
+          <motion.h1
+            style={{
+              ...typography.h1,
+              color: colors.text.onPrimary,
+              margin: 0,
+            }}
+            variants={headingVariants}
+          >
+            Session Attendance
+            <span style={{ display: "block", color: colors.accent.main, fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.normal, marginTop: spacing.xs }}>
+              Track and manage player attendance across all sessions
+            </span>
+          </motion.h1>
+          
+          {/* KPI Cards Row */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: spacing.md,
+              marginTop: spacing.md,
+            }}
+          >
+            {[
+              { label: "Sessions This Month", value: sessionsThisMonth, subLabel: `${selectedMonth}/${selectedYear}` },
+              { label: "Total Sessions", value: totalSessions, subLabel: "All time" },
+              { label: "Active Students", value: totalStudents, subLabel: "Current centre" },
+              { label: "Avg Attendance", value: `${Math.round(attendanceRate)}%`, subLabel: "This month" },
+            ].map((kpi, index) => (
+              <motion.div
+                key={kpi.label}
+                {...getStaggeredCard(index)}
+                style={{
+                  background: "rgba(255, 255, 255, 0.1)",
+                  backdropFilter: "blur(10px)",
+                  borderRadius: borderRadius.lg,
+                  padding: spacing.md,
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                }}
+              >
+                <p style={{ ...typography.caption, color: colors.text.onPrimary, opacity: 0.8, marginBottom: spacing.xs }}>
+                  {kpi.label}
+                </p>
+                <p style={{ ...typography.h2, color: colors.text.onPrimary, margin: 0 }}>
+                  {kpi.value}
+                </p>
+                {kpi.subLabel && (
+                  <p style={{ ...typography.caption, color: colors.text.onPrimary, opacity: 0.6, marginTop: spacing.xs, margin: 0 }}>
+                    {kpi.subLabel}
+                  </p>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
       <PageHeader
         title="📅 Attendance"
         subtitle="Manage sessions and track player attendance"

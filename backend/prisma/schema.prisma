@@ -56,6 +56,9 @@ model Coach {
   feedbacks    MonthlyFeedback[]
   publishedFeedbacks MonthlyFeedback[] @relation("FeedbackPublisher")
   progressRoadmaps ProgressRoadmap[] @relation("RoadmapUpdater")
+  createdMetricSnapshots PlayerMetricSnapshot[] @relation("MetricSnapshotCreator")
+  metricAuditLogs PlayerMetricAuditLog[] @relation("AuditLogCreator")
+  authoredNotes PlayerCoachNote[] @relation("NoteAuthor")
 }
 
 model CoachCenter {
@@ -93,6 +96,9 @@ model Student {
   monthlyFeedbacks MonthlyFeedback[]
   wellnessChecks WellnessCheck[]
   progressRoadmap ProgressRoadmap?
+  metricSnapshots PlayerMetricSnapshot[]
+  metricAuditLogs PlayerMetricAuditLog[]
+  coachNotes PlayerCoachNote[]
 }
 
 model Payment {
@@ -604,6 +610,199 @@ model CentreMonthlyMetrics {
   @@index([centreId])
   @@index([year, month])
   @@index([centreId, year, month])
+}
+
+// ============================================
+// PLAYER METRICS SYSTEM (Football Manager-style)
+// ============================================
+
+enum MetricCategory {
+  TECHNICAL
+  PHYSICAL
+  MENTAL
+  ATTITUDE
+  GOALKEEPING
+}
+
+enum PlayerPosition {
+  GK    // Goalkeeper
+  CB    // Centre Back
+  FB    // Full Back
+  WB    // Wing Back
+  DM    // Defensive Midfielder
+  CM    // Central Midfielder
+  AM    // Attacking Midfielder
+  W     // Winger
+  ST    // Striker
+}
+
+enum MetricSourceContext {
+  TRAINING_BLOCK
+  MATCH_BLOCK
+  TRIAL
+  MONTHLY_REVIEW
+  QUARTERLY_ASSESSMENT
+  SEASON_START
+  SEASON_END
+  CUSTOM
+}
+
+// Metric catalog - defines all available metrics
+model PlayerMetricDefinition {
+  id            Int            @id @default(autoincrement())
+  key           String         @unique // e.g., "first_touch", "acceleration", "work_rate"
+  displayName   String         // Human-readable name
+  category      MetricCategory
+  description   String?        // Optional description
+  minValue      Int            @default(0)
+  maxValue      Int            @default(100)
+  isActive      Boolean        @default(true)
+  isCoachOnly   Boolean        @default(false) // Hide from players if true (e.g., attitude traits)
+  displayOrder  Int            @default(0) // For UI sorting
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  // Relations
+  values        PlayerMetricValue[]
+  traits        PlayerTraitSnapshot[]
+  @@index([key])
+  @@index([category])
+  @@index([isActive])
+  @@index([displayOrder])
+}
+
+// Time-series snapshot - complete player assessment at a point in time
+model PlayerMetricSnapshot {
+  id              Int            @id @default(autoincrement())
+  studentId       Int            // Links to Student (player)
+  createdByUserId Int            // Coach or Admin who created this snapshot
+  createdByRole   Role           // ADMIN or COACH
+  createdAt       DateTime       @default(now())
+  sourceContext   MetricSourceContext
+  seasonId        String?        // Optional: e.g., "2024-25"
+  notes           String?        // Optional summary notes
+  // Relations
+  student         Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdBy       Coach          @relation("MetricSnapshotCreator", fields: [createdByUserId], references: [id])
+  values          PlayerMetricValue[]
+  positional      PlayerPositionalSuitability[]
+  traits          PlayerTraitSnapshot[]
+  auditLogs       PlayerMetricAuditLog[]
+  readiness       PlayerReadinessIndex?
+  coachNotes      PlayerCoachNote[]
+  @@index([studentId, createdAt])
+  @@index([createdByUserId])
+  @@index([sourceContext])
+  @@index([createdAt])
+}
+
+// Individual metric values within a snapshot
+model PlayerMetricValue {
+  id                  Int                    @id @default(autoincrement())
+  snapshotId          Int
+  metricDefinitionId Int
+  valueNumber         Int                    // 0-100 scale
+  confidence          Int?                   // 0-100: coach confidence in this rating
+  comment             String?                // Optional short comment
+  // Relations
+  snapshot            PlayerMetricSnapshot   @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  metricDefinition   PlayerMetricDefinition @relation(fields: [metricDefinitionId], references: [id])
+  @@unique([snapshotId, metricDefinitionId])
+  @@index([snapshotId])
+  @@index([metricDefinitionId])
+  @@index([valueNumber])
+}
+
+// Positional suitability ratings per snapshot
+model PlayerPositionalSuitability {
+  id          Int                  @id @default(autoincrement())
+  snapshotId  Int
+  position    PlayerPosition
+  suitability Int                  // 0-100: how well player fits this position
+  comment     String?               // Optional: e.g., "Natural fit", "Needs work on positioning"
+  // Relations
+  snapshot    PlayerMetricSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  @@unique([snapshotId, position])
+  @@index([snapshotId])
+  @@index([position])
+  @@index([suitability])
+}
+
+// Coach-assessed traits (attitude/personality) per snapshot
+model PlayerTraitSnapshot {
+  id                  Int                    @id @default(autoincrement())
+  snapshotId          Int
+  metricDefinitionId  Int                    // Links to PlayerMetricDefinition with category ATTITUDE
+  valueNumber         Int                    // 0-100
+  comment             String?                // Optional coach note
+  // Relations
+  snapshot            PlayerMetricSnapshot   @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  metricDefinition   PlayerMetricDefinition @relation(fields: [metricDefinitionId], references: [id])
+  @@unique([snapshotId, metricDefinitionId])
+  @@index([snapshotId])
+  @@index([metricDefinitionId])
+}
+
+// Audit log for tracking changes between snapshots
+model PlayerMetricAuditLog {
+  id                  Int                    @id @default(autoincrement())
+  studentId           Int
+  snapshotId           Int                    // New snapshot
+  previousSnapshotId  Int?                   // Previous snapshot (null for first snapshot)
+  changedByUserId     Int                    // Coach/Admin who created the change
+  changedByRole       Role                   // ADMIN or COACH
+  createdAt           DateTime               @default(now())
+  diffJson            Json                   // Array of { metricKey, oldValue, newValue, comment }
+  summary             String?                // Short summary of changes
+  // Relations
+  student             Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  snapshot            PlayerMetricSnapshot   @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  changedBy           Coach                  @relation("AuditLogCreator", fields: [changedByUserId], references: [id])
+  @@index([studentId, createdAt])
+  @@index([snapshotId])
+  @@index([changedByUserId])
+  @@index([createdAt])
+}
+
+// Qualitative coach notes tied to a snapshot or date range
+model PlayerCoachNote {
+  id                Int                    @id @default(autoincrement())
+  studentId         Int
+  authorUserId      Int                    // Coach/Admin who wrote the note
+  authorRole        Role                   // ADMIN or COACH
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  title             String
+  body              String                 // Full text note
+  tags              String[]               // Array of tags for filtering
+  relatedSnapshotId Int?                   // Optional: link to specific snapshot
+  isVisibleToPlayer Boolean                @default(false) // Whether player can see this note
+  // Relations
+  student           Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  author            Coach                  @relation("NoteAuthor", fields: [authorUserId], references: [id])
+  relatedSnapshot   PlayerMetricSnapshot?  @relation(fields: [relatedSnapshotId], references: [id], onDelete: SetNull)
+  @@index([studentId, createdAt])
+  @@index([authorUserId])
+  @@index([relatedSnapshotId])
+  @@index([tags])
+  @@index([isVisibleToPlayer])
+}
+
+// Derived readiness index - computed and stored for fast reads
+model PlayerReadinessIndex {
+  id              Int                    @id @default(autoincrement())
+  snapshotId      Int                    @unique
+  overall         Int                    // 0-100 overall readiness
+  technical       Int                    // 0-100 technical readiness
+  physical        Int                    // 0-100 physical readiness
+  mental          Int                    // 0-100 mental readiness
+  attitude        Int                    // 0-100 attitude score
+  tacticalFit     Int                    // 0-100 tactical understanding
+  explanationJson Json                   // { topStrengths: [metricKey], topRisks: [metricKey], recommendedFocus: [metricKey], ruleTriggers: [string] }
+  computedAt      DateTime               @default(now())
+  // Relations
+  snapshot        PlayerMetricSnapshot   @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  @@index([snapshotId])
+  @@index([overall])
 }
 
 

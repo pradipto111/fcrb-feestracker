@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { Card } from "../components/ui/Card";
@@ -7,6 +8,8 @@ import { Button } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Badge } from "../components/ui/Badge";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { galleryAssets, getGalleryImage } from "../config/assets";
+import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import "../styles/animations.css";
 
 const FeedPage: React.FC = () => {
@@ -164,13 +167,116 @@ const FeedPage: React.FC = () => {
     return null;
   };
 
+  const {
+    sectionVariants,
+    headingVariants,
+    getStaggeredCard,
+  } = useHomepageAnimation();
+
   return (
-    <div>
+    <div style={{ maxWidth: "1400px", margin: "0 auto", padding: spacing.md }}>
+      {/* Banner Section */}
+      <motion.section
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          marginBottom: spacing["2xl"],
+          borderRadius: borderRadius.xl,
+          minHeight: "250px",
+        }}
+        variants={sectionVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: true, amount: 0.4 }}
+      >
+        {/* Background image */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `url(${galleryAssets.actionShots[1].medium})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            opacity: 0.3,
+            filter: "blur(8px)",
+            zIndex: 0,
+          }}
+        />
+        {/* Gradient overlay */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: `linear-gradient(135deg, rgba(4, 61, 208, 0.7) 0%, rgba(255, 169, 0, 0.5) 100%)`,
+            zIndex: 1,
+          }}
+        />
+        {/* Banner content */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 2,
+            padding: spacing["2xl"],
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: spacing.md,
+          }}
+        >
+          <div>
+            <motion.p
+              style={{
+                ...typography.overline,
+                color: colors.accent.main,
+                letterSpacing: "0.1em",
+                marginBottom: spacing.sm,
+              }}
+              variants={headingVariants}
+            >
+              RealVerse • Social Feed
+            </motion.p>
+            <motion.h1
+              style={{
+                ...typography.h1,
+                color: colors.text.onPrimary,
+                marginBottom: spacing.sm,
+              }}
+              variants={headingVariants}
+            >
+              📸 Feed
+            </motion.h1>
+            <motion.p
+              style={{
+                ...typography.body,
+                color: colors.text.onPrimary,
+                opacity: 0.9,
+                fontSize: typography.fontSize.lg,
+              }}
+              variants={headingVariants}
+            >
+              View posts, photos, and videos from sessions
+            </motion.p>
+          </div>
+          <motion.div variants={headingVariants}>
+            <Button variant="primary" onClick={() => navigate("/feed/create")}>
+              ➕ Create Post
+            </Button>
+          </motion.div>
+        </div>
+      </motion.section>
+
       <PageHeader
         title="📸 Feed"
         subtitle="View posts, photos, and videos from sessions"
         actions={
-          <Button variant="primary" onClick={() => navigate("/feed/create")}>
+          <Button variant="primary" onClick={() => navigate("/feed/create")} style={{ display: "none" }}>
             ➕ Create Post
           </Button>
         }

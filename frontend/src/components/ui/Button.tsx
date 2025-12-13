@@ -102,18 +102,18 @@ export const Button: React.FC<ButtonProps> = ({
       boxShadow: `0 0 18px rgba(0, 230, 255, 0.4), 0 6px 30px rgba(0, 230, 255, 0.6)`,
     },
     secondary: {
-      borderColor: 'rgba(0, 230, 255, 0.6)',
+      border: `2px solid rgba(0, 230, 255, 0.6)`,
       boxShadow: `0 0 15px rgba(0, 230, 255, 0.3), ${shadows.md}`,
       color: '#CDE7FF',
     },
     utility: {
       background: 'rgba(255, 255, 255, 0.08)',
       color: colors.text.secondary,
-      borderColor: 'rgba(255, 255, 255, 0.2)',
+      border: `1px solid rgba(255, 255, 255, 0.2)`,
     },
     danger: {
       background: colors.danger.main,
-      borderColor: colors.danger.main,
+      border: `2px solid ${colors.danger.main}`,
       color: colors.text.onPrimary,
       boxShadow: `0 4px 20px rgba(239, 68, 68, 0.4)`,
       transform: 'translateY(-1px)',
@@ -145,8 +145,12 @@ export const Button: React.FC<ButtonProps> = ({
 
   const handleMouseUp = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (variant === 'primary' && !props.disabled) {
+      const target = e.currentTarget;
       setTimeout(() => {
-        e.currentTarget.style.transform = isHovered ? 'translateY(-1px) scale(1.02)' : 'scale(1)';
+        // Check if element still exists before accessing style
+        if (target && target.style) {
+          target.style.transform = isHovered ? 'translateY(-1px) scale(1.02)' : 'scale(1)';
+        }
       }, 100);
     }
   };

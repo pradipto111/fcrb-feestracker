@@ -46,7 +46,7 @@ const AdminLayout: React.FC = () => {
       section: "Operations",
     },
     {
-      path: "/realverse/students",
+      path: "/realverse/admin/students",
       label: "Players",
       icon: "players",
       description: "All players & students",
@@ -54,14 +54,14 @@ const AdminLayout: React.FC = () => {
     },
     // Football Ops Section
     {
-      path: "/realverse/fixtures",
+      path: "/realverse/admin/fixtures",
       label: "Matches",
       icon: "matches",
       description: "Fixtures & competitions",
       section: "Football Ops",
     },
     {
-      path: "/realverse/attendance",
+      path: "/realverse/admin/attendance",
       label: "Sessions",
       icon: "sessions",
       description: "Training sessions management",
@@ -88,6 +88,20 @@ const AdminLayout: React.FC = () => {
       icon: "settings",
       description: "System configuration",
       section: "System",
+    },
+    {
+      path: "/realverse/admin/batch-review",
+      label: "Batch Review",
+      icon: "sessions",
+      description: "Review multiple players",
+      section: "Football Ops",
+    },
+    {
+      path: "/realverse/admin/calibration",
+      label: "Calibration",
+      icon: "analytics",
+      description: "Coach scoring consistency & calibration",
+      section: "Football Ops",
     },
   ];
 

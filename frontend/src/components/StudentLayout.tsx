@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation, Outlet } from "react-router-dom";
+import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { api } from "../api/client";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
 
@@ -55,11 +56,57 @@ const IconWellness = () => (
   </svg>
 );
 
+const IconAnalytics = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 17v-6M7 17V9M11 17V5M15 17v-4" />
+    <circle cx="3" cy="11" r="1" fill="currentColor" />
+    <circle cx="7" cy="7" r="1" fill="currentColor" />
+    <circle cx="11" cy="3" r="1" fill="currentColor" />
+    <circle cx="15" cy="13" r="1" fill="currentColor" />
+  </svg>
+);
+
+const IconAttendance = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="14" height="14" rx="2" />
+    <path d="M7 2v4M13 2v4M3 10h14" />
+  </svg>
+);
+
+const IconDrills = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="4" width="16" height="12" rx="2" />
+    <path d="M6 8h8M6 12h6" />
+    <circle cx="8" cy="16" r="1" />
+  </svg>
+);
+
+const IconFeed = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="16" height="16" rx="2" />
+    <circle cx="7" cy="7" r="1.5" />
+    <path d="M2 12l5-5 3 3 8-8" />
+  </svg>
+);
+
+const IconLeaderboard = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 10l2 4 4-8 2 4v4H4v-4z" />
+  </svg>
+);
+
 const StudentLayout: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [studentData, setStudentData] = useState<any>(null);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/realverse/login");
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -84,13 +131,29 @@ const StudentLayout: React.FC = () => {
     loadStudentData();
   }, []);
 
-  const navItems: NavItem[] = [
+  // Organized navigation items with sections
+  const mainNavItems: NavItem[] = [
     {
       path: "/realverse/student",
       label: "Dashboard",
       icon: "dashboard",
       description: "Overview & quick links",
     },
+    {
+      path: "/realverse/my-attendance",
+      label: "My Attendance",
+      icon: "attendance",
+      description: "Track your training sessions",
+    },
+    {
+      path: "/realverse/my-fixtures",
+      label: "My Fixtures",
+      icon: "matches",
+      description: "Upcoming matches & selection",
+    },
+  ];
+
+  const developmentNavItems: NavItem[] = [
     {
       path: "/realverse/student/pathway",
       label: "My Pathway",
@@ -121,11 +184,26 @@ const StudentLayout: React.FC = () => {
       icon: "wellness",
       description: "Training load & recovery",
     },
+  ];
+
+  const contentNavItems: NavItem[] = [
     {
-      path: "/realverse/student/analytics",
-      label: "Analytics",
-      icon: "dashboard",
-      description: "My performance metrics",
+      path: "/realverse/drills",
+      label: "Drills & Tutorials",
+      icon: "drills",
+      description: "Training videos & guides",
+    },
+    {
+      path: "/realverse/feed",
+      label: "Feed",
+      icon: "feed",
+      description: "Club updates & posts",
+    },
+    {
+      path: "/realverse/leaderboard",
+      label: "Leaderboard",
+      icon: "leaderboard",
+      description: "Rankings & achievements",
     },
   ];
 
@@ -143,6 +221,16 @@ const StudentLayout: React.FC = () => {
         return <IconMatches />;
       case "wellness":
         return <IconWellness />;
+      case "analytics":
+        return <IconAnalytics />;
+      case "attendance":
+        return <IconAttendance />;
+      case "drills":
+        return <IconDrills />;
+      case "feed":
+        return <IconFeed />;
+      case "leaderboard":
+        return <IconLeaderboard />;
       default:
         return null;
     }
@@ -214,7 +302,49 @@ const StudentLayout: React.FC = () => {
                 gap: spacing.xs,
               }}
             >
-              {navItems.map((item) => {
+              {/* Analytics CTA for Mobile */}
+              <Link
+                to="/realverse/student/analytics"
+                onClick={() => setMobileMenuOpen(false)}
+                style={{ textDecoration: "none", marginBottom: spacing.sm }}
+              >
+                <div
+                  style={{
+                    background: `linear-gradient(135deg, ${colors.accent.main}15 0%, ${colors.primary.main}15 100%)`,
+                    border: `2px solid ${isActive("/realverse/student/analytics") ? colors.accent.main : colors.accent.main + "40"}`,
+                    borderRadius: borderRadius.lg,
+                    padding: spacing.md,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, marginBottom: spacing.xs }}>
+                    <div style={{ color: colors.accent.main }}>
+                      <IconAnalytics />
+                    </div>
+                    <div
+                      style={{
+                        ...typography.body,
+                        fontWeight: typography.fontWeight.bold,
+                        color: colors.text.primary,
+                        fontSize: typography.fontSize.sm,
+                      }}
+                    >
+                      Analytics
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      ...typography.caption,
+                      fontSize: typography.fontSize.xs,
+                      color: colors.text.muted,
+                    }}
+                  >
+                    View your performance metrics & insights
+                  </div>
+                </div>
+              </Link>
+
+              {/* All navigation items combined for mobile */}
+              {[...mainNavItems, ...developmentNavItems, ...contentNavItems].map((item) => {
                 const active = isActive(item.path);
                 return (
                   <Link
@@ -251,10 +381,60 @@ const StudentLayout: React.FC = () => {
                       >
                         {item.label}
                       </div>
+                      <div
+                        style={{
+                          ...typography.caption,
+                          fontSize: typography.fontSize.xs,
+                          color: colors.text.muted,
+                          marginTop: spacing.xs,
+                        }}
+                      >
+                        {item.description}
+                      </div>
                     </div>
                   </Link>
                 );
               })}
+
+              {/* Logout Button for Mobile */}
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setMobileMenuOpen(false);
+                }}
+                style={{
+                  width: "100%",
+                  marginTop: spacing.md,
+                  padding: spacing.md,
+                  background: `linear-gradient(135deg, ${colors.danger.main} 0%, ${colors.danger.dark} 100%)`,
+                  color: colors.text.onPrimary,
+                  border: "none",
+                  borderRadius: borderRadius.lg,
+                  cursor: "pointer",
+                  fontSize: typography.fontSize.sm,
+                  fontWeight: typography.fontWeight.semibold,
+                  fontFamily: typography.fontFamily.primary,
+                  transition: "all 0.2s ease",
+                  boxShadow: shadows.md,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: spacing.sm,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = shadows.lg;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = shadows.md;
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+                </svg>
+                Logout
+              </button>
             </div>
           )}
         </div>
@@ -282,7 +462,15 @@ const StudentLayout: React.FC = () => {
           position: "sticky",
           top: 0,
           height: "100vh",
+          maxHeight: "100vh",
           overflowY: "auto",
+          overflowX: "hidden",
+          WebkitOverflowScrolling: "touch" as any,
+          overscrollBehavior: "contain",
+          scrollbarWidth: "thin",
+          scrollbarColor: `${colors.primary.main}40 ${colors.surface.section}`,
+          scrollBehavior: "smooth",
+          scrollbarGutter: "stable",
         }}
       >
         {/* Club Identity Block */}
@@ -358,91 +546,394 @@ const StudentLayout: React.FC = () => {
           </div>
         )}
 
-        {/* Navigation CTAs */}
-        <nav style={{ display: "flex", flexDirection: "column", gap: spacing.xs, flex: 1 }}>
-          {navItems.map((item) => {
-            const active = isActive(item.path);
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
+        {/* Analytics CTA - Prominent Section */}
+        <Link
+          to="/realverse/student/analytics"
+          style={{
+            textDecoration: "none",
+            marginBottom: spacing.lg,
+          }}
+        >
+          <div
+            style={{
+              background: `linear-gradient(135deg, ${colors.accent.main}15 0%, ${colors.primary.main}15 100%)`,
+              border: `2px solid ${isActive("/realverse/student/analytics") ? colors.accent.main : colors.accent.main + "40"}`,
+              borderRadius: borderRadius.lg,
+              padding: spacing.md,
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              position: "relative",
+              overflow: "hidden",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = shadows.glassDark;
+              e.currentTarget.style.borderColor = colors.accent.main;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "none";
+              e.currentTarget.style.borderColor = isActive("/realverse/student/analytics") ? colors.accent.main : colors.accent.main + "40";
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, marginBottom: spacing.xs }}>
+              <div style={{ color: colors.accent.main }}>
+                <IconAnalytics />
+              </div>
+              <div
                 style={{
-                  textDecoration: "none",
-                  padding: spacing.md,
-                  borderRadius: borderRadius.md,
-                  background: active
-                    ? colors.primary.main + "12"
-                    : "transparent",
-                  borderLeft: active ? `3px solid ${colors.primary.main}` : "3px solid transparent",
-                  color: active ? colors.text.primary : colors.text.secondary,
-                  transition: "all 0.15s ease-out",
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: spacing.md,
-                  cursor: "pointer",
-                  position: "relative",
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) {
-                    e.currentTarget.style.background = colors.surface.soft;
-                    e.currentTarget.style.color = colors.text.primary;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) {
-                    e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = colors.text.secondary;
-                  }
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.outline = `2px solid ${colors.primary.main}40`;
-                  e.currentTarget.style.outlineOffset = "2px";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.outline = "none";
+                  ...typography.body,
+                  fontWeight: typography.fontWeight.bold,
+                  color: colors.text.primary,
+                  fontSize: typography.fontSize.sm,
                 }}
               >
-                <div
-                  style={{
-                    color: active ? colors.primary.light : colors.text.muted,
-                    opacity: active ? 1 : 0.7,
-                    flexShrink: 0,
-                    marginTop: "2px",
-                    transition: "opacity 0.15s ease-out",
-                  }}
-                >
-                  {getIcon(item.icon)}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
+                Analytics
+              </div>
+            </div>
+            <div
+              style={{
+                ...typography.caption,
+                fontSize: typography.fontSize.xs,
+                color: colors.text.muted,
+                lineHeight: 1.4,
+              }}
+            >
+              View your performance metrics & insights
+            </div>
+          </div>
+        </Link>
+
+        {/* Navigation Sections */}
+        <nav 
+          style={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: spacing.lg, 
+            flex: 1, 
+            overflowY: "auto",
+            minHeight: 0, // Important for flex scrolling
+          }}
+        >
+          {/* Main Navigation */}
+          <div>
+            <div
+              style={{
+                ...typography.caption,
+                fontSize: typography.fontSize.xs,
+                color: colors.text.muted,
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                marginBottom: spacing.sm,
+                paddingLeft: spacing.xs,
+              }}
+            >
+              Main
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
+              {mainNavItems.map((item) => {
+                const active = isActive(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
                     style={{
-                      ...typography.body,
-                      fontWeight: active
-                        ? typography.fontWeight.semibold
-                        : typography.fontWeight.medium,
-                      marginBottom: spacing.xs,
-                      fontSize: typography.fontSize.sm,
-                      color: "inherit",
+                      textDecoration: "none",
+                      padding: spacing.md,
+                      borderRadius: borderRadius.md,
+                      background: active
+                        ? colors.primary.main + "12"
+                        : "transparent",
+                      borderLeft: active ? `3px solid ${colors.primary.main}` : "3px solid transparent",
+                      color: active ? colors.text.primary : colors.text.secondary,
+                      transition: "all 0.15s ease-out",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: spacing.md,
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.background = colors.surface.soft;
+                        e.currentTarget.style.color = colors.text.primary;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.color = colors.text.secondary;
+                      }
                     }}
                   >
-                    {item.label}
-                  </div>
-                  <div
+                    <div
+                      style={{
+                        color: active ? colors.primary.light : colors.text.muted,
+                        opacity: active ? 1 : 0.7,
+                        flexShrink: 0,
+                        marginTop: "2px",
+                      }}
+                    >
+                      {getIcon(item.icon)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          ...typography.body,
+                          fontWeight: active
+                            ? typography.fontWeight.semibold
+                            : typography.fontWeight.medium,
+                          marginBottom: spacing.xs,
+                          fontSize: typography.fontSize.sm,
+                          color: "inherit",
+                        }}
+                      >
+                        {item.label}
+                      </div>
+                      <div
+                        style={{
+                          ...typography.caption,
+                          fontSize: typography.fontSize.xs,
+                          color: colors.text.muted,
+                          lineHeight: 1.4,
+                          opacity: active ? 0.8 : 0.6,
+                        }}
+                      >
+                        {item.description}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Development Section */}
+          <div>
+            <div
+              style={{
+                ...typography.caption,
+                fontSize: typography.fontSize.xs,
+                color: colors.text.muted,
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                marginBottom: spacing.sm,
+                paddingLeft: spacing.xs,
+              }}
+            >
+              Development
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
+              {developmentNavItems.map((item) => {
+                const active = isActive(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
                     style={{
-                      ...typography.caption,
-                      fontSize: typography.fontSize.xs,
-                      color: colors.text.muted,
-                      lineHeight: 1.4,
-                      opacity: active ? 0.8 : 0.6,
+                      textDecoration: "none",
+                      padding: spacing.md,
+                      borderRadius: borderRadius.md,
+                      background: active
+                        ? colors.primary.main + "12"
+                        : "transparent",
+                      borderLeft: active ? `3px solid ${colors.primary.main}` : "3px solid transparent",
+                      color: active ? colors.text.primary : colors.text.secondary,
+                      transition: "all 0.15s ease-out",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: spacing.md,
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.background = colors.surface.soft;
+                        e.currentTarget.style.color = colors.text.primary;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.color = colors.text.secondary;
+                      }
                     }}
                   >
-                    {item.description}
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+                    <div
+                      style={{
+                        color: active ? colors.primary.light : colors.text.muted,
+                        opacity: active ? 1 : 0.7,
+                        flexShrink: 0,
+                        marginTop: "2px",
+                      }}
+                    >
+                      {getIcon(item.icon)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          ...typography.body,
+                          fontWeight: active
+                            ? typography.fontWeight.semibold
+                            : typography.fontWeight.medium,
+                          marginBottom: spacing.xs,
+                          fontSize: typography.fontSize.sm,
+                          color: "inherit",
+                        }}
+                      >
+                        {item.label}
+                      </div>
+                      <div
+                        style={{
+                          ...typography.caption,
+                          fontSize: typography.fontSize.xs,
+                          color: colors.text.muted,
+                          lineHeight: 1.4,
+                          opacity: active ? 0.8 : 0.6,
+                        }}
+                      >
+                        {item.description}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Content Section */}
+          <div>
+            <div
+              style={{
+                ...typography.caption,
+                fontSize: typography.fontSize.xs,
+                color: colors.text.muted,
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                marginBottom: spacing.sm,
+                paddingLeft: spacing.xs,
+              }}
+            >
+              Content
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
+              {contentNavItems.map((item) => {
+                const active = isActive(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    style={{
+                      textDecoration: "none",
+                      padding: spacing.md,
+                      borderRadius: borderRadius.md,
+                      background: active
+                        ? colors.primary.main + "12"
+                        : "transparent",
+                      borderLeft: active ? `3px solid ${colors.primary.main}` : "3px solid transparent",
+                      color: active ? colors.text.primary : colors.text.secondary,
+                      transition: "all 0.15s ease-out",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: spacing.md,
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.background = colors.surface.soft;
+                        e.currentTarget.style.color = colors.text.primary;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.color = colors.text.secondary;
+                      }
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: active ? colors.primary.light : colors.text.muted,
+                        opacity: active ? 1 : 0.7,
+                        flexShrink: 0,
+                        marginTop: "2px",
+                      }}
+                    >
+                      {getIcon(item.icon)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          ...typography.body,
+                          fontWeight: active
+                            ? typography.fontWeight.semibold
+                            : typography.fontWeight.medium,
+                          marginBottom: spacing.xs,
+                          fontSize: typography.fontSize.sm,
+                          color: "inherit",
+                        }}
+                      >
+                        {item.label}
+                      </div>
+                      <div
+                        style={{
+                          ...typography.caption,
+                          fontSize: typography.fontSize.xs,
+                          color: colors.text.muted,
+                          lineHeight: 1.4,
+                          opacity: active ? 0.8 : 0.6,
+                        }}
+                      >
+                        {item.description}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         </nav>
+
+        {/* Logout Button - Desktop */}
+        <div style={{ 
+          marginTop: "auto", 
+          paddingTop: spacing.lg, 
+          borderTop: `1px solid ${colors.surface.soft}`,
+          flexShrink: 0,
+        }}>
+          <button
+            onClick={handleLogout}
+            style={{
+              width: "100%",
+              padding: spacing.md,
+              background: `linear-gradient(135deg, ${colors.danger.main} 0%, ${colors.danger.dark} 100%)`,
+              color: colors.text.onPrimary,
+              border: "none",
+              borderRadius: borderRadius.lg,
+              cursor: "pointer",
+              fontSize: typography.fontSize.sm,
+              fontWeight: typography.fontWeight.semibold,
+              fontFamily: typography.fontFamily.primary,
+              transition: "all 0.2s ease",
+              boxShadow: shadows.md,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: spacing.sm,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = shadows.lg;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = shadows.md;
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+            </svg>
+            Logout
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}
@@ -451,7 +942,11 @@ const StudentLayout: React.FC = () => {
           flex: 1,
           padding: spacing.xl,
           overflowY: "auto",
+          overflowX: "hidden",
           background: colors.surface.bg,
+          minHeight: "100vh",
+          width: "100%",
+          boxSizing: "border-box",
         }}
       >
         <Outlet />

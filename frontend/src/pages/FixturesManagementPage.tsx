@@ -4,8 +4,12 @@ import { api } from "../api/client";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
+import { Section } from "../components/ui/Section";
+import { DataTableCard } from "../components/ui/DataTableCard";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 import { pageVariants, cardVariants, primaryButtonWhileHover, primaryButtonWhileTap } from "../utils/motion";
+import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
+import { matchAssets, galleryAssets, adminAssets } from "../config/assets";
 
 const FixturesManagementPage: React.FC = () => {
   const [centers, setCenters] = useState<any[]>([]);
@@ -172,6 +176,17 @@ const FixturesManagementPage: React.FC = () => {
     }
   };
 
+  const {
+    sectionVariants,
+    headingVariants,
+    getStaggeredCard,
+  } = useHomepageAnimation();
+
+  // Calculate KPIs - use fixtures safely
+  const upcomingMatches = (fixtures || []).filter(f => f.status === "UPCOMING").length;
+  const completedMatches = (fixtures || []).filter(f => f.status === "COMPLETED").length;
+  const competitions = [...new Set((fixtures || []).map(f => f.matchType))].length;
+
   return (
     <motion.main
       className="rv-page rv-page--fixtures"
@@ -179,6 +194,10 @@ const FixturesManagementPage: React.FC = () => {
       initial="initial"
       animate="animate"
       exit="exit"
+      style={{
+        background: colors.surface.bg,
+        minHeight: '100%',
+      }}
     >
       {/* Floating Stars Background */}
       <div className="rv-page-stars" aria-hidden="true">
@@ -189,32 +208,138 @@ const FixturesManagementPage: React.FC = () => {
         <span className="rv-star rv-star--delay4" />
       </div>
 
-      <section className="rv-section-surface">
-        {/* Header */}
-        <header className="rv-section-header">
-          <div>
-            <h1 className="rv-page-title">⚽ Fixtures</h1>
-            <p className="rv-page-subtitle">Manage match fixtures and player selections</p>
-          </div>
-          <motion.button
-            className="rv-btn rv-btn-primary"
-            whileHover={primaryButtonWhileHover}
-            whileTap={primaryButtonWhileTap}
-            onClick={() => setShowCreateFixture(true)}
+      {/* BANNER SECTION */}
+      <motion.section
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          marginBottom: spacing["2xl"],
+          borderRadius: borderRadius.xl,
+        }}
+        variants={sectionVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: true, amount: 0.4 }}
+      >
+        {/* Background image */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `url(${matchAssets.lastMatchStripBg})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            opacity: 0.2,
+            filter: "blur(10px)",
+          }}
+        />
+        {/* Gradient overlay */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: `linear-gradient(135deg, rgba(4, 61, 208, 0.7) 0%, rgba(255, 169, 0, 0.5) 100%)`,
+          }}
+        />
+        {/* Banner content */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            padding: spacing["2xl"],
+            display: "flex",
+            flexDirection: "column",
+            gap: spacing.lg,
+          }}
+        >
+          <motion.p
+            style={{
+              ...typography.overline,
+              color: colors.accent.main,
+              letterSpacing: "0.1em",
+            }}
+            variants={headingVariants}
           >
-            ➕ Create Fixture
-          </motion.button>
-        </header>
+            RealVerse • Match Management
+          </motion.p>
+          <motion.h1
+            style={{
+              ...typography.h1,
+              color: colors.text.onPrimary,
+              margin: 0,
+            }}
+            variants={headingVariants}
+          >
+            Fixtures & Matches
+            <span style={{ display: "block", color: colors.accent.main, fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.normal, marginTop: spacing.xs }}>
+              Schedule matches and manage player selections
+            </span>
+          </motion.h1>
+          
+          {/* KPI Cards Row */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: spacing.md,
+              marginTop: spacing.md,
+            }}
+          >
+            {[
+              { label: "Upcoming Matches", value: upcomingMatches, subLabel: "Scheduled" },
+              { label: "Completed Matches", value: completedMatches, subLabel: "Finished" },
+              { label: "Competitions", value: competitions, subLabel: "Active" },
+              { label: "Total Fixtures", value: fixtures.length, subLabel: "All statuses" },
+            ].map((kpi, index) => (
+              <motion.div
+                key={kpi.label}
+                {...getStaggeredCard(index)}
+                style={{
+                  background: "rgba(255, 255, 255, 0.1)",
+                  backdropFilter: "blur(10px)",
+                  borderRadius: borderRadius.lg,
+                  padding: spacing.md,
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                }}
+              >
+                <p style={{ ...typography.caption, color: colors.text.onPrimary, opacity: 0.8, marginBottom: spacing.xs }}>
+                  {kpi.label}
+                </p>
+                <p style={{ ...typography.h2, color: colors.text.onPrimary, margin: 0 }}>
+                  {kpi.value}
+                </p>
+                {kpi.subLabel && (
+                  <p style={{ ...typography.caption, color: colors.text.onPrimary, opacity: 0.6, marginTop: spacing.xs, margin: 0 }}>
+                    {kpi.subLabel}
+                  </p>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
 
-      {error && (
-        <Card variant="default" padding="md" style={{ 
-          marginBottom: spacing.md,
-          background: colors.danger.soft,
-          border: `1px solid ${colors.danger.main}40`,
-        }}>
-          <p style={{ margin: 0, color: colors.danger.main }}>{error}</p>
-        </Card>
-      )}
+      <Section
+        title="⚽ Fixtures"
+        description="Manage match fixtures and player selections"
+        variant="elevated"
+        style={{ marginBottom: spacing.xl }}
+      >
+        {error && (
+          <Card variant="default" padding="md" style={{ 
+            marginBottom: spacing.md,
+            background: colors.danger.soft,
+            border: `1px solid ${colors.danger.main}40`,
+          }}>
+            <p style={{ margin: 0, color: colors.danger.main }}>{error}</p>
+          </Card>
+        )}
 
         {/* Center Filter */}
         <div className="rv-filter-bar">
@@ -715,7 +840,7 @@ const FixturesManagementPage: React.FC = () => {
           </div>
         )}
       </Card>
-      </section>
+      </Section>
     </motion.main>
   );
 };

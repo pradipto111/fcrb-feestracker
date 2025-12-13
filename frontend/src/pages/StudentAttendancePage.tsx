@@ -3,8 +3,12 @@ import { motion } from "framer-motion";
 import { api } from "../api/client";
 import { Card } from "../components/ui/Card";
 import { KPICard } from "../components/ui/KPICard";
+import { Section } from "../components/ui/Section";
+import { DataTableCard } from "../components/ui/DataTableCard";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
-import { pageVariants, cardVariants } from "../utils/motion";
+import { cardVariants } from "../utils/motion";
+import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
+import { academyAssets } from "../config/assets";
 
 const StudentAttendancePage: React.FC = () => {
   const [sessions, setSessions] = useState<any[]>([]);
@@ -76,31 +80,20 @@ const StudentAttendancePage: React.FC = () => {
     ? ((stats.present + stats.excused) / stats.total * 100).toFixed(1)
     : "0";
 
-  return (
-    <motion.main
-      className="rv-page rv-page--student-attendance"
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-    >
-      {/* Floating Stars Background */}
-      <div className="rv-page-stars" aria-hidden="true">
-        <span className="rv-star" />
-        <span className="rv-star rv-star--delay1" />
-        <span className="rv-star rv-star--delay2" />
-        <span className="rv-star rv-star--delay3" />
-        <span className="rv-star rv-star--delay4" />
-      </div>
+  const {
+    headingVariants,
+    viewportOnce,
+  } = useHomepageAnimation();
 
-      <section className="rv-section-surface">
-        {/* Header */}
-        <header className="rv-section-header">
-          <div>
-            <h1 className="rv-page-title">📅 My Attendance</h1>
-            <p className="rv-page-subtitle">View your session attendance for the month</p>
-          </div>
-        </header>
+  return (
+    <div style={{ maxWidth: "1400px", margin: "0 auto", padding: spacing.md }}>
+      {/* Page Header */}
+      <Section
+        title="My Attendance"
+        description="View your session attendance for the month"
+        variant="default"
+        style={{ marginBottom: spacing.xl }}
+      >
 
         {/* Error State */}
         {error && (
@@ -395,8 +388,8 @@ const StudentAttendancePage: React.FC = () => {
           </div>
         </Card>
       )}
-      </section>
-    </motion.main>
+      </Section>
+    </div>
   );
 };
 

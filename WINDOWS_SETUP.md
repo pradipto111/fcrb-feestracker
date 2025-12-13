@@ -49,7 +49,7 @@ Complete step-by-step guide to set up the FCRB Fees Management System on a Windo
 **Option A: Using Git**
 ```cmd
 git clone <your-repo-url>
-cd fcrb
+cd fcrb-feestracker-new
 ```
 
 **Option B: Download ZIP**
@@ -102,11 +102,18 @@ CREATE DATABASE fees_tracker;
 
 6. Run database migrations:
    ```cmd
-   npx prisma migrate dev
+   npx prisma migrate deploy
    ```
 
-7. Seed initial data:
+7. Seed initial data (minimal clean seed):
    ```cmd
+   npm run prisma:seed
+   ```
+
+8. (Optional) If you need to reset and re-run everything:
+   ```cmd
+   npx prisma migrate reset --force
+   npx prisma migrate deploy
    npm run prisma:seed
    ```
 
@@ -115,7 +122,7 @@ CREATE DATABASE fees_tracker;
 1. Open a **NEW** Command Prompt/PowerShell window
 2. Navigate to frontend folder:
    ```cmd
-   cd C:\path\to\fcrb\frontend
+   cd C:\path\to\fcrb-feestracker-new\frontend
    ```
 
 3. Install dependencies:
@@ -139,7 +146,7 @@ You need **TWO** separate terminal windows:
 
 **Terminal 1 - Backend:**
 ```cmd
-cd C:\path\to\fcrb\backend
+cd C:\path\to\fcrb-feestracker-new\backend
 npm run dev
 ```
 
@@ -147,7 +154,7 @@ Wait until you see: `✓ Server running on http://localhost:4000`
 
 **Terminal 2 - Frontend:**
 ```cmd
-cd C:\path\to\fcrb\frontend
+cd C:\path\to\fcrb-feestracker-new\frontend
 npm run dev
 ```
 

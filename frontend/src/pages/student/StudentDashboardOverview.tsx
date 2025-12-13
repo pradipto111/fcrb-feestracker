@@ -1,27 +1,35 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import { api } from "../../api/client";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import { Section } from "../../components/ui/Section";
+import { CardHeader } from "../../components/ui/CardHeader";
+import { CardBody } from "../../components/ui/CardBody";
 import PlayerIdentityHeader from "../../components/PlayerIdentityHeader";
 import NextStepSnapshot from "../../components/NextStepSnapshot";
+import YourAnalytics from "../../components/YourAnalytics";
 import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
-import { pageVariants } from "../../utils/motion";
-
-interface QuickLinkCard {
-  title: string;
-  description: string;
-  icon: string;
-  path: string;
-  color: string;
-}
+import { useHomepageAnimation } from "../../hooks/useHomepageAnimation";
+import { heroAssets, clubAssets, academyAssets } from "../../config/assets";
 
 const StudentDashboardOverview: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [attendanceData, setAttendanceData] = useState<any>(null);
   const [roadmapData, setRoadmapData] = useState<any>(null);
   const [error, setError] = useState("");
+  const [analyticsRefreshKey, setAnalyticsRefreshKey] = useState(0);
+  
+  // Toned-down motion for internal pages
+  const {
+    sectionVariantsLight,
+    headingVariants,
+    cardVariants,
+    cardHoverLight,
+    viewportOnce,
+    getStaggeredCard,
+  } = useHomepageAnimation();
 
   useEffect(() => {
     const loadData = async () => {
@@ -44,43 +52,7 @@ const StudentDashboardOverview: React.FC = () => {
     loadData();
   }, []);
 
-  const quickLinks: QuickLinkCard[] = [
-    {
-      title: "View My Pathway",
-      description: "See your full progress roadmap and requirements",
-      icon: "🎯",
-      path: "/realverse/student/pathway",
-      color: colors.primary.main,
-    },
-    {
-      title: "Read Coach Feedback",
-      description: "Review monthly feedback from your coaches",
-      icon: "📝",
-      path: "/realverse/student/feedback",
-      color: colors.accent.main,
-    },
-    {
-      title: "See My Journey",
-      description: "Explore your development timeline and milestones",
-      icon: "⭐",
-      path: "/realverse/student/journey",
-      color: colors.success.main,
-    },
-    {
-      title: "View Match & Selection History",
-      description: "Check your match exposure and selection status",
-      icon: "⚽",
-      path: "/realverse/student/matches",
-      color: colors.warning.main,
-    },
-    {
-      title: "Update Wellness",
-      description: "Submit today's training load and recovery check",
-      icon: "💪",
-      path: "/realverse/student/wellness",
-      color: colors.info.main,
-    },
-  ];
+  // Quick links removed - navigation is now handled by the sidebar
 
   if (error) {
     return (
@@ -105,17 +77,123 @@ const StudentDashboardOverview: React.FC = () => {
   const currentLevel = roadmapData?.currentLevel;
 
   return (
-    <motion.div variants={pageVariants} initial="initial" animate="animate" exit="exit">
-      {/* Header */}
-      <div style={{ marginBottom: spacing.xl }}>
-        <h1 style={{ ...typography.h1, color: colors.text.primary, marginBottom: spacing.sm }}>
-          Dashboard
-        </h1>
-        <p style={{ ...typography.body, color: colors.text.secondary }}>
-          Overview of your academy journey and quick access to all features
-        </p>
-      </div>
-
+    <div>
+      {/* Hero Banner - STUNNING THEME */}
+      <motion.section
+        variants={sectionVariantsLight}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={viewportOnce}
+        style={{
+          position: "relative",
+          minHeight: "300px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+          marginBottom: spacing.xl,
+          borderRadius: borderRadius.xl,
+        }}
+      >
+        {/* Background image - ONLY IMAGE, NO VIDEO */}
+        <motion.div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `url(${academyAssets.trainingShot})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            opacity: 0.4,
+            filter: "blur(6px)",
+            zIndex: 0,
+          }}
+          animate={{
+            scale: [1, 1.02, 1],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        
+        {/* Animated Radial Gradient */}
+        <motion.div
+          style={{
+            position: "absolute",
+            top: "20%",
+            left: "30%",
+            width: "400px",
+            height: "400px",
+            background: "radial-gradient(circle, rgba(0, 224, 255, 0.2) 0%, transparent 70%)",
+            borderRadius: "50%",
+            filter: "blur(50px)",
+            zIndex: 1,
+          }}
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.1, 0.3, 0.1],
+          }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        
+        {/* Dark Overlay */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(5, 11, 32, 0.6)",
+            zIndex: 2,
+          }}
+        />
+        
+        {/* Content */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 3,
+            textAlign: "center",
+            padding: spacing.xl,
+            maxWidth: "700px",
+          }}
+        >
+          <motion.h1
+            variants={headingVariants}
+            style={{
+              ...typography.display,
+              fontSize: typography.fontSize["3xl"],
+              color: colors.text.primary,
+              marginBottom: spacing.sm,
+              textShadow: "0 4px 30px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 224, 255, 0.3)",
+            }}
+          >
+            Dashboard
+          </motion.h1>
+          <motion.p
+            variants={headingVariants}
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.lg,
+              color: colors.text.secondary,
+              textShadow: "0 2px 15px rgba(0, 0, 0, 0.5)",
+            }}
+          >
+            Overview of your academy journey and quick access to all features
+          </motion.p>
+        </div>
+        
+      </motion.section>
+      
       {/* Player Identity & Status Header */}
       <PlayerIdentityHeader
         student={student}
@@ -126,76 +204,82 @@ const StudentDashboardOverview: React.FC = () => {
       {/* "What's Next for Me?" Snapshot */}
       <NextStepSnapshot roadmap={roadmapData} />
 
-      {/* Quick Links Grid */}
-      <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg }}>
-        <h2 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.lg }}>
-          Quick Links
-        </h2>
-        <div
+      {/* Player Profile CTA Banner - Prominent Access Point */}
+      <Section variant="elevated" style={{ marginBottom: spacing.xl }}>
+        <Card
+          variant="elevated"
+          padding="lg"
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: spacing.lg,
+            background: `linear-gradient(135deg, ${colors.primary.main}15 0%, ${colors.accent.main}15 100%)`,
+            border: `2px solid ${colors.primary.main}40`,
+            position: "relative",
+            overflow: "hidden",
           }}
         >
-          {quickLinks.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              style={{ textDecoration: "none" }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  background: `linear-gradient(135deg, ${colors.surface.card} 0%, ${colors.surface.soft} 100%)`,
-                  border: `2px solid ${link.color}30`,
-                  borderRadius: borderRadius.md,
-                  padding: spacing.md,
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = link.color;
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = `0 8px 16px ${link.color}20`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = link.color + "30";
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md }}>
-                  <span style={{ fontSize: typography.fontSize["2xl"], flexShrink: 0 }}>
-                    {link.icon}
-                  </span>
-                  <div style={{ flex: 1 }}>
-                    <h3
-                      style={{
-                        ...typography.h5,
-                        color: colors.text.primary,
-                        marginBottom: spacing.xs,
-                      }}
-                    >
-                      {link.title}
-                    </h3>
-                    <p
-                      style={{
-                        ...typography.caption,
-                        color: colors.text.secondary,
-                        margin: 0,
-                        fontSize: typography.fontSize.sm,
-                      }}
-                    >
-                      {link.description}
-                    </p>
-                  </div>
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: spacing.md }}>
+              <div style={{ flex: 1, minWidth: "250px" }}>
+                <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.sm }}>
+                  📊 Complete Player Profile
+                </h3>
+                <p style={{ ...typography.body, color: colors.text.secondary, marginBottom: spacing.md }}>
+                  View your complete performance profile including detailed metrics, development timeline, positional suitability, and coach feedback.
+                </p>
+                <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
+                  <Link to="/realverse/student/analytics" style={{ textDecoration: "none" }}>
+                    <Button variant="primary" size="md">
+                      View Full Profile →
+                    </Button>
+                  </Link>
+                  <Link to="/realverse/student/analytics" style={{ textDecoration: "none" }}>
+                    <Button variant="secondary" size="md">
+                      View Analytics Dashboard
+                    </Button>
+                  </Link>
                 </div>
               </div>
-            </Link>
-          ))}
-        </div>
-      </Card>
+              <div style={{ fontSize: "4rem", opacity: 0.2, lineHeight: 1 }}>
+                📈
+              </div>
+            </div>
+          </div>
+        </Card>
+      </Section>
+
+      {/* Your Analytics Section - Prominently Displayed */}
+      <Section
+        variant="elevated"
+        style={{ marginBottom: spacing.xl }}
+      >
+        <Card variant="elevated" padding="none" style={{ background: colors.surface.card }}>
+          <CardHeader
+            title="Your Analytics"
+            description="View your latest performance metrics, readiness index, and positional suitability assessments."
+            actions={
+              <div style={{ display: "flex", gap: spacing.sm }}>
+                <Button
+                  variant="utility"
+                  size="sm"
+                  onClick={() => setAnalyticsRefreshKey(prev => prev + 1)}
+                >
+                  🔄 Refresh
+                </Button>
+                <Link to="/realverse/student/analytics" style={{ textDecoration: "none" }}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                  >
+                    View Full Analytics →
+                  </Button>
+                </Link>
+              </div>
+            }
+          />
+          <CardBody padding="lg">
+            <YourAnalytics refreshKey={analyticsRefreshKey} />
+          </CardBody>
+        </Card>
+      </Section>
 
       {/* Summary Stats */}
       <div
@@ -233,11 +317,11 @@ const StudentDashboardOverview: React.FC = () => {
           >
             ₹{Math.abs(summary.outstanding).toLocaleString()}
           </div>
-        </Card>
+          </Card>
+        </div>
       </div>
-    </motion.div>
-  );
-};
+    );
+  };
 
 export default StudentDashboardOverview;
 

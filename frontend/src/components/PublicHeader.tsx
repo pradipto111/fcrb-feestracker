@@ -34,12 +34,16 @@ const PublicHeader: React.FC = () => {
 
   // Home sections that are on the landing page
   const homeSections = [
-    { id: "news", label: "News" },
-    { id: "fixtures", label: "Fixtures & Results" },
-    { id: "academy", label: "Academy" },
-    { id: "club", label: "About" },
+    { id: "stats", label: "Club Snapshot" },
+    { id: "pyramid", label: "Football Pyramid" },
+    { id: "matches", label: "Match Centre" },
     { id: "teams", label: "Teams" },
-    { id: "contact", label: "Contact" },
+    { id: "philosophy", label: "Club Philosophy" },
+    { id: "academy", label: "Academy" },
+    { id: "centres", label: "Our Centres" },
+    { id: "realverse", label: "RealVerse" },
+    { id: "shop", label: "Shop" },
+    { id: "news", label: "News" },
   ];
 
   // Handle navigation to home sections - works from any route
@@ -245,6 +249,145 @@ const PublicHeader: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Club */}
+          <button
+            onClick={() => handleHomeSectionClick("philosophy")}
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.sm,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.text.secondary,
+              background: "transparent",
+              border: "none",
+              padding: `${spacing.xs} ${spacing.sm}`,
+              borderRadius: borderRadius.md,
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = colors.text.primary;
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = colors.text.secondary;
+              e.currentTarget.style.background = "transparent";
+            }}
+          >
+            Club
+          </button>
+
+          {/* Teams */}
+          <button
+            onClick={() => handleHomeSectionClick("teams")}
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.sm,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.text.secondary,
+              background: "transparent",
+              border: "none",
+              padding: `${spacing.xs} ${spacing.sm}`,
+              borderRadius: borderRadius.md,
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = colors.text.primary;
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = colors.text.secondary;
+              e.currentTarget.style.background = "transparent";
+            }}
+          >
+            Teams
+          </button>
+
+          {/* Matches */}
+          <button
+            onClick={() => handleHomeSectionClick("matches")}
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.sm,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.text.secondary,
+              background: "transparent",
+              border: "none",
+              padding: `${spacing.xs} ${spacing.sm}`,
+              borderRadius: borderRadius.md,
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = colors.text.primary;
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = colors.text.secondary;
+              e.currentTarget.style.background = "transparent";
+            }}
+          >
+            Matches
+          </button>
+
+          {/* Academy */}
+          <button
+            onClick={() => handleHomeSectionClick("academy")}
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.sm,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.text.secondary,
+              background: "transparent",
+              border: "none",
+              padding: `${spacing.xs} ${spacing.sm}`,
+              borderRadius: borderRadius.md,
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = colors.text.primary;
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = colors.text.secondary;
+              e.currentTarget.style.background = "transparent";
+            }}
+          >
+            Academy
+          </button>
+
+          {/* RealVerse */}
+          <Link
+            to="/realverse/login"
+            onClick={() => setIsMobileMenuOpen(false)}
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.sm,
+              fontWeight: typography.fontWeight.medium,
+              color: location.pathname.startsWith("/realverse") ? colors.text.primary : colors.text.secondary,
+              textDecoration: "none",
+              padding: `${spacing.xs} ${spacing.sm}`,
+              borderRadius: borderRadius.md,
+              transition: "all 0.2s ease",
+              background: location.pathname.startsWith("/realverse") ? "rgba(255, 255, 255, 0.05)" : "transparent",
+            }}
+            onMouseEnter={(e) => {
+              if (!location.pathname.startsWith("/realverse")) {
+                e.currentTarget.style.color = colors.text.primary;
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!location.pathname.startsWith("/realverse")) {
+                e.currentTarget.style.color = colors.text.secondary;
+                e.currentTarget.style.background = "transparent";
+              }
+            }}
+          >
+            RealVerse
+          </Link>
 
           {/* Shop */}
           <Link
@@ -498,7 +641,7 @@ const PublicHeader: React.FC = () => {
               <span>{homeDropdownOpen ? "▲" : "▼"}</span>
             </button>
             {homeDropdownOpen && (
-              <div style={{ paddingLeft: spacing.md, marginTop: spacing.xs }}>
+              <div style={{ paddingLeft: spacing.md, marginTop: spacing.xs, display: "flex", flexDirection: "column", gap: spacing.xs }}>
                 {homeSections.map((section) => (
                   <button
                     key={section.id}
@@ -522,6 +665,115 @@ const PublicHeader: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Club */}
+          <button
+            onClick={() => {
+              handleHomeSectionClick("philosophy");
+              setIsMobileMenuOpen(false);
+            }}
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.base,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.text.secondary,
+              background: "transparent",
+              border: "none",
+              padding: spacing.md,
+              borderRadius: borderRadius.md,
+              textAlign: "left",
+              width: "100%",
+              cursor: "pointer",
+            }}
+          >
+            Club
+          </button>
+
+          {/* Teams */}
+          <button
+            onClick={() => {
+              handleHomeSectionClick("teams");
+              setIsMobileMenuOpen(false);
+            }}
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.base,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.text.secondary,
+              background: "transparent",
+              border: "none",
+              padding: spacing.md,
+              borderRadius: borderRadius.md,
+              textAlign: "left",
+              width: "100%",
+              cursor: "pointer",
+            }}
+          >
+            Teams
+          </button>
+
+          {/* Matches */}
+          <button
+            onClick={() => {
+              handleHomeSectionClick("matches");
+              setIsMobileMenuOpen(false);
+            }}
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.base,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.text.secondary,
+              background: "transparent",
+              border: "none",
+              padding: spacing.md,
+              borderRadius: borderRadius.md,
+              textAlign: "left",
+              width: "100%",
+              cursor: "pointer",
+            }}
+          >
+            Matches
+          </button>
+
+          {/* Academy */}
+          <button
+            onClick={() => {
+              handleHomeSectionClick("academy");
+              setIsMobileMenuOpen(false);
+            }}
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.base,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.text.secondary,
+              background: "transparent",
+              border: "none",
+              padding: spacing.md,
+              borderRadius: borderRadius.md,
+              textAlign: "left",
+              width: "100%",
+              cursor: "pointer",
+            }}
+          >
+            Academy
+          </button>
+
+          {/* RealVerse */}
+          <Link
+            to="/realverse/login"
+            onClick={() => setIsMobileMenuOpen(false)}
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.base,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.text.secondary,
+              textDecoration: "none",
+              padding: spacing.md,
+              borderRadius: borderRadius.md,
+            }}
+          >
+            RealVerse
+          </Link>
 
           {/* Shop */}
           <Link

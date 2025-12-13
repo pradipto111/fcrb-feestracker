@@ -6,6 +6,8 @@ import { colors, typography, spacing, borderRadius, shadows } from "../theme/des
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { motion } from "framer-motion";
+import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
+import { brochureAssets, galleryAssets, academyAssets, heroAssets, clubAssets, getGalleryImage } from "../config/assets";
 
 const BrochurePage: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -44,7 +46,7 @@ const BrochurePage: React.FC = () => {
           paddingBottom: isMobile ? spacing["3xl"] : spacing["4xl"],
         }}
       >
-        {/* 1. HERO / COVER SECTION */}
+        {/* 1. HERO / COVER SECTION - STUNNING THEME */}
         <motion.section
           {...fadeInUp}
           style={{
@@ -58,21 +60,61 @@ const BrochurePage: React.FC = () => {
             overflow: "hidden",
           }}
         >
-          {/* Video Background */}
-          <video
-            src="/fcrb-video.mp4"
-            autoPlay
-            loop
-            muted
-            playsInline
+          {/* Hero Collage Background - ONLY IMAGES, NO VIDEO */}
+          <div
             style={{
               position: "absolute",
               top: 0,
               left: 0,
               width: "100%",
               height: "100%",
-              objectFit: "cover",
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
               zIndex: 0,
+            }}
+          >
+            {brochureAssets.collage.map((imageUrl, idx) => (
+              <motion.div
+                key={idx}
+                style={{
+                  backgroundImage: `url(${imageUrl})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  opacity: 0.6,
+                }}
+                animate={{
+                  scale: [1, 1.02, 1],
+                }}
+                transition={{
+                  duration: 10 + idx * 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+            ))}
+          </div>
+          
+          {/* Animated Radial Gradient */}
+          <motion.div
+            style={{
+              position: "absolute",
+              top: "30%",
+              left: "20%",
+              width: "500px",
+              height: "500px",
+              background: "radial-gradient(circle, rgba(0, 224, 255, 0.2) 0%, transparent 70%)",
+              borderRadius: "50%",
+              filter: "blur(60px)",
+              zIndex: 1,
+            }}
+            animate={{
+              scale: [1, 1.3, 1],
+              opacity: [0.1, 0.3, 0.1],
+            }}
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut",
             }}
           />
           
@@ -84,8 +126,8 @@ const BrochurePage: React.FC = () => {
               left: 0,
               right: 0,
               bottom: 0,
-              background: "rgba(5, 11, 32, 0.75)",
-              zIndex: 1,
+              background: "rgba(5, 11, 32, 0.7)",
+              zIndex: 2,
             }}
           />
           
@@ -98,9 +140,10 @@ const BrochurePage: React.FC = () => {
               right: 0,
               bottom: 0,
               background: `linear-gradient(135deg, rgba(4, 61, 208, 0.4) 0%, rgba(255, 169, 0, 0.3) 100%)`,
-              zIndex: 2,
+              zIndex: 3,
             }}
           />
+          
 
           {/* Content */}
           <div
@@ -113,7 +156,7 @@ const BrochurePage: React.FC = () => {
             }}
           >
             <img
-              src="/fcrb-logo.png"
+              src={clubAssets.crest}
               alt="FC Real Bengaluru"
               className="logo-transparent-dark"
               style={{
@@ -192,7 +235,7 @@ const BrochurePage: React.FC = () => {
               }}
             >
               <img
-                src="/photo1.png"
+                src={brochureAssets.collage[0]}
                 alt="FC Real Bengaluru Team"
                 style={{
                   width: "100%",
@@ -511,7 +554,7 @@ const BrochurePage: React.FC = () => {
               }}
             >
               <img
-                src="/photo2.png"
+                src={academyAssets.trainingShot}
                 alt="Training Session"
                 style={{
                   width: "100%",
@@ -862,7 +905,7 @@ const BrochurePage: React.FC = () => {
               }}
             >
               <img
-                src="/photo3.png"
+                src={academyAssets.coachTalk}
                 alt="Match Play"
                 style={{
                   width: "100%",

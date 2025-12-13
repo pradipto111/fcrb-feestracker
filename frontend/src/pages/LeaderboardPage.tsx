@@ -5,6 +5,8 @@ import { useAuth } from "../context/AuthContext";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
+import { Section } from "../components/ui/Section";
+import { DataTableCard } from "../components/ui/DataTableCard";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 import { pageVariants, cardVariants } from "../utils/motion";
 
@@ -135,26 +137,21 @@ const LeaderboardPage: React.FC = () => {
         <span className="rv-star rv-star--delay4" />
       </div>
 
-      <section className="rv-section-surface">
-        {/* Header */}
-        <header className="rv-section-header">
-          <div>
-            <h1 className="rv-page-title">🏆 Most Hardworking Player</h1>
-            <p className="rv-page-subtitle">Center-wise leaderboard and achievements</p>
-          </div>
-        </header>
-
-      {error && (
-        <div style={{
-          padding: 12,
-          background: "#fee",
-          color: "#c33",
-          borderRadius: 8,
-          marginBottom: 16
-        }}>
-          {error}
-        </div>
-      )}
+      <Section
+        title="🏆 Most Hardworking Player"
+        description="Center-wise leaderboard and achievements"
+        variant="elevated"
+        style={{ marginBottom: spacing.xl }}
+      >
+        {error && (
+          <Card variant="default" padding="md" style={{
+            marginBottom: spacing.md,
+            background: colors.danger.soft,
+            border: `1px solid ${colors.danger.main}40`,
+          }}>
+            <p style={{ margin: 0, color: colors.danger.main }}>{error}</p>
+          </Card>
+        )}
 
       {/* My Stats Card (for students) */}
       {myStats && user?.role === "STUDENT" && (
@@ -363,7 +360,7 @@ const LeaderboardPage: React.FC = () => {
           )}
         </Card>
       ) : null}
-      </section>
+      </Section>
     </motion.main>
   );
 };

@@ -6,6 +6,7 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Card } from "../components/ui/Card";
 import { colors, typography, spacing, shadows } from "../theme/design-tokens";
+import { realverseAssets, galleryAssets } from "../config/assets";
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -16,7 +17,12 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const images = ["/photo1.png", "/photo2.png", "/photo3.png"];
+  // Use RealVerse login cover and gallery images
+  const images = [
+    realverseAssets.loginCover,
+    galleryAssets.actionShots[0].medium,
+    galleryAssets.actionShots[1].medium,
+  ];
 
   useEffect(() => {
     const interval = setInterval(() => {

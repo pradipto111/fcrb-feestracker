@@ -1,6 +1,8 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+import { SmoothScroll } from "./components/SmoothScroll";
+import { PageTransition } from "./components/PageTransition";
 
 // Component to handle legacy route redirects with params
 const LegacyRedirect: React.FC<{ to: string }> = ({ to }) => {
@@ -53,12 +55,16 @@ import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import BrochurePage from "./pages/BrochurePage";
+import InteractiveBrochurePage from "./pages/InteractiveBrochurePage";
 import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 import AdminStaffPage from "./pages/AdminStaffPage";
 import AdminPaymentsPage from "./pages/AdminPaymentsPage";
 import AdminSettingsPage from "./pages/AdminSettingsPage";
 import CoachAnalyticsPage from "./pages/CoachAnalyticsPage";
 import PlayerAnalyticsPage from "./pages/PlayerAnalyticsPage";
+import PlayerProfilePage from "./pages/PlayerProfilePage";
+import BatchReviewPage from "./pages/BatchReviewPage";
+import CoachCalibrationDashboard from "./pages/CoachCalibrationDashboard";
 import NotFound from "./pages/NotFound";
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -84,8 +90,15 @@ const DashboardSelector: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <Routes>
+    <SmoothScroll>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <PageTransition>
+          <Routes>
         {/* Public Landing Page */}
         <Route path="/" element={<LandingPage />} />
         
@@ -99,8 +112,9 @@ const App: React.FC = () => {
         {/* RealVerse Join Entry Page */}
         <Route path="/realverse/join" element={<RealVerseJoinPage />} />
         
-        {/* Brochure Page */}
-        <Route path="/brochure" element={<BrochurePage />} />
+        {/* Brochure Pages */}
+        <Route path="/brochure" element={<InteractiveBrochurePage />} />
+        <Route path="/brochure/classic" element={<BrochurePage />} />
         
         {/* RealVerse Login */}
         <Route
@@ -124,14 +138,12 @@ const App: React.FC = () => {
           }
         />
         
-        {/* Student Section - Nested Routes */}
+        {/* Student Section - Nested Routes - No Layout wrapper to avoid old sidebar */}
         <Route
           path="/realverse/student"
           element={
             <PrivateRoute>
-              <Layout>
-                <StudentLayout />
-              </Layout>
+              <StudentLayout />
             </PrivateRoute>
           }
         >
@@ -144,14 +156,64 @@ const App: React.FC = () => {
           <Route path="analytics" element={<PlayerAnalyticsPage />} />
         </Route>
 
-        {/* Coach Section - Nested Routes */}
+        {/* Student routes that should use StudentLayout - No Layout wrapper to avoid old sidebar */}
+        <Route
+          path="/realverse/my-attendance"
+          element={
+            <PrivateRoute>
+              <StudentLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<StudentAttendancePage />} />
+        </Route>
+        <Route
+          path="/realverse/my-fixtures"
+          element={
+            <PrivateRoute>
+              <StudentLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<StudentFixturesPage />} />
+        </Route>
+        <Route
+          path="/realverse/drills"
+          element={
+            <PrivateRoute>
+              <StudentLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<DrillsPage />} />
+        </Route>
+        <Route
+          path="/realverse/feed"
+          element={
+            <PrivateRoute>
+              <StudentLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<FeedPage />} />
+        </Route>
+        <Route
+          path="/realverse/leaderboard"
+          element={
+            <PrivateRoute>
+              <StudentLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<LeaderboardPage />} />
+        </Route>
+
+        {/* Coach Section - Nested Routes - No Layout wrapper to avoid old sidebar */}
         <Route
           path="/realverse/coach"
           element={
             <PrivateRoute>
-              <Layout>
-                <CoachLayout />
-              </Layout>
+              <CoachLayout />
             </PrivateRoute>
           }
         >
@@ -159,14 +221,12 @@ const App: React.FC = () => {
           <Route path="analytics" element={<CoachAnalyticsPage />} />
         </Route>
 
-        {/* Admin Section - Nested Routes */}
+        {/* Admin Section - Nested Routes - No Layout wrapper to avoid old sidebar */}
         <Route
           path="/realverse/admin"
           element={
             <PrivateRoute>
-              <Layout>
-                <AdminLayout />
-              </Layout>
+              <AdminLayout />
             </PrivateRoute>
           }
         >
@@ -175,18 +235,18 @@ const App: React.FC = () => {
           <Route path="staff" element={<AdminStaffPage />} />
           <Route path="payments" element={<AdminPaymentsPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="attendance" element={<AttendanceManagementPage />} />
+          <Route path="fixtures" element={<FixturesManagementPage />} />
+          <Route path="students" element={<EnhancedStudentsPage />} />
+          <Route path="batch-review" element={<BatchReviewPage />} />
+          <Route path="players/:id/profile" element={<PlayerProfilePage />} />
+          <Route path="calibration" element={<CoachCalibrationDashboard />} />
         </Route>
 
         {/* RealVerse Routes - All authenticated routes under /realverse */}
         <Route
           path="/realverse/students"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <EnhancedStudentsPage />
-              </Layout>
-            </PrivateRoute>
-          }
+          element={<Navigate to="/realverse/admin/students" replace />}
         />
         {/* Legacy route redirect */}
         <Route
@@ -208,22 +268,12 @@ const App: React.FC = () => {
           element={<LegacyRedirect to="/realverse/students" />}
         />
         <Route
-          path="/realverse/admin"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <AdminManagementPage />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
           path="/realverse/admin/leads"
           element={
             <PrivateRoute>
-              <Layout>
+              <AdminLayout>
                 <WebsiteLeadsPage />
-              </Layout>
+              </AdminLayout>
             </PrivateRoute>
           }
         />
@@ -235,9 +285,9 @@ const App: React.FC = () => {
           path="/realverse/admin/merch"
           element={
             <PrivateRoute>
-              <Layout>
+              <AdminLayout>
                 <MerchandiseListPage />
-              </Layout>
+              </AdminLayout>
             </PrivateRoute>
           }
         />
@@ -245,9 +295,9 @@ const App: React.FC = () => {
           path="/realverse/admin/merch/new"
           element={
             <PrivateRoute>
-              <Layout>
+              <AdminLayout>
                 <MerchandiseFormPage />
-              </Layout>
+              </AdminLayout>
             </PrivateRoute>
           }
         />
@@ -255,9 +305,9 @@ const App: React.FC = () => {
           path="/realverse/admin/merch/:id/edit"
           element={
             <PrivateRoute>
-              <Layout>
+              <AdminLayout>
                 <MerchandiseFormPage />
-              </Layout>
+              </AdminLayout>
             </PrivateRoute>
           }
         />
@@ -265,9 +315,9 @@ const App: React.FC = () => {
           path="/realverse/admin/centres"
           element={
             <PrivateRoute>
-              <Layout>
+              <AdminLayout>
                 <CentresManagementPage />
-              </Layout>
+              </AdminLayout>
             </PrivateRoute>
           }
         />
@@ -275,9 +325,9 @@ const App: React.FC = () => {
           path="/realverse/admin/centres/new"
           element={
             <PrivateRoute>
-              <Layout>
+              <AdminLayout>
                 <CentreFormPage />
-              </Layout>
+              </AdminLayout>
             </PrivateRoute>
           }
         />
@@ -285,9 +335,9 @@ const App: React.FC = () => {
           path="/realverse/admin/centres/:id/edit"
           element={
             <PrivateRoute>
-              <Layout>
+              <AdminLayout>
                 <CentreFormPage />
-              </Layout>
+              </AdminLayout>
             </PrivateRoute>
           }
         />
@@ -317,73 +367,42 @@ const App: React.FC = () => {
         />
         <Route
           path="/realverse/attendance"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <AttendanceManagementPage />
-              </Layout>
-            </PrivateRoute>
-          }
+          element={<Navigate to="/realverse/admin/attendance" replace />}
         />
         <Route
           path="/attendance"
-          element={<Navigate to="/realverse/attendance" replace />}
+          element={<Navigate to="/realverse/admin/attendance" replace />}
         />
-        <Route
-          path="/realverse/my-attendance"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <StudentAttendancePage />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
+        {/* Legacy redirects for student routes */}
         <Route
           path="/my-attendance"
           element={<Navigate to="/realverse/my-attendance" replace />}
-        />
-        <Route
-          path="/realverse/fixtures"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <FixturesManagementPage />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/fixtures"
-          element={<Navigate to="/realverse/fixtures" replace />}
-        />
-        <Route
-          path="/realverse/my-fixtures"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <StudentFixturesPage />
-              </Layout>
-            </PrivateRoute>
-          }
         />
         <Route
           path="/my-fixtures"
           element={<Navigate to="/realverse/my-fixtures" replace />}
         />
         <Route
-          path="/realverse/drills"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <DrillsPage />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
           path="/drills"
           element={<Navigate to="/realverse/drills" replace />}
+        />
+        <Route
+          path="/feed"
+          element={<Navigate to="/realverse/feed" replace />}
+        />
+        <Route
+          path="/leaderboard"
+          element={<Navigate to="/realverse/leaderboard" replace />}
+        />
+
+        {/* Admin/Coach routes - Keep separate */}
+        <Route
+          path="/realverse/fixtures"
+          element={<Navigate to="/realverse/admin/fixtures" replace />}
+        />
+        <Route
+          path="/fixtures"
+          element={<Navigate to="/realverse/admin/fixtures" replace />}
         />
         <Route
           path="/realverse/drills/manage"
@@ -398,20 +417,6 @@ const App: React.FC = () => {
         <Route
           path="/drills/manage"
           element={<Navigate to="/realverse/drills/manage" replace />}
-        />
-        <Route
-          path="/realverse/feed"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <FeedPage />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/feed"
-          element={<Navigate to="/realverse/feed" replace />}
         />
         <Route
           path="/realverse/feed/create"
@@ -442,20 +447,6 @@ const App: React.FC = () => {
           element={<Navigate to="/realverse/feed/approve" replace />}
         />
         <Route
-          path="/realverse/leaderboard"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <LeaderboardPage />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/leaderboard"
-          element={<Navigate to="/realverse/leaderboard" replace />}
-        />
-        <Route
           path="/realverse/vote/:sessionId"
           element={
             <PrivateRoute>
@@ -473,8 +464,10 @@ const App: React.FC = () => {
           path="*"
           element={<NotFound />}
         />
-      </Routes>
-    </BrowserRouter>
+          </Routes>
+        </PageTransition>
+      </BrowserRouter>
+    </SmoothScroll>
   );
 };
 
