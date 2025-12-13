@@ -257,7 +257,7 @@ const EnhancedCoachDashboard: React.FC = () => {
           return (
             <React.Fragment key="coach-dashboard-content">
               {/* Quick Actions CTA Section - Player Management & Calibration */}
-        <div style={{ display: "flex", flexDirection: "column", gap: spacing.md, marginBottom: spacing.xl }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: spacing.md, marginBottom: spacing.xl }}>
           <Card
             variant="elevated"
             padding="lg"
@@ -300,6 +300,7 @@ const EnhancedCoachDashboard: React.FC = () => {
             </div>
           </div>
         </Card>
+              </div>
 
         {/* Main Stats Cards - Chunked for Miller's Law */}
         <div style={{ 

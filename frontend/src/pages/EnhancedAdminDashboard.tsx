@@ -337,6 +337,7 @@ const EnhancedAdminDashboard: React.FC = () => {
                   </div>
                 </div>
               </Card>
+              </div>
 
               {/* Main Stats Cards - Chunked for Miller's Law */}
               <div style={{ 

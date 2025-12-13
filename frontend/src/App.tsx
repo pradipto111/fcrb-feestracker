@@ -271,12 +271,12 @@ const App: React.FC = () => {
           path="/realverse/admin/leads"
           element={
             <PrivateRoute>
-              <AdminLayout>
-                <WebsiteLeadsPage />
-              </AdminLayout>
+              <AdminLayout />
             </PrivateRoute>
           }
-        />
+        >
+          <Route index element={<WebsiteLeadsPage />} />
+        </Route>
         <Route
           path="/admin"
           element={<Navigate to="/realverse/admin" replace />}
@@ -285,72 +285,72 @@ const App: React.FC = () => {
           path="/realverse/admin/merch"
           element={
             <PrivateRoute>
-              <AdminLayout>
-                <MerchandiseListPage />
-              </AdminLayout>
+              <AdminLayout />
             </PrivateRoute>
           }
-        />
+        >
+          <Route index element={<MerchandiseListPage />} />
+        </Route>
         <Route
           path="/realverse/admin/merch/new"
           element={
             <PrivateRoute>
-              <AdminLayout>
-                <MerchandiseFormPage />
-              </AdminLayout>
+              <AdminLayout />
             </PrivateRoute>
           }
-        />
+        >
+          <Route index element={<MerchandiseFormPage />} />
+        </Route>
         <Route
           path="/realverse/admin/merch/:id/edit"
           element={
             <PrivateRoute>
-              <AdminLayout>
-                <MerchandiseFormPage />
-              </AdminLayout>
+              <AdminLayout />
             </PrivateRoute>
           }
-        />
+        >
+          <Route index element={<MerchandiseFormPage />} />
+        </Route>
         <Route
           path="/realverse/admin/centres"
           element={
             <PrivateRoute>
-              <AdminLayout>
-                <CentresManagementPage />
-              </AdminLayout>
+              <AdminLayout />
             </PrivateRoute>
           }
-        />
+        >
+          <Route index element={<CentresManagementPage />} />
+        </Route>
         <Route
           path="/realverse/admin/centres/new"
           element={
             <PrivateRoute>
-              <AdminLayout>
-                <CentreFormPage />
-              </AdminLayout>
+              <AdminLayout />
             </PrivateRoute>
           }
-        />
+        >
+          <Route index element={<CentreFormPage />} />
+        </Route>
         <Route
           path="/realverse/admin/centres/:id/edit"
           element={
             <PrivateRoute>
-              <AdminLayout>
-                <CentreFormPage />
-              </AdminLayout>
+              <AdminLayout />
             </PrivateRoute>
           }
-        />
+        >
+          <Route index element={<CentreFormPage />} />
+        </Route>
         <Route
           path="/realverse/admin/centres/:centreId/analytics"
           element={
             <PrivateRoute>
-              <AdminLayout>
-                <CentreAnalyticsPage />
-              </AdminLayout>
+              <AdminLayout />
             </PrivateRoute>
           }
-        />
+        >
+          <Route index element={<CentreAnalyticsPage />} />
+        </Route>
         <Route
           path="/realverse/centers/:id"
           element={
