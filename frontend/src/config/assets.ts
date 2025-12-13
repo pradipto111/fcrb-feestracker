@@ -170,6 +170,9 @@ export const shopAssets = {
   trainingTees: [
     `${BASE_URL}/2025/01/DSC0335-1024x683.jpg`,
   ],
+  miscMerch: [
+    `${BASE_URL}/2025/01/DSC1940-1024x683.jpg`,
+  ],
 };
 
 // ============================================
