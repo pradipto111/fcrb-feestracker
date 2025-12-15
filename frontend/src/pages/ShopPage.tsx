@@ -94,7 +94,7 @@ const ShopPage: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundImage: `url(${shopAssets.jerseys[0]})`,
+            backgroundImage: `url(${shopAssets.jerseys?.[0] || shopAssets.trainingTees?.[0] || ''})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             opacity: 0.6,
@@ -136,7 +136,7 @@ const ShopPage: React.FC = () => {
             top: "20%",
             width: "300px",
             height: "300px",
-            backgroundImage: `url(${shopAssets.trainingTees[0]})`,
+            backgroundImage: `url(${shopAssets.trainingTees?.[0] || shopAssets.jerseys?.[0] || ''})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             opacity: 0.4,
@@ -161,7 +161,7 @@ const ShopPage: React.FC = () => {
             bottom: "20%",
             width: "300px",
             height: "300px",
-            backgroundImage: `url(${shopAssets.miscMerch[0]})`,
+            backgroundImage: `url(${shopAssets.jerseys[0] || shopAssets.trainingTees[0]})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             opacity: 0.4,
@@ -287,7 +287,7 @@ const ShopPage: React.FC = () => {
                         }}
                         onError={(e) => {
                           // Fallback to placeholder if image fails to load
-                          (e.target as HTMLImageElement).src = shopAssets.jerseys[0];
+                          (e.target as HTMLImageElement).src = shopAssets.jerseys?.[0] || shopAssets.trainingTees?.[0] || '';
                         }}
                       />
                     </motion.div>
@@ -296,7 +296,7 @@ const ShopPage: React.FC = () => {
                       style={{
                         width: "100%",
                         height: "300px",
-                        backgroundImage: `url(${shopAssets.jerseys[0]})`,
+                        backgroundImage: `url(${shopAssets.jerseys?.[0] || shopAssets.trainingTees?.[0] || ''})`,
                         backgroundSize: "cover",
                         backgroundPosition: "center",
                         borderRadius: `${borderRadius.xl} ${borderRadius.xl} 0 0`,

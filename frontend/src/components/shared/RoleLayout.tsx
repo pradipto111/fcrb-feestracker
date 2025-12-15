@@ -341,11 +341,15 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
             flexDirection: "column", 
             gap: spacing.xs, 
             flex: 1,
-            minHeight: 0, // Important for flex scrolling
+            minHeight: 0, // Critical for flex scrolling
             overflowY: "auto",
             overflowX: "hidden",
-            // Ensure smooth scrolling within nav
             scrollBehavior: "smooth",
+            WebkitOverflowScrolling: "touch" as any,
+            overscrollBehavior: "contain",
+            // Custom scrollbar styling
+            scrollbarWidth: "thin",
+            scrollbarColor: `${colors.primary.main}40 ${colors.surface.section}`,
           }}
         >
           {Object.entries(groupedItems).map(([section, items]) => (

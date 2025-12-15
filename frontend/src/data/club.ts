@@ -44,14 +44,16 @@ export const clubInfo = {
     yearsActive: 1,
   },
   contact: {
-    email: "info@fcrealbengaluru.com",
+    email: "contact@realbengaluru.com",
     phone: "+91 8660843598",
-    address: "Bengaluru, Karnataka, India",
+    address: "HAL Old Airport Rd, opp. Administrative Building, Vimanapura, Bengaluru",
   },
   social: {
-    instagram: "https://instagram.com/fcrealbengaluru",
+    instagram: "https://www.instagram.com/realbengaluru/",
     youtube: "https://youtube.com/@fcrealbengaluru",
     facebook: "https://facebook.com/fcrealbengaluru",
+    tiktok: "https://tiktok.com/@fcrealbengaluru",
+    twitter: "https://twitter.com/fcrealbengaluru",
   },
 };
 
@@ -189,24 +191,27 @@ export const mockNews: NewsItem[] = [
   },
 ];
 
+// Note: Icons are now handled by IconSet component
+// This data structure is kept for backward compatibility
+// Icons should be rendered using IconSet components in components
 export const academyFeatures = [
   {
-    icon: "⚽",
+    iconKey: "football",
     title: "Sessions Per Week",
     description: "Structured training sessions multiple times per week",
   },
   {
-    icon: "💪",
+    iconKey: "dumbbell",
     title: "Strength & Conditioning",
     description: "Dedicated fitness programs for athletic development",
   },
   {
-    icon: "🏆",
+    iconKey: "trophy",
     title: "Match Exposure",
     description: "Regular competitive matches and tournaments",
   },
   {
-    icon: "📊",
+    iconKey: "chart",
     title: "Performance Tracking",
     description: "Data-driven insights into player development",
   },

@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAuth } from "../context/AuthContext";
 import { api } from "../api/client";
 import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
 import { KPICard } from "../components/ui/KPICard";
 import { Section } from "../components/ui/Section";
 import { DataTableCard } from "../components/ui/DataTableCard";
@@ -9,8 +12,11 @@ import { colors, typography, spacing, borderRadius } from "../theme/design-token
 import { cardVariants } from "../utils/motion";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { academyAssets } from "../config/assets";
+import { ChartBarIcon } from "../components/icons/IconSet";
 
 const StudentAttendancePage: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [sessions, setSessions] = useState<any[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -94,6 +100,39 @@ const StudentAttendancePage: React.FC = () => {
         variant="default"
         style={{ marginBottom: spacing.xl }}
       >
+        {/* CTA to Load Dashboard */}
+        {user?.id && (
+          <Card
+            variant="elevated"
+            padding="md"
+            style={{
+              marginBottom: spacing.lg,
+              background: `linear-gradient(135deg, ${colors.primary.main}15 0%, ${colors.accent.main}15 100%)`,
+              border: `2px solid ${colors.primary.main}40`,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: spacing.md }}>
+              <div style={{ flex: 1, minWidth: "200px" }}>
+                <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+                    <ChartBarIcon size={20} />
+                    Training Load Dashboard
+                  </span>
+                </h3>
+                <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm }}>
+                  See how your attendance relates to training load and readiness
+                </p>
+              </div>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => navigate(`/realverse/player/${user.id}/load-dashboard`)}
+              >
+                View Load Dashboard →
+              </Button>
+            </div>
+          </Card>
+        )}
 
         {/* Error State */}
         {error && (

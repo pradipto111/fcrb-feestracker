@@ -250,8 +250,12 @@ export async function createPlayerMetricSnapshot(payload: CreateSnapshotPayload)
     }
   }
 
-  // Compute readiness index
-  const readinessIndex = await computeReadinessIndex(payload.values, payload.traits);
+  // Compute readiness index with calibration assistance
+  const readinessIndex = await computeReadinessIndex(
+    payload.values, 
+    payload.traits,
+    payload.createdByUserId // Pass coach ID for calibration
+  );
 
   // Create snapshot with all related data
   const snapshot = await prisma.playerMetricSnapshot.create({
@@ -371,10 +375,12 @@ export async function createPlayerMetricSnapshot(payload: CreateSnapshotPayload)
 
 /**
  * Compute readiness index from metric values and traits
+ * Enhanced with calibration-assisted insights based on coach scoring patterns
  */
 export async function computeReadinessIndex(
   values: MetricValueInput[],
-  traits: TraitInput[]
+  traits: TraitInput[],
+  coachId?: number
 ): Promise<ReadinessIndex> {
   // Get all metric definitions to categorize
   const definitions = await prisma.playerMetricDefinition.findMany({
@@ -419,15 +425,70 @@ export async function computeReadinessIndex(
   // Calculate averages
   const avg = (arr: number[]) => (arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 50);
 
-  const technicalScore = Math.round(avg(technical));
-  const physicalScore = Math.round(avg(physical));
-  const mentalScore = Math.round(avg(mental));
-  const attitudeScore = Math.round(avg(attitude));
+  let technicalScore = Math.round(avg(technical));
+  let physicalScore = Math.round(avg(physical));
+  let mentalScore = Math.round(avg(mental));
+  let attitudeScore = Math.round(avg(attitude));
   const tacticalFit = Math.round((technicalScore + mentalScore) / 2); // Simplified tactical fit
 
-  const overall = Math.round(
+  let overall = Math.round(
     (technicalScore + physicalScore + mentalScore + attitudeScore + tacticalFit) / 5
   );
+
+  // Calibration-assisted insights: Adjust scores based on coach's scoring patterns
+  let calibrationAdjustment = 0;
+  let calibrationInsights: string[] = [];
+  
+  if (coachId) {
+    try {
+      // Import calibration service function
+      const { getCoachScoringProfile } = await import('./calibration.service');
+      const coachProfile = await getCoachScoringProfile(coachId, false);
+      
+      if (coachProfile && coachProfile.totalSnapshots >= 5) {
+        // Only apply calibration if coach has enough data (5+ snapshots)
+        const coachAverage = coachProfile.averageOverallScore;
+        const coachStdDev = coachProfile.standardDeviation;
+        
+        // Calculate adjustment: if coach scores high on average, reduce readiness slightly
+        // If coach scores low on average, increase readiness slightly
+        // Adjustment is proportional to how far from neutral (57.5 = average of 0-100 range)
+        const neutralScore = 57.5;
+        const deviation = coachAverage - neutralScore;
+        
+        // Apply adjustment: max ±3 points, scaled by deviation and consistency
+        // More consistent coaches (lower std dev) get less adjustment
+        const consistencyFactor = Math.max(0.5, 1 - (coachStdDev / 30)); // Lower std dev = more consistent
+        const adjustment = Math.round((deviation / 10) * consistencyFactor * -1); // Negative because we want to correct bias
+        calibrationAdjustment = Math.max(-3, Math.min(3, adjustment));
+        
+        // Apply adjustment to overall score
+        overall = Math.max(0, Math.min(100, overall + calibrationAdjustment));
+        
+        // Add calibration insights
+        if (Math.abs(calibrationAdjustment) > 0) {
+          if (calibrationAdjustment > 0) {
+            calibrationInsights.push(
+              `Calibration: Adjusted +${calibrationAdjustment} based on coach's scoring pattern (tends to score ${coachAverage.toFixed(1)} avg)`
+            );
+          } else {
+            calibrationInsights.push(
+              `Calibration: Adjusted ${calibrationAdjustment} based on coach's scoring pattern (tends to score ${coachAverage.toFixed(1)} avg)`
+            );
+          }
+          
+          if (coachStdDev < 10) {
+            calibrationInsights.push('Coach shows consistent scoring patterns');
+          } else if (coachStdDev > 20) {
+            calibrationInsights.push('Coach shows variable scoring patterns');
+          }
+        }
+      }
+    } catch (error) {
+      // Silently fail if calibration data not available - don't break readiness calculation
+      console.debug('Calibration data not available for coach:', coachId);
+    }
+  }
 
   // Find top strengths and risks
   const allValues = [
@@ -445,6 +506,11 @@ export async function computeReadinessIndex(
   if (attitudeScore > 90) ruleTriggers.push('EXCELLENT_ATTITUDE');
   if (mentalScore < 50) ruleTriggers.push('MENTAL_DEVELOPMENT_NEEDED');
   if (technicalScore > 85 && physicalScore > 80) ruleTriggers.push('ELITE_POTENTIAL');
+  
+  // Add calibration insights to rule triggers
+  if (calibrationInsights.length > 0) {
+    ruleTriggers.push(...calibrationInsights);
+  }
 
   return {
     overall,
@@ -458,6 +524,7 @@ export async function computeReadinessIndex(
       topRisks,
       recommendedFocus: topRisks,
       ruleTriggers,
+      calibrationAdjustment: calibrationAdjustment !== 0 ? calibrationAdjustment : undefined,
     },
   };
 }

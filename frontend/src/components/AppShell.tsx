@@ -2,6 +2,21 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { 
+  ChartBarIcon, 
+  UsersIcon, 
+  CalendarIcon, 
+  FootballIcon, 
+  VideoCameraIcon, 
+  FilmIcon, 
+  CameraIcon, 
+  SuccessIcon, 
+  TrophyIcon, 
+  GearIcon, 
+  ClipboardIcon, 
+  ShoppingBagIcon, 
+  LocationIcon 
+} from "../components/icons/IconSet";
 import "../styles/animations.css";
 
 interface AppShellProps {
@@ -31,21 +46,21 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const isActive = (path: string) => location.pathname === path;
 
   const navItems = [
-    { path: '/realverse', label: 'Dashboard', icon: '📊', roles: ['ADMIN', 'COACH', 'STUDENT'] },
-    { path: '/realverse/students', label: 'Players', icon: '👥', roles: ['ADMIN', 'COACH'] },
-    { path: '/realverse/attendance', label: 'Attendance', icon: '📅', roles: ['ADMIN', 'COACH'] },
-    { path: '/realverse/my-attendance', label: 'My Attendance', icon: '📅', roles: ['STUDENT'] },
-    { path: '/realverse/fixtures', label: 'Fixtures', icon: '⚽', roles: ['ADMIN', 'COACH'] },
-    { path: '/realverse/my-fixtures', label: 'My Fixtures', icon: '⚽', roles: ['STUDENT'] },
-    { path: '/realverse/drills', label: 'Drills & Tutorials', icon: '🎥', roles: ['ADMIN', 'COACH', 'STUDENT'] },
-    { path: '/realverse/drills/manage', label: 'Manage Videos', icon: '🎬', roles: ['ADMIN', 'COACH'] },
-    { path: '/realverse/feed', label: 'Feed', icon: '📸', roles: ['ADMIN', 'COACH', 'STUDENT'] },
-    { path: '/realverse/feed/approve', label: 'Approve Posts', icon: '✅', roles: ['ADMIN', 'COACH'] },
-    { path: '/realverse/leaderboard', label: 'Leaderboard', icon: '🏆', roles: ['ADMIN', 'COACH', 'STUDENT'] },
-    { path: '/realverse/admin', label: 'Admin', icon: '⚙️', roles: ['ADMIN'] },
-    { path: '/realverse/admin/leads', label: 'Website Leads', icon: '📋', roles: ['ADMIN'] },
-    { path: '/realverse/admin/merch', label: 'Merchandise', icon: '🛍️', roles: ['ADMIN'] },
-    { path: '/realverse/admin/centres', label: 'Centres', icon: '📍', roles: ['ADMIN'] },
+    { path: '/realverse', label: 'Dashboard', Icon: ChartBarIcon, roles: ['ADMIN', 'COACH', 'STUDENT'] },
+    { path: '/realverse/students', label: 'Players', Icon: UsersIcon, roles: ['ADMIN', 'COACH'] },
+    { path: '/realverse/attendance', label: 'Attendance', Icon: CalendarIcon, roles: ['ADMIN', 'COACH'] },
+    { path: '/realverse/my-attendance', label: 'My Attendance', Icon: CalendarIcon, roles: ['STUDENT'] },
+    { path: '/realverse/fixtures', label: 'Fixtures', Icon: FootballIcon, roles: ['ADMIN', 'COACH'] },
+    { path: '/realverse/my-fixtures', label: 'My Fixtures', Icon: FootballIcon, roles: ['STUDENT'] },
+    { path: '/realverse/drills', label: 'Drills & Tutorials', Icon: VideoCameraIcon, roles: ['ADMIN', 'COACH', 'STUDENT'] },
+    { path: '/realverse/drills/manage', label: 'Manage Videos', Icon: FilmIcon, roles: ['ADMIN', 'COACH'] },
+    { path: '/realverse/feed', label: 'Feed', Icon: CameraIcon, roles: ['ADMIN', 'COACH', 'STUDENT'] },
+    { path: '/realverse/feed/approve', label: 'Approve Posts', Icon: SuccessIcon, roles: ['ADMIN', 'COACH'] },
+    { path: '/realverse/leaderboard', label: 'Leaderboard', Icon: TrophyIcon, roles: ['ADMIN', 'COACH', 'STUDENT'] },
+    { path: '/realverse/admin', label: 'Admin', Icon: GearIcon, roles: ['ADMIN'] },
+    { path: '/realverse/admin/leads', label: 'Website Leads', Icon: ClipboardIcon, roles: ['ADMIN'] },
+    { path: '/realverse/admin/merch', label: 'Merchandise', Icon: ShoppingBagIcon, roles: ['ADMIN'] },
+    { path: '/realverse/admin/centres', label: 'Centres', Icon: LocationIcon, roles: ['ADMIN'] },
   ];
 
   const filteredNavItems = navItems.filter(item => 
@@ -292,7 +307,9 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
           position: 'relative',
           zIndex: 1,
         }}>
-          {filteredNavItems.map((item, index) => (
+          {filteredNavItems.map((item, index) => {
+            const IconComponent = item.Icon;
+            return (
             <Link
               key={item.path}
               to={item.path}
@@ -314,14 +331,11 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 }
               }}
             >
-              <span style={{ 
-                fontSize: '1.25rem',
-                display: 'inline-block',
-                transition: 'transform 0.2s ease',
-              }}>{item.icon}</span>
+              <IconComponent size={20} color={colors.text.inverted} />
               <span>{item.label}</span>
             </Link>
-          ))}
+            );
+          })}
         </nav>
 
         {/* User Info & Logout */}

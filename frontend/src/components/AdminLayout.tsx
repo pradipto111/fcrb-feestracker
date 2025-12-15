@@ -97,10 +97,38 @@ const AdminLayout: React.FC = () => {
       section: "Football Ops",
     },
     {
+      path: "/realverse/scouting/board",
+      label: "Scouting Board",
+      icon: "players",
+      description: "Player comparison & shortlists",
+      section: "Football Ops",
+    },
+    {
+      path: "/realverse/trials/events",
+      label: "Trial Events",
+      icon: "matches",
+      description: "External scouting & trial management",
+      section: "Football Ops",
+    },
+    {
+      path: "/realverse/trials/templates",
+      label: "Trial Templates",
+      icon: "settings",
+      description: "Manage evaluation metric templates",
+      section: "Football Ops",
+    },
+    {
       path: "/realverse/admin/calibration",
       label: "Calibration",
       icon: "analytics",
       description: "Coach scoring consistency & calibration",
+      section: "Football Ops",
+    },
+    {
+      path: "/realverse/admin/season-planning",
+      label: "Season Planning",
+      icon: "sessions",
+      description: "Training load planning & prediction",
       section: "Football Ops",
     },
   ];

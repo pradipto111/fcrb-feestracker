@@ -63,6 +63,12 @@ const CoachLayout: React.FC = () => {
       icon: "dashboard",
       description: "Squad performance metrics",
     },
+    {
+      path: "/realverse/scouting/board",
+      label: "Scouting Board",
+      icon: "players",
+      description: "Player comparison & shortlists",
+    },
   ];
 
   const getIcon = (iconName: string) => {

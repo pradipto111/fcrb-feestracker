@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { VoteIcon } from "../components/icons/IconSet";
 
 const VotingPage: React.FC = () => {
   const { user } = useAuth();
@@ -147,8 +148,9 @@ const VotingPage: React.FC = () => {
       backgroundAttachment: "fixed"
     }}>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, color: "#1E40AF" }}>
-          🗳️ Vote for Hardworking Players
+        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, color: "#1E40AF", display: 'flex', alignItems: 'center', gap: 8 }}>
+          <VoteIcon size={32} />
+          Vote for Hardworking Players
         </h1>
         <p style={{ color: "#666", margin: 0 }}>
           Select up to 5 students who showed exceptional effort in this session

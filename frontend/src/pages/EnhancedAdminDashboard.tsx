@@ -13,6 +13,7 @@ import HeroSection from "../components/HeroSection";
 import { pageVariants, cardVariants } from "../utils/motion";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { adminAssets, academyAssets, galleryAssets, heroAssets, clubAssets } from "../config/assets";
+import { FootballIcon, ClipboardIcon, CalendarIcon, ChartBarIcon, BuildingIcon } from "../components/icons/IconSet";
 
 const EnhancedAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -293,50 +294,91 @@ const EnhancedAdminDashboard: React.FC = () => {
 
           return (
             <React.Fragment key="dashboard-content">
-              {/* Quick Actions CTA Section - Player Management & Calibration */}
-              <div style={{ display: "flex", flexDirection: "column", gap: spacing.md, marginBottom: spacing.xl }}>
-                <Card
-                  variant="elevated"
-                  padding="lg"
-                  style={{
-                    background: `linear-gradient(135deg, ${colors.primary.main}15 0%, ${colors.accent.main}15 100%)`,
-                    border: `2px solid ${colors.primary.main}40`,
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                <div style={{ position: "relative", zIndex: 1 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: spacing.lg }}>
-                    <div style={{ flex: 1, minWidth: "300px" }}>
-                      <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.sm }}>
-                        ⚽ Player Management & Analytics
-                      </h3>
-                      <p style={{ ...typography.body, color: colors.text.secondary, marginBottom: spacing.md }}>
-                        Access comprehensive player profiles, create metric snapshots, and review multiple players efficiently.
-                      </p>
-                      <div style={{ display: "flex", gap: spacing.md, flexWrap: "wrap" }}>
-                        <Button
-                          variant="primary"
-                          size="md"
-                          onClick={() => navigate("/realverse/admin/students")}
-                        >
-                          View All Players →
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="md"
-                          onClick={() => navigate("/realverse/admin/batch-review")}
-                        >
-                          Start Batch Review →
-                        </Button>
+              {/* Quick Actions Grid */}
+              <div style={{ marginBottom: spacing.xl }}>
+                <h2 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.lg }}>
+                  Quick Actions
+                </h2>
+                <div style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", 
+                  gap: spacing.md 
+                }}>
+                  {/* Player Management */}
+                  <Card 
+                    variant="elevated" 
+                    padding="lg" 
+                    style={{ cursor: "pointer" }}
+                    onClick={() => navigate("/realverse/admin/students")}
+                  >
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md }}>
+                      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                        <FootballIcon size={32} color={colors.primary.main} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
+                          Player Management
+                        </h3>
+                        <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm, marginBottom: spacing.sm }}>
+                          View all players, profiles, and create metric snapshots
+                        </p>
+                        <div style={{ ...typography.caption, color: colors.primary.main, fontWeight: typography.fontWeight.medium }}>
+                          View Players →
+                        </div>
                       </div>
                     </div>
-                    <div style={{ fontSize: "4rem", opacity: 0.2, lineHeight: 1 }}>
-                      ⚽
+                  </Card>
+
+                  {/* Batch Review */}
+                  <Card 
+                    variant="elevated" 
+                    padding="lg" 
+                    style={{ cursor: "pointer" }}
+                    onClick={() => navigate("/realverse/admin/batch-review")}
+                  >
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md }}>
+                      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                        <ClipboardIcon size={32} color={colors.primary.main} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
+                          Batch Review
+                        </h3>
+                        <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm, marginBottom: spacing.sm }}>
+                          Efficiently review and assess multiple players at once
+                        </p>
+                        <div style={{ ...typography.caption, color: colors.primary.main, fontWeight: typography.fontWeight.medium }}>
+                          Start Review →
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </Card>
+
+                  {/* Season Planning */}
+                  <Card 
+                    variant="elevated" 
+                    padding="lg" 
+                    style={{ cursor: "pointer" }}
+                    onClick={() => navigate("/realverse/admin/season-planning")}
+                  >
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md }}>
+                      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                        <CalendarIcon size={32} color={colors.primary.main} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
+                          Season Planning
+                        </h3>
+                        <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm, marginBottom: spacing.sm }}>
+                          Plan training blocks and monitor player load
+                        </p>
+                        <div style={{ ...typography.caption, color: colors.primary.main, fontWeight: typography.fontWeight.medium }}>
+                          Open Planner →
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
                 </div>
-              </Card>
               </div>
 
               {/* Main Stats Cards - Chunked for Miller's Law */}
@@ -469,7 +511,10 @@ const EnhancedAdminDashboard: React.FC = () => {
               fontWeight: typography.fontWeight.semibold,
               color: colors.text.secondary,
             }}>
-              📅 Time Period
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+                <CalendarIcon size={16} />
+                Time Period
+              </span>
             </label>
             <select
               value={revenueMonths}
@@ -508,7 +553,10 @@ const EnhancedAdminDashboard: React.FC = () => {
               fontWeight: typography.fontWeight.semibold,
               color: colors.text.secondary,
             }}>
-              🏢 Center
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+                <BuildingIcon size={16} />
+                Center
+              </span>
             </label>
             <select
               value={revenueCenterId}
@@ -675,7 +723,10 @@ const EnhancedAdminDashboard: React.FC = () => {
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
             }}>
-              📊 Monthly Collections
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+                <ChartBarIcon size={20} />
+                Monthly Collections
+              </span>
             </h2>
             <p style={{ 
               ...typography.caption,
@@ -701,7 +752,10 @@ const EnhancedAdminDashboard: React.FC = () => {
 
           <div>
             <label style={{ display: "block", marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
-              🏢 Center
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+                <BuildingIcon size={14} />
+                Center
+              </span>
             </label>
             <select
               value={monthlyCenterId}
@@ -862,7 +916,12 @@ const EnhancedAdminDashboard: React.FC = () => {
           borderRadius: 12,
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
         }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>📊 Collection Overview</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+              <ChartBarIcon size={20} />
+              Collection Overview
+            </span>
+          </h2>
           <div style={{ height: 300, display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 48, padding: "16px 0" }}>
             {/* Collected Bar */}
             <div style={{ flex: 1, maxWidth: 200, display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -928,7 +987,12 @@ const EnhancedAdminDashboard: React.FC = () => {
           borderRadius: 12,
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
         }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>🏢 Centers</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+              <BuildingIcon size={20} />
+              Centers
+            </span>
+          </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {centerStats.map((center, idx) => {
               const percentage = totalRevenue > 0 ? ((center.revenue / totalRevenue) * 100).toFixed(1) : 0;

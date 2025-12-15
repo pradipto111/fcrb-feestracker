@@ -24,6 +24,21 @@ const PublicHeader: React.FC = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-dropdown-container]')) {
+        setHomeDropdownOpen(false);
+      }
+    };
+
+    if (homeDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [homeDropdownOpen]);
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -58,7 +73,17 @@ const PublicHeader: React.FC = () => {
       // Already on home, just scroll
       const element = document.getElementById(sectionId);
       if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "start" });
+        // Use Lenis for smooth scrolling if available
+        const lenis = (window as any).lenis;
+        if (lenis) {
+          lenis.scrollTo(element, {
+            offset: -100, // Account for header height
+            duration: 1.2,
+          });
+        } else {
+          // Fallback to native smooth scroll
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       }
       // Update URL hash
       window.history.pushState(null, "", `#${sectionId}`);
@@ -68,42 +93,125 @@ const PublicHeader: React.FC = () => {
   const handleHomeClick = () => {
     setIsMobileMenuOpen(false);
     setHomeDropdownOpen(false);
+    const lenis = (window as any).lenis;
     if (location.pathname !== "/") {
       navigate("/");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      // Scroll will be handled after navigation
+      setTimeout(() => {
+        if (lenis) {
+          lenis.scrollTo(0, { duration: 1.2 });
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      }, 100);
     } else {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (lenis) {
+        lenis.scrollTo(0, { duration: 1.2 });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     }
   };
 
   return (
     <header
       style={{
-        position: "fixed",
+        position: "sticky",
         top: 0,
         left: 0,
         right: 0,
-        zIndex: 1000,
-        background: isScrolled
-          ? `linear-gradient(135deg, rgba(5, 11, 32, 0.98) 0%, rgba(10, 22, 51, 0.98) 100%)`
-          : "transparent",
-        backdropFilter: isScrolled ? "blur(20px)" : "none",
-        borderBottom: isScrolled ? `1px solid rgba(255, 255, 255, 0.1)` : "none",
-        transition: "all 0.3s ease",
-        boxShadow: isScrolled ? shadows.glassDark : "none",
+        zIndex: 1200,
+        background: "transparent",
+        padding: `${spacing.md} ${spacing.xl}`,
+        transition: "all 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
       }}
     >
+      <style>{`
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateX(-5px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+      `}</style>
+      {/* Floating glass container with rounded corners */}
       <div
         style={{
           maxWidth: "1400px",
           margin: "0 auto",
-          padding: `${spacing.md} ${spacing.xl}`,
+          width: "100%",
+          background: isScrolled
+            ? `linear-gradient(135deg, 
+                rgba(5, 11, 32, 0.75) 0%, 
+                rgba(10, 22, 51, 0.7) 50%, 
+                rgba(5, 11, 32, 0.75) 100%)`
+            : `linear-gradient(135deg, 
+                rgba(5, 11, 32, 0.4) 0%, 
+                rgba(10, 22, 51, 0.35) 50%, 
+                rgba(5, 11, 32, 0.4) 100%)`,
+          backdropFilter: "blur(20px) saturate(180%)",
+          WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          borderRadius: borderRadius["2xl"],
+          border: `1px solid ${isScrolled ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.08)"}`,
+          boxShadow: isScrolled
+            ? `0 8px 32px rgba(0, 0, 0, 0.4), 
+               0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+               0 0 60px rgba(0, 224, 255, 0.08)`
+            : `0 4px 24px rgba(0, 0, 0, 0.2), 
+               0 0 0 1px rgba(255, 255, 255, 0.03) inset`,
+          padding: `${spacing.md} ${spacing.lg}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           gap: spacing.lg,
+          boxSizing: "border-box",
+          position: "relative",
+          overflow: "hidden",
+          transition: "all 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
         }}
       >
+        {/* Subtle gradient overlay matching infinity flow */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: `radial-gradient(circle at 20% 20%, rgba(0,224,255,0.06) 0%, transparent 50%), 
+                         radial-gradient(circle at 80% 80%, rgba(255,169,0,0.04) 0%, transparent 50%)`,
+            pointerEvents: "none",
+            zIndex: 0,
+            opacity: isScrolled ? 0.8 : 0.5,
+            transition: "opacity 0.3s ease",
+          }}
+        />
+        {/* Content wrapper */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: spacing.lg,
+          }}
+        >
         {/* Logo */}
         <Link
           to="/"
@@ -161,20 +269,40 @@ const PublicHeader: React.FC = () => {
         >
           {/* Home with Dropdown */}
           <div
+            data-dropdown-container
             style={{
               position: "relative",
+              zIndex: 1001,
             }}
-            onMouseEnter={() => setHomeDropdownOpen(true)}
-            onMouseLeave={() => setHomeDropdownOpen(false)}
+            onMouseEnter={() => {
+              if (!isMobile) {
+                setHomeDropdownOpen(true);
+              }
+            }}
+            onMouseLeave={() => {
+              if (!isMobile) {
+                // Small delay to allow moving to dropdown
+                setTimeout(() => {
+                  setHomeDropdownOpen(false);
+                }, 100);
+              }
+            }}
           >
             <button
-              onClick={handleHomeClick}
+              onClick={() => {
+                if (isMobile) {
+                  setHomeDropdownOpen(!homeDropdownOpen);
+                } else {
+                  // On desktop, clicking Home button should go to top of page
+                  handleHomeClick();
+                }
+              }}
               style={{
                 ...typography.body,
                 fontSize: typography.fontSize.sm,
                 fontWeight: typography.fontWeight.medium,
-                color: colors.text.secondary,
-                background: "transparent",
+                color: homeDropdownOpen ? colors.text.primary : colors.text.secondary,
+                background: homeDropdownOpen ? "rgba(255, 255, 255, 0.05)" : "transparent",
                 border: "none",
                 padding: `${spacing.xs} ${spacing.sm}`,
                 borderRadius: borderRadius.md,
@@ -185,38 +313,84 @@ const PublicHeader: React.FC = () => {
                 gap: spacing.xs,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = colors.text.primary;
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                if (!isMobile) {
+                  e.currentTarget.style.color = colors.text.primary;
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                }
               }}
               onMouseLeave={(e) => {
-                if (!homeDropdownOpen) {
+                if (!isMobile && !homeDropdownOpen) {
                   e.currentTarget.style.color = colors.text.secondary;
                   e.currentTarget.style.background = "transparent";
                 }
               }}
             >
               Home
-              <span style={{ fontSize: typography.fontSize.xs }}>▼</span>
+              <span 
+                style={{ 
+                  fontSize: typography.fontSize.xs, 
+                  transition: "transform 0.2s ease", 
+                  transform: homeDropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  display: "inline-block",
+                }}
+              >
+                ▼
+              </span>
             </button>
 
             {/* Dropdown Menu */}
             {homeDropdownOpen && (
               <div
+                data-dropdown-container
                 style={{
                   position: "absolute",
                   top: "100%",
                   left: 0,
-                  marginTop: spacing.xs,
-                  background: `linear-gradient(135deg, rgba(5, 11, 32, 0.98) 0%, rgba(10, 22, 51, 0.98) 100%)`,
-                  backdropFilter: "blur(20px)",
-                  border: `1px solid rgba(255, 255, 255, 0.1)`,
-                  borderRadius: borderRadius.lg,
+                  marginTop: "12px",
+                  background: `linear-gradient(135deg, 
+                    rgba(5, 11, 32, 0.85) 0%, 
+                    rgba(10, 22, 51, 0.8) 50%, 
+                    rgba(5, 11, 32, 0.85) 100%)`,
+                  backdropFilter: "blur(20px) saturate(180%)",
+                  WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                  border: `1px solid rgba(255, 255, 255, 0.15)`,
+                  borderRadius: borderRadius.xl,
                   padding: spacing.sm,
-                  minWidth: "200px",
-                  boxShadow: shadows.glassDark,
+                  minWidth: "240px",
+                  maxWidth: "300px",
+                  boxShadow: `0 8px 32px rgba(0, 0, 0, 0.4), 
+                              0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+                              0 0 40px rgba(0, 224, 255, 0.06)`,
+                  zIndex: 1002,
+                  animation: "slideDown 0.2s ease-out",
+                  overflow: "hidden",
+                }}
+                onMouseEnter={() => {
+                  if (!isMobile) {
+                    setHomeDropdownOpen(true);
+                  }
+                }}
+                onMouseLeave={() => {
+                  if (!isMobile) {
+                    setHomeDropdownOpen(false);
+                  }
                 }}
               >
-                {homeSections.map((section) => (
+                {/* Subtle gradient overlay */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: `radial-gradient(circle at 20% 20%, rgba(0,224,255,0.04) 0%, transparent 50%)`,
+                    pointerEvents: "none",
+                    zIndex: 0,
+                  }}
+                />
+                <div style={{ position: "relative", zIndex: 1 }}>
+                {homeSections.map((section, idx) => (
                   <button
                     key={section.id}
                     onClick={() => handleHomeSectionClick(section.id)}
@@ -232,77 +406,27 @@ const PublicHeader: React.FC = () => {
                       cursor: "pointer",
                       width: "100%",
                       textAlign: "left",
-                      transition: "all 0.2s ease",
+                      transition: "all 0.15s ease",
+                      animation: `fadeIn 0.2s ease-out ${idx * 0.02}s both`,
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.color = colors.text.primary;
-                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+                      e.currentTarget.style.transform = "translateX(4px)";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.color = colors.text.secondary;
                       e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.transform = "translateX(0)";
                     }}
                   >
                     {section.label}
                   </button>
                 ))}
+                </div>
               </div>
             )}
           </div>
-
-          {/* Club */}
-          <button
-            onClick={() => handleHomeSectionClick("philosophy")}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.sm,
-              fontWeight: typography.fontWeight.medium,
-              color: colors.text.secondary,
-              background: "transparent",
-              border: "none",
-              padding: `${spacing.xs} ${spacing.sm}`,
-              borderRadius: borderRadius.md,
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = colors.text.primary;
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = colors.text.secondary;
-              e.currentTarget.style.background = "transparent";
-            }}
-          >
-            Club
-          </button>
-
-          {/* Teams */}
-          <button
-            onClick={() => handleHomeSectionClick("teams")}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.sm,
-              fontWeight: typography.fontWeight.medium,
-              color: colors.text.secondary,
-              background: "transparent",
-              border: "none",
-              padding: `${spacing.xs} ${spacing.sm}`,
-              borderRadius: borderRadius.md,
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = colors.text.primary;
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = colors.text.secondary;
-              e.currentTarget.style.background = "transparent";
-            }}
-          >
-            Teams
-          </button>
 
           {/* Matches */}
           <button
@@ -358,51 +482,54 @@ const PublicHeader: React.FC = () => {
             Academy
           </button>
 
-          {/* RealVerse */}
+          {/* Programs */}
           <Link
-            to="/realverse/login"
-            onClick={() => setIsMobileMenuOpen(false)}
+            to="/programs"
             style={{
+              textDecoration: "none",
               ...typography.body,
               fontSize: typography.fontSize.sm,
               fontWeight: typography.fontWeight.medium,
-              color: location.pathname.startsWith("/realverse") ? colors.text.primary : colors.text.secondary,
-              textDecoration: "none",
+              color: location.pathname.startsWith("/programs") ? colors.text.primary : colors.text.secondary,
+              background: location.pathname.startsWith("/programs") ? "rgba(255, 255, 255, 0.05)" : "transparent",
               padding: `${spacing.xs} ${spacing.sm}`,
               borderRadius: borderRadius.md,
               transition: "all 0.2s ease",
-              background: location.pathname.startsWith("/realverse") ? "rgba(255, 255, 255, 0.05)" : "transparent",
+              display: "inline-block",
             }}
             onMouseEnter={(e) => {
-              if (!location.pathname.startsWith("/realverse")) {
+              if (!location.pathname.startsWith("/programs")) {
                 e.currentTarget.style.color = colors.text.primary;
                 e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
               }
             }}
             onMouseLeave={(e) => {
-              if (!location.pathname.startsWith("/realverse")) {
+              if (!location.pathname.startsWith("/programs")) {
                 e.currentTarget.style.color = colors.text.secondary;
                 e.currentTarget.style.background = "transparent";
               }
             }}
           >
-            RealVerse
+            Programs
           </Link>
 
           {/* Shop */}
-          <Link
-            to="/shop"
-            onClick={() => setIsMobileMenuOpen(false)}
+          <button
+            onClick={() => {
+              navigate("/shop");
+              setIsMobileMenuOpen(false);
+            }}
             style={{
               ...typography.body,
               fontSize: typography.fontSize.sm,
               fontWeight: typography.fontWeight.medium,
               color: location.pathname === "/shop" ? colors.text.primary : colors.text.secondary,
-              textDecoration: "none",
+              background: location.pathname === "/shop" ? "rgba(255, 255, 255, 0.05)" : "transparent",
+              border: "none",
               padding: `${spacing.xs} ${spacing.sm}`,
               borderRadius: borderRadius.md,
+              cursor: "pointer",
               transition: "all 0.2s ease",
-              background: location.pathname === "/shop" ? "rgba(255, 255, 255, 0.05)" : "transparent",
             }}
             onMouseEnter={(e) => {
               if (location.pathname !== "/shop") {
@@ -418,7 +545,7 @@ const PublicHeader: React.FC = () => {
             }}
           >
             Shop
-          </Link>
+          </button>
         </nav>
 
         {/* CTAs - Ordered by importance: Secondary actions → Primary action */}
@@ -463,7 +590,7 @@ const PublicHeader: React.FC = () => {
                   top: -4,
                   right: -4,
                   background: colors.accent.main,
-                  color: colors.charcoal,
+                  color: colors.brand.charcoal,
                   borderRadius: "50%",
                   width: 18,
                   height: 18,
@@ -486,28 +613,6 @@ const PublicHeader: React.FC = () => {
             background: "rgba(255, 255, 255, 0.15)",
             margin: `0 ${spacing.xs}`,
           }} />
-
-          {/* Our Brochure - Tertiary/Text link */}
-          <Link
-            to="/brochure"
-            style={{
-              ...typography.body,
-              fontSize: "13px",
-              fontWeight: typography.fontWeight.medium,
-              padding: `6px 12px`,
-              color: colors.text.muted,
-              textDecoration: "none",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = colors.text.primary;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = colors.text.muted;
-            }}
-          >
-            Our Brochure
-          </Link>
 
           {/* Login - Secondary action */}
           <Link
@@ -540,7 +645,7 @@ const PublicHeader: React.FC = () => {
 
           {/* Join RealVerse Academy - Primary CTA with highest visibility */}
           <Link
-            to="/realverse/join"
+            to="/brochure"
             style={{
               ...typography.body,
               fontSize: "14px",
@@ -548,7 +653,7 @@ const PublicHeader: React.FC = () => {
               padding: `10px 24px`,
               borderRadius: borderRadius.md,
               background: `linear-gradient(135deg, ${colors.accent.main} 0%, #FFB82E 100%)`,
-              color: colors.charcoal,
+              color: colors.brand.charcoal,
               textDecoration: "none",
               transition: "all 0.2s ease",
               border: "none",
@@ -601,19 +706,28 @@ const PublicHeader: React.FC = () => {
         <div
           style={{
             position: "absolute",
-            top: "100%",
-            left: 0,
-            right: 0,
-            background: `linear-gradient(135deg, rgba(5, 11, 32, 0.98) 0%, rgba(10, 22, 51, 0.98) 100%)`,
-            backdropFilter: "blur(20px)",
-            borderTop: `1px solid rgba(255, 255, 255, 0.1)`,
+            top: "calc(100% + 12px)",
+            left: spacing.xl,
+            right: spacing.xl,
+            maxWidth: "1400px",
+            margin: "0 auto",
+            background: `linear-gradient(135deg, 
+              rgba(5, 11, 32, 0.85) 0%, 
+              rgba(10, 22, 51, 0.8) 50%, 
+              rgba(5, 11, 32, 0.85) 100%)`,
+            backdropFilter: "blur(20px) saturate(180%)",
+            WebkitBackdropFilter: "blur(20px) saturate(180%)",
+            borderRadius: borderRadius.xl,
+            border: `1px solid rgba(255, 255, 255, 0.15)`,
             padding: spacing.lg,
             display: "flex",
             flexDirection: "column",
             gap: spacing.md,
-            boxShadow: shadows.glassDark,
+            boxShadow: `0 8px 32px rgba(0, 0, 0, 0.4), 
+                        0 0 0 1px rgba(255, 255, 255, 0.05) inset`,
             maxHeight: "80vh",
             overflowY: "auto",
+            zIndex: 1201,
           }}
         >
           {/* Home */}
@@ -625,7 +739,7 @@ const PublicHeader: React.FC = () => {
                 fontSize: typography.fontSize.base,
                 fontWeight: typography.fontWeight.semibold,
                 color: colors.text.primary,
-                background: "transparent",
+                background: homeDropdownOpen ? "rgba(255, 255, 255, 0.05)" : "transparent",
                 border: "none",
                 padding: spacing.md,
                 borderRadius: borderRadius.md,
@@ -635,14 +749,28 @@ const PublicHeader: React.FC = () => {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
+                transition: "all 0.2s ease",
               }}
             >
               Home
-              <span>{homeDropdownOpen ? "▲" : "▼"}</span>
+              <span style={{ 
+                transition: "transform 0.2s ease",
+                transform: homeDropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
+                display: "inline-block",
+              }}>
+                ▼
+              </span>
             </button>
             {homeDropdownOpen && (
-              <div style={{ paddingLeft: spacing.md, marginTop: spacing.xs, display: "flex", flexDirection: "column", gap: spacing.xs }}>
-                {homeSections.map((section) => (
+              <div style={{ 
+                paddingLeft: spacing.md, 
+                marginTop: spacing.xs, 
+                display: "flex", 
+                flexDirection: "column", 
+                gap: spacing.xs,
+                animation: "slideDown 0.2s ease-out",
+              }}>
+                {homeSections.map((section, idx) => (
                   <button
                     key={section.id}
                     onClick={() => handleHomeSectionClick(section.id)}
@@ -657,6 +785,16 @@ const PublicHeader: React.FC = () => {
                       cursor: "pointer",
                       width: "100%",
                       textAlign: "left",
+                      transition: "all 0.15s ease",
+                      animation: `fadeIn 0.2s ease-out ${idx * 0.02}s both`,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = colors.text.primary;
+                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = colors.text.secondary;
+                      e.currentTarget.style.background = "transparent";
                     }}
                   >
                     {section.label}
@@ -665,52 +803,6 @@ const PublicHeader: React.FC = () => {
               </div>
             )}
           </div>
-
-          {/* Club */}
-          <button
-            onClick={() => {
-              handleHomeSectionClick("philosophy");
-              setIsMobileMenuOpen(false);
-            }}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.base,
-              fontWeight: typography.fontWeight.medium,
-              color: colors.text.secondary,
-              background: "transparent",
-              border: "none",
-              padding: spacing.md,
-              borderRadius: borderRadius.md,
-              textAlign: "left",
-              width: "100%",
-              cursor: "pointer",
-            }}
-          >
-            Club
-          </button>
-
-          {/* Teams */}
-          <button
-            onClick={() => {
-              handleHomeSectionClick("teams");
-              setIsMobileMenuOpen(false);
-            }}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.base,
-              fontWeight: typography.fontWeight.medium,
-              color: colors.text.secondary,
-              background: "transparent",
-              border: "none",
-              padding: spacing.md,
-              borderRadius: borderRadius.md,
-              textAlign: "left",
-              width: "100%",
-              cursor: "pointer",
-            }}
-          >
-            Teams
-          </button>
 
           {/* Matches */}
           <button
@@ -758,56 +850,49 @@ const PublicHeader: React.FC = () => {
             Academy
           </button>
 
-          {/* RealVerse */}
+          {/* Programs */}
           <Link
-            to="/realverse/login"
+            to="/programs"
             onClick={() => setIsMobileMenuOpen(false)}
             style={{
+              textDecoration: "none",
               ...typography.body,
               fontSize: typography.fontSize.base,
               fontWeight: typography.fontWeight.medium,
               color: colors.text.secondary,
-              textDecoration: "none",
+              background: "transparent",
               padding: spacing.md,
               borderRadius: borderRadius.md,
+              textAlign: "left",
+              width: "100%",
+              display: "block",
             }}
           >
-            RealVerse
+            Programs
           </Link>
 
           {/* Shop */}
-          <Link
-            to="/shop"
-            onClick={() => setIsMobileMenuOpen(false)}
+          <button
+            onClick={() => {
+              navigate("/shop");
+              setIsMobileMenuOpen(false);
+            }}
             style={{
               ...typography.body,
               fontSize: typography.fontSize.base,
               fontWeight: typography.fontWeight.medium,
               color: colors.text.secondary,
-              textDecoration: "none",
+              background: "transparent",
+              border: "none",
               padding: spacing.md,
               borderRadius: borderRadius.md,
+              textAlign: "left",
+              width: "100%",
+              cursor: "pointer",
             }}
           >
             Shop
-          </Link>
-
-          {/* Our Brochure */}
-          <Link
-            to="/brochure"
-            onClick={() => setIsMobileMenuOpen(false)}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.base,
-              fontWeight: typography.fontWeight.medium,
-              color: colors.text.secondary,
-              textDecoration: "none",
-              padding: spacing.md,
-              borderRadius: borderRadius.md,
-            }}
-          >
-            Our Brochure
-          </Link>
+          </button>
 
           {/* Cart */}
           <Link
@@ -830,7 +915,7 @@ const PublicHeader: React.FC = () => {
             {getItemCount() > 0 && (
               <span style={{
                 background: colors.accent.main,
-                color: colors.charcoal,
+                color: colors.brand.charcoal,
                 borderRadius: "12px",
                 padding: "2px 8px",
                 fontSize: typography.fontSize.xs,
@@ -870,7 +955,7 @@ const PublicHeader: React.FC = () => {
 
           {/* Join RealVerse Academy - Primary CTA with highest visibility */}
           <Link
-            to="/realverse/join"
+            to="/brochure"
             onClick={() => setIsMobileMenuOpen(false)}
             style={{
               ...typography.body,
@@ -879,7 +964,7 @@ const PublicHeader: React.FC = () => {
               padding: `${spacing.md} ${spacing.lg}`,
               borderRadius: borderRadius.md,
               background: `linear-gradient(135deg, ${colors.accent.main} 0%, #FFB82E 100%)`,
-              color: colors.charcoal,
+              color: colors.brand.charcoal,
               textDecoration: "none",
               textAlign: "center",
               marginTop: spacing.sm,
@@ -891,6 +976,7 @@ const PublicHeader: React.FC = () => {
           </Link>
         </div>
       )}
+      </div>
     </header>
   );
 };

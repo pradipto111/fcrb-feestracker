@@ -25,6 +25,10 @@ import matchSelectionRoutes from "./modules/students/match-selection.routes";
 import progressRoadmapRoutes from "./modules/students/progress-roadmap.routes";
 import analyticsRoutes from "./modules/analytics/analytics.routes";
 import playerMetricsRoutes from "./modules/player-metrics/metrics.routes";
+import scoutingRoutes from "./modules/scouting/scouting.routes";
+import parentReportsRoutes from "./modules/parent-reports/parent-reports.routes";
+import seasonPlanningRoutes from "./modules/season-planning/season-planning.routes";
+import trialsRoutes from "./modules/trials/trials.routes";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -69,6 +73,10 @@ app.use("/match-selection", matchSelectionRoutes);
 app.use("/progress-roadmap", progressRoadmapRoutes);
 app.use("/analytics", analyticsRoutes);
 app.use("/player-metrics", playerMetricsRoutes);
+app.use("/scouting", scoutingRoutes);
+app.use("/parent-reports", parentReportsRoutes);
+app.use("/trials", trialsRoutes);
+app.use("/season-planning", seasonPlanningRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

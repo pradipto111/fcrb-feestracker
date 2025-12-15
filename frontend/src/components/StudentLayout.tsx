@@ -184,6 +184,12 @@ const StudentLayout: React.FC = () => {
       icon: "wellness",
       description: "Training load & recovery",
     },
+    {
+      path: "/realverse/my-reports",
+      label: "Development Reports",
+      icon: "feedback",
+      description: "View your progress reports",
+    },
   ];
 
   const contentNavItems: NavItem[] = [
@@ -611,8 +617,14 @@ const StudentLayout: React.FC = () => {
             flexDirection: "column", 
             gap: spacing.lg, 
             flex: 1, 
+            minHeight: 0, // Critical for flex scrolling
             overflowY: "auto",
-            minHeight: 0, // Important for flex scrolling
+            overflowX: "hidden",
+            scrollBehavior: "smooth",
+            WebkitOverflowScrolling: "touch" as any,
+            overscrollBehavior: "contain",
+            scrollbarWidth: "thin",
+            scrollbarColor: `${colors.primary.main}40 ${colors.surface.section}`,
           }}
         >
           {/* Main Navigation */}

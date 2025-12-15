@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, useInView } from "framer-motion";
 import { api } from "../../api/client";
 import { Card } from "../../components/ui/Card";
@@ -13,11 +13,14 @@ import YourAnalytics from "../../components/YourAnalytics";
 import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
 import { useHomepageAnimation } from "../../hooks/useHomepageAnimation";
 import { heroAssets, clubAssets, academyAssets } from "../../config/assets";
+import { ChartBarIcon, ChartLineIcon, ClipboardIcon, RefreshIcon, BoltIcon, LeafIcon, CalendarIcon, ArrowRightIcon } from "../../components/icons/IconSet";
 
 const StudentDashboardOverview: React.FC = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState<any>(null);
   const [attendanceData, setAttendanceData] = useState<any>(null);
   const [roadmapData, setRoadmapData] = useState<any>(null);
+  const [workloadMessage, setWorkloadMessage] = useState<any>(null);
   const [error, setError] = useState("");
   const [analyticsRefreshKey, setAnalyticsRefreshKey] = useState(0);
   
@@ -34,23 +37,34 @@ const StudentDashboardOverview: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [dashboardData, attendance, roadmap] = await Promise.all([
+        const [dashboardData, attendance, roadmap, workload] = await Promise.all([
           api.getStudentDashboard(),
           api.getStudentAttendance({
             month: new Date().getMonth() + 1,
             year: new Date().getFullYear(),
           }),
           api.getMyProgressRoadmap().catch(() => null),
+          api.getPlayerWorkloadMessage(data?.student?.id || 0).catch(() => null),
         ]);
         setData(dashboardData);
         setAttendanceData(attendance);
         setRoadmapData(roadmap);
+        setWorkloadMessage(workload);
       } catch (err: any) {
         setError(err.message);
       }
     };
     loadData();
   }, []);
+
+  // Load workload message after student data is available
+  useEffect(() => {
+    if (data?.student?.id) {
+      api.getPlayerWorkloadMessage(data.student.id)
+        .then(setWorkloadMessage)
+        .catch(() => setWorkloadMessage(null));
+    }
+  }, [data?.student?.id]);
 
   // Quick links removed - navigation is now handled by the sidebar
 
@@ -204,57 +218,138 @@ const StudentDashboardOverview: React.FC = () => {
       {/* "What's Next for Me?" Snapshot */}
       <NextStepSnapshot roadmap={roadmapData} />
 
-      {/* Player Profile CTA Banner - Prominent Access Point */}
+      {/* Quick Actions Grid - Organized CTAs */}
       <Section variant="elevated" style={{ marginBottom: spacing.xl }}>
-        <Card
-          variant="elevated"
-          padding="lg"
-          style={{
-            background: `linear-gradient(135deg, ${colors.primary.main}15 0%, ${colors.accent.main}15 100%)`,
-            border: `2px solid ${colors.primary.main}40`,
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          <div style={{ position: "relative", zIndex: 1 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: spacing.md }}>
-              <div style={{ flex: 1, minWidth: "250px" }}>
-                <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.sm }}>
-                  📊 Complete Player Profile
+        <h2 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.lg }}>
+          Quick Actions
+        </h2>
+        <div style={{ 
+          display: "grid", 
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", 
+          gap: spacing.md 
+        }}>
+          {/* Analytics & Profile */}
+          <Card variant="elevated" padding="lg" style={{ cursor: "pointer" }} onClick={() => navigate("/realverse/student/analytics")}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md }}>
+              <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: borderRadius.md, background: colors.primary.soft, color: colors.primary.main }}>
+                <ChartBarIcon size={24} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
+                  Analytics & Profile
                 </h3>
-                <p style={{ ...typography.body, color: colors.text.secondary, marginBottom: spacing.md }}>
-                  View your complete performance profile including detailed metrics, development timeline, positional suitability, and coach feedback.
+                <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm, marginBottom: spacing.sm }}>
+                  View your performance metrics, readiness, and positional suitability
                 </p>
-                <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
-                  <Link to="/realverse/student/analytics" style={{ textDecoration: "none" }}>
-                    <Button variant="primary" size="md">
-                      View Full Profile →
-                    </Button>
-                  </Link>
-                  <Link to="/realverse/student/analytics" style={{ textDecoration: "none" }}>
-                    <Button variant="secondary" size="md">
-                      View Analytics Dashboard
-                    </Button>
-                  </Link>
+                <div style={{ ...typography.caption, color: colors.primary.main, fontWeight: typography.fontWeight.medium }}>
+                  View Profile <ArrowRightIcon size={12} style={{ marginLeft: spacing.xs }} />
                 </div>
               </div>
-              <div style={{ fontSize: "4rem", opacity: 0.2, lineHeight: 1 }}>
-                📈
+            </div>
+          </Card>
+
+          {/* Load Dashboard */}
+          {data?.student?.id && (
+            <Card 
+              variant="elevated" 
+              padding="lg" 
+              style={{ cursor: "pointer" }} 
+              onClick={() => navigate(`/realverse/player/${data.student.id}/load-dashboard`)}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md }}>
+                <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: borderRadius.md, background: colors.primary.soft, color: colors.primary.main }}>
+                  <ChartLineIcon size={24} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
+                    Training Load
+                  </h3>
+                  <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm, marginBottom: spacing.sm }}>
+                    Monitor your training load trends and readiness correlation
+                  </p>
+                  <div style={{ ...typography.caption, color: colors.primary.main, fontWeight: typography.fontWeight.medium }}>
+                    View Dashboard <ArrowRightIcon size={12} style={{ marginLeft: spacing.xs }} />
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Development Reports */}
+          <Card variant="elevated" padding="lg" style={{ cursor: "pointer" }} onClick={() => navigate("/realverse/my-reports")}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md }}>
+              <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: borderRadius.md, background: colors.primary.soft, color: colors.primary.main }}>
+                <ClipboardIcon size={24} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
+                  Development Reports
+                </h3>
+                <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm, marginBottom: spacing.sm }}>
+                  View your progress reports and development insights
+                </p>
+                <div style={{ ...typography.caption, color: colors.primary.main, fontWeight: typography.fontWeight.medium }}>
+                  View Reports <ArrowRightIcon size={12} style={{ marginLeft: spacing.xs }} />
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
       </Section>
 
-      {/* Your Analytics Section - Prominently Displayed */}
-      <Section
-        variant="elevated"
-        style={{ marginBottom: spacing.xl }}
-      >
+      {/* Workload Message - Compact */}
+      {workloadMessage && (
+        <Section variant="elevated" style={{ marginBottom: spacing.xl }}>
+          <Card
+            variant="elevated"
+            padding="md"
+            style={{
+              background: workloadMessage.status === 'HIGH' 
+                ? colors.warning?.soft || colors.accent.soft
+                : workloadMessage.status === 'LOW'
+                ? colors.info?.soft || colors.primary.soft
+                : colors.surface.elevated,
+              border: `2px solid ${
+                workloadMessage.status === 'HIGH'
+                  ? colors.warning?.main || colors.accent.main
+                  : workloadMessage.status === 'LOW'
+                  ? colors.info?.main || colors.primary.main
+                  : colors.border.medium
+              }40`,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md, flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: borderRadius.md, background: colors.primary.soft, color: colors.primary.main }}>
+                  {workloadMessage.status === 'HIGH' ? <BoltIcon size={18} /> : workloadMessage.status === 'LOW' ? <LeafIcon size={18} /> : <CalendarIcon size={18} />}
+                </div>
+                <div>
+                  <h3 style={{ ...typography.body, fontWeight: typography.fontWeight.semibold, color: colors.text.primary, marginBottom: spacing.xs }}>
+                    This Week's Training
+                  </h3>
+                  <p style={{ ...typography.caption, color: colors.text.secondary }}>
+                    {workloadMessage.message}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate(`/realverse/player/${data?.student?.id}/load-dashboard`)}
+              >
+                Details <ArrowRightIcon size={12} style={{ marginLeft: spacing.xs }} />
+              </Button>
+            </div>
+          </Card>
+        </Section>
+      )}
+
+      {/* Your Analytics Section */}
+      <Section variant="elevated" style={{ marginBottom: spacing.xl }}>
         <Card variant="elevated" padding="none" style={{ background: colors.surface.card }}>
           <CardHeader
             title="Your Analytics"
-            description="View your latest performance metrics, readiness index, and positional suitability assessments."
+            description="Latest performance metrics and assessments"
             actions={
               <div style={{ display: "flex", gap: spacing.sm }}>
                 <Button
@@ -262,14 +357,11 @@ const StudentDashboardOverview: React.FC = () => {
                   size="sm"
                   onClick={() => setAnalyticsRefreshKey(prev => prev + 1)}
                 >
-                  🔄 Refresh
+                  <RefreshIcon size={14} style={{ marginRight: spacing.xs }} /> Refresh
                 </Button>
                 <Link to="/realverse/student/analytics" style={{ textDecoration: "none" }}>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                  >
-                    View Full Analytics →
+                  <Button variant="primary" size="sm">
+                    View Full <ArrowRightIcon size={12} style={{ marginLeft: spacing.xs }} />
                   </Button>
                 </Link>
               </div>
@@ -281,45 +373,50 @@ const StudentDashboardOverview: React.FC = () => {
         </Card>
       </Section>
 
-      {/* Summary Stats */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: spacing.lg,
-        }}
-      >
-        <Card variant="default" padding="md" style={{ textAlign: "center" }}>
-          <div style={{ ...typography.overline, color: colors.text.muted, marginBottom: spacing.xs }}>
-            Monthly Fee
-          </div>
-          <div style={{ ...typography.h3, color: colors.text.primary }}>
-            ₹{student.monthlyFeeAmount.toLocaleString()}
-          </div>
-        </Card>
-        <Card variant="default" padding="md" style={{ textAlign: "center" }}>
-          <div style={{ ...typography.overline, color: colors.text.muted, marginBottom: spacing.xs }}>
-            Total Paid
-          </div>
-          <div style={{ ...typography.h3, color: colors.success.main }}>
-            ₹{summary.totalPaid.toLocaleString()}
-          </div>
-        </Card>
-        <Card variant="default" padding="md" style={{ textAlign: "center" }}>
-          <div style={{ ...typography.overline, color: colors.text.muted, marginBottom: spacing.xs }}>
-            Outstanding
-          </div>
-          <div
-            style={{
-              ...typography.h3,
-              color: summary.outstanding > 0 ? colors.danger.main : colors.success.main,
-            }}
-          >
-            ₹{Math.abs(summary.outstanding).toLocaleString()}
-          </div>
+      {/* Summary Stats - Compact */}
+      <Section variant="elevated">
+        <h2 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.md }}>
+          Financial Summary
+        </h2>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: spacing.md,
+          }}
+        >
+          <Card variant="default" padding="md" style={{ textAlign: "center" }}>
+            <div style={{ ...typography.overline, color: colors.text.muted, marginBottom: spacing.xs }}>
+              Monthly Fee
+            </div>
+            <div style={{ ...typography.h3, color: colors.text.primary }}>
+              ₹{student.monthlyFeeAmount.toLocaleString()}
+            </div>
+          </Card>
+          <Card variant="default" padding="md" style={{ textAlign: "center" }}>
+            <div style={{ ...typography.overline, color: colors.text.muted, marginBottom: spacing.xs }}>
+              Total Paid
+            </div>
+            <div style={{ ...typography.h3, color: colors.success.main }}>
+              ₹{summary.totalPaid.toLocaleString()}
+            </div>
+          </Card>
+          <Card variant="default" padding="md" style={{ textAlign: "center" }}>
+            <div style={{ ...typography.overline, color: colors.text.muted, marginBottom: spacing.xs }}>
+              Outstanding
+            </div>
+            <div
+              style={{
+                ...typography.h3,
+                color: summary.outstanding > 0 ? colors.danger.main : colors.success.main,
+              }}
+            >
+              ₹{Math.abs(summary.outstanding).toLocaleString()}
+            </div>
           </Card>
         </div>
-      </div>
+      </Section>
+    </div>
     );
   };
 

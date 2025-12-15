@@ -22,7 +22,16 @@ async function request(
     if (currentToken) headers["Authorization"] = `Bearer ${currentToken}`;
 
     const url = `${API_BASE}${path}`;
-    console.log(`API Request: ${options.method || 'GET'} ${url}`);
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const payloadSize = options.body ? new Blob([options.body as string]).size : 0;
+    
+    // Log request (non-sensitive data only)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[${requestId}] API Request: ${options.method || 'GET'} ${url}`, {
+        payloadSize: `${payloadSize} bytes`,
+        hasAuth: !!currentToken,
+      });
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
@@ -45,6 +54,11 @@ async function request(
           try {
             const json = JSON.parse(text);
             errorMessage = json.message || json.error || text;
+            // Don't log sensitive data
+            if (json.password || json.passwordHash) {
+              delete json.password;
+              delete json.passwordHash;
+            }
           } catch {
             errorMessage = text;
           }
@@ -52,9 +66,13 @@ async function request(
       } catch {
         // If we can't read the error, use status text
       }
-      console.error(`API Error: ${res.status} ${errorMessage}`);
+      // Don't log 404s as errors - they're expected for missing resources
+      if (res.status !== 404) {
+        console.error(`[${requestId}] API Error: ${res.status} ${path} - ${errorMessage}`);
+      }
       const error = new Error(errorMessage);
       (error as any).status = res.status;
+      (error as any).requestId = requestId;
       throw error;
     }
 
@@ -64,7 +82,10 @@ async function request(
     }
     return null;
   } catch (error: any) {
-    console.error(`API Request Failed:`, error);
+    // Don't log 404 errors - they're expected for missing resources
+    if (error.status !== 404) {
+      console.error(`API Request Failed:`, error);
+    }
     // Handle network errors
     if (error.name === "AbortError") {
       throw new Error("Request timeout. The server is taking too long to respond. Please check if the backend is running.");
@@ -829,6 +850,427 @@ export const api = {
     traits?: Array<{ traitKey: string; score: number }>;
   }) {
     return request("/player-metrics/snapshots", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  // Scouting & Comparison APIs
+  comparePlayers(payload: {
+    playerIds: number[];
+    position: string;
+    ageGroup?: string;
+    level?: string;
+    snapshotType: 'latest' | 'specific' | 'average';
+    snapshotDate?: string;
+    averageSnapshots?: number;
+  }) {
+    return request("/scouting/compare", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  getPlayersForScouting(params?: {
+    centerId?: number;
+    position?: string;
+    ageGroup?: string;
+    level?: string;
+    readinessMin?: number;
+    readinessMax?: number;
+    trendDirection?: 'improving' | 'plateau' | 'declining';
+    injuryRisk?: boolean;
+    coachConfidence?: number;
+    lastUpdatedDays?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    limit?: number;
+    offset?: number;
+  }) {
+    const query = new URLSearchParams();
+    if (params?.centerId) query.set("centerId", params.centerId.toString());
+    if (params?.position) query.set("position", params.position);
+    if (params?.ageGroup) query.set("ageGroup", params.ageGroup);
+    if (params?.level) query.set("level", params.level);
+    if (params?.readinessMin) query.set("readinessMin", params.readinessMin.toString());
+    if (params?.readinessMax) query.set("readinessMax", params.readinessMax.toString());
+    if (params?.trendDirection) query.set("trendDirection", params.trendDirection);
+    if (params?.injuryRisk) query.set("injuryRisk", "true");
+    if (params?.coachConfidence) query.set("coachConfidence", params.coachConfidence.toString());
+    if (params?.lastUpdatedDays) query.set("lastUpdatedDays", params.lastUpdatedDays.toString());
+    if (params?.sortBy) query.set("sortBy", params.sortBy);
+    if (params?.sortOrder) query.set("sortOrder", params.sortOrder);
+    if (params?.limit) query.set("limit", params.limit.toString());
+    if (params?.offset) query.set("offset", params.offset.toString());
+    return request(`/scouting/players?${query.toString()}`);
+  },
+  getScoutingBoards() {
+    return request("/scouting/boards");
+  },
+  createScoutingBoard(payload: {
+    name: string;
+    description?: string;
+    type: 'CENTRE_VIEW' | 'CLUB_WIDE' | 'CUSTOM';
+    centerId?: number;
+  }) {
+    return request("/scouting/boards", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  getScoutingBoard(boardId: number) {
+    return request(`/scouting/boards/${boardId}`);
+  },
+  updateScoutingBoard(boardId: number, payload: { name?: string; description?: string }) {
+    return request(`/scouting/boards/${boardId}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  },
+  deleteScoutingBoard(boardId: number) {
+    return request(`/scouting/boards/${boardId}`, {
+      method: "DELETE",
+    });
+  },
+  addPlayerToBoard(boardId: number, payload: { studentId: number; notes?: string }) {
+    return request(`/scouting/boards/${boardId}/players`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  removePlayerFromBoard(boardId: number, studentId: number) {
+    return request(`/scouting/boards/${boardId}/players/${studentId}`, {
+      method: "DELETE",
+    });
+  },
+  getBoardPlayers(boardId: number) {
+    return request(`/scouting/boards/${boardId}/players`);
+  },
+  createScoutingDecision(boardId: number, payload: {
+    studentId: number;
+    decisionState: 'OBSERVING' | 'TRIAL_RECOMMENDED' | 'READY_FOR_PROMOTION' | 'HOLD_FOR_DEVELOPMENT' | 'INTERVENTION_NEEDED';
+    notes?: string;
+  }) {
+    return request(`/scouting/boards/${boardId}/decisions`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  getScoutingDecisions(boardId: number) {
+    return request(`/scouting/boards/${boardId}/decisions`);
+  },
+  // Parent Development Reports APIs
+  generateReportContent(payload: {
+    studentId: number;
+    snapshotId: number;
+    reportingPeriodStart?: string;
+    reportingPeriodEnd?: string;
+    coachNote?: string;
+  }) {
+    return request("/parent-reports/generate", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  createParentReport(payload: {
+    studentId: number;
+    snapshotId: number;
+    reportingPeriodStart?: string;
+    reportingPeriodEnd?: string;
+    coachNote?: string;
+  }) {
+    return request("/parent-reports", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  getMyReports() {
+    return request("/parent-reports/my");
+  },
+  getStudentReports(studentId: number, includeDrafts?: boolean) {
+    const query = includeDrafts ? "?includeDrafts=true" : "";
+    return request(`/parent-reports/student/${studentId}${query}`);
+  },
+  getReport(reportId: number) {
+    return request(`/parent-reports/${reportId}`);
+  },
+  updateReport(reportId: number, payload: {
+    reportingPeriodStart?: string;
+    reportingPeriodEnd?: string;
+    coachNote?: string;
+  }) {
+    return request(`/parent-reports/${reportId}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  },
+  publishReport(reportId: number, visibleToParent?: boolean) {
+    return request(`/parent-reports/${reportId}/publish`, {
+      method: "POST",
+      body: JSON.stringify({ visibleToParent: visibleToParent !== false }),
+    });
+  },
+  deleteReport(reportId: number) {
+    return request(`/parent-reports/${reportId}`, {
+      method: "DELETE",
+    });
+  },
+  // Season Planning & Load Prediction APIs
+  getSeasonPlans(centerId?: number) {
+    const query = new URLSearchParams();
+    if (centerId) query.set("centerId", centerId.toString());
+    return request(`/season-planning/plans?${query.toString()}`);
+  },
+  getSeasonPlan(id: number) {
+    return request(`/season-planning/plans/${id}`);
+  },
+  createSeasonPlan(data: {
+    centerId: number;
+    name: string;
+    seasonStart: string;
+    seasonEnd: string;
+    description?: string;
+    phases?: Array<{
+      name: string;
+      phaseType: string;
+      startDate: string;
+      endDate: string;
+      description?: string;
+      targetLoadRange?: { min: number; max: number };
+    }>;
+  }) {
+    return request("/season-planning/plans", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+  updateSeasonPlan(id: number, data: any) {
+    return request(`/season-planning/plans/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+  deleteSeasonPlan(id: number) {
+    return request(`/season-planning/plans/${id}`, {
+      method: "DELETE",
+    });
+  },
+  createSessionLoad(sessionId: number, data: {
+    intensity: "LOW" | "MEDIUM" | "HIGH";
+    duration: number;
+    focusTags: string[];
+    notes?: string;
+    seasonPlanId?: number;
+  }) {
+    return request(`/season-planning/sessions/${sessionId}/load`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+  getSessionLoad(sessionId: number) {
+    return request(`/season-planning/sessions/${sessionId}/load`);
+  },
+  getPlayerLoadTrends(studentId: number, weeks?: number) {
+    const query = new URLSearchParams();
+    if (weeks) query.set("weeks", weeks.toString());
+    return request(`/season-planning/players/${studentId}/load-trends?${query.toString()}`);
+  },
+  getPlayerWeeklyLoad(studentId: number, weekStart?: string) {
+    const query = new URLSearchParams();
+    if (weekStart) query.set("weekStart", weekStart);
+    return request(`/season-planning/players/${studentId}/weekly-load?${query.toString()}`);
+  },
+  getReadinessLoadCorrelation(studentId: number, weeks?: number) {
+    const query = new URLSearchParams();
+    if (weeks) query.set("weeks", weeks.toString());
+    return request(`/season-planning/players/${studentId}/readiness-load-correlation?${query.toString()}`);
+  },
+  createDevelopmentBlock(planId: number, data: {
+    name: string;
+    startDate: string;
+    endDate: string;
+    focusArea: string;
+    targetMetrics?: string[];
+    suggestedLoadRange?: { min: number; max: number };
+    sessionFocusDistribution?: Record<string, number>;
+    description?: string;
+  }) {
+    return request(`/season-planning/plans/${planId}/development-blocks`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+  getPlayerWorkloadMessage(studentId: number) {
+    return request(`/season-planning/players/${studentId}/workload-message`);
+  },
+  // Trial Management APIs
+  getTrialEvents(params?: { centerId?: number; status?: string; coachId?: number }) {
+    const query = new URLSearchParams();
+    if (params?.centerId) query.set("centerId", params.centerId.toString());
+    if (params?.status) query.set("status", params.status);
+    if (params?.coachId) query.set("coachId", params.coachId.toString());
+    return request(`/trials/events?${query.toString()}`);
+  },
+  createTrialEvent(payload: {
+    title: string;
+    centerId: number;
+    startDateTime: string;
+    endDateTime: string;
+    ageGroups: string[];
+    positionsNeeded: string[];
+    format?: string;
+    notes?: string;
+    staffIds?: number[];
+  }) {
+    return request("/trials/events", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  getTrialEvent(eventId: number) {
+    return request(`/trials/events/${eventId}`);
+  },
+  updateTrialEvent(eventId: number, payload: any) {
+    return request(`/trials/events/${eventId}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  },
+  addStaffToEvent(eventId: number, payload: { coachId: number; role?: string }) {
+    return request(`/trials/events/${eventId}/staff`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  removeStaffFromEvent(eventId: number, coachId: number) {
+    return request(`/trials/events/${eventId}/staff/${coachId}`, {
+      method: "DELETE",
+    });
+  },
+  getTrialists(params?: { search?: string; primaryPosition?: string; ageGroup?: string }) {
+    const query = new URLSearchParams();
+    if (params?.search) query.set("search", params.search);
+    if (params?.primaryPosition) query.set("primaryPosition", params.primaryPosition);
+    if (params?.ageGroup) query.set("ageGroup", params.ageGroup);
+    return request(`/trials/trialists?${query.toString()}`);
+  },
+  createTrialist(payload: any) {
+    return request("/trials/trialists", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  getTrialist(trialistId: number) {
+    return request(`/trials/trialists/${trialistId}`);
+  },
+  updateTrialist(trialistId: number, payload: any) {
+    return request(`/trials/trialists/${trialistId}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  },
+  addTrialistToEvent(eventId: number, payload: { trialistId: number; notes?: string }) {
+    return request(`/trials/events/${eventId}/trialists`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  removeTrialistFromEvent(eventId: number, trialistId: number) {
+    return request(`/trials/events/${eventId}/trialists/${trialistId}`, {
+      method: "DELETE",
+    });
+  },
+  getTrialTemplates(params?: { positionScope?: string; position?: string; ageGroup?: string }) {
+    const query = new URLSearchParams();
+    if (params?.positionScope) query.set("positionScope", params.positionScope);
+    if (params?.position) query.set("position", params.position);
+    if (params?.ageGroup) query.set("ageGroup", params.ageGroup);
+    return request(`/trials/templates?${query.toString()}`);
+  },
+  createTrialTemplate(payload: any) {
+    return request("/trials/templates", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  getTrialTemplate(templateId: number) {
+    return request(`/trials/templates/${templateId}`);
+  },
+  updateTrialTemplate(templateId: number, payload: any) {
+    return request(`/trials/templates/${templateId}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  },
+  getTrialReports(params?: {
+    trialEventId?: number;
+    trialistId?: number;
+    coachId?: number;
+    position?: string;
+    ageGroup?: string;
+    recommendedAction?: string;
+  }) {
+    const query = new URLSearchParams();
+    if (params?.trialEventId) query.set("trialEventId", params.trialEventId.toString());
+    if (params?.trialistId) query.set("trialistId", params.trialistId.toString());
+    if (params?.coachId) query.set("coachId", params.coachId.toString());
+    if (params?.position) query.set("position", params.position);
+    if (params?.ageGroup) query.set("ageGroup", params.ageGroup);
+    if (params?.recommendedAction) query.set("recommendedAction", params.recommendedAction);
+    return request(`/trials/reports?${query.toString()}`);
+  },
+  createTrialReport(payload: any) {
+    return request("/trials/reports", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  getTrialReport(reportId: number) {
+    return request(`/trials/reports/${reportId}`);
+  },
+  updateTrialReport(reportId: number, payload: any) {
+    return request(`/trials/reports/${reportId}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  },
+  compareTrialists(payload: {
+    trialistIds: number[];
+    trialEventId?: number;
+    position: string;
+    ageGroup: string;
+  }) {
+    return request("/trials/compare", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  createTrialShortlist(payload: {
+    trialEventId: number;
+    name: string;
+    description?: string;
+  }) {
+    return request("/trials/shortlists", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  addTrialistToShortlist(shortlistId: number, payload: { trialistId: number; notes?: string }) {
+    return request(`/trials/shortlists/${shortlistId}/trialists`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  removeTrialistFromShortlist(shortlistId: number, trialistId: number) {
+    return request(`/trials/shortlists/${shortlistId}/trialists/${trialistId}`, {
+      method: "DELETE",
+    });
+  },
+  createTrialDecision(payload: {
+    trialEventId: number;
+    trialistId: number;
+    decision: string;
+    notes?: string;
+  }) {
+    return request("/trials/decisions", {
       method: "POST",
       body: JSON.stringify(payload),
     });

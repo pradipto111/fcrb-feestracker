@@ -10,6 +10,7 @@ import { Badge } from "../components/ui/Badge";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
 import { galleryAssets, getGalleryImage } from "../config/assets";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
+import { CameraIcon, PlusIcon, LinkIcon } from "../components/icons/IconSet";
 import "../styles/animations.css";
 
 const FeedPage: React.FC = () => {
@@ -158,7 +159,10 @@ const FeedPage: React.FC = () => {
                 ...typography.body,
               }}
             >
-              🔗 Open Link: {post.mediaUrl}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+                <LinkIcon size={14} />
+                Open Link: {post.mediaUrl}
+              </span>
             </a>
           </div>
         );
@@ -250,7 +254,10 @@ const FeedPage: React.FC = () => {
               }}
               variants={headingVariants}
             >
-              📸 Feed
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+                <CameraIcon size={32} />
+                Feed
+              </span>
             </motion.h1>
             <motion.p
               style={{
@@ -266,18 +273,29 @@ const FeedPage: React.FC = () => {
           </div>
           <motion.div variants={headingVariants}>
             <Button variant="primary" onClick={() => navigate("/feed/create")}>
-              ➕ Create Post
+              <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                <PlusIcon size={16} />
+                Create Post
+              </span>
             </Button>
           </motion.div>
         </div>
       </motion.section>
 
       <PageHeader
-        title="📸 Feed"
+        title={
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+            <CameraIcon size={24} />
+            Feed
+          </span>
+        }
         subtitle="View posts, photos, and videos from sessions"
         actions={
           <Button variant="primary" onClick={() => navigate("/feed/create")} style={{ display: "none" }}>
-            ➕ Create Post
+            <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+              <PlusIcon size={16} />
+              Create Post
+            </span>
           </Button>
         }
       />

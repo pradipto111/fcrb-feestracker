@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { colors, typography, spacing, borderRadius } from '../../theme/design-tokens';
@@ -11,6 +12,7 @@ import { MetricPanel } from '../../components/player-profile/MetricPanel';
 import { CoachNotesPanel } from '../../components/player-profile/CoachNotesPanel';
 import { SnapshotTimeline } from '../../components/player-profile/SnapshotTimeline';
 import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 import { Section } from '../../components/ui/Section';
 
 type Tab = 'overview' | 'attributes' | 'development' | 'notes';
@@ -55,6 +57,7 @@ interface MetricSnapshot {
 
 const StudentPlayerProfilePage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const studentId = user?.id || 0;
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -199,6 +202,36 @@ const StudentPlayerProfilePage: React.FC = () => {
         preferredFoot={player.preferredFoot as 'Left' | 'Right' | 'Both' | undefined}
         team={player.team}
       />
+
+      {/* Quick Actions CTA */}
+      <Section variant="elevated" style={{ marginTop: spacing.xl, marginBottom: spacing.lg }}>
+        <Card
+          variant="elevated"
+          padding="md"
+          style={{
+            background: `linear-gradient(135deg, ${colors.primary.main}15 0%, ${colors.accent.main}15 100%)`,
+            border: `2px solid ${colors.primary.main}40`,
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: spacing.md }}>
+            <div style={{ flex: 1, minWidth: '200px' }}>
+              <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
+                📊 Load Dashboard
+              </h3>
+              <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm }}>
+                View your training load trends and readiness correlation
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => navigate(`/realverse/player/${user?.id}/load-dashboard`)}
+            >
+              View Load Dashboard →
+            </Button>
+          </div>
+        </Card>
+      </Section>
 
       {/* Tabs */}
       <div

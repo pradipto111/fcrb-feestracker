@@ -182,7 +182,7 @@ const RealVerseJoinPage: React.FC = () => {
                 <Button variant="secondary">Visit Shop</Button>
               </Link>
               <a
-                href="https://instagram.com/fcrealbengaluru"
+                href="https://www.instagram.com/realbengaluru/"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ textDecoration: "none" }}

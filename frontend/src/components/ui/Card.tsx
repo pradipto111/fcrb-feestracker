@@ -7,7 +7,7 @@ interface CardProps {
   padding?: 'none' | 'sm' | 'md' | 'lg';
   style?: React.CSSProperties;
   className?: string;
-  onClick?: () => void;
+  onClick?: (e?: React.MouseEvent) => void;
 }
 
 export const Card: React.FC<CardProps> = ({

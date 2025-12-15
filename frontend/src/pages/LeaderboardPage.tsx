@@ -9,6 +9,7 @@ import { Section } from "../components/ui/Section";
 import { DataTableCard } from "../components/ui/DataTableCard";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 import { pageVariants, cardVariants } from "../utils/motion";
+import { FireIcon } from "../components/icons/IconSet";
 
 const LeaderboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -332,7 +333,13 @@ const LeaderboardPage: React.FC = () => {
                     </div>
                     <div style={{ fontSize: 12, color: "#666" }}>
                       {entry.student.programType || "No Program"} • {entry.sessionsVoted} sessions
-                      {entry.currentStreak > 0 && ` • 🔥 ${entry.currentStreak} day streak`}
+                      {entry.currentStreak > 0 && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          {' • '}
+                          <FireIcon size={12} />
+                          {` ${entry.currentStreak} day streak`}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div style={{ textAlign: "right" }}>

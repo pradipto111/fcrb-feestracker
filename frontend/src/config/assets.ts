@@ -43,6 +43,7 @@ export const heroAssets = {
   // Overlay gradients (CSS-based, defined here for reference)
   overlayGradient: 'linear-gradient(135deg, rgba(5, 11, 32, 0.85) 0%, rgba(5, 11, 32, 0.4) 50%, rgba(5, 11, 32, 0.85) 100%)',
   overlayGradientLeft: 'linear-gradient(to right, rgba(5, 11, 32, 0.9) 0%, rgba(5, 11, 32, 0.5) 60%, transparent 100%)',
+  overlayGradientRight: 'linear-gradient(to left, rgba(5, 11, 32, 0.9) 0%, rgba(5, 11, 32, 0.5) 60%, transparent 100%)',
   overlayGradientBottom: 'linear-gradient(to top, rgba(5, 11, 32, 0.9) 0%, rgba(5, 11, 32, 0.3) 50%, transparent 100%)',
   
   // Background video (YouTube embed from old homepage)

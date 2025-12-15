@@ -268,15 +268,56 @@ const PlayerProfilePage: React.FC = () => {
       }}
     >
       {/* Header */}
-      <PlayerHeaderCard
-        name={player.fullName || 'Unknown Player'}
-        avatar={player.avatar}
-        ageGroup={getAgeGroup(player.dateOfBirth) || player.ageGroup}
-        centre={player.center?.name}
-        primaryPosition={player.primaryPosition}
-        preferredFoot={player.preferredFoot as 'Left' | 'Right' | 'Both' | undefined}
-        team={player.team}
-      />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: spacing.xl }}>
+        <div style={{ flex: 1 }}>
+          <PlayerHeaderCard
+            name={player.fullName || 'Unknown Player'}
+            avatar={player.avatar}
+            ageGroup={getAgeGroup(player.dateOfBirth) || player.ageGroup}
+            centre={player.center?.name}
+            primaryPosition={player.primaryPosition}
+            preferredFoot={player.preferredFoot as 'Left' | 'Right' | 'Both' | undefined}
+            team={player.team}
+          />
+        </div>
+        {canEdit && (
+          <div style={{ display: 'flex', gap: spacing.sm, marginLeft: spacing.lg, flexWrap: 'wrap' }}>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => navigate(`/realverse/scouting/compare?playerIds=${studentId}&position=${latestSnapshot?.positional?.[0]?.position || 'CM'}`)}
+            >
+              Compare Player
+            </Button>
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={() => navigate('/realverse/scouting/board')}
+            >
+              Scouting Board
+            </Button>
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={() => navigate(`/realverse/parent-reports/manage/${studentId}`)}
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate(`/realverse/admin/season-planning/load-dashboard/${studentId}`)}
+            >
+              📊 Load Dashboard
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate(`/realverse/parent-reports/manage/${studentId}`)}
+            >
+              Generate Parent Report
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Tabs */}
       <div

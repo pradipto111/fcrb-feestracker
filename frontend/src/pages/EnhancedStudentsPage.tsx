@@ -17,6 +17,7 @@ import { StatusChip } from "../components/ui/StatusChip";
 import { pageVariants, cardVariants, primaryButtonWhileHover, primaryButtonWhileTap } from "../utils/motion";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { adminAssets, academyAssets, galleryAssets } from "../config/assets";
+import { PlusIcon, CloseIcon, ErrorIcon, SuccessIcon, SearchIcon, BuildingIcon, ChartBarIcon, ChartLineIcon, EditIcon } from "../components/icons/IconSet";
 
 const EnhancedStudentsPage: React.FC = () => {
   const { user } = useAuth();
@@ -105,7 +106,7 @@ const EnhancedStudentsPage: React.FC = () => {
       
       // Fetch student details which include payment summaries
       await Promise.all(
-        enrichedStudents.map(async (student) => {
+        enrichedStudents.map(async (student: any) => {
           try {
             const studentDetail = await api.getStudent(student.id);
             const totalPaid = studentDetail.totalPaid || 0;
@@ -173,29 +174,38 @@ const EnhancedStudentsPage: React.FC = () => {
     
     // Validation
     if (!newStudent.fullName?.trim()) {
-      setError("❌ Student name is required");
+      setError("Student name is required");
       return;
     }
     
     if (!newStudent.centerId) {
-      setError("❌ Please select a center");
+      setError("Please select a center");
       return;
     }
     
     if (!newStudent.monthlyFeeAmount || parseInt(newStudent.monthlyFeeAmount) <= 0) {
-      setError("❌ Please enter a valid monthly fee amount");
+      setError("Please enter a valid monthly fee amount");
       return;
+    }
+
+    // Email validation (if provided)
+    if (newStudent.email && newStudent.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newStudent.email.trim())) {
+        setError("Please enter a valid email address");
+        return;
+      }
     }
     
     // If email is provided, password should also be provided
     if (newStudent.email && !newStudent.password) {
-      setError("❌ Password is required when email is provided (for student login)");
+      setError("Password is required when email is provided (for student login)");
       return;
     }
     
     // If password is provided, email should also be provided
     if (newStudent.password && !newStudent.email) {
-      setError("❌ Email is required when password is provided (for student login)");
+      setError("Email is required when password is provided (for student login)");
       return;
     }
     
@@ -212,7 +222,7 @@ const EnhancedStudentsPage: React.FC = () => {
       };
       
       await api.createStudent(data);
-      setSuccess("✅ Student created successfully!");
+      setSuccess("Student created successfully!");
       setNewStudent({
         fullName: "",
         dateOfBirth: "",
@@ -254,7 +264,7 @@ const EnhancedStudentsPage: React.FC = () => {
         errorMessage = "You don't have permission to create students. Only admins can create students.";
       }
       
-      setError(`❌ ${errorMessage}`);
+      setError(errorMessage);
       console.error("Create student error:", err);
     }
   };
@@ -265,24 +275,33 @@ const EnhancedStudentsPage: React.FC = () => {
     
     // Validation
     if (!editingStudent.fullName?.trim()) {
-      setError("❌ Student name is required");
+      setError("Student name is required");
       return;
     }
     
     if (!editingStudent.centerId) {
-      setError("❌ Please select an academy");
+      setError("Please select an academy");
       return;
     }
     
     if (!editingStudent.monthlyFeeAmount || parseInt(editingStudent.monthlyFeeAmount) <= 0) {
-      setError("❌ Please enter a valid monthly fee amount");
+      setError("Please enter a valid monthly fee amount");
       return;
     }
     
     // If email is provided and password is being changed
     if (editingStudent.email && editingStudent.newPassword && !editingStudent.email.trim()) {
-      setError("❌ Email cannot be empty when setting a password");
+      setError("Email cannot be empty when setting a password");
       return;
+    }
+
+    // Email validation (if provided)
+    if (editingStudent.email && editingStudent.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(editingStudent.email.trim())) {
+        setError("Please enter a valid email address");
+        return;
+      }
     }
     
     try {
@@ -326,7 +345,7 @@ const EnhancedStudentsPage: React.FC = () => {
         errorMessage = "A student with this email already exists. Please use a different email.";
       }
       
-      setError(`❌ ${errorMessage}`);
+      setError(errorMessage);
       console.error("Update student error:", err);
     }
   };
@@ -498,7 +517,10 @@ const EnhancedStudentsPage: React.FC = () => {
         {/* Filters - Collapsible for Hick's Law */}
         <div className="rv-filter-bar" style={{ marginBottom: spacing.lg }}>
           <div className="rv-filter-field">
-            <label>🔍 Search</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+              <SearchIcon size={16} />
+              Search
+            </label>
             <Input
               type="text"
               placeholder="Search by name, center, program, status..."
@@ -517,7 +539,10 @@ const EnhancedStudentsPage: React.FC = () => {
           </div>
 
           <div className="rv-filter-field">
-            <label>🏢 Center</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+              <BuildingIcon size={16} />
+              Center
+            </label>
             <select
               value={centerFilter}
               onChange={(e) => setCenterFilter(e.target.value)}
@@ -546,7 +571,10 @@ const EnhancedStudentsPage: React.FC = () => {
           </div>
 
           <div className="rv-filter-field">
-            <label>📊 Status</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+              <ChartBarIcon size={16} />
+              Status
+            </label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -670,7 +698,10 @@ const EnhancedStudentsPage: React.FC = () => {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: spacing.lg }}>
                 <div style={{ flex: 1, minWidth: "300px" }}>
                   <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.sm }}>
-                    📊 Player Profiles & Batch Review
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+                      <ChartBarIcon size={24} />
+                      Player Profiles & Batch Review
+                    </span>
                   </h3>
                   <p style={{ ...typography.body, color: colors.text.secondary, marginBottom: spacing.md }}>
                     Access detailed player profiles with metrics, readiness scores, and development timelines. Use batch review to efficiently assess multiple players.
@@ -697,8 +728,8 @@ const EnhancedStudentsPage: React.FC = () => {
                     </Button>
                   </div>
                 </div>
-                <div style={{ fontSize: "4rem", opacity: 0.2, lineHeight: 1 }}>
-                  📈
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.2 }}>
+                  <ChartLineIcon size={64} color={colors.primary.main} />
                 </div>
               </div>
             </div>
@@ -735,7 +766,7 @@ const EnhancedStudentsPage: React.FC = () => {
                   size="md"
                   onClick={() => setShowCreateModal(true)}
                 >
-                  ➕ Add New Student
+                  <PlusIcon size={14} style={{ marginRight: spacing.xs }} /> Add New Student
                 </Button>
               )}
               <Button
@@ -863,10 +894,9 @@ const EnhancedStudentsPage: React.FC = () => {
                 <td style={{ padding: spacing.md }}>
                   <StatusChip 
                     status={student.status === "ACTIVE" ? "success" : 
-                           student.status === "TRIAL" ? "warning" : "muted"}
-                  >
-                    {student.status}
-                  </StatusChip>
+                           student.status === "TRIAL" ? "warning" : "inactive"}
+                    label={student.status}
+                  />
                 </td>
                 <td style={{ 
                   padding: spacing.md, 
@@ -889,16 +919,12 @@ const EnhancedStudentsPage: React.FC = () => {
                     const { outstanding } = paymentInfo;
                     if (outstanding === 0) {
                       return (
-                        <StatusChip status="success">
-                          ✓ Paid
-                        </StatusChip>
+                        <StatusChip status="success" label="✓ Paid" />
                       );
                     } else {
                       return (
                         <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
-                          <StatusChip status="danger">
-                            Due
-                          </StatusChip>
+                          <StatusChip status="danger" label="Due" />
                           <span style={{ 
                             color: colors.danger.main, 
                             fontSize: typography.fontSize.sm,
@@ -912,7 +938,7 @@ const EnhancedStudentsPage: React.FC = () => {
                   })()}
                 </td>
                 <td style={{ padding: spacing.md, textAlign: "center" }}>
-                  <div style={{ display: "flex", gap: spacing.xs, justifyContent: "center", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: spacing.xs, justifyContent: "center", alignItems: "center", flexWrap: "wrap" }}>
                     <Link to={`/realverse/admin/players/${student.id}/profile`} style={{ textDecoration: "none" }}>
                       <Button
                         variant="primary"
@@ -923,15 +949,32 @@ const EnhancedStudentsPage: React.FC = () => {
                           boxShadow: `0 2px 8px ${colors.primary.main}40`,
                         }}
                       >
-                        📊 View Profile
+                        <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                          <ChartBarIcon size={16} />
+                          View Profile
+                        </span>
                       </Button>
                     </Link>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => navigate(`/realverse/admin/season-planning/load-dashboard/${student.id}`)}
+                      style={{ minWidth: "120px" }}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                        <ChartLineIcon size={16} />
+                        Load Dashboard
+                      </span>
+                    </Button>
                     <Button
                       variant="utility"
                       size="sm"
                       onClick={() => handleEditClick(student)}
                     >
-                      ✏️ Edit
+                      <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                        <EditIcon size={16} />
+                        Edit
+                      </span>
                     </Button>
                   </div>
                 </td>
@@ -967,22 +1010,22 @@ const EnhancedStudentsPage: React.FC = () => {
             }
           }}
         >
-          <Card variant="elevated" padding="xl" style={{
-            maxWidth: 900,
-            width: "100%",
-            maxHeight: "90vh",
-            overflow: "auto",
-            background: colors.surface.card,
-            border: `1px solid rgba(255, 255, 255, 0.1)`,
-          }}
-          onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
-              <h2 style={{ 
-                ...typography.h2,
-                margin: 0,
-                color: colors.text.primary,
-              }}>Add New Player</h2>
+          <div onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <Card variant="elevated" padding="lg" style={{
+              maxWidth: 900,
+              width: "100%",
+              maxHeight: "90vh",
+              overflow: "auto",
+              background: colors.surface.card,
+              border: `1px solid rgba(255, 255, 255, 0.1)`,
+            }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
+                <h2 style={{ 
+                  ...typography.h2,
+                  margin: 0,
+                  color: colors.text.primary,
+                }}>Add New Player</h2>
               <button
                 type="button"
                 onClick={() => {
@@ -1351,7 +1394,7 @@ const EnhancedStudentsPage: React.FC = () => {
                     fontWeight: 600
                   }}
                 >
-                  ➕ Create Student
+                  <PlusIcon size={14} style={{ marginRight: spacing.xs }} /> Create Student
                 </button>
                 <button
                   type="button"
@@ -1391,6 +1434,7 @@ const EnhancedStudentsPage: React.FC = () => {
               </div>
             </form>
           </Card>
+          </div>
         </div>
       )}
 
@@ -1420,7 +1464,8 @@ const EnhancedStudentsPage: React.FC = () => {
             }
           }}
         >
-          <Card variant="elevated" padding="xl" style={{
+          <div onClick={(e) => e.stopPropagation()}>
+          <Card variant="elevated" padding="lg" style={{
             maxWidth: 900,
             width: "100%",
             maxHeight: "90vh",
@@ -1428,7 +1473,6 @@ const EnhancedStudentsPage: React.FC = () => {
             background: colors.surface.card,
             border: `1px solid rgba(255, 255, 255, 0.1)`,
           }}
-          onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
               <h2 style={{ 
@@ -1819,7 +1863,8 @@ const EnhancedStudentsPage: React.FC = () => {
                 </button>
               </div>
             </form>
-          </Card>
+            </Card>
+          </div>
         </div>
       )}
     </motion.main>

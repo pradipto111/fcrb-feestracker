@@ -56,6 +56,7 @@ import CheckoutPage from "./pages/CheckoutPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import BrochurePage from "./pages/BrochurePage";
 import InteractiveBrochurePage from "./pages/InteractiveBrochurePage";
+import RealVerseExperiencePage from "./pages/RealVerseExperiencePage";
 import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 import AdminStaffPage from "./pages/AdminStaffPage";
 import AdminPaymentsPage from "./pages/AdminPaymentsPage";
@@ -63,8 +64,30 @@ import AdminSettingsPage from "./pages/AdminSettingsPage";
 import CoachAnalyticsPage from "./pages/CoachAnalyticsPage";
 import PlayerAnalyticsPage from "./pages/PlayerAnalyticsPage";
 import PlayerProfilePage from "./pages/PlayerProfilePage";
+import PlayerComparisonPage from "./pages/PlayerComparisonPage";
+import ScoutingBoardPage from "./pages/ScoutingBoardPage";
+import TrialEventsPage from "./pages/TrialEventsPage";
+import TrialEventDetailPage from "./pages/TrialEventDetailPage";
+import TrialBoardPage from "./pages/TrialBoardPage";
+import TrialReportFormPage from "./pages/TrialReportFormPage";
+import TrialTemplatesPage from "./pages/TrialTemplatesPage";
+import TrialTemplateEditorPage from "./pages/TrialTemplateEditorPage";
+import TrialistDetailPage from "./pages/TrialistDetailPage";
+import ParentDevelopmentReportPage from "./pages/ParentDevelopmentReportPage";
+import ManageParentReportsPage from "./pages/ManageParentReportsPage";
+import MyReportsPage from "./pages/MyReportsPage";
 import BatchReviewPage from "./pages/BatchReviewPage";
 import CoachCalibrationDashboard from "./pages/CoachCalibrationDashboard";
+import SeasonPlanningPage from "./pages/SeasonPlanningPage";
+import SeasonPlanFormPage from "./pages/SeasonPlanFormPage";
+import SeasonPlannerPage from "./pages/SeasonPlannerPage";
+import DevelopmentBlocksPage from "./pages/DevelopmentBlocksPage";
+import PlayerLoadDashboardPage from "./pages/PlayerLoadDashboardPage";
+import ProgramsOverviewPage from "./pages/ProgramsOverviewPage";
+import ElitePathwayProgramPage from "./pages/ElitePathwayProgramPage";
+import SeniorCompetitiveProgramPage from "./pages/SeniorCompetitiveProgramPage";
+import WomenPerformancePathwayPage from "./pages/WomenPerformancePathwayPage";
+import FoundationYouthProgramPage from "./pages/FoundationYouthProgramPage";
 import NotFound from "./pages/NotFound";
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -109,12 +132,22 @@ const App: React.FC = () => {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/order-confirmation/:orderNumber" element={<OrderConfirmationPage />} />
         
-        {/* RealVerse Join Entry Page */}
-        <Route path="/realverse/join" element={<RealVerseJoinPage />} />
+        {/* RealVerse Join Entry Page - Redirected to Brochure */}
+        <Route path="/realverse/join" element={<Navigate to="/brochure" replace />} />
         
         {/* Brochure Pages */}
         <Route path="/brochure" element={<InteractiveBrochurePage />} />
         <Route path="/brochure/classic" element={<BrochurePage />} />
+        
+        {/* RealVerse Experience */}
+        <Route path="/realverse/experience" element={<RealVerseExperiencePage />} />
+        
+        {/* Programs Pages */}
+        <Route path="/programs" element={<ProgramsOverviewPage />} />
+        <Route path="/programs/epp" element={<ElitePathwayProgramPage />} />
+        <Route path="/programs/scp" element={<SeniorCompetitiveProgramPage />} />
+        <Route path="/programs/wpp" element={<WomenPerformancePathwayPage />} />
+        <Route path="/programs/fydp" element={<FoundationYouthProgramPage />} />
         
         {/* RealVerse Login */}
         <Route
@@ -241,6 +274,13 @@ const App: React.FC = () => {
           <Route path="batch-review" element={<BatchReviewPage />} />
           <Route path="players/:id/profile" element={<PlayerProfilePage />} />
           <Route path="calibration" element={<CoachCalibrationDashboard />} />
+          <Route path="season-planning" element={<SeasonPlanningPage />} />
+          <Route path="season-planning/new" element={<SeasonPlanFormPage />} />
+          <Route path="season-planning/:id/edit" element={<SeasonPlanFormPage />} />
+          <Route path="season-planning/planner" element={<SeasonPlannerPage />} />
+          <Route path="season-planning/development-blocks" element={<DevelopmentBlocksPage />} />
+          <Route path="season-planning/load-dashboard" element={<PlayerLoadDashboardPage />} />
+          <Route path="season-planning/load-dashboard/:studentId" element={<PlayerLoadDashboardPage />} />
         </Route>
 
         {/* RealVerse Routes - All authenticated routes under /realverse */}
@@ -460,6 +500,172 @@ const App: React.FC = () => {
           path="/vote/:sessionId"
           element={<LegacyRedirect to="/realverse/vote" />}
         />
+        
+        {/* Scouting & Comparison Routes (COACH/ADMIN only) */}
+        <Route
+          path="/realverse/scouting/board"
+          element={
+            <PrivateRoute>
+              <AdminLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<ScoutingBoardPage />} />
+        </Route>
+        <Route
+          path="/realverse/scouting/compare"
+          element={
+            <PrivateRoute>
+              <AdminLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<PlayerComparisonPage />} />
+        </Route>
+        <Route
+          path="/realverse/player/:id"
+          element={
+            <PrivateRoute>
+              <AdminLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<PlayerProfilePage />} />
+        </Route>
+        {/* Load Dashboard - Accessible by students (own) and coaches/admins (any player) */}
+        <Route
+          path="/realverse/player/:id/load-dashboard"
+          element={
+            <PrivateRoute>
+              <PlayerLoadDashboardPage />
+            </PrivateRoute>
+          }
+        />
+        
+        {/* Parent Development Reports Routes */}
+        <Route
+          path="/realverse/parent-reports/manage"
+          element={
+            <PrivateRoute>
+              <AdminLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<ManageParentReportsPage />} />
+        </Route>
+        <Route
+          path="/realverse/parent-reports/manage/:studentId"
+          element={
+            <PrivateRoute>
+              <AdminLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<ManageParentReportsPage />} />
+        </Route>
+        <Route
+          path="/realverse/parent-reports/:reportId"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <ParentDevelopmentReportPage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/realverse/my-reports"
+          element={
+            <PrivateRoute>
+              <StudentLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<MyReportsPage />} />
+        </Route>
+        
+        {/* Trial Management Routes (COACH/ADMIN only) */}
+        <Route
+          path="/realverse/trials/events"
+          element={
+            <PrivateRoute>
+              <AdminLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<TrialEventsPage />} />
+        </Route>
+        <Route
+          path="/realverse/trials/events/:eventId"
+          element={
+            <PrivateRoute>
+              <AdminLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<TrialEventDetailPage />} />
+        </Route>
+        <Route
+          path="/realverse/trials/board"
+          element={
+            <PrivateRoute>
+              <AdminLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<TrialBoardPage />} />
+        </Route>
+        <Route
+          path="/realverse/trials/trialists/:trialistId"
+          element={
+            <PrivateRoute>
+              <AdminLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<TrialistDetailPage />} />
+        </Route>
+        <Route
+          path="/realverse/trials/reports/new"
+          element={
+            <PrivateRoute>
+              <AdminLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<TrialReportFormPage />} />
+        </Route>
+        <Route
+          path="/realverse/trials/templates"
+          element={
+            <PrivateRoute>
+              <AdminLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<TrialTemplatesPage />} />
+        </Route>
+        <Route
+          path="/realverse/trials/templates/new"
+          element={
+            <PrivateRoute>
+              <AdminLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<TrialTemplateEditorPage />} />
+        </Route>
+        <Route
+          path="/realverse/trials/templates/:templateId/edit"
+          element={
+            <PrivateRoute>
+              <AdminLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<TrialTemplateEditorPage />} />
+        </Route>
+        
         <Route
           path="*"
           element={<NotFound />}

@@ -15,6 +15,7 @@ import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { api } from "../api/client";
 import ExpandableCard from "../components/ExpandableCard";
 import InfoModal from "../components/InfoModal";
+import { TrophyIcon, ChartLineIcon, CommentIcon } from "../components/icons/IconSet";
 import { 
   brochureAssets, 
   academyAssets, 
@@ -1288,29 +1289,33 @@ const InteractiveBrochurePage: React.FC = () => {
           <div style={{ display: "grid", gap: spacing.md }}>
             {[
               {
-                icon: "🎯",
+                Icon: TrophyIcon,
                 title: "Understanding the Game",
                 desc: "We focus on developing tactical awareness and decision-making under pressure. Players learn to read the game, anticipate movements, and make intelligent choices on and off the ball.",
               },
               {
-                icon: "📈",
+                Icon: ChartLineIcon,
                 title: "Long-Term Growth",
                 desc: "We prioritize development over short-term wins. Our approach ensures players build a strong foundation that serves them throughout their football journey, not just in the next match.",
               },
               {
-                icon: "💬",
+                Icon: CommentIcon,
                 title: "Accountability & Feedback",
                 desc: "Honest communication and clear expectations are essential. We provide regular, constructive feedback that helps players understand their progress and areas for improvement.",
               },
               {
-                icon: "🏆",
+                Icon: TrophyIcon,
                 title: "Competitive Excellence",
                 desc: "We build winners through process and discipline. Success comes from consistent effort, proper preparation, and a commitment to excellence in every training session and match.",
               },
-            ].map((item, idx) => (
+            ].map((item, idx) => {
+              const IconComponent = item.Icon;
+              return (
               <Card key={idx} variant="elevated" padding="md">
                 <div style={{ display: "flex", gap: spacing.md, alignItems: "flex-start" }}>
-                  <div style={{ fontSize: typography.fontSize["2xl"], flexShrink: 0 }}>{item.icon}</div>
+                  <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                    <IconComponent size={32} color={colors.primary.main} />
+                  </div>
                   <div>
                     <h4 style={{ ...typography.h5, color: colors.text.primary, marginBottom: spacing.xs }}>
                       {item.title}
@@ -1321,7 +1326,8 @@ const InteractiveBrochurePage: React.FC = () => {
                   </div>
                 </div>
               </Card>
-            ))}
+              );
+            })}
           </div>
         </div>
       </InfoModal>

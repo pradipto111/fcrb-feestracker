@@ -112,12 +112,30 @@ const OurCentresSection: React.FC = () => {
       style={{
         padding: `${spacing["2xl"]} ${spacing.xl}`,
         background: `linear-gradient(135deg, #050B20 0%, #0A1633 100%)`,
+        position: "relative",
+        overflow: "hidden",
       }}
     >
+      {/* Background decoration */}
+      <div
+        style={{
+          position: "absolute",
+          top: "-50%",
+          right: "-10%",
+          width: "600px",
+          height: "600px",
+          background: `radial-gradient(circle, rgba(4, 61, 208, 0.1) 0%, transparent 70%)`,
+          borderRadius: "50%",
+          pointerEvents: "none",
+        }}
+      />
+
       <div
         style={{
           maxWidth: "1400px",
           margin: "0 auto",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         {/* Section Header */}
@@ -131,7 +149,10 @@ const OurCentresSection: React.FC = () => {
             style={{
               ...typography.h2,
               color: colors.text.primary,
-              marginBottom: spacing.md,
+              marginBottom: spacing.sm,
+              fontSize: isMobile ? typography.fontSize["2xl"] : typography.fontSize["3xl"],
+              fontWeight: typography.fontWeight.bold,
+              letterSpacing: "-0.02em",
             }}
           >
             Our Centres
@@ -141,29 +162,32 @@ const OurCentresSection: React.FC = () => {
               ...typography.body,
               color: colors.text.muted,
               fontSize: typography.fontSize.lg,
+              maxWidth: "600px",
+              margin: "0 auto",
             }}
           >
             Explore our training hubs across Bengaluru
           </p>
         </div>
 
-        {/* Map and Cards Layout */}
+        {/* Main Layout */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "60% 40%",
+            gridTemplateColumns: isMobile ? "1fr" : "1.2fr 0.8fr",
             gap: spacing.xl,
-            marginBottom: spacing.xl,
+            alignItems: "start",
           }}
         >
           {/* Map Section */}
           <div
             style={{
               width: "100%",
-              height: isMobile ? "400px" : "600px",
-              borderRadius: borderRadius.lg,
+              height: isMobile ? "450px" : "650px",
+              minHeight: isMobile ? "450px" : "650px",
+              borderRadius: borderRadius.xl,
               overflow: "hidden",
-              boxShadow: shadows.glassDark,
+              boxShadow: `0 20px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)`,
               background: colors.space.dark,
               position: "relative",
             }}
@@ -173,240 +197,219 @@ const OurCentresSection: React.FC = () => {
               height="100%"
               style={{
                 border: 0,
-                borderRadius: borderRadius.lg,
+                display: "block",
               }}
               loading="lazy"
               allowFullScreen
               src={getMapEmbedUrl()}
               title="FC Real Bengaluru Centres Map"
             />
-            
-            {/* Clickable Marker Overlays */}
+          </div>
+
+          {/* Centres List Panel */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: spacing.md,
+              height: isMobile ? "auto" : "650px",
+              overflowY: isMobile ? "visible" : "auto",
+              paddingRight: isMobile ? 0 : spacing.sm,
+            }}
+          >
+            {/* Scrollbar styling */}
+            <style>
+              {`
+                div::-webkit-scrollbar {
+                  width: 6px;
+                }
+                div::-webkit-scrollbar-track {
+                  background: rgba(255, 255, 255, 0.05);
+                  border-radius: 10px;
+                }
+                div::-webkit-scrollbar-thumb {
+                  background: rgba(4, 61, 208, 0.5);
+                  border-radius: 10px;
+                }
+                div::-webkit-scrollbar-thumb:hover {
+                  background: rgba(4, 61, 208, 0.7);
+                }
+              `}
+            </style>
+
+            {/* Centres Count Header */}
             <div
               style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                pointerEvents: "none",
+                padding: spacing.md,
+                background: `linear-gradient(135deg, rgba(4, 61, 208, 0.15) 0%, rgba(4, 61, 208, 0.05) 100%)`,
+                borderRadius: borderRadius.lg,
+                border: `1px solid rgba(4, 61, 208, 0.2)`,
+                marginBottom: spacing.xs,
               }}
             >
-              {centres.map((centre, idx) => {
-                if (!centre.latitude || !centre.longitude) return null;
-                
-                // Calculate approximate pixel positions (this is a simplified approach)
-                // For a proper implementation, you'd need to convert lat/lng to pixel coordinates
-                // For now, we'll show markers in a grid overlay
-                const row = Math.floor(idx / 2);
-                const col = idx % 2;
-                const topPercent = 20 + row * 30;
-                const leftPercent = 20 + col * 40;
-                
-                return (
+              <div
+                style={{
+                  ...typography.body,
+                  color: colors.text.primary,
+                  fontWeight: typography.fontWeight.semibold,
+                  fontSize: typography.fontSize.sm,
+                }}
+              >
+                {centres.length} Training {centres.length === 1 ? "Centre" : "Centres"}
+              </div>
+            </div>
+
+            {/* Centre Cards */}
+            {centres.map((centre, idx) => {
+              const isSelected = selectedCentre?.id === centre.id;
+              return (
+                <Card
+                  key={centre.id}
+                  variant="elevated"
+                  padding="lg"
+                  style={{
+                    cursor: "pointer",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    border: isSelected
+                      ? `2px solid ${colors.primary.main}`
+                      : `1px solid rgba(255, 255, 255, 0.1)`,
+                    background: isSelected
+                      ? `linear-gradient(135deg, rgba(4, 61, 208, 0.2) 0%, rgba(4, 61, 208, 0.1) 100%)`
+                      : `linear-gradient(135deg, rgba(5, 11, 32, 0.6) 0%, rgba(10, 22, 51, 0.4) 100%)`,
+                    backdropFilter: "blur(10px)",
+                    width: "100%",
+                    boxShadow: isSelected
+                      ? `0 8px 24px rgba(4, 61, 208, 0.3), 0 0 0 1px rgba(4, 61, 208, 0.1)`
+                      : `0 4px 12px rgba(0, 0, 0, 0.2)`,
+                    transform: isSelected ? "translateX(4px)" : "translateX(0)",
+                  }}
+                  onClick={() => handleCardClick(centre)}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.transform = "translateX(4px) translateY(-2px)";
+                      e.currentTarget.style.boxShadow = `0 8px 24px rgba(4, 61, 208, 0.2), 0 0 0 1px rgba(4, 61, 208, 0.2)`;
+                      e.currentTarget.style.borderColor = `rgba(4, 61, 208, 0.4)`;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.transform = "translateX(0) translateY(0)";
+                      e.currentTarget.style.boxShadow = `0 4px 12px rgba(0, 0, 0, 0.2)`;
+                      e.currentTarget.style.borderColor = `rgba(255, 255, 255, 0.1)`;
+                    }
+                  }}
+                >
+                  {/* Centre Number Badge */}
                   <div
-                    key={centre.id}
-                    onClick={() => handleMarkerClick(centre)}
                     style={{
-                      position: "absolute",
-                      top: `${topPercent}%`,
-                      left: `${leftPercent}%`,
-                      pointerEvents: "auto",
-                      cursor: "pointer",
-                      transform: "translate(-50%, -50%)",
-                      zIndex: 10,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: spacing.sm,
+                      marginBottom: spacing.sm,
                     }}
-                    title={`${centre.name} - Click to open in Google Maps`}
                   >
                     <div
                       style={{
                         width: 32,
                         height: 32,
                         borderRadius: "50%",
-                        background: colors.primary.main,
-                        border: `3px solid ${colors.text.onPrimary}`,
-                        boxShadow: `0 2px 8px rgba(0, 0, 0, 0.3)`,
+                        background: isSelected
+                          ? colors.primary.main
+                          : `linear-gradient(135deg, rgba(4, 61, 208, 0.3) 0%, rgba(4, 61, 208, 0.2) 100%)`,
+                        border: `2px solid ${isSelected ? colors.text.onPrimary : colors.primary.main}`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         fontSize: typography.fontSize.sm,
                         fontWeight: typography.fontWeight.bold,
                         color: colors.text.onPrimary,
-                        transition: "all 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "scale(1.2)";
-                        e.currentTarget.style.boxShadow = `0 4px 12px rgba(4, 61, 208, 0.5)`;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "scale(1)";
-                        e.currentTarget.style.boxShadow = `0 2px 8px rgba(0, 0, 0, 0.3)`;
+                        flexShrink: 0,
                       }}
                     >
                       {idx + 1}
                     </div>
+                    <h3
+                      style={{
+                        ...typography.h4,
+                        color: colors.text.primary,
+                        fontSize: typography.fontSize.base,
+                        fontWeight: typography.fontWeight.semibold,
+                        margin: 0,
+                        flex: 1,
+                      }}
+                    >
+                      {centre.name}
+                    </h3>
                   </div>
-                );
-              })}
-            </div>
-            
-            {/* Legend */}
-            <div
-              style={{
-                position: "absolute",
-                bottom: spacing.md,
-                left: spacing.md,
-                background: `linear-gradient(135deg, rgba(5, 11, 32, 0.95) 0%, rgba(10, 22, 51, 0.95) 100%)`,
-                backdropFilter: "blur(10px)",
-                padding: spacing.md,
-                borderRadius: borderRadius.md,
-                border: `1px solid rgba(255, 255, 255, 0.1)`,
-                maxWidth: "250px",
-              }}
-            >
-              <div
-                style={{
-                  ...typography.caption,
-                  color: colors.text.primary,
-                  fontWeight: typography.fontWeight.semibold,
-                  marginBottom: spacing.xs,
-                }}
-              >
-                Our Centres ({centres.length})
-              </div>
-              {centres.map((centre, idx) => (
-                <div
-                  key={centre.id}
-                  onClick={() => handleMarkerClick(centre)}
-                  style={{
-                    ...typography.caption,
-                    fontSize: typography.fontSize.xs,
-                    color: colors.text.secondary,
-                    marginBottom: spacing.xs,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: spacing.xs,
-                    cursor: "pointer",
-                    transition: "color 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = colors.primary.light;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = colors.text.secondary;
-                  }}
-                >
-                  <span
+
+                  {/* Location */}
+                  <div
                     style={{
-                      display: "inline-block",
-                      width: 16,
-                      height: 16,
-                      borderRadius: "50%",
-                      background: colors.primary.main,
-                      border: `2px solid ${colors.text.onPrimary}`,
-                      textAlign: "center",
-                      lineHeight: "12px",
-                      fontSize: typography.fontSize.xs,
-                      fontWeight: typography.fontWeight.bold,
-                      color: colors.text.onPrimary,
-                      flexShrink: 0,
+                      display: "flex",
+                      alignItems: "start",
+                      gap: spacing.xs,
+                      marginBottom: spacing.sm,
+                      paddingLeft: spacing.md + spacing.xs,
                     }}
                   >
-                    {idx + 1}
-                  </span>
-                  <span style={{ flex: 1 }}>{centre.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke={colors.text.secondary}
+                      strokeWidth="2"
+                      style={{ flexShrink: 0, marginTop: "2px" }}
+                    >
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    <div
+                      style={{
+                        ...typography.body,
+                        color: colors.text.secondary,
+                        fontSize: typography.fontSize.sm,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {centre.locality}, {centre.city}
+                    </div>
+                  </div>
 
-          {/* Centres Cards */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: spacing.md,
-              maxHeight: isMobile ? "none" : "600px",
-              overflowY: isMobile ? "visible" : "auto",
-            }}
-          >
-            {centres.map((centre) => (
-              <Card
-                key={centre.id}
-                variant="elevated"
-                padding="lg"
-                style={{
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  border:
-                    selectedCentre?.id === centre.id
-                      ? `2px solid ${colors.primary.main}`
-                      : `1px solid rgba(255, 255, 255, 0.1)`,
-                  background:
-                    selectedCentre?.id === centre.id
-                      ? `linear-gradient(135deg, rgba(4, 61, 208, 0.1) 0%, rgba(4, 61, 208, 0.05) 100%)`
-                      : `linear-gradient(135deg, rgba(5, 11, 32, 0.8) 0%, rgba(10, 22, 51, 0.8) 100%)`,
-                }}
-                onClick={() => handleCardClick(centre)}
-                onMouseEnter={(e) => {
-                  if (selectedCentre?.id !== centre.id) {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = shadows.lg;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedCentre?.id !== centre.id) {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = shadows.md;
-                  }
-                }}
-              >
-                <h3
-                  style={{
-                    ...typography.h3,
-                    color: colors.text.primary,
-                    marginBottom: spacing.xs,
-                    fontSize: typography.fontSize.lg,
-                  }}
-                >
-                  {centre.name}
-                </h3>
-                <div
-                  style={{
-                    ...typography.body,
-                    color: colors.text.secondary,
-                    fontSize: typography.fontSize.sm,
-                    marginBottom: spacing.sm,
-                  }}
-                >
-                  {centre.locality}, {centre.city}
-                </div>
-                <div
-                  style={{
-                    ...typography.caption,
-                    color: colors.text.muted,
-                    fontSize: typography.fontSize.xs,
-                    marginBottom: spacing.md,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {centre.addressLine}
-                </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenInMaps(centre);
-                  }}
-                  style={{
-                    width: "100%",
-                  }}
-                >
-                  View on Google Maps →
-                </Button>
-              </Card>
-            ))}
+                  {/* Address */}
+                  {centre.addressLine && (
+                    <div
+                      style={{
+                        ...typography.caption,
+                        color: colors.text.muted,
+                        fontSize: typography.fontSize.xs,
+                        marginBottom: spacing.md,
+                        paddingLeft: spacing.md + spacing.xs,
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {centre.addressLine}
+                    </div>
+                  )}
+
+                  {/* Action Button */}
+                  <Button
+                    variant={isSelected ? "primary" : "secondary"}
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenInMaps(centre);
+                    }}
+                    style={{
+                      width: "100%",
+                      marginTop: spacing.xs,
+                    }}
+                  >
+                    View on Google Maps →
+                  </Button>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </div>

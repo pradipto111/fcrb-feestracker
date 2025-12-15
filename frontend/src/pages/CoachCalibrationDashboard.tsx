@@ -5,7 +5,7 @@
  * Shows scoring profile, comparisons, and calibration insights.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -50,28 +50,62 @@ const CoachCalibrationDashboard: React.FC = () => {
     latestSnapshotDate: string;
   }>>([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [hasCheckedProfile, setHasCheckedProfile] = useState(false); // Track if we've already checked for profile
+  const lastUserIdRef = useRef<number | null>(null); // Track the last user ID we loaded for
+
+  // Show loading if user is not yet loaded
+  if (!user) {
+    return (
+      <PageShell>
+        <div style={{ textAlign: 'center', padding: spacing['2xl'], color: colors.text.muted }}>
+          Loading...
+        </div>
+      </PageShell>
+    );
+  }
+
+  const loadProfile = async (force = false) => {
+    if (!user || isLoadingProfile) return; // Prevent multiple simultaneous calls
+    if (hasCheckedProfile && !force) return; // Don't reload if we've already checked (unless forced)
+    
+    try {
+      setIsLoadingProfile(true);
+      setLoading(true);
+      setError(''); // Clear any previous errors
+      const data = await api.getCoachScoringProfile(user.id);
+      setProfile(data);
+      setHasCheckedProfile(true);
+    } catch (err: any) {
+      // 404 means no profile exists yet, which is expected - don't treat as error
+      if (err.status === 404 || err.message?.includes('404') || err.message?.includes('not found') || err.message?.includes('Create some snapshots')) {
+        setProfile(null);
+        setError('');
+        setHasCheckedProfile(true); // Mark as checked so we don't keep retrying
+      } else {
+        setError(err.message || 'Failed to load calibration profile');
+        setHasCheckedProfile(true);
+      }
+    } finally {
+      setLoading(false);
+      setIsLoadingProfile(false);
+    }
+  };
 
   useEffect(() => {
-    if (user) {
+    // Only make the initial API call once per user
+    // Check if we've already loaded for this user ID
+    if (user && user.id !== lastUserIdRef.current) {
+      lastUserIdRef.current = user.id;
+      setHasCheckedProfile(false); // Reset when user changes
       loadProfile();
       if (user.role === 'ADMIN') {
         loadAllProfiles();
         loadMultiCoachPlayers();
       }
     }
-  }, [user]);
-
-  const loadProfile = async () => {
-    try {
-      setLoading(true);
-      const data = await api.getCoachScoringProfile(user!.id);
-      setProfile(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load calibration profile');
-    } finally {
-      setLoading(false);
-    }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Only depend on user.id
 
   const loadAllProfiles = async () => {
     try {
@@ -94,16 +128,19 @@ const CoachCalibrationDashboard: React.FC = () => {
   const refreshProfile = async () => {
     try {
       setLoading(true);
+      setHasCheckedProfile(false); // Reset check flag to allow refresh
       await api.refreshCoachProfile(user!.id);
-      await loadProfile();
+      await loadProfile(true); // Force reload
     } catch (err: any) {
       setError(err.message || 'Failed to refresh profile');
+      setHasCheckedProfile(true);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading && !profile) {
+  // Show loading only on initial load
+  if (loading && !profile && !error) {
     return (
       <PageShell>
         <div style={{ textAlign: 'center', padding: spacing['2xl'], color: colors.text.muted }}>
@@ -113,6 +150,7 @@ const CoachCalibrationDashboard: React.FC = () => {
     );
   }
 
+  // Show error state only for non-404 errors
   if (error && !profile) {
     return (
       <PageShell>
@@ -120,7 +158,7 @@ const CoachCalibrationDashboard: React.FC = () => {
           <div style={{ color: colors.danger.main, marginBottom: spacing.md }}>
             {error}
           </div>
-          <Button variant="secondary" onClick={loadProfile}>
+          <Button variant="secondary" onClick={() => loadProfile()}>
             Retry
           </Button>
         </Card>
@@ -128,7 +166,8 @@ const CoachCalibrationDashboard: React.FC = () => {
     );
   }
 
-  if (!profile) {
+  // Show "No Data" message when profile is null (including 404 case)
+  if (!profile && !loading) {
     return (
       <PageShell>
         <Card variant="default" padding="lg" style={{ maxWidth: '600px', margin: '0 auto' }}>
@@ -146,6 +185,11 @@ const CoachCalibrationDashboard: React.FC = () => {
         </Card>
       </PageShell>
     );
+  }
+
+  // Type guard: profile must be non-null at this point
+  if (!profile) {
+    return null;
   }
 
   const distribution = profile.scoreDistribution || {};
@@ -169,9 +213,14 @@ const CoachCalibrationDashboard: React.FC = () => {
                 Understand your scoring patterns and maintain consistency across players
               </p>
             </div>
-            <Button variant="secondary" size="md" onClick={refreshProfile}>
-              🔄 Refresh Data
+            <div style={{ display: 'flex', gap: spacing.sm }}>
+              <Button variant="secondary" size="md" onClick={() => navigate('/realverse/admin/season-planning')}>
+              📅 Season Planning
             </Button>
+              <Button variant="secondary" size="md" onClick={refreshProfile}>
+                🔄 Refresh Data
+              </Button>
+            </div>
           </div>
         </Section>
 
@@ -430,35 +479,43 @@ const CoachCalibrationDashboard: React.FC = () => {
                 {multiCoachPlayers.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
                     {multiCoachPlayers.map((player) => (
-                      <Card
+                      <div
                         key={player.studentId}
-                        variant="outlined"
-                        padding="md"
-                        style={{
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          ':hover': { background: colors.surface.soft },
+                        onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
+                          e.currentTarget.style.background = colors.surface.soft;
                         }}
-                        onClick={() => setSelectedPlayerId(player.studentId)}
+                        onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
+                          e.currentTarget.style.background = '';
+                        }}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <div style={{ ...typography.body, fontWeight: typography.fontWeight.semibold, color: colors.text.primary, marginBottom: spacing.xs }}>
-                              {player.studentName}
+                        <Card
+                          variant="outlined"
+                          padding="md"
+                          style={{
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onClick={() => setSelectedPlayerId(player.studentId)}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div style={{ ...typography.body, fontWeight: typography.fontWeight.semibold, color: colors.text.primary, marginBottom: spacing.xs }}>
+                                {player.studentName}
+                              </div>
+                              <div style={{ display: 'flex', gap: spacing.md, ...typography.caption, color: colors.text.muted }}>
+                                <span>{player.uniqueCoaches} coaches</span>
+                                <span>•</span>
+                                <span>{player.totalSnapshots} snapshots</span>
+                                <span>•</span>
+                                <span>Latest: {new Date(player.latestSnapshotDate).toLocaleDateString()}</span>
+                              </div>
                             </div>
-                            <div style={{ display: 'flex', gap: spacing.md, ...typography.caption, color: colors.text.muted }}>
-                              <span>{player.uniqueCoaches} coaches</span>
-                              <span>•</span>
-                              <span>{player.totalSnapshots} snapshots</span>
-                              <span>•</span>
-                              <span>Latest: {new Date(player.latestSnapshotDate).toLocaleDateString()}</span>
-                            </div>
+                            <Button variant="primary" size="sm">
+                              View Consensus →
+                            </Button>
                           </div>
-                          <Button variant="primary" size="sm">
-                            View Consensus →
-                          </Button>
-                        </div>
-                      </Card>
+                        </Card>
+                      </div>
                     ))}
                   </div>
                 ) : (

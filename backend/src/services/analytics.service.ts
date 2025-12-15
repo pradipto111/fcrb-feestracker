@@ -254,7 +254,19 @@ export async function getFactPayments(filters?: CentreAnalyticsFilters) {
  */
 export async function getFactTrials(filters?: CentreAnalyticsFilters) {
   const where: any = {};
-  if (filters?.centreId) where.centerId = filters.centreId;
+  
+  // WebsiteLead doesn't have centerId, only preferredCentre (string)
+  // If filtering by centre is needed, get center name from center ID
+  if (filters?.centreId) {
+    const center = await prisma.center.findUnique({
+      where: { id: filters.centreId },
+      select: { name: true },
+    });
+    if (center) {
+      where.preferredCentre = center.name;
+    }
+  }
+  
   if (filters?.dateRange) {
     where.createdAt = {
       gte: filters.dateRange.from,
@@ -262,30 +274,31 @@ export async function getFactTrials(filters?: CentreAnalyticsFilters) {
     };
   }
 
-  const leads = await (prisma as any).websiteLead?.findMany({
+  const leads = await prisma.websiteLead.findMany({
     where,
     select: {
       id: true,
-      fullName: true,
-      phoneNumber: true,
+      playerName: true,
+      guardianName: true,
+      phone: true,
       email: true,
-      centerId: true,
-      programType: true,
+      preferredCentre: true,
+      programmeInterest: true,
       createdAt: true,
       status: true,
-      convertedToPlayerId: true,
+      convertedPlayerId: true,
     },
-  }) || [];
+  });
 
-  return leads.map((lead: any) => ({
+  return leads.map((lead) => ({
     trial_id: lead.id,
-    lead_name: lead.fullName,
-    contact: lead.phoneNumber || lead.email,
-    centre_id: lead.centerId,
-    program_id: lead.programType,
+    lead_name: lead.playerName,
+    contact: lead.phone || lead.email,
+    centre_id: lead.preferredCentre, // This is a string, not an ID
+    program_id: lead.programmeInterest,
     trial_date: lead.createdAt,
-    status: lead.status || "PENDING",
-    converted_to_player: lead.convertedToPlayerId !== null,
+    status: lead.status || "NEW",
+    converted_to_player: lead.convertedPlayerId !== null,
   }));
 }
 

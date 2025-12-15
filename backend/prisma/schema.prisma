@@ -36,6 +36,10 @@ model Center {
   votes         Vote[]
   studentStats  StudentStats[]
   monthlyMetrics CentreMonthlyMetrics[]
+  scoutingBoards ScoutingBoard[]
+  seasonPlans SeasonPlan[]
+  weeklyLoads PlayerWeeklyLoad[]
+  trialEvents TrialEvent[]
   @@index([shortName])
   @@index([isActive])
   @@index([displayOrder])
@@ -59,6 +63,20 @@ model Coach {
   createdMetricSnapshots PlayerMetricSnapshot[] @relation("MetricSnapshotCreator")
   metricAuditLogs PlayerMetricAuditLog[] @relation("AuditLogCreator")
   authoredNotes PlayerCoachNote[] @relation("NoteAuthor")
+  createdScoutingBoards ScoutingBoard[] @relation("ScoutingBoardCreator")
+  addedScoutingBoardPlayers ScoutingBoardPlayer[] @relation("ScoutingBoardPlayerAdder")
+  scoutingDecisions ScoutingDecisionLog[] @relation("ScoutingDecisionMaker")
+  publishedReports ParentDevelopmentReport[] @relation("ReportPublisher")
+  createdSeasonPlans SeasonPlan[] @relation("SeasonPlanCreator")
+  createdSessionLoads TrainingSessionLoad[] @relation("SessionLoadCreator")
+  createdDevelopmentBlocks DevelopmentBlock[] @relation("DevelopmentBlockCreator")
+  createdTrialEvents TrialEvent[] @relation("TrialEventCreator")
+  trialEventStaff TrialEventStaff[] @relation("TrialEventStaff")
+  createdTrialTemplates TrialMetricTemplate[] @relation("TrialTemplateCreator")
+  createdTrialReports TrialReport[] @relation("TrialReportCreator")
+  revisedTrialReports TrialReportRevision[] @relation("TrialReportRevisor")
+  createdTrialShortlists TrialShortlist[] @relation("TrialShortlistCreator")
+  trialDecisions TrialDecisionLog[] @relation("TrialDecisionMaker")
 }
 
 model CoachCenter {
@@ -99,6 +117,10 @@ model Student {
   metricSnapshots PlayerMetricSnapshot[]
   metricAuditLogs PlayerMetricAuditLog[]
   coachNotes PlayerCoachNote[]
+  scoutingBoardPlayers ScoutingBoardPlayer[]
+  scoutingDecisions ScoutingDecisionLog[]
+  parentReports ParentDevelopmentReport[]
+  weeklyLoads PlayerWeeklyLoad[]
 }
 
 model Payment {
@@ -145,6 +167,7 @@ model Session {
   attendance  Attendance[]
   votes       Vote[]
   wellnessChecks WellnessCheck[]
+  sessionLoad TrainingSessionLoad?
   @@index([centerId])
   @@index([coachId])
   @@index([sessionDate])
@@ -689,6 +712,7 @@ model PlayerMetricSnapshot {
   auditLogs       PlayerMetricAuditLog[]
   readiness       PlayerReadinessIndex?
   coachNotes      PlayerCoachNote[]
+  parentReports   ParentDevelopmentReport[]
   @@index([studentId, createdAt])
   @@index([createdByUserId])
   @@index([sourceContext])
@@ -805,4 +829,561 @@ model PlayerReadinessIndex {
   @@index([overall])
 }
 
+// ============================================
+// SCOUTING BOARD & COMPARISON SYSTEM
+// ============================================
 
+enum ScoutingBoardType {
+  CENTRE_VIEW      // Players from a specific centre
+  CLUB_WIDE        // All centres combined
+  CUSTOM           // Coach-created shortlist
+}
+
+enum ScoutingDecisionState {
+  OBSERVING
+  TRIAL_RECOMMENDED
+  READY_FOR_PROMOTION
+  HOLD_FOR_DEVELOPMENT
+  INTERVENTION_NEEDED
+}
+
+// Scouting Board - a decision workspace for coaches/admins
+model ScoutingBoard {
+  id          Int                  @id @default(autoincrement())
+  name        String               // e.g., "U17 CM – Promotion Candidates"
+  description String?              // Optional description
+  type        ScoutingBoardType
+  centerId    Int?                 // Required for CENTRE_VIEW, null for CLUB_WIDE/CUSTOM
+  createdByUserId Int               // Coach/Admin who created
+  createdByRole   Role              // ADMIN or COACH
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  // Relations
+  center      Center?              @relation(fields: [centerId], references: [id], onDelete: SetNull)
+  createdBy   Coach                 @relation("ScoutingBoardCreator", fields: [createdByUserId], references: [id])
+  players     ScoutingBoardPlayer[]
+  decisions   ScoutingDecisionLog[]
+  @@index([createdByUserId])
+  @@index([type])
+  @@index([centerId])
+  @@index([createdAt])
+}
+
+// Players on a scouting board
+model ScoutingBoardPlayer {
+  id          Int              @id @default(autoincrement())
+  boardId     Int
+  studentId   Int
+  addedAt     DateTime         @default(now())
+  addedByUserId Int            // Coach/Admin who added
+  addedByRole   Role           // ADMIN or COACH
+  notes       String?          // Optional notes specific to this board
+  // Relations
+  board       ScoutingBoard    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  student     Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  addedBy     Coach            @relation("ScoutingBoardPlayerAdder", fields: [addedByUserId], references: [id])
+  @@unique([boardId, studentId])
+  @@index([boardId])
+  @@index([studentId])
+  @@index([addedAt])
+}
+
+// Decision log for tracking scouting decisions
+model ScoutingDecisionLog {
+  id          Int                    @id @default(autoincrement())
+  boardId     Int
+  studentId   Int
+  decisionState ScoutingDecisionState
+  notes       String?                // Decision rationale
+  decidedByUserId Int                // Coach/Admin who made decision
+  decidedByRole   Role               // ADMIN or COACH
+  decidedAt   DateTime               @default(now())
+  // Relations
+  board       ScoutingBoard          @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  student     Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  decidedBy   Coach                  @relation("ScoutingDecisionMaker", fields: [decidedByUserId], references: [id])
+  @@index([boardId])
+  @@index([studentId])
+  @@index([decisionState])
+  @@index([decidedAt])
+}
+
+// Add relations to existing models
+// (These will be added to the existing model definitions above)
+
+// ============================================
+// PARENT-FACING DEVELOPMENT REPORTS
+// ============================================
+
+// Parent-friendly development report generated from a snapshot
+model ParentDevelopmentReport {
+  id              Int                    @id @default(autoincrement())
+  studentId       Int                    // Links to Student
+  snapshotId      Int                    // Links to the snapshot this report is based on
+  publishedAt     DateTime?              // When report was published (null = draft)
+  publishedByUserId Int?                 // Coach/Admin who published
+  publishedByRole   Role?                // ADMIN or COACH
+  visibleToParent Boolean                @default(false) // Whether parent/player can see this
+  reportingPeriodStart DateTime?         // Optional: start of reporting period
+  reportingPeriodEnd   DateTime?         // Optional: end of reporting period
+  // Content stored as JSON for flexibility
+  contentJson     Json                   // { headline, bands, strengths, focusAreas, coachNote, readinessStage, parentSupportTips }
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  // Relations
+  student         Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  snapshot        PlayerMetricSnapshot   @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  publishedBy     Coach?                 @relation("ReportPublisher", fields: [publishedByUserId], references: [id], onDelete: SetNull)
+  @@index([studentId])
+  @@index([snapshotId])
+  @@index([publishedAt])
+  @@index([visibleToParent])
+  @@index([createdAt])
+}
+
+// ============================================
+// SEASON PLANNING & LOAD PREDICTION SYSTEM
+// ============================================
+
+enum SeasonPhaseType {
+  PREPARATION
+  COMPETITIVE
+  RECOVERY
+  TRANSITION
+}
+
+enum TrainingIntensity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TrainingFocus {
+  TECHNICAL
+  TACTICAL
+  PHYSICAL
+  RECOVERY
+}
+
+// Season Plan - defines the overall season structure
+model SeasonPlan {
+  id              Int            @id @default(autoincrement())
+  centerId        Int
+  name            String         // e.g., "2024-25 Season"
+  seasonStart     DateTime
+  seasonEnd       DateTime
+  description     String?
+  createdByUserId Int            // Coach/Admin who created
+  createdByRole    Role           // ADMIN or COACH
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  // Relations
+  center          Center         @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  createdBy      Coach          @relation("SeasonPlanCreator", fields: [createdByUserId], references: [id])
+  phases         SeasonPhase[]
+  sessionLoads    TrainingSessionLoad[]
+  developmentBlocks DevelopmentBlock[]
+  @@index([centerId])
+  @@index([createdByUserId])
+  @@index([seasonStart, seasonEnd])
+}
+
+// Season Phase - periods within a season (preparation, competitive, recovery)
+model SeasonPhase {
+  id              Int            @id @default(autoincrement())
+  seasonPlanId    Int
+  name            String         // e.g., "Pre-Season", "League Phase"
+  phaseType       SeasonPhaseType
+  startDate       DateTime
+  endDate         DateTime
+  description     String?
+  targetLoadRange Json?          // { min: number, max: number } - recommended load range
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  // Relations
+  seasonPlan      SeasonPlan     @relation(fields: [seasonPlanId], references: [id], onDelete: Cascade)
+  @@index([seasonPlanId])
+  @@index([startDate, endDate])
+}
+
+// Training Session Load - manual load assessment for each session
+model TrainingSessionLoad {
+  id              Int            @id @default(autoincrement())
+  sessionId       Int            @unique // Links to Session
+  seasonPlanId    Int?           // Optional: link to season plan
+  intensity       TrainingIntensity
+  duration        Int            // Duration in minutes
+  focusTags       TrainingFocus[] // Array of focus areas
+  estimatedLoad   Float          // Computed: Duration × Intensity Multiplier
+  notes           String?        // Optional notes
+  createdByUserId Int            // Coach/Admin who assessed
+  createdByRole    Role           // ADMIN or COACH
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  // Relations
+  session         Session        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  seasonPlan      SeasonPlan?    @relation(fields: [seasonPlanId], references: [id], onDelete: SetNull)
+  createdBy       Coach          @relation("SessionLoadCreator", fields: [createdByUserId], references: [id])
+  @@index([sessionId])
+  @@index([seasonPlanId])
+  @@index([createdByUserId])
+  @@index([createdAt])
+}
+
+// Player Weekly Load - aggregated weekly load per player (derived/cacheable)
+model PlayerWeeklyLoad {
+  id              Int            @id @default(autoincrement())
+  studentId       Int
+  centerId        Int
+  weekStart       DateTime       // Monday of the week
+  weekEnd         DateTime       // Sunday of the week
+  totalLoad       Float          // Sum of estimated load from sessions attended
+  sessionCount    Int            @default(0) // Number of sessions in this week
+  averageIntensity TrainingIntensity?
+  focusDistribution Json?        // { TECHNICAL: number, TACTICAL: number, PHYSICAL: number, RECOVERY: number }
+  squadAverage    Float?         // Squad average for comparison
+  ageGroupRange   Json?          // { min: number, max: number } - recommended for age group
+  loadStatus      String?        // "LOW", "NORMAL", "HIGH", "CRITICAL" - soft indicator
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  // Relations
+  student         Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  center          Center         @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  @@unique([studentId, weekStart])
+  @@index([studentId, weekStart])
+  @@index([centerId, weekStart])
+  @@index([weekStart, weekEnd])
+}
+
+// Development Block - links planning to specific development goals
+model DevelopmentBlock {
+  id              Int            @id @default(autoincrement())
+  seasonPlanId    Int
+  name            String         // e.g., "Ball Retention Focus"
+  startDate       DateTime
+  endDate         DateTime
+  focusArea       String         // Development focus (e.g., "Ball retention", "Defensive positioning")
+  targetMetrics   String[]       // Array of metric keys to focus on
+  suggestedLoadRange Json?       // { min: number, max: number }
+  sessionFocusDistribution Json? // { TECHNICAL: number, TACTICAL: number, PHYSICAL: number, RECOVERY: number }
+  description     String?
+  createdByUserId Int
+  createdByRole    Role
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  // Relations
+  seasonPlan      SeasonPlan     @relation(fields: [seasonPlanId], references: [id], onDelete: Cascade)
+  createdBy       Coach          @relation("DevelopmentBlockCreator", fields: [createdByUserId], references: [id])
+  @@index([seasonPlanId])
+  @@index([startDate, endDate])
+}
+
+// ============================================
+// TRIAL INTAKE & EXTERNAL SCOUTING SYSTEM
+// ============================================
+
+enum TrialEventStatus {
+  DRAFT
+  LIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum TrialObservationType {
+  DRILLS
+  MATCH
+  BOTH
+}
+
+enum TrialRecommendedAction {
+  INVITE_BACK
+  SELECT_NOW
+  DEVELOPMENT_POOL
+  NOT_SELECTED
+  NEED_MORE_DATA
+}
+
+enum TrialMetricCategory {
+  TECHNICAL
+  PHYSICAL
+  MENTAL
+  ATTITUDE
+  TACTICAL
+  ROLE_FIT
+}
+
+enum TrialPositionScope {
+  OUTFIELD
+  GK
+  ANY
+}
+
+// Trial Event - the session container
+model TrialEvent {
+  id              Int                @id @default(autoincrement())
+  title           String             // e.g., "U17 Trials – Jan 2026 – Centre 3lok"
+  centerId       Int
+  startDateTime   DateTime
+  endDateTime     DateTime
+  ageGroups       String[]           // Array: ["U13", "U15", "U17"]
+  positionsNeeded String[]           // Array: ["CM", "ST", "CB"]
+  format          String?            // "small-sided" / "full match" / "drills + match"
+  status          TrialEventStatus   @default(DRAFT)
+  notes           String?            // Internal notes
+  createdByUserId Int                // Coach/Admin who created
+  createdByRole   Role               // ADMIN or COACH
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  // Relations
+  center          Center             @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  createdBy       Coach              @relation("TrialEventCreator", fields: [createdByUserId], references: [id])
+  staffAssigned   TrialEventStaff[]
+  trialists      TrialEventTrialist[]
+  reports         TrialReport[]
+  shortlists      TrialShortlist[]
+  decisions       TrialDecisionLog[]
+  @@index([centerId])
+  @@index([startDateTime])
+  @@index([status])
+  @@index([createdByUserId])
+}
+
+// Staff assigned to trial event
+model TrialEventStaff {
+  id          Int        @id @default(autoincrement())
+  trialEventId Int
+  coachId     Int
+  role        String?    // e.g., "Lead Evaluator", "Observer"
+  createdAt   DateTime   @default(now())
+  // Relations
+  trialEvent  TrialEvent @relation(fields: [trialEventId], references: [id], onDelete: Cascade)
+  coach       Coach      @relation("TrialEventStaff", fields: [coachId], references: [id], onDelete: Cascade)
+  @@unique([trialEventId, coachId])
+  @@index([trialEventId])
+  @@index([coachId])
+}
+
+// Trialist - external player record (separate from Student)
+model Trialist {
+  id                Int                @id @default(autoincrement())
+  fullName          String
+  phone             String?
+  guardianPhone     String?
+  email             String?
+  dateOfBirth       DateTime?
+  preferredFoot     String?            // "Left" / "Right" / "Both"
+  primaryPosition   String?            // e.g., "CM"
+  secondaryPositions String[]          // Array: ["AM", "DM"]
+  currentClub       String?            // Current club/academy
+  location          String?            // City/location
+  height            Int?               // cm
+  weight            Int?               // kg
+  injuryNotes       String?
+  consentAccepted   Boolean            @default(false)
+  consentAcceptedAt DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  // Relations
+  trialEvents       TrialEventTrialist[]
+  reports           TrialReport[]
+  shortlistItems    TrialShortlistItem[]
+  decisions         TrialDecisionLog[]
+  @@index([fullName])
+  @@index([phone])
+  @@index([email])
+  @@index([createdAt])
+}
+
+// Link trialist to trial event
+model TrialEventTrialist {
+  id          Int        @id @default(autoincrement())
+  trialEventId Int
+  trialistId  Int
+  registeredAt DateTime  @default(now())
+  notes       String?    // Registration notes
+  // Relations
+  trialEvent  TrialEvent @relation(fields: [trialEventId], references: [id], onDelete: Cascade)
+  trialist    Trialist   @relation(fields: [trialistId], references: [id], onDelete: Cascade)
+  @@unique([trialEventId, trialistId])
+  @@index([trialEventId])
+  @@index([trialistId])
+}
+
+// Trial Metric Template - coach-configurable evaluation templates
+model TrialMetricTemplate {
+  id            Int                @id @default(autoincrement())
+  name          String             // e.g., "FCRB Standard Trial – Outfield"
+  positionScope TrialPositionScope @default(ANY)
+  specificPositions String[]       // Array if positionScope is specific
+  ageScope      String[]           // Optional: ["U13", "U15"]
+  description   String?
+  isDefault     Boolean            @default(false)
+  createdByCoachId Int             // Coach/Admin who created
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  // Relations
+  createdBy     Coach              @relation("TrialTemplateCreator", fields: [createdByCoachId], references: [id])
+  items         TrialMetricTemplateItem[]
+  reports       TrialReport[]
+  @@index([createdByCoachId])
+  @@index([isDefault])
+}
+
+// Template metric items
+model TrialMetricTemplateItem {
+  id              Int                @id @default(autoincrement())
+  templateId      Int
+  metricKey       String             // e.g., "acceleration"
+  displayName     String             // e.g., "Acceleration"
+  category        TrialMetricCategory
+  description     String?            // What to observe
+  anchors         Json?              // { "40": "description", "60": "description", "80": "description" }
+  weight          Float?             // Optional weight for overall score calculation
+  required        Boolean            @default(false)
+  displayOrder    Int                @default(0)
+  createdAt       DateTime           @default(now())
+  // Relations
+  template        TrialMetricTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  reportValues    TrialReportValue[]
+  @@index([templateId])
+  @@index([metricKey])
+  @@index([displayOrder])
+}
+
+// Trial Report - evaluation record
+model TrialReport {
+  id                Int                    @id @default(autoincrement())
+  trialEventId      Int
+  trialistId        Int
+  templateId        Int                    // Template used
+  createdByCoachId  Int                    // Coach who created
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  // Context
+  observedPosition  String                 // Required position context
+  ageGroup          String                 // Required age group
+  observationType   TrialObservationType
+  confidence        Int?                   // 0-100
+  minutesObserved   Int?
+  weatherNotes      String?
+  pitchNotes        String?
+  // Evaluation
+  strengths         String[]               // Max 3 tags
+  risks             String[]               // Max 3 tags
+  coachSummary      String?                // Short text summary
+  recommendedAction TrialRecommendedAction
+  decisionNotes     String?                // Internal decision rationale
+  // Derived score (cached)
+  overallScore      Float?                 // 0-100, calculated from template weights
+  // Relations
+  trialEvent        TrialEvent              @relation(fields: [trialEventId], references: [id], onDelete: Cascade)
+  trialist          Trialist                @relation(fields: [trialistId], references: [id], onDelete: Cascade)
+  template          TrialMetricTemplate     @relation(fields: [templateId], references: [id])
+  createdBy         Coach                   @relation("TrialReportCreator", fields: [createdByCoachId], references: [id])
+  values            TrialReportValue[]
+  positional        TrialReportPositional[]
+  revisions         TrialReportRevision[]
+  @@index([trialEventId, trialistId, createdAt])
+  @@index([trialistId])
+  @@index([createdByCoachId])
+  @@index([recommendedAction])
+  @@index([createdAt])
+}
+
+// Individual metric values in a report
+model TrialReportValue {
+  id          Int            @id @default(autoincrement())
+  reportId    Int
+  templateItemId Int         // Links to template item
+  value       Int            // 0-100
+  comment     String?        // Optional comment
+  confidence  Int?           // 0-100, metric-specific confidence
+  createdAt   DateTime       @default(now())
+  // Relations
+  report      TrialReport    @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  templateItem TrialMetricTemplateItem @relation(fields: [templateItemId], references: [id])
+  @@unique([reportId, templateItemId])
+  @@index([reportId])
+  @@index([templateItemId])
+}
+
+// Positional suitability in trial report
+model TrialReportPositional {
+  id          Int            @id @default(autoincrement())
+  reportId    Int
+  position    String         // e.g., "CM"
+  suitability Int            // 0-100
+  comment     String?
+  createdAt   DateTime       @default(now())
+  // Relations
+  report      TrialReport    @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  @@unique([reportId, position])
+  @@index([reportId])
+}
+
+// Report revision history (audit trail)
+model TrialReportRevision {
+  id          Int            @id @default(autoincrement())
+  reportId    Int
+  previousData Json          // Snapshot of previous report data
+  revisedByCoachId Int
+  revisedAt  DateTime       @default(now())
+  reason     String?        // Reason for revision
+  // Relations
+  report      TrialReport    @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  revisedBy   Coach          @relation("TrialReportRevisor", fields: [revisedByCoachId], references: [id])
+  @@index([reportId])
+  @@index([revisedByCoachId])
+  @@index([revisedAt])
+}
+
+// Trial Shortlist - decision workspace
+model TrialShortlist {
+  id          Int                @id @default(autoincrement())
+  trialEventId Int
+  name        String             // e.g., "Invite Back", "Select Now"
+  description String?
+  createdByCoachId Int
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  // Relations
+  trialEvent  TrialEvent         @relation(fields: [trialEventId], references: [id], onDelete: Cascade)
+  createdBy   Coach              @relation("TrialShortlistCreator", fields: [createdByCoachId], references: [id])
+  items       TrialShortlistItem[]
+  @@index([trialEventId])
+  @@index([createdByCoachId])
+}
+
+// Shortlist items
+model TrialShortlistItem {
+  id          Int            @id @default(autoincrement())
+  shortlistId Int
+  trialistId  Int
+  notes       String?
+  addedAt     DateTime       @default(now())
+  // Relations
+  shortlist   TrialShortlist @relation(fields: [shortlistId], references: [id], onDelete: Cascade)
+  trialist    Trialist       @relation(fields: [trialistId], references: [id], onDelete: Cascade)
+  @@unique([shortlistId, trialistId])
+  @@index([shortlistId])
+  @@index([trialistId])
+}
+
+// Decision log - track final decisions
+model TrialDecisionLog {
+  id          Int                    @id @default(autoincrement())
+  trialEventId Int
+  trialistId  Int
+  decision    TrialRecommendedAction
+  notes       String?                // Decision rationale
+  decidedByCoachId Int
+  decidedAt   DateTime               @default(now())
+  // Relations
+  trialEvent  TrialEvent             @relation(fields: [trialEventId], references: [id], onDelete: Cascade)
+  trialist    Trialist               @relation(fields: [trialistId], references: [id], onDelete: Cascade)
+  decidedBy   Coach                  @relation("TrialDecisionMaker", fields: [decidedByCoachId], references: [id])
+  @@index([trialEventId])
+  @@index([trialistId])
+  @@index([decision])
+  @@index([decidedAt])
+}

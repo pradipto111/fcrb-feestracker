@@ -8,6 +8,7 @@ import { Card } from "../components/ui/Card";
 import { motion } from "framer-motion";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { brochureAssets, galleryAssets, academyAssets, heroAssets, clubAssets, getGalleryImage } from "../config/assets";
+import { TrophyIcon, ChartLineIcon, CommentIcon } from "../components/icons/IconSet";
 
 const BrochurePage: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -196,12 +197,12 @@ const BrochurePage: React.FC = () => {
                 flexWrap: "wrap",
               }}
             >
-              <Link to="/realverse/join" style={{ textDecoration: "none" }}>
+              <Link to="/brochure" style={{ textDecoration: "none" }}>
                 <Button variant="primary" size="lg">
                   Join the Academy
                 </Button>
               </Link>
-              <Link to="/realverse/join" style={{ textDecoration: "none" }}>
+              <Link to="/brochure" style={{ textDecoration: "none" }}>
                 <Button variant="secondary" size="lg">
                   Book a Call / Know More
                 </Button>
@@ -333,55 +334,59 @@ const BrochurePage: React.FC = () => {
           >
             {[
               {
-                icon: "🎯",
+                Icon: TrophyIcon,
                 title: "Understanding the Game",
                 desc: "Tactical awareness and decision-making under pressure",
               },
               {
-                icon: "📈",
+                Icon: ChartLineIcon,
                 title: "Long-Term Growth",
                 desc: "Development over short-term wins",
               },
               {
-                icon: "💬",
+                Icon: CommentIcon,
                 title: "Accountability & Feedback",
                 desc: "Honest communication and clear expectations",
               },
               {
-                icon: "🏆",
+                Icon: TrophyIcon,
                 title: "Competitive Excellence",
                 desc: "Building winners through process and discipline",
               },
-            ].map((item, idx) => (
-              <Card key={idx} variant="outlined" padding="lg">
-                <div
-                  style={{
-                    fontSize: typography.fontSize["4xl"],
-                    marginBottom: spacing.md,
-                  }}
-                >
-                  {item.icon}
-                </div>
-                <h3
-                  style={{
-                    ...typography.h4,
-                    color: colors.text.primary,
-                    marginBottom: spacing.sm,
-                  }}
-                >
-                  {item.title}
-                </h3>
-                <p
-                  style={{
-                    ...typography.body,
-                    color: colors.text.muted,
-                    fontSize: typography.fontSize.sm,
-                  }}
-                >
-                  {item.desc}
-                </p>
-              </Card>
-            ))}
+            ].map((item, idx) => {
+              const IconComponent = item.Icon;
+              return (
+                <Card key={idx} variant="outlined" padding="lg">
+                  <div
+                    style={{
+                      marginBottom: spacing.md,
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <IconComponent size={48} color={colors.primary.main} />
+                  </div>
+                  <h3
+                    style={{
+                      ...typography.h4,
+                      color: colors.text.primary,
+                      marginBottom: spacing.sm,
+                    }}
+                  >
+                    {item.title}
+                  </h3>
+                  <p
+                    style={{
+                      ...typography.body,
+                      color: colors.text.muted,
+                      fontSize: typography.fontSize.sm,
+                    }}
+                  >
+                    {item.desc}
+                  </p>
+                </Card>
+              );
+            })}
           </div>
         </motion.section>
 

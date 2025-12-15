@@ -10,6 +10,7 @@ import { colors, typography, spacing, borderRadius } from "../theme/design-token
 import { pageVariants, cardVariants, primaryButtonWhileHover, primaryButtonWhileTap } from "../utils/motion";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { academyAssets, adminAssets } from "../config/assets";
+import { CalendarIcon, PlusIcon, ClipboardIcon, VoteIcon } from "../components/icons/IconSet";
 
 const AttendanceManagementPage: React.FC = () => {
   const { user } = useAuth();
@@ -498,15 +499,26 @@ const AttendanceManagementPage: React.FC = () => {
       </motion.section>
 
       <PageHeader
-        title="📅 Attendance"
+        title={
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+            <CalendarIcon size={24} />
+            Attendance
+          </span>
+        }
         subtitle="Manage sessions and track player attendance"
         actions={
           <>
             <Button variant="primary" onClick={() => setShowCreateSession(true)}>
-              ➕ Create Session
+              <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                <PlusIcon size={16} />
+                Create Session
+              </span>
             </Button>
             <Button variant="secondary" onClick={() => setShowCreateMonthlySessions(true)}>
-              📅 Create Monthly Sessions
+              <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                <CalendarIcon size={16} />
+                Create Monthly Sessions
+              </span>
             </Button>
           </>
         }
@@ -989,7 +1001,10 @@ const AttendanceManagementPage: React.FC = () => {
                       fontWeight: 600
                     }}
                   >
-                    ➕ Add Date
+                    <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                      <PlusIcon size={14} />
+                      Add Date
+                    </span>
                   </button>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12, maxHeight: 300, overflowY: "auto", padding: 8 }}>
@@ -1245,14 +1260,20 @@ const AttendanceManagementPage: React.FC = () => {
                         size="sm"
                         onClick={() => handleOpenAttendanceModal(session)}
                       >
-                        📋 Mark Attendance
+                        <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                          <ClipboardIcon size={16} />
+                          Mark Attendance
+                        </span>
                       </Button>
                       <Button
                         variant="secondary"
                         size="sm"
                         onClick={() => navigate(`/vote/${session.id}`)}
                       >
-                        🗳️ Vote
+                        <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                          <VoteIcon size={16} />
+                          Vote
+                        </span>
                       </Button>
                       <Button
                         variant="danger"

@@ -28,6 +28,7 @@ html {
   /* Ensure no horizontal scroll */
   overflow-x: hidden;
   width: 100%;
+  position: relative;
 }
 
 /* Global UX Fixes - Laws of UX Compliance */
@@ -64,6 +65,7 @@ body {
   background: var(--color-space-deep);
   color: #FFFFFF;
   line-height: 1.5;
+  position: relative;
   /* Ensure no horizontal scroll */
   overflow-x: hidden;
   width: 100%;
@@ -99,23 +101,38 @@ h1, h2, h3, h4, h5, h6 {
   100% { transform: rotate(360deg); }
 }
 
-/* Custom Scrollbar - Space Theme */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+/* Hide ALL Scrollbars - Keep scrolling functionality */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
-::-webkit-scrollbar-track {
-  background: var(--color-space-deep);
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+  width: 0;
+  height: 0;
 }
 
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, var(--color-primary-blue) 0%, var(--color-accent-orange) 100%);
-  border-radius: 5px;
+html {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-accent-orange);
+html::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 /* Sidebar Scroll Fix - Ensure scroll wheel works and smooth UX */
@@ -134,10 +151,16 @@ aside[style*="overflowY: auto"] {
 
 /* Ensure scrollable containers can receive wheel events */
 [style*="overflow-y: auto"],
-[style*="overflowY: auto"] {
+[style*="overflowY: auto"],
+[style*="overflow: auto"],
+[style*="overflow: scroll"] {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  scroll-behavior: smooth;
+  scroll-behavior: auto; /* Use auto for nested scrolls, not smooth */
+  /* Ensure pointer events work */
+  pointer-events: auto !important;
+  /* Ensure wheel events are captured */
+  touch-action: pan-y pan-x;
 }
 
 /* Custom scrollbar styling for sidebars */
