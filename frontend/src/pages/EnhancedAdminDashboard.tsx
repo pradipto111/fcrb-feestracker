@@ -1157,6 +1157,7 @@ const EnhancedAdminDashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
+              </div>
             </React.Fragment>
           );
         })()}

@@ -10,7 +10,14 @@
     "resolveJsonModule": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "prisma"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "prisma",
+    "**/*.example.ts",
+    "src/modules/player-metrics/calibration.service.ts",
+    "src/modules/player-metrics/calibration.routes.ts"
+  ]
 }
 
 
