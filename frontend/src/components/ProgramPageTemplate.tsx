@@ -883,6 +883,138 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
             </motion.p>
           </motion.div>
 
+          {/* RealVerse visual break (adds graphics + CTA so this section isn't pointer-only) */}
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+            style={{
+              position: "relative",
+              borderRadius: borderRadius["2xl"],
+              overflow: "hidden",
+              border: `1px solid rgba(255,255,255,0.12)`,
+              background: "rgba(10, 16, 32, 0.55)",
+              backdropFilter: "blur(18px)",
+              boxShadow: "0 22px 60px rgba(0,0,0,0.45)",
+              minHeight: isMobile ? 280 : 360,
+              marginBottom: spacing["2xl"],
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                backgroundImage: `url(${realverseAssets?.dashboards?.[0] || galleryAssets.actionShots[0]?.medium || ""})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                opacity: 0.55,
+                filter: "saturate(1.1) contrast(1.05)",
+                transform: "scale(1.06)",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background:
+                  `linear-gradient(135deg, rgba(5,11,32,0.82) 0%, rgba(10,22,51,0.78) 55%, rgba(5,11,32,0.86) 100%),` +
+                  `radial-gradient(circle at 25% 20%, rgba(0,224,255,0.18) 0%, transparent 55%),` +
+                  `radial-gradient(circle at 80% 75%, rgba(255,169,0,0.12) 0%, transparent 55%)`,
+              }}
+            />
+
+            {/* Scanline */}
+            <motion.div
+              aria-hidden
+              style={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                height: 2,
+                background: `linear-gradient(to right, transparent, ${accentColor}70, transparent)`,
+                opacity: 0.6,
+              }}
+              animate={{ top: ["12%", "88%", "12%"] }}
+              transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut" }}
+            />
+
+            <div style={{ position: "relative", zIndex: 2, padding: isMobile ? spacing.lg : spacing.xl }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.lg }}>
+                <div>
+                  <div style={{ ...typography.overline, color: accentColor, letterSpacing: "0.18em" }}>
+                    REALVERSE
+                  </div>
+                  <div style={{ ...typography.h3, color: colors.text.primary, marginTop: 6, marginBottom: 8 }}>
+                    Your player dashboard
+                  </div>
+                  <div style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.base, lineHeight: 1.7, maxWidth: 720 }}>
+                    See training clips, analytics, coach feedback, and assignments in one place—built for players and parents.
+                  </div>
+                </div>
+                <div
+                  style={{
+                    width: 46,
+                    height: 46,
+                    borderRadius: "50%",
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <ChartBarIcon size={20} color={accentColor} />
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.lg, marginBottom: spacing.lg }}>
+                {[
+                  `${program.data.aiFeatures.length} AI features`,
+                  `${program.realverse.features.length} RealVerse tools`,
+                  "Transparent feedback cycles",
+                ].map((label) => (
+                  <div
+                    key={label}
+                    style={{
+                      padding: `${spacing.xs} ${spacing.md}`,
+                      borderRadius: borderRadius.full,
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      backdropFilter: "blur(12px)",
+                    }}
+                  >
+                    <span style={{ ...typography.caption, color: colors.text.secondary, fontSize: typography.fontSize.sm, opacity: 0.95 }}>
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", gap: spacing.md, flexWrap: "wrap" }}>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => {
+                    window.location.href = "/realverse/experience";
+                  }}
+                >
+                  Explore RealVerse <ArrowRightIcon size={18} style={{ marginLeft: spacing.xs }} />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  onClick={() => {
+                    window.location.href = "/brochure";
+                  }}
+                >
+                  Apply / Enquire <ArrowRightIcon size={18} style={{ marginLeft: spacing.xs }} />
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+
           {/* Split Layout: AI Features Left, RealVerse Features Right */}
           <div style={{
             display: "grid",
@@ -910,8 +1042,8 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
                 <ChartBarIcon size={22} color={accentColor} />
                 AI-Powered Analytics
               </motion.h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
-                {program.data.aiFeatures.map((feature, idx) => (
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: spacing.md }}>
+                {program.data.aiFeatures.slice(0, 6).map((feature, idx) => (
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, y: 20 }}
@@ -1032,8 +1164,8 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
               >
                 Features available to players & parents:
               </motion.p>
-              <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
-                {program.realverse.features.map((feature, idx) => (
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: spacing.md }}>
+                {program.realverse.features.slice(0, 8).map((feature, idx) => (
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, scale: 0.95 }}
