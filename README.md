@@ -178,6 +178,90 @@ Students can have payment frequencies from 1-12 months:
 
 ### Outstanding Calculation
 - Payments are expected at the **beginning of each cycle**
+
+## ⭐ RealVerse Fan Club (New)
+
+RealVerse now supports a 4th role: **Fan Club** (`role: FAN`) with an Admin-controlled membership system.
+
+### Public entry (no login)
+
+- **Header CTA**: “Your benefits for backing FC Real Bengaluru”
+- **Route**: `/fan-club/benefits` (preview page with locked/blurred rewards)
+
+### Fan dashboard routes
+
+- `/realverse/fan` (Fan Club HQ)
+- `/realverse/fan/benefits` (Sponsors + rewards + coupon redemption)
+- `/realverse/fan/games` (Mini games + quests)
+- `/realverse/fan/matchday` (Weekly fixtures + unlock messaging)
+- `/realverse/fan/profile` (Tier, points, badges, history)
+- `/realverse/fan/programs` (Program interest conversion)
+
+Fan modules are **admin-driven** via `FanTier.featureFlags` (offers/games/matchday/programs).
+
+### Admin control plane routes
+
+All are under the existing Admin layout (no disruption to other Admin tools):
+
+- `/realverse/admin/fans` (accounts)
+- `/realverse/admin/fans/tiers` (tiers + pricing + benefits + featureFlags)
+- `/realverse/admin/fans/rewards` (sponsors + campaigns + coupon pools)
+- `/realverse/admin/fans/games` (quests)
+- `/realverse/admin/fans/analytics` (KPIs + CSV exports)
+- `/realverse/admin/fans/settings` (tier feature toggles)
+
+Legacy redirects are supported:
+- `/admin/fans/*` → `/realverse/admin/fans/*`
+
+### Backend API (Fan Club)
+
+Fan endpoints (Fan role only):
+- `GET /fan/me`
+- `GET /fan/tiers`
+- `GET /fan/sponsors`
+- `GET /fan/rewards`
+- `GET /fan/coupons`
+- `GET /fan/quests`
+- `GET /fan/history`
+- `POST /fan/redeem`
+- `POST /fan/game/session`
+- `POST /fan/program-interest`
+
+Admin endpoints (Admin role only):
+- `GET/POST /api/admin/fans`
+- `PATCH /api/admin/fans/:id/status`
+- `PATCH /api/admin/fans/:id/tier`
+- `POST /api/admin/fans/:id/reset-password`
+- `GET/POST /api/admin/fans/tiers`
+- `GET/POST /api/admin/fans/sponsors`
+- `GET/POST /api/admin/fans/campaigns`
+- `GET/POST /api/admin/fans/coupon-pools`
+- `GET/POST /api/admin/fans/quests`
+- `GET /api/admin/fans/analytics/summary`
+- `GET /api/admin/fans/redemptions`
+- `GET /api/admin/fans/leads`
+- `GET /api/admin/fans/audit`
+
+### Demo (seed + logins)
+
+1) Seed QA (includes Fan Club demo data):
+
+```bash
+cd backend
+npm run seed:qa -- --students=10 --centres=4 --sessions=20
+```
+
+2) Fan Club demo credentials (printed by seed script):
+- Fan Club: `fan1@test.com` / `fan123`
+
+3) Admin-controlled credentials:
+- Go to `/realverse/admin/fans`
+- Create a fan → copy the temp password (shown once)
+- Fan logs in at `/realverse/login` using **Fan Club** role
+
+4) QA checklist:
+- See `docs/qa/FAN_CLUB_QA_CHECKLIST.md`
+
 - Outstanding is calculated based on completed payment cycles from joining date
 - Uses system date (or custom debug date) for calculations
 

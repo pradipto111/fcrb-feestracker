@@ -13,6 +13,7 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginRole, setLoginRole] = useState<"STUDENT" | "COACH" | "ADMIN" | "FAN">("STUDENT");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -36,7 +37,7 @@ const LoginPage: React.FC = () => {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, loginRole);
       navigate("/realverse");
     } catch (err: any) {
       setError(err.message || "Login failed");
@@ -65,7 +66,7 @@ const LoginPage: React.FC = () => {
       {/* Background Image Slideshow */}
       {images.map((image, index) => (
         <div
-          key={image}
+          key={`${image || "bg"}_${index}`}
           style={{
             position: "absolute",
             top: 0,
@@ -190,6 +191,47 @@ const LoginPage: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: spacing.lg }}>
+          {/* Role Selector */}
+          <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
+            <div style={{ ...typography.caption, color: colors.text.muted }}>Sign in as</div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: spacing.sm,
+              }}
+            >
+              {[
+                { id: "STUDENT" as const, label: "Student" },
+                { id: "COACH" as const, label: "Coach" },
+                { id: "ADMIN" as const, label: "Admin" },
+                { id: "FAN" as const, label: "Fan Club" },
+              ].map((opt) => {
+                const active = loginRole === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setLoginRole(opt.id)}
+                    style={{
+                      padding: "12px 12px",
+                      borderRadius: 14,
+                      border: active ? `1px solid rgba(0, 224, 255, 0.45)` : "1px solid rgba(255, 255, 255, 0.12)",
+                      background: active ? "rgba(0, 224, 255, 0.10)" : "rgba(255,255,255,0.04)",
+                      color: active ? colors.text.primary : colors.text.secondary,
+                      cursor: "pointer",
+                      fontWeight: active ? typography.fontWeight.semibold : typography.fontWeight.medium,
+                      textAlign: "left",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <Input
             type="email"
             label="Email"

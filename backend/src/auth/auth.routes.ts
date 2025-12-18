@@ -64,11 +64,12 @@ router.post("/register-admin", async (req, res) => {
  * Supports login for Admin, Coach, and Student
  */
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body as { email: string; password: string };
+  const { email, password, role } = req.body as { email: string; password: string; role?: "ADMIN" | "COACH" | "STUDENT" | "FAN" };
   
   // Try to find coach/admin first
   const coach = await prisma.coach.findUnique({ where: { email } });
   if (coach) {
+    if (role && role !== coach.role) return res.status(403).json({ message: "Access denied" });
     const ok = await bcrypt.compare(password, coach.passwordHash);
     if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 
@@ -84,9 +85,35 @@ router.post("/login", async (req, res) => {
     });
   }
 
+  // Try to find fan user (Fan Club)
+  const fan = await (prisma as any).fanUser?.findUnique({ where: { email } });
+  if (fan) {
+    if (role && role !== "FAN") return res.status(403).json({ message: "Access denied" });
+    if (fan.status === "SUSPENDED") return res.status(403).json({ message: "Account suspended" });
+    const ok = await bcrypt.compare(password, fan.passwordHash);
+    if (!ok) return res.status(401).json({ message: "Invalid credentials" });
+
+    const profile = await (prisma as any).fanProfile?.findUnique({
+      where: { userId: fan.id },
+      select: { fullName: true },
+    });
+
+    const token = jwt.sign(
+      { id: fan.id, role: "FAN" },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.json({
+      token,
+      user: { id: fan.id, role: "FAN", fullName: profile?.fullName || "Fan Club Member" }
+    });
+  }
+
   // Try to find student
   const student = await prisma.student.findUnique({ where: { email } });
   if (student && student.passwordHash) {
+    if (role && role !== "STUDENT") return res.status(403).json({ message: "Access denied" });
     const ok = await bcrypt.compare(password, student.passwordHash);
     if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 

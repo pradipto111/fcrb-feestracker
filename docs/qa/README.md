@@ -15,6 +15,7 @@ docs/qa/
 ├── BUG_LOG.md                  # Bug tracking and fixes
 ├── TEST_DATA_SEED.md           # Seed data documentation
 └── QA_SETUP_COMPLETE.md        # Phase 0 setup summary
+└── FAN_CLUB_QA_CHECKLIST.md     # Fan Club role + admin control plane QA
 ```
 
 ---

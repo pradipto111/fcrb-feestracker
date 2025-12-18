@@ -1,0 +1,28 @@
+/**
+ * Connect, Support & Celebrate Section - Vertical Stack Layout
+ * All breakpoints: Single column stack (Support → Calendar → Gallery)
+ * 
+ * Layout Structure:
+ * - All sizes: Vertical stack with full-width sections
+ * - Proper spacing between sections (48px desktop, 24px mobile)
+ */
+
+.connect-support-celebrate-grid {
+  /* Ensure flex column layout */
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 48px !important;
+  
+  /* Mobile spacing */
+  @media (max-width: 767px) {
+    gap: 24px !important;
+  }
+}
+
+/* Ensure sections are full-width flex containers */
+.connect-support-celebrate-grid > * {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0; /* Prevent overflow */
+}

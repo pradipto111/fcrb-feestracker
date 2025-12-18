@@ -11,6 +11,7 @@ import studentDashboardRoutes from "./modules/students/student-dashboard.routes"
 import systemRoutes from "./modules/system/system.routes";
 import attendanceRoutes from "./modules/attendance/attendance.routes";
 import fixturesRoutes from "./modules/fixtures/fixtures.routes";
+import eventsRoutes from "./modules/events/events.routes";
 import videosRoutes from "./modules/videos/videos.routes";
 import postsRoutes from "./modules/posts/posts.routes";
 import commentsRoutes from "./modules/posts/comments.routes";
@@ -29,6 +30,8 @@ import scoutingRoutes from "./modules/scouting/scouting.routes";
 import parentReportsRoutes from "./modules/parent-reports/parent-reports.routes";
 import seasonPlanningRoutes from "./modules/season-planning/season-planning.routes";
 import trialsRoutes from "./modules/trials/trials.routes";
+import fanRoutes from "./modules/fan/fan.routes";
+import fanAdminRoutes from "./modules/fan/fan-admin.routes";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -59,6 +62,7 @@ app.use("/student", studentDashboardRoutes);
 app.use("/system", systemRoutes);
 app.use("/attendance", attendanceRoutes);
 app.use("/fixtures", fixturesRoutes);
+app.use("/events", eventsRoutes);
 app.use("/videos", videosRoutes);
 app.use("/posts", postsRoutes);
 app.use("/comments", commentsRoutes);
@@ -66,6 +70,10 @@ app.use("/leaderboard", leaderboardRoutes);
 app.use("/leads", leadsRoutes);
 app.use("/shop", shopRoutes);
 app.use("/admin", adminRoutes);
+// Fan Club (RealVerse Fan) — separate mount points for spec compatibility
+app.use("/fan", fanRoutes);
+app.use("/api/fan", fanRoutes);
+app.use("/api/admin/fans", fanAdminRoutes);
 app.use("/timeline", timelineRoutes);
 app.use("/feedback", feedbackRoutes);
 app.use("/wellness", wellnessRoutes);
@@ -112,11 +120,34 @@ async function initializeShop() {
   }
 }
 
+// Seed demo calendar events in development (idempotent)
+async function initializeDemoCalendar() {
+  try {
+    if (process.env.NODE_ENV !== "development") return;
+    // If prisma client doesn't have the model yet (missing generate/migrate), skip gracefully.
+    if (!(prisma as any).clubEvent) return;
+    const count = await (prisma as any).clubEvent.count();
+    if (count > 0) return;
+
+    // Find any admin/coach to attribute demo data to.
+    const coach = await prisma.coach.findFirst({ where: { role: { in: ["ADMIN", "COACH"] } } });
+    if (!coach) return;
+
+    const { seedDemoClubEvents } = await import("./modules/events/seed-demo-events");
+    await seedDemoClubEvents({ createdByUserId: coach.id });
+    console.log("✅ Seeded demo calendar events (development)");
+  } catch (error: any) {
+    // Optional feature; never crash server startup.
+    console.warn("⚠️  Demo calendar seed skipped:", error?.message || error);
+  }
+}
+
 // Start server
 app.listen(PORT, "0.0.0.0", async () => {
   console.log(`✅ Backend listening on http://localhost:${PORT}`);
   console.log(`✅ Backend also accessible on http://0.0.0.0:${PORT}`);
   await initializeShop();
+  await initializeDemoCalendar();
 }).on("error", (err: any) => {
   if (err.code === "EADDRINUSE") {
     console.error(`❌ Port ${PORT} is already in use. Please stop the other process or change the PORT in .env`);

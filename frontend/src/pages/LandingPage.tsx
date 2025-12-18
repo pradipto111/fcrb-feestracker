@@ -1,12 +1,12 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { motion, useInView, AnimatePresence } from "framer-motion";
+import { motion, useInView, AnimatePresence, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import PublicHeader from "../components/PublicHeader";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { api } from "../api/client";
-import { clubInfo, teams, mockNews, NewsItem } from "../data/club";
+import { clubInfo, teams } from "../data/club";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -28,6 +28,11 @@ import {
 } from "../components/icons/IconSet";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { useHeroParallax } from "../hooks/useParallaxMotion";
+import SupportCelebrateBelongSection from "../components/home/SupportCelebrateBelongSection";
+import GalleryUpdatesModule from "../components/home/GalleryUpdatesModule";
+import ClubCalendarModule from "../components/calendar/ClubCalendar"; // Default export
+// FanClubBenefitsSection moved to FanClubBenefitsPreviewPage - removed from homepage
+import { FanClubTeaserSection } from "../components/home/FanClubTeaserSection";
 import { 
   heroAssets, 
   matchAssets, 
@@ -45,6 +50,8 @@ import {
   getNewsImage 
 } from "../config/assets";
 import { homepageAssets } from "../config/homepageAssets";
+import { SectionBackground } from "../components/shared/SectionBackground";
+import "../styles/connect-section.css";
 
 // Interface for fixtures from API
 interface PublicFixture {
@@ -56,7 +63,793 @@ interface PublicFixture {
   matchType: string;
   status: string;
   center: string;
+  score?: string | null;
 }
+
+const DUMMY_LAST_RESULT: PublicFixture = {
+  id: 0,
+  opponent: "Bangalore Rangers",
+  matchDate: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+  matchTime: "18:00",
+  venue: "3Lok Football Fitness Hub",
+  matchType: "League",
+  status: "COMPLETED",
+  center: "FCRB",
+  score: "3-1",
+};
+
+type CalendarEvent = {
+  id: string;
+  dateKey: string; // YYYY-MM-DD
+  date: Date; // normalized to midnight
+  title: string; // vs Opponent
+  opponent: string;
+  timeLabel: string;
+  competition: string;
+  venue: string;
+  status: string;
+  kind: "match" | "result";
+};
+
+const StoryNavDock: React.FC<{
+  currentIndex: number;
+  total: number;
+  onPrev: () => void;
+  onNext: () => void;
+  canPrev: boolean;
+  canNext: boolean;
+  isMobile: boolean;
+}> = ({ currentIndex, total, onPrev, onNext, canPrev, canNext, isMobile }) => {
+  const btnSize = isMobile ? 36 : 40;
+  const progress = total <= 1 ? 1 : (currentIndex + 1) / total;
+  const progressPct = Math.round(progress * 100);
+
+  const buttonBase: React.CSSProperties = {
+    width: btnSize,
+    height: btnSize,
+    borderRadius: 12,
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    color: colors.text.primary,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
+    outline: "none",
+    boxShadow: "0 10px 28px rgba(0,0,0,0.35)",
+    WebkitTapHighlightColor: "transparent",
+  };
+
+  const focusRing = (el: HTMLButtonElement) => {
+    el.style.boxShadow = "0 10px 28px rgba(0,0,0,0.35), 0 0 0 2px rgba(0,224,255,0.22), 0 0 26px rgba(0,224,255,0.10)";
+    el.style.borderColor = "rgba(0,224,255,0.28)";
+  };
+  const blurRing = (el: HTMLButtonElement) => {
+    el.style.boxShadow = "0 10px 28px rgba(0,0,0,0.35)";
+    el.style.borderColor = "rgba(255,255,255,0.12)";
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: spacing.sm,
+        padding: "10px 10px",
+        borderRadius: 14,
+        border: "1px solid rgba(255,255,255,0.12)",
+        background: "rgba(10,16,32,0.26)",
+        backdropFilter: "blur(14px)",
+        boxShadow: "0 18px 48px rgba(0,0,0,0.42)",
+        width: isMobile ? "100%" : "auto",
+      }}
+      aria-label="Story navigation"
+    >
+      {/* Progress pill + micro bar */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 86 }}>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: spacing.sm,
+            padding: "6px 10px",
+            borderRadius: 999,
+            border: "1px solid rgba(255,255,255,0.14)",
+            background: "rgba(255,255,255,0.04)",
+            color: colors.text.secondary,
+            ...typography.caption,
+            letterSpacing: "0.16em",
+            fontSize: typography.fontSize.xs,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span>
+            {String(currentIndex + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+          </span>
+          <span
+            aria-hidden="true"
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              background: colors.accent.main,
+              boxShadow: "0 0 0 2px rgba(255,169,0,0.14), 0 0 18px rgba(255,169,0,0.22)",
+              flexShrink: 0,
+            }}
+          />
+        </div>
+
+        <div
+          aria-label={`Progress ${progressPct}%`}
+          style={{
+            height: 5,
+            borderRadius: 999,
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              height: "100%",
+              width: `${Math.round(progress * 100)}%`,
+              background: "linear-gradient(90deg, rgba(255,169,0,0.80), rgba(0,224,255,0.70))",
+              position: "relative",
+            }}
+          >
+            <motion.div
+              aria-hidden="true"
+              animate={{ x: ["-40%", "140%"] }}
+              transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.6 }}
+              style={{
+                position: "absolute",
+                top: -6,
+                bottom: -6,
+                width: "45%",
+                left: 0,
+                background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 45%, transparent 100%)",
+                filter: "blur(6px)",
+                opacity: 0.55,
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Prev / Next */}
+      <div style={{ display: "flex", gap: spacing.xs, marginLeft: "auto" }}>
+        <motion.button
+          type="button"
+          aria-label="Previous section"
+          disabled={!canPrev}
+          onClick={onPrev}
+          whileHover={canPrev ? { scale: 1.03, boxShadow: "0 0 0 1px rgba(0,224,255,0.18), 0 14px 40px rgba(0,0,0,0.42), 0 0 26px rgba(0,224,255,0.10)" } : undefined}
+          whileTap={canPrev ? { scale: 0.98 } : undefined}
+          style={{
+            ...buttonBase,
+            opacity: canPrev ? 0.95 : 0.35,
+            cursor: canPrev ? "pointer" : "not-allowed",
+          }}
+          onFocus={(e) => focusRing(e.currentTarget)}
+          onBlur={(e) => blurRing(e.currentTarget)}
+        >
+          <ArrowRightIcon size={16} style={{ transform: "rotate(180deg)" }} />
+        </motion.button>
+        <motion.button
+          type="button"
+          aria-label="Next section"
+          disabled={!canNext}
+          onClick={onNext}
+          whileHover={canNext ? { scale: 1.03, boxShadow: "0 0 0 1px rgba(255,169,0,0.18), 0 14px 40px rgba(0,0,0,0.42), 0 0 26px rgba(255,169,0,0.10)" } : undefined}
+          whileTap={canNext ? { scale: 0.98 } : undefined}
+          style={{
+            ...buttonBase,
+            opacity: canNext ? 0.95 : 0.35,
+            cursor: canNext ? "pointer" : "not-allowed",
+          }}
+          onFocus={(e) => focusRing(e.currentTarget)}
+          onBlur={(e) => blurRing(e.currentTarget)}
+        >
+          <ArrowRightIcon size={16} />
+        </motion.button>
+      </div>
+    </div>
+  );
+};
+
+const ClubCalendar: React.FC<{
+  isMobile: boolean;
+  loading?: boolean;
+  fixtures?: PublicFixture[];
+  results?: PublicFixture[];
+}> = ({ isMobile, loading = false, fixtures = [], results = [] }) => {
+  const fmtDate = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const fmtMonth = (d: Date) => d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+  const fmtTime = (t: string) => {
+    // Handles "HH:mm", "HH:mm:ss", or an ISO-ish string.
+    try {
+      if (!t) return "TBA";
+      if (t.includes("T")) {
+        const dt = new Date(t);
+        if (!Number.isNaN(dt.getTime())) return dt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+      }
+      const match = t.match(/^(\d{1,2}):(\d{2})/);
+      if (match) {
+        const hh = Number(match[1]);
+        const mm = Number(match[2]);
+        const dt = new Date();
+        dt.setHours(hh, mm, 0, 0);
+        return dt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+      }
+      return t;
+    } catch {
+      return t || "TBA";
+    }
+  };
+
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  const [monthCursor, setMonthCursor] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+
+  const [selectedDateKey, setSelectedDateKey] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
+  const [hoveredLocked, setHoveredLocked] = useState(false);
+
+  const events = useMemo<CalendarEvent[]>(() => {
+    const toEvent = (f: PublicFixture, kind: "match" | "result"): CalendarEvent => {
+      const d = new Date(f.matchDate);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      return {
+        id: `${kind}-${f.id}-${dateKey}`,
+        dateKey,
+        date,
+        title: `vs ${f.opponent}`,
+        opponent: f.opponent,
+        timeLabel: f.matchTime ? fmtTime(f.matchTime) : "TBA",
+        competition: f.matchType || "Match",
+        venue: f.venue || "TBA",
+        status: f.status || (kind === "result" ? "RESULT" : "SCHEDULED"),
+        kind,
+      };
+    };
+
+    const merged = [
+      ...results.map((r) => toEvent(r, "result")),
+      ...fixtures.map((f) => toEvent(f, "match")),
+    ];
+    // de-dupe (id includes kind+fixtureId+dateKey)
+    const seen = new Set<string>();
+    return merged.filter((e) => {
+      if (seen.has(e.id)) return false;
+      seen.add(e.id);
+      return true;
+    });
+  }, [fixtures, results]);
+
+  const eventsByDay = useMemo(() => {
+    const map = new Map<string, CalendarEvent[]>();
+    for (const e of events) {
+      const list = map.get(e.dateKey) || [];
+      list.push(e);
+      map.set(e.dateKey, list);
+    }
+    for (const [k, list] of map.entries()) {
+      list.sort((a, b) => a.date.getTime() - b.date.getTime());
+      map.set(k, list);
+    }
+    return map;
+  }, [events]);
+
+  const selectedEvents = useMemo(() => eventsByDay.get(selectedDateKey) || [], [eventsByDay, selectedDateKey]);
+
+  const nextMatch = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const upcoming = events
+      .filter((e) => e.kind === "match" && e.date.getTime() >= start)
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+    return upcoming[0] || null;
+  }, [events]);
+
+  const primaryEvent = useMemo(() => {
+    return (selectedEvents[0] || nextMatch) ?? null;
+  }, [selectedEvents, nextMatch]);
+
+  const monthGrid = useMemo(() => {
+    const year = monthCursor.getFullYear();
+    const month = monthCursor.getMonth();
+    const first = new Date(year, month, 1);
+    const last = new Date(year, month + 1, 0);
+    const startWeekday = first.getDay(); // Sun=0
+    const totalDays = last.getDate();
+
+    const cells: Array<{ key: string; date: Date | null; dayNum?: number }> = [];
+    for (let i = 0; i < startWeekday; i++) cells.push({ key: `pad-${i}`, date: null });
+    for (let d = 1; d <= totalDays; d++) {
+      const date = new Date(year, month, d);
+      const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      cells.push({ key, date, dayNum: d });
+    }
+    while (cells.length % 7 !== 0) cells.push({ key: `pad-end-${cells.length}`, date: null });
+    while (cells.length < 42) cells.push({ key: `pad-last-${cells.length}`, date: null });
+    return cells;
+  }, [monthCursor]);
+
+  const weekdayLabels = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+
+  const isCurrentMonth = monthCursor.getFullYear() === today.getFullYear() && monthCursor.getMonth() === today.getMonth();
+  const daysInMonth = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 0).getDate();
+  const monthProgress = isCurrentMonth ? Math.min(1, Math.max(0, today.getDate() / Math.max(1, daysInMonth))) : 0;
+  const opponentAbbr = (name: string) =>
+    (name || "TBA")
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() || "")
+      .join("");
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "0.9fr 1.1fr", gap: spacing.md }}>
+      {/* Left: Details */}
+      <div
+        style={{
+          borderRadius: borderRadius.xl,
+          border: "1px solid rgba(255,255,255,0.10)",
+          background: "rgba(255,255,255,0.03)",
+          overflow: "hidden",
+          position: "relative",
+        }}
+      >
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "radial-gradient(circle at 20% 15%, rgba(0,224,255,0.12) 0%, transparent 55%), radial-gradient(circle at 85% 80%, rgba(255,169,0,0.10) 0%, transparent 60%)",
+            opacity: 0.95,
+            pointerEvents: "none",
+          }}
+        />
+
+        <div style={{ position: "relative", zIndex: 1 }}>
+          {/* EAFC-style match card art strip */}
+          <div
+            style={{
+              position: "relative",
+              height: isMobile ? 96 : 112,
+              overflow: "hidden",
+              padding: spacing.md,
+              borderBottom: "1px solid rgba(255,255,255,0.10)",
+            }}
+          >
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                inset: 0,
+                backgroundImage: `url(${galleryAssets.actionShots[1]?.medium || galleryAssets.actionShots[0]?.medium || ""})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                opacity: 0.18,
+                filter: "blur(10px)",
+              }}
+            />
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                inset: 0,
+                background:
+                  "linear-gradient(135deg, rgba(5,11,32,0.80) 0%, rgba(5,11,32,0.55) 45%, rgba(5,11,32,0.86) 100%)",
+              }}
+            />
+
+            <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.md }}>
+              <div style={{ display: "flex", alignItems: "center", gap: spacing.md }}>
+                {/* FCRB crest placeholder */}
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "50%",
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 14px 40px rgba(0,0,0,0.45)",
+                    color: colors.text.primary,
+                    ...typography.caption,
+                    fontWeight: typography.fontWeight.bold,
+                    letterSpacing: "0.12em",
+                  }}
+                  aria-label="FC Real Bengaluru crest"
+                >
+                  FCRB
+                </div>
+
+                <div style={{ ...typography.caption, color: colors.text.muted, opacity: 0.9 }}>
+                  {primaryEvent ? primaryEvent.title : "No match selected"}
+                </div>
+
+                {/* Opponent crest placeholder */}
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "50%",
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: colors.text.secondary,
+                    ...typography.caption,
+                    fontWeight: typography.fontWeight.bold,
+                    letterSpacing: "0.12em",
+                    opacity: 0.9,
+                  }}
+                  aria-label="Opponent crest"
+                >
+                  {primaryEvent ? opponentAbbr(primaryEvent.opponent) : "—"}
+                </div>
+              </div>
+
+              {/* Competition badge */}
+              <div
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: borderRadius.full,
+                  border: "1px solid rgba(0,224,255,0.22)",
+                  background: "rgba(0,224,255,0.06)",
+                  color: colors.text.secondary,
+                  ...typography.caption,
+                  letterSpacing: "0.08em",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {primaryEvent ? primaryEvent.competition : "SCHEDULE"}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ padding: spacing.md }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.sm }}>
+            <div>
+              <div style={{ ...typography.overline, color: colors.text.muted, letterSpacing: "0.14em" }}>CLUB CALENDAR</div>
+              <div style={{ ...typography.h4, color: colors.text.primary, margin: 0 }}>Matchdays & Moments</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ ...typography.caption, color: colors.text.secondary }}>{fmtDate(today)}</div>
+              <div style={{ ...typography.caption, color: colors.text.muted, opacity: 0.9 }}>Today</div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              borderRadius: borderRadius.lg,
+              border: "1px solid rgba(255,255,255,0.10)",
+              background: "rgba(10,16,32,0.35)",
+              padding: spacing.md,
+              boxShadow: "0 16px 46px rgba(0,0,0,0.45)",
+            }}
+          >
+            {loading ? (
+              <div style={{ ...typography.body, color: colors.text.muted }}>Loading schedule…</div>
+            ) : selectedEvents.length ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.md }}>
+                  <div style={{ ...typography.caption, color: colors.text.muted, letterSpacing: "0.1em" }}>
+                    {selectedEvents[0].competition.toUpperCase()}
+                  </div>
+                  <div style={{ ...typography.caption, color: colors.text.secondary }}>{selectedEvents[0].timeLabel}</div>
+                </div>
+                <div style={{ ...typography.h3, color: colors.text.primary, margin: 0, lineHeight: 1.12 }}>
+                  {selectedEvents[0].title}
+                </div>
+                <div style={{ display: "flex", gap: spacing.md, flexWrap: "wrap", alignItems: "center" }}>
+                  <div style={{ ...typography.caption, color: colors.text.secondary }}>{selectedEvents[0].venue}</div>
+                  <div style={{ ...typography.caption, color: colors.text.muted, opacity: 0.9 }}>{selectedEvents[0].status}</div>
+                </div>
+                {selectedEvents.length > 1 && (
+                  <div style={{ ...typography.caption, color: colors.text.muted }}>+{selectedEvents.length - 1} more on this day</div>
+                )}
+              </div>
+            ) : nextMatch ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
+                <div style={{ ...typography.caption, color: colors.text.muted, letterSpacing: "0.1em" }}>NEXT MATCH</div>
+                <div style={{ ...typography.h3, color: colors.text.primary, margin: 0, lineHeight: 1.12 }}>{nextMatch.title}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: spacing.md }}>
+                  <div style={{ ...typography.caption, color: colors.text.secondary }}>{fmtDate(nextMatch.date)}</div>
+                  <div style={{ ...typography.caption, color: colors.text.secondary }}>{nextMatch.timeLabel}</div>
+                </div>
+                <div style={{ ...typography.caption, color: colors.text.muted }}>{nextMatch.competition}</div>
+              </div>
+            ) : (
+              <div style={{ ...typography.body, color: colors.text.muted, lineHeight: 1.6 }}>
+                No fixtures on the board yet. Check back soon.
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginTop: spacing.md, display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
+            <div
+              style={{
+                padding: "6px 10px",
+                borderRadius: borderRadius.full,
+                border: "1px solid rgba(255,255,255,0.10)",
+                background: "rgba(255,255,255,0.04)",
+                ...typography.caption,
+                color: colors.text.muted,
+              }}
+            >
+              Click a matchday to view details
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right: Month grid */}
+      <div
+        style={{
+          borderRadius: borderRadius.xl,
+          border: "1px solid rgba(255,255,255,0.10)",
+          background: "rgba(255,255,255,0.02)",
+          overflow: "hidden",
+        }}
+      >
+        <div style={{ padding: spacing.md, display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.md }}>
+          <div style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.semibold }}>
+            {fmtMonth(monthCursor)}
+          </div>
+          <div style={{ display: "flex", gap: spacing.sm }}>
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                const d = new Date(monthCursor);
+                d.setMonth(d.getMonth() - 1);
+                setMonthCursor(d);
+              }}
+              style={{
+                padding: "8px 10px",
+                borderRadius: borderRadius.lg,
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgba(255,255,255,0.04)",
+                color: colors.text.secondary,
+                cursor: "pointer",
+              }}
+              aria-label="Previous month"
+            >
+              ‹
+            </motion.button>
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                const d = new Date();
+                d.setDate(1);
+                d.setHours(0, 0, 0, 0);
+                setMonthCursor(d);
+              }}
+              style={{
+                padding: "8px 10px",
+                borderRadius: borderRadius.lg,
+                border: "1px solid rgba(0,224,255,0.22)",
+                background: "rgba(0,224,255,0.06)",
+                color: colors.text.secondary,
+                cursor: "pointer",
+              }}
+              aria-label="Jump to current month"
+            >
+              Today
+            </motion.button>
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                const d = new Date(monthCursor);
+                d.setMonth(d.getMonth() + 1);
+                setMonthCursor(d);
+              }}
+              style={{
+                padding: "8px 10px",
+                borderRadius: borderRadius.lg,
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgba(255,255,255,0.04)",
+                color: colors.text.secondary,
+                cursor: "pointer",
+              }}
+              aria-label="Next month"
+            >
+              ›
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Season progress + locked tooltip */}
+        <div style={{ padding: `0 ${spacing.md} ${spacing.sm}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.md }}>
+          <div style={{ ...typography.caption, color: colors.text.muted }}>
+            Season progress:{" "}
+            <span style={{ color: colors.text.secondary, fontWeight: typography.fontWeight.semibold }}>
+              {isCurrentMonth ? `${Math.round(monthProgress * 100)}%` : "—"}
+            </span>
+          </div>
+          {hoveredLocked && (
+            <div
+              style={{
+                padding: "6px 10px",
+                borderRadius: borderRadius.full,
+                border: "1px solid rgba(255,169,0,0.22)",
+                background: "rgba(255,169,0,0.08)",
+                ...typography.caption,
+                color: colors.text.secondary,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Milestone ahead — keep building
+            </div>
+          )}
+        </div>
+
+        {isCurrentMonth && (
+          <div style={{ padding: `0 ${spacing.md} ${spacing.md}` }}>
+            <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)", overflow: "hidden" }}>
+              <div
+                style={{
+                  height: "100%",
+                  width: `${Math.round(monthProgress * 100)}%`,
+                  background: "linear-gradient(90deg, rgba(255,169,0,0.85), rgba(0,224,255,0.75))",
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        <div style={{ padding: `0 ${spacing.md} ${spacing.md}` }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8, marginBottom: 8 }}>
+            {weekdayLabels.map((w) => (
+              <div
+                key={w}
+                style={{
+                  ...typography.caption,
+                  color: colors.text.muted,
+                  textAlign: "center",
+                  letterSpacing: "0.14em",
+                }}
+              >
+                {w}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
+            {monthGrid.map((cell) => {
+              if (!cell.date) return <div key={cell.key} />;
+              const d = cell.date;
+              const dateKey = cell.key;
+              const isToday = d.getTime() === today.getTime();
+              const isSelected = dateKey === selectedDateKey;
+              const dayEvents = eventsByDay.get(dateKey) || [];
+              const hasMatch = dayEvents.some((e) => e.kind === "match");
+              const hasResult = dayEvents.some((e) => e.kind === "result");
+              const isFuture = d.getTime() > today.getTime();
+              const isLocked = isFuture && hasMatch;
+
+              return (
+                <motion.button
+                  key={cell.key}
+                  type="button"
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    if (isLocked) return;
+                    setSelectedDateKey(dateKey);
+                  }}
+                  onMouseEnter={() => {
+                    if (isLocked) setHoveredLocked(true);
+                  }}
+                  onMouseLeave={() => {
+                    if (isLocked) setHoveredLocked(false);
+                  }}
+                  style={{
+                    height: 48,
+                    borderRadius: borderRadius.lg,
+                    border: isSelected
+                      ? "1px solid rgba(0,224,255,0.45)"
+                      : isToday
+                        ? "1px solid rgba(255,169,0,0.45)"
+                        : "1px solid rgba(255,255,255,0.10)",
+                    background: isSelected
+                      ? "linear-gradient(135deg, rgba(0,224,255,0.10) 0%, rgba(255,169,0,0.06) 100%)"
+                      : "rgba(10,16,32,0.30)",
+                    boxShadow: isSelected
+                      ? "0 14px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,224,255,0.10) inset"
+                      : isToday
+                        ? "0 12px 34px rgba(0,0,0,0.42), 0 0 18px rgba(255,169,0,0.18)"
+                        : "none",
+                    color: colors.text.secondary,
+                    cursor: isLocked ? "not-allowed" : "pointer",
+                    position: "relative",
+                    overflow: "hidden",
+                    padding: 0,
+                    opacity: isLocked ? 0.55 : 1,
+                  }}
+                  aria-label={`Day ${cell.dayNum}`}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+                    <span
+                      style={{
+                        ...typography.body,
+                        fontSize: typography.fontSize.sm,
+                        color: isToday ? colors.text.primary : colors.text.secondary,
+                        fontWeight: isToday ? 700 : 600,
+                        filter: isLocked ? "blur(1px)" : "none",
+                      }}
+                    >
+                      {cell.dayNum}
+                    </span>
+                  </div>
+
+                  {(hasMatch || hasResult) && (
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position: "absolute",
+                        left: 8,
+                        right: 8,
+                        bottom: 6,
+                        height: 4,
+                        borderRadius: 999,
+                        background: hasMatch
+                          ? "linear-gradient(90deg, rgba(255,169,0,0.85), rgba(0,224,255,0.75))"
+                          : "rgba(255,255,255,0.20)",
+                        opacity: 0.95,
+                      }}
+                    />
+                  )}
+
+                  {hasMatch && (
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position: "absolute",
+                        top: 6,
+                        right: 6,
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background: "rgba(255,169,0,0.9)",
+                        boxShadow: "0 0 0 2px rgba(255,169,0,0.20)",
+                      }}
+                    />
+                  )}
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Interface for centres
 interface Centre {
@@ -87,34 +880,73 @@ const InfinitySection: React.FC<{
   const isInView = useInView(sectionRef, { 
     once: false, 
     amount: 0.1,
-    margin: "0px",
+    margin: "-100px", // Negative margin to trigger earlier for smoother transitions
   });
 
   return (
     <>
+      {/* Smooth transition bridge - eliminates blank zones */}
+      {bridge && (
+        <div
+          style={{
+            position: "relative",
+            height: "100px",
+            marginTop: "-100px",
+            zIndex: 1,
+            background: "transparent",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+      
       <motion.section
         ref={sectionRef}
         id={id}
         initial="offscreen"
         animate={isInView ? "onscreen" : "offscreen"}
         variants={infinitySectionVariants}
-        transition={{ delay }}
+        transition={{ 
+          delay,
+          duration: 0.6,
+          ease: [0.25, 0.46, 0.45, 0.94], // easeOutQuad-like curve for smooth sports broadcast feel
+        }}
         viewport={{ once: false, amount: 0.1 }}
         style={{
           ...style,
           position: "relative",
           marginTop: bridge ? "-100px" : "0",
           marginBottom: bridge ? "-100px" : "0",
-          paddingTop: bridge ? "150px" : (style?.paddingTop !== undefined ? style.paddingTop : "100px"),
-          paddingBottom: bridge ? "150px" : (style?.paddingBottom !== undefined ? style.paddingBottom : "100px"),
+          // Fixed header overlap - ensure top padding accounts for sticky header (120px)
+          paddingTop: bridge ? "150px" : (style?.paddingTop !== undefined ? style.paddingTop : spacing.sectionGap),
+          paddingBottom: bridge ? "150px" : (style?.paddingBottom !== undefined ? style.paddingBottom : spacing.sectionGap),
           zIndex: bridge ? 2 : 1,
           overflow: "visible",
           overflowY: "visible",
           overflowX: "hidden",
           width: "100%",
           minHeight: "1px",
+          // Ensure no blank zones - continuous background
+          background: style?.background || "transparent",
         }}
       >
+        {/* Subtle pitch texture overlay for football-first feel */}
+        {bridge && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 0,
+              pointerEvents: "none",
+              backgroundImage: `
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.01) 2px, rgba(255,255,255,0.01) 4px),
+                repeating-linear-gradient(90deg, transparent, transparent 100px, rgba(10,61,145,0.02) 100px, rgba(10,61,145,0.02) 200px)
+              `,
+              opacity: 0.3,
+            }}
+          />
+        )}
+        
         <div style={{ 
           position: "relative", 
           zIndex: 1, 
@@ -127,80 +959,31 @@ const InfinitySection: React.FC<{
           {children}
         </div>
       </motion.section>
+      
+      {/* Bottom transition bridge */}
+      {bridge && (
+        <div
+          style={{
+            position: "relative",
+            height: "100px",
+            marginBottom: "-100px",
+            zIndex: 1,
+            background: "transparent",
+            pointerEvents: "none",
+          }}
+        />
+      )}
     </>
   );
 };
 
 // Trophy Cabinet Component - Interactive Achievement Display
-type CabinetIconProps = { size?: number; style?: React.CSSProperties; primary?: string; secondary?: string };
 
-// Purpose-built cabinet icons (inline SVG; no additional assets/deps).
-const CabinetTrophyMark: React.FC<CabinetIconProps> = ({
-  size = 24,
-  primary = "rgba(255, 194, 51, 0.95)",
-  secondary = "rgba(0, 224, 255, 0.9)",
-  style,
-}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={style}>
-    {/* Cup */}
-    <path
-      d="M7 4h10v4c0 3.2-2.6 5.8-5.8 5.8h-.4C7.6 13.8 5 11.2 5 8V4h2Z"
-      fill={primary}
-      opacity={0.95}
-    />
-    {/* Handles */}
-    <path
-      d="M5 5H3.6C3.3 5 3 5.3 3 5.6V7c0 2.2 1.5 4 3.6 4.5v-1.6C5.6 9.6 5 8.8 5 7.9V5Z"
-      fill={primary}
-      opacity={0.85}
-    />
-    <path
-      d="M19 5h1.4c.3 0 .6.3.6.6V7c0 2.2-1.5 4-3.6 4.5v-1.6c1-.3 1.6-1.1 1.6-2V5Z"
-      fill={primary}
-      opacity={0.85}
-    />
-    {/* Stem + base */}
-    <path d="M10.2 13.6h3.6v2.2c0 .7-.6 1.3-1.3 1.3h-1c-.7 0-1.3-.6-1.3-1.3v-2.2Z" fill={secondary} opacity={0.92} />
-    <path
-      d="M7.6 18h8.8c.3 0 .6.3.6.6v1c0 .2-.1.4-.3.5-.1.1-.2.1-.3.1H7.6c-.2 0-.4-.1-.5-.3-.1-.1-.1-.2-.1-.3v-1c0-.3.3-.6.6-.6Z"
-      fill={primary}
-      opacity={0.9}
-    />
-    {/* Shine */}
-    <path
-      d="M9.2 5.4h1.1c.3 0 .5.2.4.5-.3 1.6-.1 4.3 1.3 6.2.2.3-.1.7-.4.7H11c-.1 0-.3-.1-.4-.2-1.7-2.2-1.8-5.3-1.4-7 .1-.1.2-.2.4-.2Z"
-      fill="#fff"
-      opacity={0.22}
-    />
-  </svg>
-);
-
-const CabinetMedalMark: React.FC<CabinetIconProps> = ({
-  size = 24,
-  primary = "rgba(0, 224, 255, 0.95)",
-  secondary = "rgba(255, 194, 51, 0.9)",
-  style,
-}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={style}>
-    {/* Ribbons */}
-    <path d="M7.1 3.8h3.8L9.7 8 7.1 3.8Z" fill={secondary} opacity={0.9} />
-    <path d="M13.1 3.8h3.8L14.3 8 13.1 3.8Z" fill={secondary} opacity={0.9} />
-    {/* Medal */}
-    <circle cx="12" cy="14.2" r="5.3" fill={primary} opacity={0.92} />
-    <circle cx="12" cy="14.2" r="3.6" fill="#0B1224" opacity={0.55} />
-    {/* Highlight */}
-    <path
-      d="M9.7 11.5c.6-.6 1.6-1.1 2.8-1.1.3 0 .5.2.4.5-.1.3-.4.5-.7.5-1.1 0-1.8.4-2.2.9-.2.2-.5.2-.7 0-.2-.2-.2-.6 0-.8Z"
-      fill="#fff"
-      opacity={0.2}
-    />
-  </svg>
-);
-
-const TrophyCabinet: React.FC<{
+export const TrophyCabinet: React.FC<{
   onOpenChange?: (isOpen: boolean) => void;
   variant?: "compact" | "royal";
-}> = ({ onOpenChange, variant = "compact" }) => {
+  isMobile?: boolean;
+}> = ({ onOpenChange, variant = "compact", isMobile = false }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleToggle = () => {
@@ -213,20 +996,18 @@ const TrophyCabinet: React.FC<{
 
   const achievements = [
     { 
+      year: "2025",
       label: "Champions — KSFA D Division", 
-      icon: CabinetTrophyMark,
-      tooltip: "Debut season title",
       glow: colors.accent.main,
-      primary: "rgba(255, 194, 51, 0.95)",
-      secondary: colors.accent.main,
+      kind: "trophy" as const,
+      color: "rgba(255, 194, 51, 0.95)",
     },
     { 
+      year: "2025",
       label: "Runners-up — KSFA C Division", 
-      icon: CabinetMedalMark,
-      tooltip: "Immediate promotion impact",
       glow: colors.primary.main,
-      primary: "rgba(0, 224, 255, 0.95)",
-      secondary: colors.accent.main,
+      kind: "medal" as const,
+      color: "rgba(0, 224, 255, 0.95)",
     },
   ];
 
@@ -395,12 +1176,11 @@ const TrophyCabinet: React.FC<{
             style={{
               position: "relative",
               zIndex: 2,
-              padding: `${spacing["2xl"]} ${spacing["2xl"]}`,
+              padding: isMobile ? spacing.sm : spacing.md,
               textAlign: "center",
-              minHeight: isOpen ? 270 : 190,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              // Keep the page flow stable: reserve a consistent footprint for both states.
+              minHeight: isMobile ? 360 : 330,
+              display: "block",
             }}
           >
             <AnimatePresence initial={false} mode="wait">
@@ -436,7 +1216,11 @@ const TrophyCabinet: React.FC<{
                     }}
                     transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
                   >
-                    <CabinetTrophyMark size={30} primary="rgba(255, 194, 51, 0.95)" secondary={colors.accent.main} />
+                    <TrophyIcon
+                      size={30}
+                      color="rgba(255, 194, 51, 0.95)"
+                      style={{ display: "block", lineHeight: 0 }}
+                    />
                   </motion.div>
 
                   <div style={{ maxWidth: 560, margin: "0 auto" }}>
@@ -488,7 +1272,7 @@ const TrophyCabinet: React.FC<{
                       ...typography.overline,
                       color: "rgba(255, 194, 51, 0.95)",
                       letterSpacing: "0.18em",
-                      marginBottom: spacing.lg,
+                      marginBottom: spacing.sm,
                       textTransform: "uppercase",
                       textAlign: "center",
                     }}
@@ -500,15 +1284,15 @@ const TrophyCabinet: React.FC<{
                   <div
                     style={{
                       position: "relative",
-                      maxWidth: 860,
+                      maxWidth: 560,
                       margin: "0 auto",
-                      borderRadius: borderRadius["2xl"],
-                      padding: isMobile ? spacing.lg : spacing.xl,
+                      borderRadius: borderRadius.xl,
+                      padding: isMobile ? spacing.xs : spacing.sm,
                       background:
                         "linear-gradient(135deg, rgba(92, 54, 28, 0.92) 0%, rgba(66, 38, 20, 0.90) 40%, rgba(84, 48, 25, 0.92) 100%)",
-                      border: "1px solid rgba(255, 194, 51, 0.22)",
+                      border: "1px solid rgba(255, 194, 51, 0.16)",
                       boxShadow:
-                        "0 40px 110px rgba(0,0,0,0.70), inset 0 1px 0 rgba(255,255,255,0.10), inset 0 0 0 1px rgba(0,0,0,0.35)",
+                        "0 20px 64px rgba(0,0,0,0.60), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px rgba(0,0,0,0.28)",
                       overflow: "hidden",
                     }}
                   >
@@ -529,8 +1313,8 @@ const TrophyCabinet: React.FC<{
                     <div
                       style={{
                         position: "relative",
-                        borderRadius: borderRadius.xl,
-                        padding: isMobile ? spacing.lg : spacing.xl,
+                        borderRadius: borderRadius.lg,
+                        padding: isMobile ? spacing.xs : spacing.sm,
                         background:
                           "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(10,16,32,0.35) 35%, rgba(10,16,32,0.55) 100%)",
                         border: "1px solid rgba(255,255,255,0.10)",
@@ -609,7 +1393,7 @@ const TrophyCabinet: React.FC<{
                         }}
                       >
                         {achievements.map((achievement, idx) => {
-                          const Icon = achievement.icon;
+                          const Icon = achievement.kind === "trophy" ? TrophyIcon : MedalIcon;
                           const glow = achievement.glow;
                           return (
                             <motion.div
@@ -626,7 +1410,7 @@ const TrophyCabinet: React.FC<{
                                   "linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(10,16,32,0.22) 45%, rgba(10,16,32,0.40) 100%)",
                                 boxShadow: "0 18px 50px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(0,0,0,0.25)",
                                 overflow: "hidden",
-                                minHeight: isMobile ? 220 : 260,
+                                minHeight: isMobile ? 160 : 180,
                               }}
                             >
                               {/* Spotlight (lamp + cone) */}
@@ -679,7 +1463,7 @@ const TrophyCabinet: React.FC<{
                                   position: "absolute",
                                   left: 12,
                                   right: 12,
-                                  top: isMobile ? 116 : 132,
+                                  top: isMobile ? 104 : 116,
                                   height: 10,
                                   borderRadius: 999,
                                   background:
@@ -694,11 +1478,11 @@ const TrophyCabinet: React.FC<{
                               <motion.div
                                 style={{
                                   position: "absolute",
-                                  top: isMobile ? 58 : 66,
+                                  top: isMobile ? 40 : 44,
                                   left: "50%",
-                                  transform: "translateX(-50%)",
-                                  width: 72,
-                                  height: 72,
+                                  x: "-50%",
+                                  width: 56,
+                                  height: 56,
                                   borderRadius: 18,
                                   display: "flex",
                                   alignItems: "center",
@@ -714,10 +1498,13 @@ const TrophyCabinet: React.FC<{
                                 transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.25 + idx * 0.12 }}
                               >
                                 <Icon
-                                  size={44}
-                                  primary={(achievement as any).primary}
-                                  secondary={(achievement as any).secondary}
-                                  style={{ filter: `drop-shadow(0 0 14px ${glow}66)` }}
+                                  size={34}
+                                  color={achievement.color}
+                                  style={{
+                                    display: "block",
+                                    lineHeight: 0,
+                                    filter: `drop-shadow(0 0 14px ${glow}66)`,
+                                  }}
                                 />
                               </motion.div>
 
@@ -727,7 +1514,7 @@ const TrophyCabinet: React.FC<{
                                   position: "absolute",
                                   left: 18,
                                   right: 18,
-                                  bottom: 18,
+                                  top: isMobile ? 114 : 122,
                                   textAlign: "center",
                                 }}
                               >
@@ -736,15 +1523,15 @@ const TrophyCabinet: React.FC<{
                                     ...typography.body,
                                     color: colors.text.primary,
                                     fontWeight: typography.fontWeight.bold,
-                                    fontSize: typography.fontSize.base,
-                                    lineHeight: 1.25,
-                                    marginBottom: 6,
+                                    fontSize: "0.72rem",
+                                    lineHeight: 1.15,
+                                    marginBottom: 0,
                                   }}
                                 >
-                                  {achievement.label}
-                                </div>
-                                <div style={{ ...typography.caption, color: colors.text.muted, opacity: 0.88 }}>
-                                  {achievement.tooltip}
+                                  {achievement.label}{" "}
+                                  <span style={{ color: "rgba(255, 194, 51, 0.92)" }}>
+                                    ({achievement.year})
+                                  </span>
                                 </div>
                               </div>
 
@@ -771,7 +1558,7 @@ const TrophyCabinet: React.FC<{
                     </div>
                   </div>
 
-                  <div style={{ ...typography.caption, color: colors.text.muted, opacity: 0.75, marginTop: spacing.lg }}>
+                  <div style={{ ...typography.caption, color: colors.text.muted, opacity: 0.75, marginTop: spacing.md }}>
                     Tap again to close
                   </div>
                 </motion.div>
@@ -822,7 +1609,7 @@ const TrophyCabinet: React.FC<{
                 flexWrap: "nowrap",
               }}>
                 {achievements.map((achievement, idx) => {
-                  const Icon = achievement.icon;
+                  const Icon = achievement.kind === "trophy" ? TrophyIcon : MedalIcon;
                   return (
                     <motion.div
                       key={idx}
@@ -853,7 +1640,6 @@ const TrophyCabinet: React.FC<{
                         flex: "1 1 0",
                         maxWidth: "300px",
                       }}
-                      title={achievement.tooltip}
                     >
                       <motion.div
                         animate={{
@@ -881,9 +1667,10 @@ const TrophyCabinet: React.FC<{
                       >
                         <Icon
                           size={32}
-                          primary={(achievement as any).primary}
-                          secondary={(achievement as any).secondary}
+                          color={achievement.color}
                           style={{
+                            display: "block",
+                            lineHeight: 0,
                             filter: `drop-shadow(0 0 10px ${achievement.glow}55)`,
                           }}
                         />
@@ -892,15 +1679,18 @@ const TrophyCabinet: React.FC<{
                         style={{
                           ...typography.body,
                           color: colors.text.primary,
-                          fontSize: typography.fontSize.sm,
+                          fontSize: "0.68rem",
                           fontWeight: typography.fontWeight.semibold,
                           letterSpacing: "0.02em",
                           textAlign: "center",
                           textShadow: `0 2px 8px rgba(0, 0, 0, 0.3)`,
-                          lineHeight: 1.4,
+                          lineHeight: 1.35,
                         }}
                       >
-                        {achievement.label}
+                        {achievement.label}{" "}
+                        <span style={{ color: "rgba(255, 194, 51, 0.92)" }}>
+                          ({achievement.year})
+                        </span>
                       </span>
                     </motion.div>
                   );
@@ -1169,294 +1959,497 @@ const ProgramsPreviewTabs: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
   );
 };
 
-// Tabbed Panel Component for Our Story Section
-const TabbedPanel: React.FC<{
+// Story Timeline Stack (progressive revelation) for Our Story Section
+export const TabbedPanel: React.FC<{
   tabs: Array<{
     id: string;
     label: string;
     icon: React.ReactNode;
     oneLiner: string;
-    paragraph: string;
-    miniNote: string;
+    paragraph?: string;
+    miniNote?: string;
   }>;
   isMobile: boolean;
 }> = ({ tabs, isMobile }) => {
-  const [activeTab, setActiveTab] = useState(tabs[0].id);
+  // fixed order (as required)
+  const orderedIds = ["our-story", "what-we-build", "our-vision"];
+  const orderedTabs = orderedIds
+    .map((id) => tabs.find((t) => t.id === id))
+    .filter(Boolean) as typeof tabs;
+  const safeTabs = orderedTabs.length ? orderedTabs : tabs;
+
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeTab = safeTabs[activeIndex]?.id || safeTabs[0]?.id;
+  const activeTabData = safeTabs[activeIndex] || safeTabs[0];
+
+  const [visited, setVisited] = useState<Record<string, boolean>>(() => ({
+    ...(safeTabs[0]?.id ? { [safeTabs[0].id]: true } : {}),
+  }));
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.getAttribute("role") !== "tab") return;
+    if (!activeTab) return;
+    setVisited((prev) => ({ ...prev, [activeTab]: true }));
+  }, [activeTab]);
 
-      if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "ArrowRight" || e.key === "ArrowLeft") {
-        e.preventDefault();
-        const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
-        let nextIndex: number;
-        
-        if (isMobile) {
-          // Horizontal navigation on mobile
-          nextIndex = (e.key === "ArrowRight" || e.key === "ArrowDown")
-            ? (currentIndex + 1) % tabs.length
-            : (currentIndex - 1 + tabs.length) % tabs.length;
-        } else {
-          // Vertical navigation on desktop
-          nextIndex = (e.key === "ArrowDown")
-            ? (currentIndex + 1) % tabs.length
-            : (currentIndex - 1 + tabs.length) % tabs.length;
-        }
-        
-        setActiveTab(tabs[nextIndex].id);
-        // Focus the new tab
-        const nextTab = document.querySelector(`[data-tab-id="${tabs[nextIndex].id}"]`) as HTMLElement;
-        if (nextTab) nextTab.focus();
-      } else if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        const tabId = target.getAttribute("data-tab-id");
-        if (tabId) setActiveTab(tabId);
-      }
+  const storyNodeVariants = {
+    inactive: { opacity: 0.4, scale: 0.98, filter: "blur(1px)" },
+    active: {
+      opacity: 1,
+      scale: 1,
+      boxShadow: "0 0 18px rgba(0,180,255,0.35)",
+      filter: "blur(0px)",
+      transition: { duration: 0.3 },
+    },
+  } as const;
+
+  const panelSwap = {
+    initial: { opacity: 0, x: 24, filter: "blur(8px)" },
+    animate: { opacity: 1, x: 0, filter: "blur(0px)", transition: { duration: 0.45, ease: [0.2, 0.8, 0.2, 1] } },
+    exit: { opacity: 0, x: -24, filter: "blur(8px)", transition: { duration: 0.25 } },
+  } as const;
+
+  const cardStagger = {
+    animate: { transition: { staggerChildren: 0.07, delayChildren: 0.06 } },
+  } as const;
+
+  const cardItem = {
+    initial: { opacity: 0, y: 10, scale: 0.99 },
+    animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.35 } },
+  } as const;
+
+  const getNodeTitle = (id: string) => {
+    if (id === "our-story") return "The Beginning";
+    if (id === "what-we-build") return "What We’re Building";
+    return "Our Vision Forward";
+  };
+
+  const getNarrative = (id: string) => {
+    if (id === "our-story") {
+      return {
+        lead: "A Bengaluru club — community-first, built to rise.",
+        insights: [
+          { k: "COMPETE", v: "Started in KSFA D Division with promotion ambitions from day one. Multiple squads across local competitions and tournaments." },
+          { k: "PATHWAY", v: "Grassroots academy → youth teams → senior squads. Training built to bridge the gap from school football to state leagues." },
+          { k: "STANDARDS", v: "Structured coaching with UEFA/AFC/IFF-licensed staff. Environments that demand professionalism, even at youth level." },
+        ],
+        direction: "",
+      };
+    }
+    if (id === "what-we-build") {
+      return {
+        lead: "One club, multiple pathways — from kids to Super Division.",
+        insights: [
+          { k: "COMPETE", v: "KSFA Super Division ambition, women’s B Division, C & D Division squads, youth leagues." },
+          { k: "PATHWAY", v: "Clear progression from FYDP into SCP, EPP, and Women’s Performance Pathway (WPP)." },
+          { k: "STANDARDS", v: "Unified playing philosophy across age groups so transitions feel natural." },
+        ],
+        direction: "",
+      };
+    }
+    return {
+      lead: "Long-term excellence with ambition.",
+      insights: [
+        { k: "COMPETE", v: "Sustain presence at the top of Karnataka football and push towards national relevance." },
+        { k: "PATHWAY", v: "Turn Bengaluru into a serious football destination for youth from across India." },
+        { k: "STANDARDS", v: "Use RealVerse data, modern sports science, and consistent coaching to track growth season over season." },
+      ],
+      direction: "",
     };
+  };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeTab, tabs, isMobile]);
+  const getPanelTint = (id: string) => {
+    if (id === "our-story") return { a: "rgba(255,169,0,0.12)", b: "rgba(0,224,255,0.08)" };
+    if (id === "what-we-build") return { a: "rgba(0,224,255,0.12)", b: "rgba(255,169,0,0.07)" };
+    return { a: "rgba(0,224,255,0.10)", b: "rgba(255,169,0,0.10)" };
+  };
 
-  const activeTabData = tabs.find(tab => tab.id === activeTab) || tabs[0];
+  const panelHeight = isMobile ? 360 : 340; // stable footprint: no height jumps
+
+  const handleMove = (nextIndex: number) => {
+    const clamped = Math.max(0, Math.min(nextIndex, safeTabs.length - 1));
+    setActiveIndex(clamped);
+  };
+
+  const narrative = getNarrative(activeTab);
 
   return (
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: isMobile ? "1fr" : "320px 1fr",
-      gap: isMobile ? spacing.md : spacing.xl,
-      minHeight: "400px",
-    }}>
-      {/* Tabs List */}
-      <div style={{
-        display: "flex",
-        flexDirection: isMobile ? "row" : "column",
-        gap: spacing.sm,
-        overflowX: isMobile ? "auto" : "visible",
-        paddingBottom: isMobile ? spacing.sm : 0,
-        paddingRight: isMobile ? 0 : spacing.sm,
-      }}>
-        {tabs.map((tab, idx) => {
+    <div
+      onKeyDown={(e) => {
+        const target = e.target as HTMLElement | null;
+        const tag = target?.tagName?.toLowerCase();
+        const isTypingTarget =
+          tag === "input" ||
+          tag === "textarea" ||
+          tag === "select" ||
+          target?.isContentEditable ||
+          (target?.getAttribute?.("contenteditable") === "true");
+        if (isTypingTarget) return;
+
+        // Keyboard navigation (←/→ per spec). Keep ↑/↓ as a convenience.
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+          e.preventDefault();
+          handleMove(activeIndex + 1);
+        } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+          e.preventDefault();
+          handleMove(activeIndex - 1);
+        } else if (e.key === "Home") {
+          e.preventDefault();
+          handleMove(0);
+        } else if (e.key === "End") {
+          e.preventDefault();
+          handleMove(safeTabs.length - 1);
+        }
+      }}
+      style={{
+        display: "grid",
+        gridTemplateColumns: isMobile ? "1fr" : "292px 1fr",
+        gap: isMobile ? spacing.md : spacing.lg,
+        alignItems: "stretch",
+      }}
+    >
+      {/* LEFT: Story Nodes (index) */}
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          paddingRight: isMobile ? 0 : spacing.sm,
+        }}
+        aria-label="Story timeline"
+      >
+        {/* subtle vertical rail */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: 14,
+            top: 8,
+            bottom: 8,
+            width: 1,
+            background: "linear-gradient(transparent, rgba(255,255,255,0.16), transparent)",
+            opacity: 0.9,
+            pointerEvents: "none",
+          }}
+        />
+
+        {safeTabs.map((tab, idx) => {
           const isActive = tab.id === activeTab;
+          const isDone = !!visited[tab.id] && !isActive;
+          const nodeTitle = getNodeTitle(tab.id);
           const step = String(idx + 1).padStart(2, "0");
           return (
             <motion.button
               key={tab.id}
-              role="tab"
-              aria-selected={isActive}
-              aria-controls={`panel-${tab.id}`}
-              data-tab-id={tab.id}
-              tabIndex={0}
-              onClick={() => setActiveTab(tab.id)}
-              whileHover={{ x: isMobile ? 0 : 4 }}
+              type="button"
+              aria-current={isActive ? "step" : undefined}
+              onClick={() => handleMove(idx)}
+              variants={storyNodeVariants}
+              animate={isActive ? "active" : "inactive"}
+              whileHover={isActive ? undefined : { opacity: 0.7, scale: 0.99, filter: "blur(0px)" }}
               whileTap={{ scale: 0.98 }}
-              onFocus={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.outline = `2px solid ${colors.accent.main}60`;
-                  e.currentTarget.style.outlineOffset = "2px";
-                }
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.outline = "none";
-              }}
               style={{
-                padding: spacing.md,
+                width: "100%",
+                padding: spacing.sm,
+                paddingLeft: 34,
                 background: isActive
-                  ? `linear-gradient(135deg, rgba(0,224,255,0.14) 0%, rgba(255,169,0,0.08) 100%)`
-                  : `rgba(255, 255, 255, 0.03)`,
+                  ? "linear-gradient(135deg, rgba(0,224,255,0.14) 0%, rgba(255,169,0,0.08) 100%)"
+                  : "rgba(255,255,255,0.03)",
                 border: `1px solid ${isActive ? "rgba(0,224,255,0.35)" : "rgba(255,255,255,0.08)"}`,
                 borderRadius: borderRadius.lg,
                 cursor: "pointer",
                 textAlign: "left",
-                transition: "all 0.2s ease",
-                boxShadow: isActive ? `0 12px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,224,255,0.12) inset` : "none",
-                minWidth: isMobile ? "200px" : "auto",
-                flexShrink: 0,
                 outline: "none",
                 position: "relative",
                 overflow: "hidden",
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
-                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.15)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
-                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
-                }
+                transition: "border-color 180ms ease, background 180ms ease",
               }}
             >
-              {/* Active accent rail */}
+              {/* progress dot */}
               <div
                 aria-hidden="true"
                 style={{
                   position: "absolute",
-                  left: 0,
-                  top: 10,
-                  bottom: 10,
-                  width: 3,
-                  borderRadius: 999,
-                  background: isActive ? `linear-gradient(180deg, rgba(0,224,255,0.9), rgba(255,169,0,0.85))` : "transparent",
-                  opacity: isActive ? 1 : 0,
-                  transition: "opacity 180ms ease",
+                  left: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: isDone ? "rgba(255, 194, 51, 0.95)" : isActive ? colors.accent.main : "rgba(255,255,255,0.25)",
+                  boxShadow: isActive
+                    ? "0 0 0 3px rgba(0,224,255,0.16), 0 0 18px rgba(0,180,255,0.30)"
+                    : isDone
+                    ? "0 0 0 3px rgba(255,194,51,0.12), 0 0 18px rgba(255,194,51,0.18)"
+                    : "none",
                 }}
               />
 
-              <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, marginBottom: spacing.xs }}>
-                <span
-                  style={{
-                    ...typography.caption,
-                    color: isActive ? colors.text.primary : colors.text.muted,
-                    fontSize: typography.fontSize.xs,
-                    letterSpacing: "0.18em",
-                    opacity: isActive ? 0.9 : 0.55,
-                    padding: `2px 8px`,
-                    borderRadius: borderRadius.full,
-                    border: `1px solid ${isActive ? "rgba(0,224,255,0.30)" : "rgba(255,255,255,0.10)"}`,
-                    background: isActive ? "rgba(0,224,255,0.08)" : "rgba(255,255,255,0.04)",
-                  }}
-                >
-                  {step}
-                </span>
-                <div style={{ opacity: isActive ? 1 : 0.6 }}>
-                  {tab.icon}
+              {/* step + icon + title */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.sm }}>
+                <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, minWidth: 0 }}>
+                  <span
+                    style={{
+                      ...typography.caption,
+                      color: isActive ? colors.text.primary : colors.text.muted,
+                      fontSize: typography.fontSize.xs,
+                      letterSpacing: "0.18em",
+                      opacity: isActive ? 0.9 : 0.55,
+                      padding: `2px 8px`,
+                      borderRadius: borderRadius.full,
+                      border: `1px solid ${isActive ? "rgba(0,224,255,0.30)" : "rgba(255,255,255,0.10)"}`,
+                      background: isActive ? "rgba(0,224,255,0.08)" : "rgba(255,255,255,0.04)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {step}
+                  </span>
+                  <div style={{ opacity: isActive ? 1 : 0.6, flexShrink: 0 }}>{tab.icon}</div>
+                  <span
+                    style={{
+                      ...typography.h5,
+                      color: isActive ? colors.text.primary : colors.text.secondary,
+                      fontSize: typography.fontSize.sm,
+                      fontWeight: isActive ? typography.fontWeight.semibold : typography.fontWeight.medium,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {nodeTitle}
+                  </span>
                 </div>
-                <span 
-                  id={`tab-${tab.id}`}
-                  style={{
-                    ...typography.h5,
-                    color: isActive ? colors.text.primary : colors.text.secondary,
-                    fontSize: typography.fontSize.base,
-                    fontWeight: isActive ? typography.fontWeight.semibold : typography.fontWeight.medium,
-                  }}
-                >
-                  {tab.label}
-                </span>
+
+                {/* completed tick */}
+                {isDone ? (
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: "50%",
+                      background: "rgba(255,194,51,0.12)",
+                      border: "1px solid rgba(255,194,51,0.22)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 10px 24px rgba(0,0,0,0.35)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <CheckIcon size={12} color="rgba(255, 194, 51, 0.95)" />
+                  </div>
+                ) : (
+                  <div aria-hidden="true" style={{ width: 22, height: 22, flexShrink: 0 }} />
+                )}
               </div>
-              <p style={{
-                ...typography.body,
-                color: colors.text.muted,
-                fontSize: typography.fontSize.sm,
-                margin: 0,
-                opacity: isActive ? 0.85 : 0.6,
-                lineHeight: 1.5,
-              }}>
+
+              {/* subtle progress hint */}
+              <div
+                style={{
+                  ...typography.body,
+                  color: colors.text.muted,
+                  fontSize: typography.fontSize.xs,
+                  marginTop: 6,
+                  opacity: isActive ? 0.75 : 0.55,
+                  lineHeight: 1.45,
+                }}
+              >
                 {tab.oneLiner}
-              </p>
+              </div>
             </motion.button>
           );
         })}
       </div>
 
-      {/* Content Panel */}
-      <div 
-        id={`panel-${activeTab}`}
-        role="tabpanel"
-        aria-labelledby={`tab-${activeTab}`}
+      {/* RIGHT: Living Content Panel (fixed height, depth swaps) */}
+      <div
         style={{
           position: "relative",
-          minHeight: "400px",
+          height: panelHeight,
+          minHeight: panelHeight,
         }}
+        aria-label="Narrative panel"
       >
-        <AnimatePresence mode="wait">
-          <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -10, filter: "blur(6px)" }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(135deg, rgba(10,16,32,0.62) 0%, rgba(10,16,32,0.48) 100%)",
+            borderRadius: borderRadius["2xl"],
+            border: "1px solid rgba(255,255,255,0.10)",
+            boxShadow: "0 22px 70px rgba(0,0,0,0.55)",
+            overflow: "hidden",
+            backdropFilter: "blur(14px)",
+          }}
+        >
+          {/* background shift per narrative */}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={`bg-${activeTab}`}
+              initial={{ opacity: 0, scale: 1.02, x: 8 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+              aria-hidden="true"
               style={{
-                position: "relative",
-                background: `linear-gradient(135deg, rgba(10, 16, 32, 0.62) 0%, rgba(10, 16, 32, 0.48) 100%)`,
-                backdropFilter: "blur(14px)",
-                borderRadius: borderRadius["2xl"],
-                border: `1px solid rgba(255,255,255,0.10)`,
-                boxShadow: "0 22px 70px rgba(0,0,0,0.55)",
-                padding: isMobile ? spacing.lg : spacing.xl,
-                height: "100%",
-                minHeight: "400px",
-                overflow: "hidden",
-                boxSizing: "border-box",
+                position: "absolute",
+                inset: 0,
+                background: (() => {
+                  const tint = getPanelTint(activeTab);
+                  return `radial-gradient(circle at 22% 18%, ${tint.a} 0%, transparent 58%), radial-gradient(circle at 85% 78%, ${tint.b} 0%, transparent 60%)`;
+                })(),
+                pointerEvents: "none",
               }}
-            >
-              {/* subtle glow behind */}
-              <div
-                aria-hidden="true"
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background:
-                    "radial-gradient(circle at 20% 15%, rgba(0,224,255,0.10) 0%, transparent 55%), radial-gradient(circle at 85% 75%, rgba(255,169,0,0.08) 0%, transparent 55%)",
-                  pointerEvents: "none",
-                  opacity: 0.9,
-                }}
-              />
+            />
+          </AnimatePresence>
 
-              <div style={{ position: "relative", zIndex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md }}>
-                  <div style={{ opacity: 0.95 }}>{activeTabData.icon}</div>
-                  <span style={{ ...typography.h3, color: colors.text.primary, fontSize: typography.fontSize["2xl"], margin: 0 }}>
-                    {activeTabData.label}
-                  </span>
-                </div>
-
-              <p style={{
-                ...typography.body,
-                color: colors.text.secondary,
-                fontSize: typography.fontSize.base,
-                marginBottom: spacing.lg,
-                lineHeight: 1.6,
-                opacity: 0.9,
-              }}>
-                {activeTabData.oneLiner}
-              </p>
-              <p
+          <div style={{ position: "relative", zIndex: 1, height: "100%" }}>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={activeTab}
+                variants={panelSwap}
+                initial="initial"
+                animate="animate"
+                exit="exit"
                 style={{
-                  ...typography.body,
-                  color: colors.text.secondary,
-                  fontSize: typography.fontSize.sm,
-                  lineHeight: 1.75,
-                  opacity: 0.9,
-                  margin: 0,
-                  marginBottom: spacing.lg,
-                  wordWrap: "break-word",
-                  overflowWrap: "break-word",
+                  height: "100%",
+                  padding: spacing.lg,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: spacing.md,
                 }}
               >
-                {activeTabData.paragraph}
-              </p>
-              {!!activeTabData.miniNote && (
-                <p
+                {/* top row: context */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.md }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, minWidth: 0 }}>
+                    <div style={{ opacity: 0.95, flexShrink: 0 }}>{activeTabData.icon}</div>
+                    <div
+                      style={{
+                        ...typography.caption,
+                        color: colors.text.muted,
+                        fontSize: typography.fontSize.xs,
+                        letterSpacing: "0.18em",
+                        opacity: 0.9,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      TIMELINE
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lead */}
+                <motion.div
+                  initial={{ opacity: 0, x: 14, filter: "blur(6px)" }}
+                  animate={{ opacity: 1, x: 0, filter: "blur(0px)", transition: { duration: 0.45, ease: [0.2, 0.8, 0.2, 1] } }}
                   style={{
-                    ...typography.caption,
-                    color: colors.text.muted,
-                    fontSize: typography.fontSize.xs,
-                    fontStyle: "italic",
-                    margin: 0,
-                    opacity: 0.85,
-                    lineHeight: 1.5,
-                    wordWrap: "break-word",
-                    overflowWrap: "break-word",
-                    marginBottom: spacing.lg,
+                    ...typography.body,
+                    color: colors.text.primary,
+                    fontSize: typography.fontSize.lg,
+                    fontWeight: typography.fontWeight.bold,
+                    lineHeight: 1.35,
+                    letterSpacing: "-0.01em",
+                    textShadow: "0 10px 36px rgba(0,0,0,0.55)",
                   }}
                 >
-                  {activeTabData.miniNote}
-                </p>
-              )}
-              </div>
-            </motion.div>
-        </AnimatePresence>
+                  {narrative.lead}
+                </motion.div>
+
+                {/* Insight blocks */}
+                <motion.div
+                  variants={cardStagger}
+                  initial="initial"
+                  animate="animate"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))",
+                    gap: spacing.sm,
+                    marginTop: spacing.xs,
+                  }}
+                >
+                  {narrative.insights.slice(0, 3).map((it) => (
+                    <motion.div
+                      variants={cardItem}
+                      key={it.k}
+                      style={{
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.10)",
+                        borderRadius: borderRadius.xl,
+                        padding: spacing.md,
+                        boxShadow: "0 12px 34px rgba(0,0,0,0.35)",
+                        minWidth: 0,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "baseline", gap: spacing.sm, marginBottom: 6 }}>
+                        <span style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.14em" }}>
+                          {it.k}
+                        </span>
+                        <div
+                          aria-hidden="true"
+                          style={{
+                            flex: 1,
+                            height: 1,
+                            background: "linear-gradient(90deg, rgba(0,224,255,0.22), transparent)",
+                            opacity: 0.7,
+                          }}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          ...typography.body,
+                          color: colors.text.secondary,
+                          fontSize: typography.fontSize.sm,
+                          lineHeight: 1.55,
+                          opacity: 0.95,
+                        }}
+                      >
+                        {it.v}
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+
+                {/* Directional line */}
+                <div
+                  style={{
+                    marginTop: "auto",
+                    paddingTop: spacing.sm,
+                    borderTop: "1px solid rgba(255,255,255,0.10)",
+                    display: "flex",
+                    flexDirection: isMobile ? "column" : "row",
+                    alignItems: isMobile ? "stretch" : "flex-end",
+                    justifyContent: narrative.direction ? "space-between" : "flex-end",
+                    gap: spacing.md,
+                  }}
+                >
+                  {narrative.direction ? (
+                    <div style={{ ...typography.caption, color: colors.text.muted, fontSize: typography.fontSize.sm, opacity: 0.9, maxWidth: isMobile ? "100%" : "46ch" }}>
+                      {narrative.direction}
+                    </div>
+                  ) : null}
+
+                  <StoryNavDock
+                    currentIndex={activeIndex}
+                    total={safeTabs.length}
+                    onPrev={() => handleMove(activeIndex - 1)}
+                    onNext={() => handleMove(activeIndex + 1)}
+                    canPrev={activeIndex > 0}
+                    canNext={activeIndex < safeTabs.length - 1}
+                    isMobile={isMobile}
+                  />
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
 const LandingPage: React.FC = () => {
+  const reduceMotion = useReducedMotion();
   // Use centralized animation hook
   const {
     sectionVariants,
@@ -1497,11 +2490,37 @@ const LandingPage: React.FC = () => {
   const heroRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const fallbackImageRef = useRef<HTMLDivElement>(null);
-  const integratedFallbackRef = useRef<HTMLDivElement>(null);
+  // integratedFallbackRef removed (background is now handled by the Story Weave wrapper)
   const heroVideoRef = useRef<HTMLIFrameElement>(null);
   const overlayVideoRef = useRef<HTMLIFrameElement>(null);
   const productsFetchedRef = useRef(false);
   const centresFetchedRef = useRef(false);
+
+  // =========================================================
+  // Post-hero STORY WEAVE (Act 1 → Act 2 → Act 3) scroll logic
+  // =========================================================
+  // Post-hero Story Weave: shared scroll progression across Act 1 (our-story) + Act 2/3 (integrated-program)
+  const storyWeaveRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: weaveP } = useScroll({
+    target: storyWeaveRef,
+    offset: ["start end", "end start"],
+  });
+
+  const weaveBgScale = useTransform(weaveP, [0, 1], reduceMotion ? [1, 1] : [1.06, 1]);
+  const weaveBgY = useTransform(weaveP, [0, 1], reduceMotion ? [0, 0] : [-40, 40]);
+  const weaveBgOpacity = useTransform(weaveP, [0, 0.18, 1], reduceMotion ? [0.12, 0.12, 0.12] : [0.22, 0.16, 0.12]);
+
+  const act1Opacity = useTransform(weaveP, [0, 0.08, 0.40, 0.55], [0, 1, 1, 0.15]);
+  const act1Y = useTransform(weaveP, [0.30, 0.62], reduceMotion ? [0, -20] : [0, -80]);
+  const act1Scale = useTransform(weaveP, [0.30, 0.62], reduceMotion ? [1, 0.99] : [1, 0.96]);
+
+  const trophyFloatY = useTransform(weaveP, [0.06, 0.22], reduceMotion ? [0, 0] : [18, 0]);
+  const trophyFloatOpacity = useTransform(weaveP, [0.05, 0.14], [0, 1]);
+
+  const act2Opacity = useTransform(weaveP, [0.40, 0.54, 0.86], [0, 1, 1]);
+  const act2Y = useTransform(weaveP, [0.40, 0.56], reduceMotion ? [8, 0] : [34, 0]);
+  const act3Opacity = useTransform(weaveP, [0.64, 0.78, 1], [0, 1, 1]);
+  const act3Y = useTransform(weaveP, [0.64, 0.80], reduceMotion ? [8, 0] : [28, 0]);
 
 
   useEffect(() => {
@@ -1545,6 +2564,11 @@ const LandingPage: React.FC = () => {
     loadFixtures();
   }, []);
 
+  const latestResult = useMemo<PublicFixture | null>(() => {
+    if (fixturesLoading) return null;
+    return (recentResults && recentResults.length > 0 ? recentResults[0] : DUMMY_LAST_RESULT);
+  }, [fixturesLoading, recentResults]);
+
   // Handle navigation to section when navigating from other pages
   useEffect(() => {
     const hash = window.location.hash;
@@ -1566,7 +2590,7 @@ const LandingPage: React.FC = () => {
     const loadProducts = async () => {
       try {
         const data = await api.getProducts();
-        setProducts(data.slice(0, 4)); // Show first 4 products
+        setProducts(data); // Show all products for homepage marquee (marquee may cap if list is huge)
       } catch (error) {
         console.error("Failed to load products:", error);
       }
@@ -1639,14 +2663,14 @@ const LandingPage: React.FC = () => {
           padding: `0 ${spacing.md}`,
           pointerEvents: "auto",
           background: "transparent",
-        }}
-      >
-        <PublicHeader />
+      }}
+    >
+      <PublicHeader />
       </div>
       <style>{`
         #vision-2026 { display: none !important; }
         .hero-link:focus-visible {
-          outline: 2px solid rgba(0, 224, 255, 0.75);
+          outline: 2px solid rgba(255, 169, 0, 0.75);
           outline-offset: 3px;
           border-radius: 16px;
         }
@@ -1677,7 +2701,9 @@ const LandingPage: React.FC = () => {
           display: "flex",
           alignItems: "center",
           justifyContent: "flex-start",
-          paddingTop: "96px",
+          paddingTop: isMobile ? "120px" : "140px", // Fixed header overlap - increased padding
+          // Reserve space for the scroll cue so it never overlaps the bottom-most CTA
+          paddingBottom: spacing["4xl"],
           overflow: "hidden",
         }}
       >
@@ -1714,10 +2740,10 @@ const LandingPage: React.FC = () => {
               opacity: 1,
             }}
             allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-            allowFullScreen={false}
+          allowFullScreen={false}
             loading="eager"
             title="Background Video"
-          />
+        />
         </motion.div>
         
         {/* Layer 2: Background image fallback with parallax */}
@@ -1752,13 +2778,13 @@ const LandingPage: React.FC = () => {
           transition={{ duration: 1 }}
         >
           {/* YouTube Video Background - Full coverage with no thumbnail */}
-          <motion.div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
+        <motion.div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
               width: "100vw",
               height: "100vh",
               zIndex: 0,
@@ -1789,37 +2815,92 @@ const LandingPage: React.FC = () => {
               title="Overlay Background Video"
             />
           </motion.div>
-          {/* Gradient Overlay - Maintains infinity flow */}
+          {/* Stadium Light Overlay - Soft Vignette for Football-First Feel */}
           <div
             style={{
               position: "absolute",
               inset: 0,
-              background: heroAssets.overlayGradientLeft,
-              zIndex: 1,
+              // Soft vignette effect - stadium light feel
+              background: `radial-gradient(ellipse at center top, transparent 0%, rgba(2,12,27,0.4) 40%, rgba(2,12,27,0.85) 100%),
+                          linear-gradient(135deg, rgba(10,61,145,0.15) 0%, transparent 50%, rgba(245,179,0,0.08) 100%)`,
+            zIndex: 1,
               pointerEvents: "none",
-            }}
-          />
-        </motion.div>
-
-        {/* Animated radial gradient for depth */}
+          }}
+        />
+        
+        {/* Pitch Texture Gradient Overlay - Subtle Football Field Pattern */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 1,
+            pointerEvents: "none",
+            // Subtle pitch grid pattern overlay
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px),
+              repeating-linear-gradient(90deg, transparent, transparent 100px, rgba(10,61,145,0.03) 100px, rgba(10,61,145,0.03) 200px)
+            `,
+            opacity: 0.4,
+          }}
+        />
+        
+        {/* FC Real Bengaluru Strip Motif - Diagonal Club Strip */}
         <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           style={{
             position: "absolute",
             top: "20%",
-            left: "10%",
-            width: "600px",
+            left: "-10%",
+            width: "40%",
+            height: "8px",
+            background: `linear-gradient(90deg, ${colors.primary.main} 0%, ${colors.accent.main} 50%, ${colors.primary.main} 100%)`,
+            transform: "rotate(-12deg)",
+            zIndex: 2,
+            boxShadow: `0 0 20px ${colors.primary.main}40`,
+            opacity: 0.6,
+          }}
+        />
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            position: "absolute",
+            top: "25%",
+            left: "-8%",
+            width: "35%",
+            height: "6px",
+            background: `linear-gradient(90deg, ${colors.accent.main} 0%, ${colors.primary.main} 50%, ${colors.accent.main} 100%)`,
+            transform: "rotate(-12deg)",
+            zIndex: 2,
+            boxShadow: `0 0 15px ${colors.accent.main}40`,
+            opacity: 0.5,
+          }}
+        />
+        </motion.div>
+
+        {/* Stadium Light Effect - Subtle, Warm, Football-Focused */}
+        <motion.div
+          style={{
+            position: "absolute",
+            top: "15%",
+            left: "50%",
+            width: "800px",
             height: "600px",
-            background: "radial-gradient(circle, rgba(0, 224, 255, 0.15) 0%, transparent 70%)",
+            background: "radial-gradient(ellipse, rgba(245,179,0,0.08) 0%, transparent 70%)",
             borderRadius: "50%",
-            filter: "blur(60px)",
+            filter: "blur(80px)",
             zIndex: 1,
+            transform: "translateX(-50%)",
           }}
           animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.1, 0.2, 0.1],
+            scale: [1, 1.1, 1],
+            opacity: [0.08, 0.12, 0.08],
           }}
           transition={{
-            duration: 6,
+            duration: 8,
             repeat: Infinity,
             ease: "easeInOut",
           }}
@@ -1837,18 +2918,146 @@ const LandingPage: React.FC = () => {
             display: "grid",
             gridTemplateColumns: isMobile ? "1fr" : "1.15fr 0.85fr",
             gap: isMobile ? spacing["2xl"] : spacing["3xl"],
-            alignItems: "center",
+                alignItems: "center",
             minHeight: "calc(100vh - 96px)",
             paddingBottom: spacing["3xl"],
           }}
         >
           {/* LEFT: Message + Primary actions */}
-          <motion.div
+          <motion.div 
             initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ delay: 0.15, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             style={{ maxWidth: "860px" }}
           >
+            {/* Floating Stat Badges - Football Broadcast Style */}
+            {!isMobile && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+                    position: "absolute",
+                    top: "10%",
+                    right: "5%",
+                    padding: `${spacing['8']} ${spacing['16']}`,
+                    borderRadius: borderRadius.button,
+                    background: colors.surface.card,
+                    border: `1px solid ${colors.accent.main}40`,
+                    boxShadow: shadows.card,
+                    backdropFilter: "blur(12px)",
+                    zIndex: 5,
+                  }}
+                >
+                  <div style={{ ...typography.overline, color: colors.text.muted, fontSize: "10px", marginBottom: 2 }}>FOUNDED</div>
+                  <div style={{ ...typography.h5, color: colors.accent.main, margin: 0, fontWeight: typography.fontWeight.bold }}>2024</div>
+                </motion.div>
+                
+            <motion.div
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ delay: 0.6, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  style={{
+                    position: "absolute",
+                    top: "20%",
+                    right: "8%",
+                    padding: `${spacing['8']} ${spacing['16']}`,
+                    borderRadius: borderRadius.button,
+                    background: colors.surface.card,
+                    border: `1px solid ${colors.primary.main}40`,
+                    boxShadow: shadows.card,
+                    backdropFilter: "blur(12px)",
+                    zIndex: 5,
+                  }}
+                >
+                  <div style={{ ...typography.overline, color: colors.text.muted, fontSize: "10px", marginBottom: 2 }}>LOCATION</div>
+                  <div style={{ ...typography.h5, color: colors.primary.light, margin: 0, fontWeight: typography.fontWeight.bold }}>Bengaluru</div>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ delay: 0.7, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  style={{
+                    position: "absolute",
+                    top: "30%",
+                    right: "6%",
+                    padding: `${spacing['8']} ${spacing['16']}`,
+                    borderRadius: borderRadius.button,
+                    background: colors.surface.card,
+                    border: `1px solid ${colors.accent.main}40`,
+                    boxShadow: shadows.card,
+                    backdropFilter: "blur(12px)",
+                    zIndex: 5,
+                  }}
+                >
+                  <div style={{ ...typography.overline, color: colors.text.muted, fontSize: "10px", marginBottom: 2 }}>IDENTITY</div>
+                  <div style={{ ...typography.h5, color: colors.accent.main, margin: 0, fontWeight: typography.fontWeight.bold, fontSize: "14px" }}>Pathway First</div>
+                </motion.div>
+              </>
+            )}
+
+            {/* Club identity lockup (logo + full name) */}
+            <motion.div
+              initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ delay: 0.12, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: spacing.md,
+                padding: isMobile ? "8px 12px" : "10px 14px",
+                borderRadius: borderRadius.full,
+                background: "rgba(10, 16, 32, 0.42)",
+                border: "1px solid rgba(255,255,255,0.14)",
+                boxShadow: "0 18px 56px rgba(0,0,0,0.55)",
+                backdropFilter: "blur(14px)",
+                marginBottom: spacing.lg,
+              }}
+              aria-label="FC Real Bengaluru"
+            >
+              <img
+                src="/fcrb-logo.png"
+                alt="FC Real Bengaluru logo"
+                style={{
+                  width: isMobile ? 34 : 40,
+                  height: isMobile ? 34 : 40,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  boxShadow: "0 10px 26px rgba(0,0,0,0.45), 0 0 18px rgba(0,224,255,0.14)",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  background: "rgba(255,255,255,0.06)",
+                  flexShrink: 0,
+                }}
+                loading="eager"
+              />
+              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
+                <div
+                style={{
+                  ...typography.overline,
+                    color: colors.text.muted,
+                    letterSpacing: "0.16em",
+                    opacity: 0.9,
+                  }}
+                >
+                  FOOTBALL CLUB
+                </div>
+                <div
+                  style={{
+                    ...typography.body,
+                    color: colors.text.primary,
+                    fontWeight: typography.fontWeight.bold,
+                    letterSpacing: "-0.01em",
+                    fontSize: isMobile ? typography.fontSize.lg : typography.fontSize.xl,
+                    textShadow: "0 6px 28px rgba(0,0,0,0.65)",
+                  }}
+                >
+                  FC Real Bengaluru
+                </div>
+              </div>
+            </motion.div>
+
             {/* Headline */}
             <motion.h1
               style={{
@@ -1877,15 +3086,15 @@ const LandingPage: React.FC = () => {
               >
                 Begins{" "}
                 <span
-                  style={{
+                style={{ 
                     background: `linear-gradient(90deg, ${colors.accent.main}, rgba(255, 194, 51, 0.95))`,
                     WebkitBackgroundClip: "text",
                     backgroundClip: "text",
                     color: "transparent",
                     textShadow: "none",
-                  }}
-                >
-                  In Bengaluru.
+                }}
+              >
+                In Bengaluru.
                 </span>
               </motion.span>
             </motion.h1>
@@ -1905,8 +3114,7 @@ const LandingPage: React.FC = () => {
                 textShadow: "0 2px 24px rgba(0, 0, 0, 0.65)",
               }}
             >
-              A modern football club ecosystem—coaching meets community, and RealVerse-backed data supports development.
-              Built for the long term. Designed to win the right way.
+              It’s more than a club, coaching meets community, and data supports development. Join the journey to the top of Indian football
             </motion.p>
 
             {/* Primary CTA row */}
@@ -1914,93 +3122,91 @@ const LandingPage: React.FC = () => {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.85, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-              style={{
+              style={{ 
                 display: "grid",
                 gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-                gap: spacing.md,
+                gap: spacing.md, 
                 alignItems: "stretch",
                 maxWidth: isMobile ? "100%" : "680px",
               }}
             >
+              {/* Football-First CTA Buttons - Solid, Bold, Sports Badge Style */}
               <Link
                 to="/shop"
                 className="hero-link"
                 style={{ textDecoration: "none", width: "100%" }}
               >
                 <motion.div
-                  whileHover={{ y: -2 }}
+                  whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
                   whileTap={{ scale: 0.98 }}
                   style={{
-                    padding: `${spacing.md} ${spacing.xl}`,
-                    borderRadius: borderRadius.lg,
-                    background:
-                      "linear-gradient(135deg, rgba(255,169,0,0.22) 0%, rgba(0,224,255,0.14) 55%, rgba(255,255,255,0.06) 100%)",
-                    border: "1px solid rgba(255, 169, 0, 0.35)",
-                    boxShadow: "0 18px 46px rgba(0,0,0,0.45), 0 0 30px rgba(255,169,0,0.18)",
-                    display: "flex",
+                    padding: `${spacing.lg} ${spacing.xl}`,
+                    borderRadius: borderRadius.button,
+                    background: colors.primary.main, // Royal blue - solid club color
+                    border: "none",
+                    boxShadow: shadows.button,
+                    display: "flex", 
                     alignItems: "center",
                     justifyContent: "space-between",
-                    gap: spacing.lg,
+                    gap: spacing.md,
                     cursor: "pointer",
-                    backdropFilter: "blur(14px)",
                     width: "100%",
-                    height: "100%",
-                    minHeight: 78,
+                    minHeight: 72, // Increased tap area
+                    transition: "all 0.2s ease",
                   }}
                 >
-                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    <span style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.bold }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                    <span style={{ ...typography.body, color: colors.text.onPrimary, fontWeight: typography.fontWeight.bold, fontSize: typography.fontSize.lg }}>
                       Support the Club
                     </span>
-                    <span style={{ ...typography.caption, color: colors.text.muted, opacity: 0.85 }}>
+                    <span style={{ ...typography.caption, color: "rgba(255,255,255,0.85)", fontSize: typography.fontSize.sm }}>
                       Shop official FC Real Bengaluru merchandise
                     </span>
                   </div>
-                  <ArrowRightIcon size={18} color={colors.accent.main} />
+                  <ArrowRightIcon size={20} color={colors.text.onPrimary} style={{ flexShrink: 0 }} />
                 </motion.div>
               </Link>
 
               <Link to="/programs" className="hero-link" style={{ textDecoration: "none", width: "100%" }}>
                 <motion.div
-                  whileHover={{ y: -2 }}
+                  whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
                   whileTap={{ scale: 0.98 }}
-                  style={{
-                    padding: `${spacing.md} ${spacing.xl}`,
-                    borderRadius: borderRadius.lg,
-                    background: "rgba(255, 255, 255, 0.06)",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    boxShadow: "0 14px 40px rgba(0,0,0,0.35)",
+                    style={{
+                    padding: `${spacing.lg} ${spacing.xl}`,
+                    borderRadius: borderRadius.button,
+                    background: colors.accent.main, // FC Real Bengaluru gold - solid club color
+                    border: "none",
+                    boxShadow: shadows.button,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    gap: spacing.lg,
+                    gap: spacing.md,
                     cursor: "pointer",
-                    backdropFilter: "blur(14px)",
                     width: "100%",
-                    height: "100%",
-                    minHeight: 78,
+                    minHeight: 72, // Increased tap area
+                    transition: "all 0.2s ease",
                   }}
                 >
-                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    <span style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.semibold }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                    <span style={{ ...typography.body, color: colors.text.onAccent, fontWeight: typography.fontWeight.bold, fontSize: typography.fontSize.lg }}>
                       Train With Us
                     </span>
-                    <span style={{ ...typography.caption, color: colors.text.muted, opacity: 0.8 }}>
+                    <span style={{ ...typography.caption, color: "rgba(2,12,27,0.85)", fontSize: typography.fontSize.sm }}>
                       Explore competitive coaching pathways
                     </span>
                   </div>
                   <motion.div
                     animate={{ x: [0, 3, 0] }}
                     transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-                    style={{ display: "flex", alignItems: "center" }}
+                    style={{ display: "flex", alignItems: "center", flexShrink: 0 }}
                   >
-                    <ArrowRightIcon size={18} color={colors.text.secondary} />
+                    <ArrowRightIcon size={20} color={colors.text.onAccent} />
                   </motion.div>
                 </motion.div>
               </Link>
-            </motion.div>
+                </motion.div>
 
-            {/* Fanclub CTA (replaces micro chips) - spans width of both CTAs above */}
+            {/* Join the Journey CTA - Football Badge Style */}
             <a
               href="#content-stream"
               className="hero-link"
@@ -2008,69 +3214,52 @@ const LandingPage: React.FC = () => {
                 e.preventDefault();
                 const element = document.getElementById("content-stream");
                 if (element) {
-                  element.scrollIntoView({ behavior: "auto", block: "start" });
+                  element.scrollIntoView({ behavior: "smooth", block: "start" });
                   setTimeout(() => {
-                    const fanClubSection = document.querySelector('[data-section="fan-club"]') as HTMLElement | null;
-                    if (fanClubSection) fanClubSection.scrollIntoView({ behavior: "auto", block: "start" });
-                  }, 80);
+                    const fanClubSection = document.querySelector('#fan-club-teaser') as HTMLElement | null;
+                    if (fanClubSection) fanClubSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }, 100);
                 }
               }}
               style={{ textDecoration: "none", display: "block" }}
-              aria-label="Be a Part of the Journey — discover the Fanclub for exclusive gifts and VIP access"
+              aria-label="Join the Journey — discover the Fanclub for exclusive gifts and VIP access"
             >
-              <motion.div
-                initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.05, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                whileHover={{ y: -2 }}
+                whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
                 whileTap={{ scale: 0.99 }}
-                style={{
+                    style={{
                   marginTop: spacing.md,
                   width: "100%",
                   maxWidth: isMobile ? "100%" : "680px",
                   padding: `${spacing.lg} ${spacing.xl}`,
-                  borderRadius: borderRadius.xl,
-                  background:
-                    "linear-gradient(135deg, rgba(255,169,0,0.14) 0%, rgba(0,224,255,0.10) 42%, rgba(255,255,255,0.06) 100%)",
-                  border: "1px solid rgba(255, 169, 0, 0.28)",
-                  boxShadow: "0 22px 58px rgba(0,0,0,0.45), 0 0 34px rgba(255,169,0,0.14)",
-                  backdropFilter: "blur(16px)",
+                  borderRadius: borderRadius.button,
+                  background: colors.surface.card, // Dark card background
+                  border: `2px solid ${colors.accent.main}`, // Gold border - sports badge feel
+                  boxShadow: shadows.button,
                   position: "relative",
                   overflow: "hidden",
+                  transition: "all 0.2s ease",
                 }}
               >
-                {/* subtle shimmer */}
-                <motion.div
-                  aria-hidden
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background:
-                      "linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.10) 30%, rgba(255,169,0,0.10) 52%, transparent 100%)",
-                    opacity: 0.35,
-                    pointerEvents: "none",
-                    transform: "translateX(-25%)",
-                  }}
-                  animate={{ x: ["-30%", "30%", "-30%"] }}
-                  transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut" }}
-                />
-
-                <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: spacing.lg }}>
+                <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: spacing.md }}>
                   <div
                     style={{
-                      width: 52,
-                      height: 52,
+                      width: 48,
+                      height: 48,
                       borderRadius: "50%",
-                      background: "rgba(255, 169, 0, 0.18)",
-                      border: "1px solid rgba(255,169,0,0.28)",
-                      display: "flex",
+                      background: colors.accent.main, // Gold background
+                      border: `2px solid ${colors.accent.main}`,
+                      display: "flex", 
                       alignItems: "center",
                       justifyContent: "center",
-                      boxShadow: "0 10px 26px rgba(0,0,0,0.35), 0 0 18px rgba(255,169,0,0.18)",
+                      boxShadow: shadows.sm,
                       flexShrink: 0,
                     }}
                   >
-                    <StarIcon size={20} style={{ color: colors.accent.main }} />
+                    <StarIcon size={20} style={{ color: colors.text.onAccent }} />
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -2079,24 +3268,23 @@ const LandingPage: React.FC = () => {
                         ...typography.body,
                         color: colors.text.primary,
                         fontWeight: typography.fontWeight.bold,
-                        fontSize: typography.fontSize.lg,
+                      fontSize: typography.fontSize.lg,
                         lineHeight: 1.25,
                         marginBottom: 4,
                       }}
                     >
-                      Be a Part of the Journey
+                      Join the Journey
                     </div>
                     <div
                       style={{
                         ...typography.body,
                         color: colors.text.secondary,
                         fontSize: typography.fontSize.sm,
-                        opacity: 0.92,
-                        lineHeight: 1.55,
+                        lineHeight: 1.5,
                       }}
                     >
-                      Join the Fanclub for <span style={{ color: colors.accent.main, fontWeight: typography.fontWeight.semibold }}>exclusive gifts</span>,{" "}
-                      <span style={{ color: colors.accent.main, fontWeight: typography.fontWeight.semibold }}>VIP access</span>, and member-only drops.
+                      Fanclub benefits: <span style={{ color: colors.accent.main, fontWeight: typography.fontWeight.semibold }}>exclusive gifts</span>,{" "}
+                      <span style={{ color: colors.accent.main, fontWeight: typography.fontWeight.semibold }}>VIP access</span>, member-only drops
                     </div>
                   </div>
 
@@ -2105,24 +3293,24 @@ const LandingPage: React.FC = () => {
                     transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
                     style={{ display: "flex", alignItems: "center", flexShrink: 0 }}
                   >
-                    <ArrowRightIcon size={18} color={colors.accent.main} />
-                  </motion.div>
+                    <ArrowRightIcon size={20} color={colors.accent.main} />
+                </motion.div>
                 </div>
-              </motion.div>
+            </motion.div>
             </a>
           </motion.div>
 
           {/* RIGHT: Interactive CTA cards (removed per request) */}
         </div>
 
-        {/* LAYER 3: SCROLL CUE - Seamless Infinite Scroll Continuity */}
+        {/* SCROLL INDICATOR - Match Scoreboard Ticker Style */}
         <motion.div
           style={{
             position: "absolute",
             bottom: spacing.xl,
             left: "50%",
             transform: "translateX(-50%)",
-            zIndex: 10,
+            zIndex: 2,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -2133,39 +3321,62 @@ const LandingPage: React.FC = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 1.6, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         >
-          {/* Gradient fade indicating continuation */}
+          {/* Match Scoreboard Ticker Style */}
           <div
             style={{
-              width: "2px",
-              height: "40px",
-              background: `linear-gradient(to bottom, 
-                ${colors.accent.main}80 0%, 
-                ${colors.accent.main}40 50%, 
-                transparent 100%)`,
-              borderRadius: borderRadius.full,
+              padding: `${spacing.xs} ${spacing.md}`,
+              borderRadius: borderRadius.button,
+              background: "rgba(10,61,145,0.85)",
+              border: `1px solid ${colors.accent.main}`,
+              boxShadow: shadows.button,
+              display: "flex",
+              alignItems: "center",
+              gap: spacing.sm,
+              backdropFilter: "blur(8px)",
             }}
-          />
+          >
+            <div
+            style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: colors.accent.main,
+                boxShadow: `0 0 8px ${colors.accent.main}`,
+              }}
+            />
+            <span
+              style={{
+                ...typography.caption,
+                color: colors.text.primary,
+                fontWeight: typography.fontWeight.bold,
+              letterSpacing: "0.1em",
+                fontSize: "11px",
+            }}
+          >
+              SCROLL
+            </span>
+          </div>
           <motion.div
             animate={{
-              y: [0, 8, 0],
+              y: [0, 6, 0],
             }}
             transition={{
-              duration: 2,
+              duration: 1.5,
               repeat: Infinity,
               ease: "easeInOut",
             }}
           >
             <motion.svg
-              width="24"
-              height="24"
+              width="20"
+              height="20"
               viewBox="0 0 24 24"
               fill="none"
-              style={{ color: colors.accent.main, opacity: 0.7 }}
+              style={{ color: colors.accent.main }}
             >
               <path
                 d="M7 10L12 15L17 10"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
@@ -2531,7 +3742,7 @@ const LandingPage: React.FC = () => {
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(min(350px, 100%), 1fr))",
               gap: spacing["2xl"],
-                marginTop: spacing["2xl"],
+              marginTop: spacing["2xl"],
               maxWidth: "1400px",
               marginLeft: 0,
               marginRight: 0,
@@ -2695,7 +3906,7 @@ const LandingPage: React.FC = () => {
                       viewport={{ once: false }}
                         style={{
                           ...typography.body,
-                        fontSize: typography.fontSize.lg,
+                  fontSize: typography.fontSize.lg,
                           color: colors.text.secondary,
                         marginBottom: spacing.sm,
                           fontWeight: typography.fontWeight.medium,
@@ -2752,342 +3963,194 @@ const LandingPage: React.FC = () => {
 
       {/* 4. 2026 VISION - I-LEAGUE 3 (removed) */}
 
-      {/* 6. OUR STORY - Comprehensive Club Introduction */}
+      {/* Post-Hero Story Weave Wrapper (Act 1 → Act 2 → Act 3) - Smooth Continuity */}
+      <div ref={storyWeaveRef} style={{ position: "relative", background: colors.club.deep, overflow: "hidden" }}>
+        {/* Shared background layer for continuity (navy base + subtle photo grain + gold/blue glows) */}
+        <motion.div
+          aria-hidden="true"
+        style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: "none",
+          overflow: "hidden",
+        }}
+      >
+        <motion.div
+          style={{
+            position: "absolute",
+              inset: "-10%",
+              backgroundImage: `url(${galleryAssets.actionShots[0]?.full || heroAssets.teamBackground})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+              filter: "blur(16px)",
+              opacity: weaveBgOpacity,
+              y: weaveBgY,
+              scale: weaveBgScale,
+            }}
+          />
+          <div
+              style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(135deg, rgba(2,12,27,0.85) 0%, rgba(10,22,51,0.75) 45%, rgba(2,12,27,0.88) 100%)",
+              opacity: 0.95, // Increased opacity to eliminate blank zones
+            }}
+          />
+          <div
+              style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "radial-gradient(900px 560px at 22% 18%, rgba(10,61,145,0.10) 0%, transparent 55%), radial-gradient(900px 620px at 82% 75%, rgba(245,179,0,0.08) 0%, transparent 60%)",
+              opacity: 0.9,
+            }}
+          />
+          <div
+              style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "radial-gradient(circle at 50% 55%, transparent 32%, rgba(0,0,0,0.55) 100%)",
+              opacity: 0.85,
+            }}
+          />
+          {/* Subtle pitch texture overlay for football-first feel */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: `
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px),
+                repeating-linear-gradient(90deg, transparent, transparent 100px, rgba(10,61,145,0.02) 100px, rgba(10,61,145,0.02) 200px)
+              `,
+              opacity: 0.4,
+            }}
+          />
+              </motion.div>
+
+      {/* 6. OUR STORY (teaser) — full story moved to /about */}
       <InfinitySection
         id="our-story"
         bridge={true}
         style={{
-          padding: isMobile ? `40px ${spacing.xl}` : `64px ${spacing.xl}`,
+          padding: isMobile ? `${spacing['48']} ${spacing.xl}` : `${spacing['64']} ${spacing.xl}`, // 48px mobile, 64px desktop
           background: "transparent",
           position: "relative",
           overflow: "hidden",
         }}
       >
-        {/* Background Image with Parallax Effect */}
-        <motion.div
-          initial={{ opacity: 0, scale: 1 }}
-          animate={{ 
-            opacity: 1,
-            scale: [1, 1.08, 1],
-          }}
-          transition={{ 
-            opacity: { duration: 1.5 },
-            scale: {
-              duration: 25,
-              repeat: Infinity,
-              ease: [0.4, 0, 0.6, 1],
-            }
-          }}
-          style={{
-            position: "absolute",
-            top: "-10%",
-            left: "-10%",
-            right: "-10%",
-            bottom: "-10%",
-            width: "120%",
-            height: "120%",
-            backgroundImage: `url("/assets/DSC00893.jpg")`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundAttachment: "fixed",
-            opacity: 0.25,
-            filter: "blur(8px)",
-            zIndex: 0,
-            pointerEvents: "none",
-          }}
-        />
-        
-        {/* Dark Overlay for Text Readability */}
-        <motion.div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: `linear-gradient(135deg, 
-              rgba(5, 11, 32, 0.6) 0%, 
-              rgba(10, 22, 51, 0.5) 50%, 
-              rgba(5, 11, 32, 0.6) 100%)`,
-            zIndex: 1,
-            pointerEvents: "none",
-          }}
-        />
-        
-        {/* Subtle Radial Gradients for Depth */}
-        <motion.div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: `radial-gradient(circle at 20% 20%, rgba(0,224,255,0.08) 0%, transparent 50%), 
-                         radial-gradient(circle at 80% 80%, rgba(255,169,0,0.06) 0%, transparent 50%)`,
-            zIndex: 1,
-            pointerEvents: "none",
-          }}
-        />
-
-        {/* Cinematic vignette (ties into hero mood + focuses content) */}
+        {/* Lively Background - Training/Celebration footage */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            background:
-              "radial-gradient(1200px 700px at 35% 20%, rgba(255,255,255,0.05) 0%, transparent 55%), radial-gradient(900px 600px at 70% 75%, rgba(0,224,255,0.06) 0%, transparent 60%), radial-gradient(circle at 50% 50%, transparent 35%, rgba(0,0,0,0.55) 100%)",
-            zIndex: 1,
-            pointerEvents: "none",
-            opacity: 0.9,
+            zIndex: 0,
           }}
-        />
-
-        {/* Subtle Top Divider for Continuity */}
-        <motion.div
-          initial={{ opacity: 0, scaleX: 0 }}
-          whileInView={{ opacity: 1, scaleX: 1 }}
-          viewport={{ once: false }}
-          transition={{ duration: 0.8 }}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 1,
-            background: `linear-gradient(to right, transparent, rgba(255,255,255,0.15), transparent)`,
-            zIndex: 1,
-          }}
-        />
-
-        {/* Content Container */}
-        <div style={{ 
-          maxWidth: "1400px", 
-          margin: "0 auto", 
-          position: "relative", 
-          zIndex: 1, 
-          width: "100%",
-          padding: isMobile ? `${spacing.xl} 0` : `${spacing["3xl"]} 0`,
-        }}>
-          {/* Chapter header + proof (desktop: two-column; mobile: stacked) */}
-          <div
+        >
+          <SectionBackground
+            variant="story"
+            type="image"
+            src={galleryAssets.actionShots[1]?.medium || heroAssets.teamBackground1024}
+            overlayIntensity="strong"
+            style={{ position: "absolute", inset: 0 }}
+          />
+        </div>
+          <motion.div
             style={{
-              display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "1.15fr 0.85fr",
-              gap: isMobile ? spacing.xl : spacing["3xl"],
-              alignItems: "start",
-              marginBottom: isMobile ? spacing.xl : spacing["2xl"],
-            }}
+            maxWidth: "1100px",
+            margin: "0 auto",
+            position: "relative",
+            zIndex: 3, // Above background layers
+            width: "100%",
+            padding: isMobile ? `${spacing.xl} ${spacing.md}` : `${spacing["2xl"]} ${spacing.xl}`, // Horizontal padding for readable text zones
+            opacity: act1Opacity,
+            y: act1Y,
+            scale: act1Scale,
+            textAlign: "center",
+          }}
+          initial={{ opacity: 0, y: 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, amount: 0.2 }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div
+                style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: spacing.sm,
+                  padding: `${spacing.xs} ${spacing.md}`,
+              background: colors.surface.soft, // Football-first background
+              border: `1px solid ${colors.accent.main}40`, // Subtle accent border
+                  borderRadius: borderRadius.full,
+              backdropFilter: "blur(12px)",
+              boxShadow: shadows.sm, // Sports broadcast style
+                  marginBottom: spacing.lg,
+                }}
           >
-            {/* Left: narrative header */}
-            <motion.div
-              style={{ textAlign: "left" }}
-              initial={{ opacity: 0, y: 26, filter: "blur(10px)" }}
-              whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              viewport={{ once: false, amount: 0.3 }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, marginBottom: spacing.lg }}>
-                <motion.div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: spacing.sm,
-                    padding: `${spacing.xs} ${spacing.md}`,
-                    background: "rgba(0, 224, 255, 0.10)",
-                    border: `1px solid rgba(0,224,255,0.28)`,
-                    borderRadius: borderRadius.full,
-                    backdropFilter: "blur(12px)",
-                    boxShadow: "0 18px 46px rgba(0,0,0,0.35)",
-                  }}
-                >
-                  <span style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.18em" }}>
-                    OUR STORY
-                  </span>
-                  <span style={{ ...typography.caption, color: colors.text.muted, opacity: 0.85 }}>
-                    Chapter 01
-                  </span>
-                </motion.div>
-
-                {/* subtle spine */}
-                {!isMobile && (
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      flex: 1,
-                      height: 1,
-                      background:
-                        "linear-gradient(90deg, rgba(255,255,255,0.14) 0%, rgba(0,224,255,0.22) 35%, rgba(255,169,0,0.18) 70%, transparent 100%)",
-                      opacity: 0.9,
-                    }}
-                  />
-                )}
-              </div>
-
-              <motion.h2
-                style={{
-                  ...typography.h1,
-                  fontSize: `clamp(2.6rem, 6vw, 5.2rem)`,
-                  color: colors.text.primary,
-                  marginBottom: spacing.md,
-                  lineHeight: 1.08,
-                  fontWeight: typography.fontWeight.bold,
-                  letterSpacing: "-0.02em",
-                  textShadow: "0 8px 56px rgba(0,0,0,0.65)",
-                }}
-              >
-                Born in <span style={{ color: colors.accent.main }}>2024</span>, Built for{" "}
-                <span style={{ color: colors.primary.main }}>Tomorrow</span>
-              </motion.h2>
-
-              <motion.p
-                style={{
-                  ...typography.body,
-                  fontSize: typography.fontSize.xl,
-                  color: colors.text.secondary,
-                  maxWidth: "62ch",
-                  margin: 0,
-                  lineHeight: 1.85,
-                  opacity: 0.92,
-                  textShadow: "0 4px 28px rgba(0,0,0,0.55)",
-                }}
-              >
-                FC Real Bengaluru is building a modern football club ecosystem—where coaching meets community, and data supports development.
-              </motion.p>
-            </motion.div>
-
-            {/* Right: proof container */}
-            <motion.div
-              initial={{ opacity: 0, y: 26, filter: "blur(10px)" }}
-              whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.06 }}
-              viewport={{ once: false, amount: 0.2 }}
-              style={{
-                width: "100%",
-                maxWidth: isMobile ? "100%" : "560px",
-                justifySelf: isMobile ? "stretch" : "end",
-              }}
-            >
-              <div
-                style={{
-                  position: "relative",
-                  borderRadius: borderRadius["2xl"],
-                  background: "rgba(10,16,32,0.38)",
-                  border: "1px solid rgba(255,255,255,0.10)",
-                  boxShadow: "0 26px 72px rgba(0,0,0,0.55)",
-                  backdropFilter: "blur(18px)",
-                  overflow: "hidden",
-                }}
-              >
-                <div
-                  aria-hidden="true"
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background:
-                      "radial-gradient(circle at 30% 25%, rgba(255,169,0,0.14) 0%, transparent 58%), radial-gradient(circle at 85% 80%, rgba(0,224,255,0.10) 0%, transparent 60%)",
-                    opacity: 0.9,
-                    pointerEvents: "none",
-                  }}
-                />
-                <div style={{ position: "relative", zIndex: 1, padding: isMobile ? spacing.md : spacing.lg }}>
-                  <TrophyCabinet variant="royal" />
-                </div>
-              </div>
-            </motion.div>
+            <span style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.18em" }}>OUR STORY</span>
+            <span style={{ ...typography.caption, color: colors.text.muted, opacity: 0.85 }}>Club Origins</span>
           </div>
 
-          {/* Tabbed Panel Interface */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: false, amount: 0.2 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div
-              style={{
-                borderRadius: borderRadius["2xl"],
-                background: "rgba(10, 16, 32, 0.28)",
-                border: "1px solid rgba(255,255,255,0.10)",
-                backdropFilter: "blur(14px)",
-                boxShadow: "0 26px 78px rgba(0,0,0,0.45)",
-                padding: isMobile ? spacing.md : spacing.lg,
-              }}
-            >
-              <TabbedPanel
-                isMobile={isMobile}
-                tabs={[
-                {
-                  id: "what-we-build",
-                  label: "What We Build",
-                  icon: <FireIcon size={20} color={colors.accent.main} />,
-                  oneLiner: "A complete pathway—training, competition, and RealVerse.",
-                  paragraph:
-                    "We’re building a complete development pathway that blends modern coaching with meaningful competition and RealVerse-backed feedback. From youth squads to senior football, progression is structured, merit-led, and designed to support long-term growth—on and off the pitch.",
-                  miniNote: "",
-                },
-                {
-                  id: "our-goals",
-                  label: "Our Goals",
-                  icon: <MedalIcon size={20} color={colors.accent.main} />,
-                  oneLiner: "Long-term excellence with ambition.",
-                  paragraph:
-                    "Our goal is long-term excellence: develop world-class footballers through structured progression, compete at higher levels as we climb the league ladder, and build a sustainable football ecosystem in Bengaluru. Data and modern processes help us improve every season—clear standards, clear progression.",
-                  miniNote: "",
-                },
-                {
-                  id: "our-story",
-                  label: "Our Story",
-                  icon: <StarIcon size={20} color={colors.accent.main} />,
-                  oneLiner: "A Bengaluru club—community-first, built to rise.",
-                  paragraph:
-                    "FC Real Bengaluru is a football club based in Bengaluru, competing in the KSFA Super Division and other leagues with the ambition to climb the Indian football ladder. We’re community-driven at our core—developing youth through a clear pathway from grassroots academy to senior football, backed by structured, best-in-class training and a culture of sporting excellence.",
-                  miniNote: "",
-                },
-                ]}
-              />
-            </div>
-          </motion.div>
-
-          {/* Subtle scroll invitation to maintain momentum into the infinite flow */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: false, amount: 0.2 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-            style={{
-              marginTop: isMobile ? spacing.xl : spacing["2xl"],
-              display: "flex",
-              justifyContent: "center",
+          <h2
+                style={{
+                  ...typography.h1,
+              fontSize: `clamp(2.2rem, 5vw, 3.4rem)`,
+                  color: colors.text.primary,
+              marginBottom: spacing.md,
+              lineHeight: 1.12,
+              fontWeight: typography.fontWeight.bold,
+              letterSpacing: "-0.02em",
+              textShadow: "0 8px 56px rgba(0,0,0,0.65)",
             }}
           >
-            <motion.button
-              type="button"
-              onClick={() => {
-                const el = document.getElementById("integrated-program");
-                if (el) el.scrollIntoView({ behavior: "auto", block: "start" });
-              }}
-              whileHover={{ y: -2 }}
+            Born in <span style={{ color: colors.accent.main }}>2024</span>, Built for{" "}
+            <span style={{ color: colors.primary.main }}>Tomorrow</span>
+          </h2>
+
+          <p
+                style={{
+                  ...typography.body,
+                  fontSize: typography.fontSize.lg,
+                  color: colors.text.secondary,
+              maxWidth: "72ch",
+              margin: `0 auto ${spacing.lg}`,
+              lineHeight: 1.85,
+              opacity: 0.92,
+              textShadow: "0 4px 28px rgba(0,0,0,0.55)",
+            }}
+          >
+            From KSFA D Division to Super Division ambitions — built on community, coaching standards, and long-term development.
+          </p>
+
+          <Link to="/about" className="hero-link" style={{ textDecoration: "none", display: "inline-block" }}>
+              <motion.div
+              whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
               whileTap={{ scale: 0.98 }}
-              style={{
+                    style={{
                 display: "inline-flex",
-                alignItems: "center",
+                        alignItems: "center",
+                        justifyContent: "center",
                 gap: spacing.sm,
-                padding: `${spacing.sm} ${spacing.lg}`,
-                borderRadius: borderRadius.full,
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                color: colors.text.secondary,
-                cursor: "pointer",
-                backdropFilter: "blur(12px)",
-                boxShadow: "0 18px 50px rgba(0,0,0,0.35)",
+                padding: `${spacing.md} ${spacing.xl}`, // 16px 32px - readable text zones
+                borderRadius: borderRadius.button, // 8px - football-first
+                background: colors.primary.main, // Royal blue - football-first solid button
+                border: "none",
+                boxShadow: shadows.button, // Sports broadcast style
+                color: colors.text.onPrimary,
+                transition: "all 0.2s ease",
+                fontWeight: typography.fontWeight.bold, // Bold for football-first
               }}
             >
-              <span style={{ ...typography.caption, opacity: 0.9 }}>Continue to Our Football Program</span>
-              <motion.div
-                aria-hidden="true"
-                animate={{ y: [0, 3, 0] }}
-                transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-                style={{ display: "inline-flex" }}
-              >
-                <ArrowRightIcon size={16} style={{ color: colors.accent.main, transform: "rotate(90deg)" }} />
+              <span style={{ ...typography.body, fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.bold }}>
+                Visit About Us
+              </span>
+              <ArrowRightIcon size={18} color={colors.text.onPrimary} />
+                  </motion.div>
+          </Link>
               </motion.div>
-            </motion.button>
-          </motion.div>
-        </div>
       </InfinitySection>
 
         {/* 5. INTEGRATED FOOTBALL PROGRAM - Teams, Tech, Data & Training */}
@@ -3095,92 +4158,43 @@ const LandingPage: React.FC = () => {
           id="integrated-program"
         bridge={true}
         style={{
-            padding: `${spacing["4xl"]} ${spacing.xl}`,
+            padding: `${spacing.sectionGap} ${spacing.xl}`, // Uniform 64px padding
             background: "transparent",
           position: "relative",
           overflow: "hidden",
         }}
       >
-          {/* Background Image with Slow Zoom Effect - Only DSC09619 (1).JPG */}
-          <motion.div
-            ref={integratedFallbackRef}
-            initial={{ opacity: 0, scale: 1 }}
-            animate={{ 
-              opacity: 1,
-              scale: [1, 1.12, 1],
-            }}
-            transition={{ 
-              opacity: { duration: 1.5 },
-              scale: {
-                duration: 30,
-                repeat: Infinity,
-                ease: [0.4, 0, 0.6, 1],
-              }
-            }}
-            style={{
-              position: "absolute",
-              top: "-10%",
-              left: "-10%",
-              right: "-10%",
-              bottom: "-10%",
-              width: "120%",
-              height: "120%",
-              backgroundImage: `url("/assets/DSC09619 (1).JPG")`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundAttachment: "fixed",
-              opacity: 0.3,
-              filter: "blur(10px)",
-              zIndex: 0,
-              pointerEvents: "none",
-            }}
-          />
+          {/* Background layers handled by the Story Weave wrapper above */}
         
-          {/* Dark Overlay for Text Readability */}
-          <motion.div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: `linear-gradient(135deg, 
-              rgba(5, 11, 32, 0.28) 0%, 
-              rgba(5, 11, 32, 0.24) 50%, 
-              rgba(5, 11, 32, 0.28) 100%)`,
-              zIndex: 1,
-              pointerEvents: "none",
-            }}
-          />
-        
-        <div style={{ maxWidth: "1400px", margin: "0 auto", position: "relative", zIndex: 2 }}>
+        <motion.div style={{ maxWidth: "1400px", margin: "0 auto", position: "relative", zIndex: 2, opacity: act2Opacity, y: act2Y }}>
           {/* Unified Header */}
-            <motion.div
+          <motion.div
             style={{ textAlign: "center", marginBottom: spacing["3xl"] }}
             variants={headingVariants}
               initial="offscreen"
               whileInView="onscreen"
             viewport={viewportOnce}
           >
-              <motion.div
-                style={{
-                  display: "inline-block",
-                  padding: `${spacing.xs} ${spacing.md}`,
-                  background: "rgba(0, 224, 255, 0.1)",
-                  border: `1px solid ${colors.accent.main}`,
-                  borderRadius: borderRadius.full,
-                  marginBottom: spacing.lg,
-                }}
-              >
-                <span style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em" }}>
+            <motion.div
+              style={{
+                display: "inline-block",
+                padding: `${spacing.xs} ${spacing.md}`,
+                background: colors.surface.soft, // Football-first background
+                border: `1px solid ${colors.accent.main}40`, // Subtle accent border
+                borderRadius: borderRadius.full,
+                marginBottom: spacing.lg,
+                boxShadow: shadows.sm, // Sports broadcast style
+              }}
+            >
+              <span style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em" }}>
                 OUR FOOTBALL PROGRAM
-                </span>
-              </motion.div>
+              </span>
+            </motion.div>
             <h2
-                style={{
-                  ...typography.h1,
-                  fontSize: `clamp(2.5rem, 5vw, 4rem)`,
-                  color: colors.text.primary,
+              style={{
+                ...typography.h1,
+                fontSize: `clamp(2.5rem, 5vw, 4rem)`,
+                color: colors.text.primary,
                 marginBottom: spacing.md,
               }}
             >
@@ -3188,19 +4202,19 @@ const LandingPage: React.FC = () => {
               <span style={{ color: colors.primary.main }}>Powered by</span>{" "}
               <span style={{ color: colors.accent.main }}>Innovation</span>
             </h2>
-              <motion.p
-                style={{
-                  ...typography.body,
-                  color: colors.text.secondary,
+            <motion.p
+              style={{
+                ...typography.body,
+                color: colors.text.secondary,
                 fontSize: typography.fontSize.lg,
                 maxWidth: "900px",
                 margin: "0 auto",
-                  lineHeight: 1.8,
-                }}
+                lineHeight: 1.8,
+              }}
               variants={subheadingVariants}
-              >
+            >
               Our teams actively compete across multiple leagues, representing FC Real Bengaluru at every level. We enable this through RealVerse, data-driven insights, and top-tier coaching—creating a unified pathway from grassroots to professional football.
-              </motion.p>
+            </motion.p>
           </motion.div>
 
           {/* Part 1: Where We Compete - Football Pyramid with Academy Impact Stats */}
@@ -3213,15 +4227,15 @@ const LandingPage: React.FC = () => {
               marginBottom: spacing["3xl"],
                 }}
               >
-                  <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: false, amount: 0.2 }}
-              style={{
-                display: "grid",
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: false, amount: 0.2 }}
+            style={{
+              display: "grid",
                 gridTemplateColumns: "repeat(auto-fit, minmax(min(400px, 100%), 1fr))",
-                gap: spacing.xl,
+              gap: spacing.xl,
                 alignItems: "stretch",
                 gridAutoRows: "1fr",
               }}
@@ -3229,14 +4243,15 @@ const LandingPage: React.FC = () => {
               {/* Left: Where We Compete */}
               <motion.div
                 variants={headingVariants}
-        style={{
+                style={{
           position: "relative",
-                  borderRadius: borderRadius.xl,
-                  padding: spacing.xl,
-                  border: `1px solid rgba(255, 255, 255, 0.15)`,
-                  boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3)`,
-                  backdropFilter: "blur(10px)",
-                  display: "flex",
+                  borderRadius: borderRadius.card, // 16px - football-first card style
+                  padding: spacing.cardPadding, // 32px minimum - readable text zones
+                  border: `1px solid rgba(255, 255, 255, 0.10)`,
+                  background: colors.surface.card, // Football-first card background
+                  boxShadow: shadows.card, // Sports broadcast style shadow
+                  backdropFilter: "blur(12px)",
+          display: "flex",
                   flexDirection: "column",
           overflow: "hidden",
           height: "100%",
@@ -3261,13 +4276,13 @@ const LandingPage: React.FC = () => {
           }}
         />
                 {/* Dark Overlay */}
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
                     background: `linear-gradient(135deg, 
                       rgba(20, 31, 58, 0.95) 0%, 
                       rgba(15, 23, 42, 0.9) 100%)`,
@@ -3276,7 +4291,7 @@ const LandingPage: React.FC = () => {
                 />
                 <div style={{ position: "relative", zIndex: 2 }}>
                 <div
-                  style={{
+              style={{
                     display: "flex",
                     alignItems: "center",
                     gap: spacing.md,
@@ -3284,7 +4299,7 @@ const LandingPage: React.FC = () => {
                   }}
                 >
                   <div
-                    style={{
+              style={{
                       width: "48px",
                       height: "48px",
                       borderRadius: "50%",
@@ -3298,7 +4313,7 @@ const LandingPage: React.FC = () => {
                     <TrophyIcon size={24} color={colors.text.onPrimary} />
                   </div>
                   <h3
-              style={{
+            style={{
                 ...typography.h2,
                 color: colors.text.primary,
                       margin: 0,
@@ -3307,17 +4322,7 @@ const LandingPage: React.FC = () => {
                     Where We Compete
                   </h3>
                 </div>
-                <p
-              style={{
-                ...typography.body,
-                    color: colors.text.secondary,
-                    marginBottom: spacing.xl,
-                    lineHeight: 1.7,
-                    fontSize: typography.fontSize.base,
-                  }}
-                >
-                  Our teams actively represent FC Real Bengaluru across multiple competitive levels, from grassroots development to top-tier professional football.
-                </p>
+                {/* (removed per request) */}
                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: spacing.md }}>
                   {/* Senior Leagues & Programs */}
                   {[
@@ -3357,7 +4362,7 @@ const LandingPage: React.FC = () => {
                       programDesc: "SCP supports players not yet selected for higher divisions.",
                     isChild: false,
                     },
-                  ].map((step, idx) => (
+            ].map((step, idx) => (
               <motion.div
                 key={idx}
                        initial={{ opacity: 0, x: -20 }}
@@ -3365,38 +4370,30 @@ const LandingPage: React.FC = () => {
                        transition={{ duration: 0.5, delay: idx * 0.1 }}
                        viewport={{ once: false }}
                 style={{
+                        // Football-first card backgrounds - matchday style
                         background: step.importance === "highest"
-                          ? `linear-gradient(135deg, rgba(255, 169, 0, 0.25) 0%, rgba(255, 194, 51, 0.15) 100%)`
+                          ? colors.surface.elevated // Elevated for top tier
                           : step.importance === "high"
-                          ? `linear-gradient(135deg, rgba(255, 169, 0, 0.15) 0%, rgba(4, 61, 208, 0.1) 100%)`
-                          : step.importance === "medium"
-                          ? `linear-gradient(135deg, rgba(20, 31, 58, 0.6) 0%, rgba(15, 23, 42, 0.5) 100%)`
-                          : step.importance === "youth-parent"
-                          ? `linear-gradient(135deg, rgba(20, 31, 58, 0.5) 0%, rgba(15, 23, 42, 0.4) 100%)`
-                          : `linear-gradient(135deg, rgba(20, 31, 58, 0.35) 0%, rgba(15, 23, 42, 0.25) 100%)`,
-                         borderRadius: borderRadius.lg,
-                        padding: spacing.md,
-                        paddingLeft: step.isChild ? spacing.xl + spacing.md : spacing.md,
+                          ? colors.surface.card
+                          : colors.surface.soft,
+                         borderRadius: borderRadius.card, // 16px - football-first
+                        padding: spacing['16'], // 16px - readable text zones
+                        paddingLeft: step.isChild ? spacing['32'] + spacing['16'] : spacing['16'],
                          border: step.importance === "highest"
                            ? `2px solid ${colors.accent.main}`
                            : step.importance === "high"
-                           ? `2px solid ${colors.accent.main}80`
-                          : step.importance === "youth-parent"
-                          ? `2px solid rgba(255, 255, 255, 0.15)`
-                          : step.isChild
-                          ? `2px solid rgba(255, 255, 255, 0.08)`
-                          : `2px solid rgba(255, 255, 255, 0.1)`,
+                           ? `1px solid ${colors.accent.main}60`
+                          : `1px solid rgba(255, 255, 255, 0.10)`,
                   display: "flex",
                   alignItems: "center",
                   gap: spacing.md,
-                  cursor: "pointer",
+                  cursor: "default",
                          boxShadow: step.importance === "highest"
-                           ? `0 4px 20px rgba(255, 169, 0, 0.3)`
+                           ? shadows.cardHover // Sports broadcast hover shadow
                            : step.importance === "high"
-                           ? `0 4px 20px rgba(255, 169, 0, 0.15)`
-                           : "none",
+                           ? shadows.card
+                           : shadows.sm,
                 }}
-                       whileHover={{ scale: 1.02, x: 5 }}
               >
                 <div
                   style={{
@@ -3428,7 +4425,7 @@ const LandingPage: React.FC = () => {
                              : "none",
                   }}
                     >
-                      {step.isChild ? String.fromCharCode(97 + (idx - 5)) : idx + 1}
+                      {step.isChild ? String.fromCharCode(65 + (idx - 5)) : idx + 1}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div
@@ -3436,21 +4433,19 @@ const LandingPage: React.FC = () => {
                              ...typography.h5,
                       color: colors.text.primary,
                       marginBottom: spacing.xs,
+                      paddingLeft: spacing['4'], // 4px padding from border - readable text zones
                              fontWeight: step.importance === "highest" || step.importance === "high"
                                ? typography.fontWeight.bold
                                : typography.fontWeight.semibold,
-                             fontSize: step.importance === "highest"
-                               ? typography.fontSize.lg
-                               : step.importance === "high"
-                               ? typography.fontSize.base
-                               : typography.fontSize.sm,
+                             // Unify font sizes across the entire "Where We Compete" list
+                             fontSize: typography.fontSize.base,
                     }}
                   >
                     {step.level}
                   </div>
-                    <div
-                      style={{
-                        ...typography.body,
+                  <div
+                    style={{
+                      ...typography.body,
                         color: step.importance === "highest"
                           ? colors.accent.main
                           : step.importance === "high"
@@ -3458,15 +4453,17 @@ const LandingPage: React.FC = () => {
                           : step.importance === "youth-parent"
                           ? colors.text.secondary
                           : colors.text.muted,
-                        fontSize: step.isChild ? typography.fontSize.xs : typography.fontSize.sm,
+                        // Unify subtitle size (including any child rows)
+                      fontSize: typography.fontSize.sm,
                         lineHeight: 1.5,
+                        paddingLeft: spacing['4'], // 4px padding from border - readable text zones
                         fontWeight: step.importance === "highest"
                           ? typography.fontWeight.medium
                           : typography.fontWeight.normal,
-                      }}
-                    >
-                      {step.desc}
-                    </div>
+                    }}
+                  >
+                    {step.desc}
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -3487,10 +4484,9 @@ const LandingPage: React.FC = () => {
                        display: "flex",
                        alignItems: "center",
                        gap: spacing.md,
-                       cursor: "pointer",
+                       cursor: "default",
                        marginTop: spacing.sm,
                      }}
-                     whileHover={{ scale: 1.01, x: 3 }}
                    >
         <div
           style={{
@@ -3566,10 +4562,9 @@ const LandingPage: React.FC = () => {
                            display: "flex",
                         alignItems: "center",
                            gap: spacing.sm,
-                           cursor: "pointer",
+                           cursor: "default",
                         position: "relative",
                       }}
-                         whileHover={{ scale: 1.01, x: 3 }}
                     >
                          {/* Connecting line indicator */}
                       <div
@@ -3600,7 +4595,7 @@ const LandingPage: React.FC = () => {
                              fontSize: typography.fontSize.xs,
                            }}
                          >
-                           {String.fromCharCode(97 + youthIdx)} {/* a, b, c */}
+                          {String.fromCharCode(65 + youthIdx)} {/* A, B, C */}
                       </div>
                          <div style={{ flex: 1 }}>
                       <div
@@ -3609,7 +4604,8 @@ const LandingPage: React.FC = () => {
                             color: colors.text.primary,
                                marginBottom: `calc(${spacing.xs} / 2)`,
                                fontWeight: typography.fontWeight.medium,
-                               fontSize: typography.fontSize.sm,
+                               // Unify with main row title sizing
+                               fontSize: typography.fontSize.base,
                           }}
                         >
                              {youthLeague.level}
@@ -3618,7 +4614,8 @@ const LandingPage: React.FC = () => {
                           style={{
                             ...typography.body,
                             color: colors.text.muted,
-                               fontSize: typography.fontSize.xs,
+                               // Unify with main row subtitle sizing
+                               fontSize: typography.fontSize.sm,
                                lineHeight: 1.4,
                           }}
                         >
@@ -3645,11 +4642,11 @@ const LandingPage: React.FC = () => {
                       alignItems: "center",
                       gap: spacing.md,
                       marginTop: spacing.lg,
+                      cursor: "default",
                     }}
-                    whileHover={{ scale: 1.01, x: 3 }}
                   >
-                    <div
-                      style={{
+                      <div
+                        style={{
                         width: "40px",
                         height: "40px",
                         borderRadius: "50%",
@@ -3665,19 +4662,19 @@ const LandingPage: React.FC = () => {
                       6
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div
-                        style={{
+                        <div
+                          style={{
                           ...typography.h5,
                           color: colors.text.primary,
                           marginBottom: spacing.xs,
-                          fontWeight: typography.fontWeight.semibold,
+                            fontWeight: typography.fontWeight.semibold,
                           fontSize: typography.fontSize.base,
-                        }}
-                      >
+                          }}
+                        >
                         Year-long Friendly & Exhibition
-                      </div>
-                      <div
-                        style={{
+                        </div>
+                        <div
+                          style={{
                           ...typography.body,
                           color: colors.text.secondary,
                           fontSize: typography.fontSize.sm,
@@ -3685,12 +4682,12 @@ const LandingPage: React.FC = () => {
                         }}
                       >
                         Season-long competitive friendlies
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
+                    </motion.div>
                   <div style={{ height: spacing.md }} />
+                  </div>
           </div>
-        </div>
               </motion.div>
 
               {/* Right: Academy Impact Stats */}
@@ -3744,7 +4741,7 @@ const LandingPage: React.FC = () => {
                   program: "Senior Competitive Program (SCP)",
                   programDesc: "SCP develops and rotates players for KSFA C & D Divisions.",
                     gradient: `linear-gradient(135deg, rgba(4, 61, 208, 0.3) 0%, rgba(45, 95, 232, 0.2) 100%)`,
-                    glowColor: colors.primary.main,
+                    glowColor: colors.primary.light,
                     Icon: MedalIcon,
                     imageOpacity: 0.5,
                     overlayOpacity: 0.75,
@@ -3770,7 +4767,6 @@ const LandingPage: React.FC = () => {
                 <motion.div
                     key={idx}
                   {...getStaggeredCard(idx)}
-                    whileHover={{ scale: 1.03, y: -4 }}
                   style={{
                     borderRadius: borderRadius.xl,
                       padding: spacing.lg,
@@ -3781,6 +4777,7 @@ const LandingPage: React.FC = () => {
                       position: "relative",
                       overflow: "hidden",
                       flex: 1,
+                      cursor: "default",
                     }}
                   >
                     {/* Background Image - replaces gradient overlay */}
@@ -3832,8 +4829,8 @@ const LandingPage: React.FC = () => {
                     )}
 
                     {/* Accent top stroke (ties card to its program color) */}
-                    <div
-                      style={{
+                      <div
+                        style={{
                         position: "absolute",
                         top: 0,
                         left: 0,
@@ -3850,7 +4847,7 @@ const LandingPage: React.FC = () => {
                     {stat.signature === "ember" ? (
                       <motion.div
                         aria-hidden="true"
-                        style={{
+                      style={{
                           position: "absolute",
                           inset: -40,
                           background: `radial-gradient(circle at 18% 35%, ${stat.glowColor}2b 0%, transparent 60%)`,
@@ -3864,7 +4861,7 @@ const LandingPage: React.FC = () => {
                     ) : stat.signature === "sheen" ? (
                       <motion.div
                         aria-hidden="true"
-                        style={{
+                      style={{
                           position: "absolute",
                           top: -40,
                           bottom: -40,
@@ -3882,12 +4879,12 @@ const LandingPage: React.FC = () => {
                         transition={{ duration: 5.6, repeat: Infinity, ease: [0.22, 1, 0.36, 1], delay: 0.6 }}
                       />
                     ) : stat.signature === "scan" ? (
-                      <motion.div
+                    <motion.div
                         aria-hidden="true"
-                        style={{
-                          position: "absolute",
-                          left: 0,
-                          right: 0,
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
                           height: 2,
                           top: -10,
                           background: `linear-gradient(90deg, transparent 0%, ${stat.glowColor}55 40%, transparent 100%)`,
@@ -3900,9 +4897,9 @@ const LandingPage: React.FC = () => {
                         transition={{ duration: 4.8, repeat: Infinity, ease: "linear", delay: 0.4 }}
                       />
                     ) : stat.signature === "bloom" ? (
-                      <motion.div
+          <motion.div
                         aria-hidden="true"
-                        style={{
+            style={{
                           position: "absolute",
                           inset: -50,
                           background: `radial-gradient(circle at 75% 20%, ${stat.glowColor}26 0%, transparent 58%)`,
@@ -3917,7 +4914,7 @@ const LandingPage: React.FC = () => {
 
                     {/* Value */}
                     <motion.div
-                        style={{
+                style={{
                         position: "relative",
                         zIndex: 3,
                         marginBottom: spacing.xs,
@@ -3928,12 +4925,15 @@ const LandingPage: React.FC = () => {
                       viewport={{ once: false }}
                     >
                       <div
-                        style={{
+                style={{
                           ...typography.h1,
                           fontSize: `clamp(2rem, 4vw, 2.5rem)`,
-                          color: stat.glowColor,
+                          color: stat.signature === "scan" ? colors.primary.light : stat.glowColor,
                           fontWeight: typography.fontWeight.bold,
-                          textShadow: `0 4px 20px ${stat.glowColor}40`,
+                          textShadow:
+                            stat.signature === "scan"
+                              ? `0 2px 0 rgba(0,0,0,0.55), 0 10px 28px ${colors.primary.light}88, 0 0 22px rgba(0,224,255,0.16)`
+                              : `0 4px 20px ${stat.glowColor}40`,
                           letterSpacing: "-0.02em",
                           lineHeight: 1.1,
                           marginBottom: spacing.xs,
@@ -3945,7 +4945,7 @@ const LandingPage: React.FC = () => {
 
                     {/* Label */}
                     <motion.div
-                      style={{
+                    style={{
                         position: "relative",
                         zIndex: 3,
                         marginBottom: spacing.xs,
@@ -3954,7 +4954,7 @@ const LandingPage: React.FC = () => {
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6, delay: idx * 0.1 + 0.3 }}
                       viewport={{ once: false }}
-                    >
+                  >
                     <div
                       style={{
                           ...typography.h5,
@@ -3968,18 +4968,19 @@ const LandingPage: React.FC = () => {
                     <div
                       style={{
                         ...typography.body,
-                          color: stat.glowColor,
+                          color: stat.signature === "scan" ? colors.primary.light : stat.glowColor,
                           fontSize: typography.fontSize.sm,
                           fontWeight: typography.fontWeight.medium,
+                          textShadow: stat.signature === "scan" ? "0 2px 10px rgba(0,0,0,0.55)" : undefined,
                       }}
                     >
                         {stat.subLabel}
-                    </div>
-                    </motion.div>
+              </div>
+            </motion.div>
 
                     {/* Description */}
-                    <motion.div
-                      style={{
+            <motion.div
+              style={{
                         position: "relative",
                         zIndex: 3,
                       }}
@@ -3988,23 +4989,23 @@ const LandingPage: React.FC = () => {
                       transition={{ duration: 0.6, delay: idx * 0.1 + 0.4 }}
                       viewport={{ once: false }}
                     >
-                      <div
-                        style={{
-                          ...typography.body,
-                          color: colors.text.muted,
+              <div
+                style={{
+                  ...typography.body,
+                  color: colors.text.muted,
                           fontSize: typography.fontSize.xs,
                           lineHeight: 1.4,
                           fontStyle: "italic",
-                        }}
-                      >
+                }}
+              >
                         {stat.description}
-                      </div>
+              </div>
                     </motion.div>
                     {/* Program info and CTA placeholder */}
                     {stat.program && (
-                      <motion.div
-                        style={{
-                          position: "relative",
+              <motion.div
+                style={{
+                  position: "relative",
                           zIndex: 3,
                           marginTop: spacing.sm,
                         }}
@@ -4013,8 +5014,8 @@ const LandingPage: React.FC = () => {
                         transition={{ duration: 0.6, delay: idx * 0.1 + 0.5 }}
                         viewport={{ once: false }}
                       >
-                        <div
-                          style={{
+                <div
+                  style={{
                             ...typography.body,
                             color: colors.text.secondary,
                             fontSize: typography.fontSize.sm,
@@ -4025,8 +5026,8 @@ const LandingPage: React.FC = () => {
                           {stat.program}
                         </div>
                         {stat.programDesc && (
-                          <div
-                            style={{
+                <div
+                  style={{
                               ...typography.body,
                               color: colors.text.muted,
                               fontSize: typography.fontSize.xs,
@@ -4114,9 +5115,9 @@ const LandingPage: React.FC = () => {
 
                             const content = (
                               <motion.div
-                                style={{
+                  style={{
                                   ...pillBase,
-                                  position: "relative",
+                    position: "relative",
                                   overflow: "hidden",
                                   opacity: cta ? 1 : 0.65,
                                 }}
@@ -4133,7 +5134,7 @@ const LandingPage: React.FC = () => {
                                 {/* sheen sweep */}
                                 <motion.div
                                   aria-hidden="true"
-                                  style={{
+                    style={{
                                     position: "absolute",
                                     top: -12,
                                     bottom: -12,
@@ -4164,7 +5165,7 @@ const LandingPage: React.FC = () => {
                                   >
                                     <ArrowRightIcon size={14} style={{ color: colors.text.secondary }} />
                                   </motion.div>
-                                </div>
+                  </div>
                               </motion.div>
                             );
 
@@ -4180,416 +5181,528 @@ const LandingPage: React.FC = () => {
                               </Link>
                             );
                           })()}
-                        </div>
-                      </motion.div>
+                </div>
+              </motion.div>
                     )}
-                </motion.div>
+            </motion.div>
               ))}
           </motion.div>
             </motion.div>
           </motion.div>
 
-          {/* Visual Divider */}
-          <motion.div
-            initial={{ scaleX: 0 }}
-            whileInView={{ scaleX: 1 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            viewport={{ once: false, amount: 0.1 }}
-        style={{
-              height: "1px",
-              background: `linear-gradient(to right, 
-                transparent 0%, 
-                rgba(255, 255, 255, 0.1) 20%, 
-                rgba(255, 169, 0, 0.3) 50%, 
-                rgba(255, 255, 255, 0.1) 80%, 
-                transparent 100%)`,
-              marginBottom: spacing["3xl"],
-            }}
-          />
+          {/* Removed: hard visual divider (story weave should reflow, not reset) */}
 
-          {/* Part 2: How We Enable This - Integrated as subset */}
+          {/* Part 2: How We Enable This - MOVED TO /about page */}
+          {/* This section has been migrated to About Us page for better narrative flow */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: false, amount: 0.2 }}
-            style={{
+        style={{
               marginBottom: spacing["2xl"],
+              opacity: act3Opacity,
+              y: act3Y,
+              display: "none", // Hidden - content moved to /about
             }}
           >
-            {/* Subsection Header */}
+            {/* System Engine Frame (keeps flow with Part 1) */}
             <motion.div
-              style={{ textAlign: "center", marginBottom: spacing.xl }}
-              variants={headingVariants}
-              initial="offscreen"
-              whileInView="onscreen"
-              viewport={viewportOnce}
-            >
-              <h3
+              initial={{ opacity: 0, y: 14, filter: "blur(8px)" }}
+              whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              viewport={{ once: false, amount: 0.2 }}
+              style={{
+          position: "relative",
+                borderRadius: borderRadius["2xl"],
+                border: "1px solid rgba(255,255,255,0.10)",
+                background: "rgba(8,12,24,0.22)",
+                backdropFilter: "blur(14px)",
+                boxShadow: "0 18px 60px rgba(0,0,0,0.38)",
+          overflow: "hidden",
+        }}
+      >
+              {/* shared texture so it feels like the same “Our Football Program” world */}
+        <div
+                aria-hidden="true"
+          style={{
+            position: "absolute",
+                  inset: 0,
+                  background:
+                    "radial-gradient(circle at 18% 20%, rgba(0,224,255,0.12) 0%, transparent 55%), radial-gradient(circle at 82% 75%, rgba(255,169,0,0.10) 0%, transparent 55%), linear-gradient(135deg, rgba(5,11,32,0.55) 0%, rgba(10,16,32,0.35) 60%, rgba(5,11,32,0.55) 100%)",
+                  opacity: 0.95,
+                  pointerEvents: "none",
+                }}
+              />
+              <div
+                aria-hidden="true"
                 style={{
-                  ...typography.h2,
-                  color: colors.text.primary,
-                  marginBottom: spacing.xs,
-                  fontSize: `clamp(1.75rem, 3vw, 2.25rem)`,
+                  position: "absolute",
+                  inset: 0,
+                  backgroundImage: `url(${galleryAssets.actionShots[2]?.medium || galleryAssets.actionShots[0]?.medium || ""})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+                  opacity: 0.10,
+                  filter: "blur(14px)",
+                  pointerEvents: "none",
+                }}
+              />
+
+              <div style={{ position: "relative", zIndex: 1, padding: isMobile ? spacing.xl : spacing["2xl"] }}>
+                {/* Header (left-aligned so it reads as a continuation, not a new section) */}
+          <motion.div
+            variants={headingVariants}
+            initial="offscreen"
+            whileInView="onscreen"
+            viewport={viewportOnce}
+                  style={{
+                    display: "flex",
+                    flexDirection: isMobile ? "column" : "row",
+                    gap: spacing.lg,
+                    alignItems: isMobile ? "flex-start" : "center",
+                    justifyContent: "space-between",
+                    marginBottom: spacing.xl,
+                  }}
+                >
+                  <div style={{ maxWidth: 780 }}>
+                    <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.18em", marginBottom: spacing.xs }}>
+                      SYSTEM ENGINE
+                    </div>
+              <h3
+              style={{
+                ...typography.h2,
+                color: colors.text.primary,
+                        margin: 0,
+                        marginBottom: spacing.xs,
+                        fontSize: `clamp(1.6rem, 2.4vw, 2.1rem)`,
+                        lineHeight: 1.2,
                 }}
               >
                 How We Enable This
               </h3>
               <p
-                style={{
-                  ...typography.body,
+              style={{
+                ...typography.body,
                   color: colors.text.secondary,
                   fontSize: typography.fontSize.base,
-                  opacity: 0.85,
-                  margin: 0,
+                        opacity: 0.9,
+                        margin: 0,
+                        lineHeight: 1.7,
                 }}
               >
                 Through RealVerse, data-driven insights, and top-tier coaching
               </p>
-            </motion.div>
+            </div>
 
-            {/* Two-Pillar System Cards */}
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: false, amount: 0.2 }}
+                  {/* Small “flow” pill */}
+                  <div
+                    style={{
+                      padding: `${spacing.xs} ${spacing.md}`,
+                      borderRadius: borderRadius.full,
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      background: "rgba(255,255,255,0.04)",
+                      backdropFilter: "blur(12px)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: spacing.sm,
+                      color: colors.text.secondary,
+                      fontSize: typography.fontSize.sm,
+                      whiteSpace: "nowrap",
+                    }}
+                    aria-label="Coaching and RealVerse combine to drive performance and promotions"
+                  >
+                    <span style={{ color: colors.accent.main, fontWeight: typography.fontWeight.bold }}>Coaching</span>
+                    <span style={{ opacity: 0.7 }}>+</span>
+                    <span style={{ color: colors.primary.main, fontWeight: typography.fontWeight.bold }}>RealVerse</span>
+                    <span style={{ opacity: 0.7 }}>→</span>
+                    <span style={{ color: colors.text.primary, fontWeight: typography.fontWeight.semibold }}>Performance</span>
+                  </div>
+          </motion.div>
+
+                {/* Two pillars, visually connected */}
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+                  viewport={{ once: false, amount: 0.2 }}
+            style={{
+                    position: "relative",
+              display: "grid",
+                    gridTemplateColumns: isMobile ? "1fr" : "repeat(2, minmax(0, 1fr))",
+              gap: spacing.lg,
+              alignItems: "stretch",
+                    justifyItems: "stretch",
+                  }}
+                >
+                  {/* connector overlay (desktop) — overlay only, not a grid column */}
+                  {!isMobile && (
+                    <div
+                      aria-hidden="true"
+                    style={{
+                        position: "absolute",
+                        top: spacing.lg,
+                        bottom: spacing.lg,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: 72,
+                  display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        pointerEvents: "none",
+                        zIndex: 2,
+                }}
+              >
+                    <div
+                      style={{
+                        position: "absolute",
+                          top: "10%",
+                          bottom: "10%",
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          width: 1,
+                          background: "linear-gradient(transparent, rgba(255,255,255,0.22), transparent)",
+                          opacity: 0.9,
+                        }}
+                      />
+                    <div
+                      style={{
+                          width: 42,
+                          height: 42,
+                      borderRadius: "50%",
+                          background: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          boxShadow: "0 16px 50px rgba(0,0,0,0.45)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                        color: colors.text.primary,
+                          backdropFilter: "blur(10px)",
+                      }}
+                    >
+                        <ArrowRightIcon size={18} />
+                    </div>
+                    </div>
+                  )}
+
+                  {/* Left pillar: Coaching */}
+              <motion.div
+                    variants={headingVariants}
+                    whileHover={{ y: -4 }}
+                style={{
+                  position: "relative",
+                      borderRadius: borderRadius.xl,
+                      border: "1px solid rgba(255,255,255,0.14)",
+                      boxShadow: "0 14px 46px rgba(0,0,0,0.35)",
+                  overflow: "hidden",
+                      background: "rgba(10, 16, 32, 0.55)",
+                      backdropFilter: "blur(14px)",
+                      minWidth: 0,
+                      width: "100%",
+                }}
+              >
+                  <div
+                      aria-hidden="true"
+                    style={{
+            position: "absolute",
+                        inset: 0,
+                        backgroundImage: `url(${galleryAssets.actionShots[3]?.large || galleryAssets.actionShots[0]?.large || academyAssets.trainingShot})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                        opacity: 0.10,
+            filter: "blur(8px)",
+                    }}
+                    />
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background:
+                          "linear-gradient(135deg, rgba(20,31,58,0.92) 0%, rgba(15,23,42,0.88) 100%)",
+                      }}
+                    />
+
+                    <div style={{ position: "relative", zIndex: 1, padding: spacing.xl, display: "flex", flexDirection: "column", height: "100%" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: spacing.md, marginBottom: spacing.md }}>
+                    <div
+                      style={{
+                            width: 48,
+                            height: 48,
+                          borderRadius: "50%",
+                            background: `linear-gradient(135deg, ${colors.primary.main} 0%, ${colors.accent.main} 100%)`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                            fontSize: 24,
+                        }}
+                          aria-hidden="true"
+                      >
+                          ⚡
+                    </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.14em", marginBottom: 2 }}>
+                            Coaching
+                          </div>
+                          <h4 style={{ ...typography.h3, color: colors.text.primary, margin: 0, fontSize: typography.fontSize.xl, lineHeight: 1.2 }}>
+                            Top-Tier Coaching & Modern Techniques
+                          </h4>
+                        </div>
+                      </div>
+
+                      <p style={{ ...typography.body, color: colors.text.secondary, marginBottom: spacing.lg, lineHeight: 1.7, fontSize: typography.fontSize.sm, opacity: 0.95 }}>
+                        We combine elite coaches and data to produce the promotions and performances you see above. Evidence-backed pathway planning, load management, and modern training prepare every player to compete and win.
+                      </p>
+
+                    <div
+                      style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                          gap: spacing.sm,
+                          marginBottom: spacing.lg,
+                        }}
+                      >
+                        {[
+                          "Merit-based player pathway",
+                          "Modern training & load management",
+                          "Data-backed coaching decisions",
+                          "Personalized player development",
+                          "Advanced training techniques",
+                          "Transparent communication",
+                        ].map((bullet, idx) => (
+                    <motion.div
+                            key={bullet}
+                            initial={{ opacity: 0, y: 8 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.35, delay: idx * 0.03 }}
+                            viewport={{ once: false }}
               style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(min(350px, 100%), 1fr))",
-                gap: spacing.xl,
-                alignItems: "stretch",
-              }}
-            >
-              {/* Left Pillar: Top-Tier Coaching */}
-              <motion.div
-                variants={headingVariants}
-                whileHover={{ scale: 1.02, y: -5 }}
-                style={{
-                  position: "relative",
-                  borderRadius: borderRadius.xl,
-                  padding: spacing.xl,
-                  border: `1px solid rgba(255, 255, 255, 0.15)`,
-                  boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3)`,
-                  backdropFilter: "blur(10px)",
-                  display: "flex",
-                  flexDirection: "column",
-                  overflow: "hidden",
-                  height: "100%",
-                  background: `linear-gradient(135deg, 
-                    rgba(20, 31, 58, 0.6) 0%, 
-                    rgba(15, 23, 42, 0.5) 100%)`,
-                }}
-              >
-                {/* Background Image */}
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundImage: `url(${galleryAssets.actionShots[3]?.large || galleryAssets.actionShots[0]?.large || academyAssets.trainingShot})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    opacity: 0.15,
-                    zIndex: 0,
-                  }}
-                />
-                {/* Dark Overlay */}
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: `linear-gradient(135deg, 
-                      rgba(20, 31, 58, 0.95) 0%, 
-                      rgba(15, 23, 42, 0.9) 100%)`,
-                    zIndex: 1,
-                  }}
-                />
-                <div style={{ position: "relative", zIndex: 2 }}>
-                  {/* Icon & Title */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: spacing.md,
-                      marginBottom: spacing.md,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "48px",
-                        height: "48px",
-                        borderRadius: "50%",
-                        background: `linear-gradient(135deg, ${colors.primary.main} 0%, ${colors.accent.main} 100%)`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        fontSize: "24px",
-                      }}
-                    >
-                      ⚡
-                    </div>
-                    <h4
-                      style={{
-                        ...typography.h3,
-                        color: colors.text.primary,
-                        margin: 0,
-                        fontSize: typography.fontSize.xl,
-                      }}
-                    >
-                      Top-Tier Coaching & Modern Techniques
-                    </h4>
-                  </div>
-                  {/* Description */}
-                  <p
-                    style={{
-                      ...typography.body,
-                      color: colors.text.secondary,
-                      marginBottom: spacing.lg,
-                      lineHeight: 1.7,
-                      fontSize: typography.fontSize.sm,
-                    }}
-                  >
-                    We combine elite coaches and data to produce the promotions and performances you see above. Evidence-backed pathway planning, load management, and modern training prepare every player to compete and win.
-                  </p>
-                  {/* Bullets */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm, marginBottom: spacing.lg }}>
-                    {[
-                      "Merit-based player pathway",
-                      "Modern training & load management",
-                      "Data-backed coaching decisions",
-                      "Personalized player development",
-                      "Advanced training techniques",
-                      "Transparent communication",
-                    ].map((bullet, idx) => (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, x: -10 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: idx * 0.05 }}
-                        viewport={{ once: false }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: spacing.sm,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "6px",
-                            height: "6px",
-                            borderRadius: "50%",
-                            background: colors.accent.main,
-                            flexShrink: 0,
-                          }}
-                        />
-                        <span
-                          style={{
-                            ...typography.body,
-                            color: colors.text.secondary,
-                            fontSize: typography.fontSize.sm,
-                          }}
-                        >
-                          {bullet}
-                        </span>
-                      </motion.div>
-                    ))}
-                  </div>
-                  {/* CTA */}
-                  <Link to="/brochure" style={{ textDecoration: "none" }}>
-                    <Button variant="secondary" size="md" style={{ width: "100%" }}>
-                      Explore Coaching Pathways →
-                    </Button>
-                  </Link>
-                </div>
+                display: "flex",
+                              alignItems: "center",
+                              gap: spacing.sm,
+                              padding: `${spacing.xs} ${spacing.sm}`,
+                              borderRadius: borderRadius.lg,
+                              background: "rgba(255,255,255,0.04)",
+                              border: "1px solid rgba(255,255,255,0.08)",
+                            }}
+                          >
+                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: colors.accent.main, flexShrink: 0 }} />
+                            <span style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.xs, lineHeight: 1.35 }}>
+                              {bullet}
+                            </span>
               </motion.div>
+            ))}
+                      </div>
 
-              {/* Right Pillar: RealVerse & Data */}
-              <motion.div
-                variants={headingVariants}
-                whileHover={{ scale: 1.02, y: -5 }}
-                style={{
-                  position: "relative",
-                  borderRadius: borderRadius.xl,
-                  padding: spacing.xl,
-                  border: `1px solid rgba(255, 255, 255, 0.15)`,
-                  boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3)`,
-                  backdropFilter: "blur(10px)",
-                  display: "flex",
-                  flexDirection: "column",
-                  overflow: "hidden",
-                  height: "100%",
-                  background: `linear-gradient(135deg, 
-                    rgba(20, 31, 58, 0.6) 0%, 
-                    rgba(15, 23, 42, 0.5) 100%)`,
-                }}
-              >
-                {/* Background Image */}
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundImage: `url(${academyAssets.trainingShot})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    opacity: 0.15,
-                    zIndex: 0,
-                  }}
-                />
-                {/* Dark Overlay */}
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: `linear-gradient(135deg, 
-                      rgba(20, 31, 58, 0.95) 0%, 
-                      rgba(15, 23, 42, 0.9) 100%)`,
-                    zIndex: 1,
-                  }}
-                />
-                <div style={{ position: "relative", zIndex: 2 }}>
-                  {/* Icon & Title */}
+                      <div style={{ marginTop: "auto" }}>
+                        <Link to="/brochure" style={{ textDecoration: "none" }}>
+                          <Button variant="secondary" size="md" style={{ width: "100%" }}>
+                      Explore Coaching Pathways →
+                </Button>
+            </Link>
+          </div>
+        </div>
+                </motion.div>
+
+                  {/* Right pillar: RealVerse */}
+                <motion.div
+                    variants={headingVariants}
+                    whileHover={{ y: -4 }}
+        style={{
+          position: "relative",
+                      borderRadius: borderRadius.xl,
+                      border: "1px solid rgba(255,255,255,0.14)",
+                      boxShadow: "0 14px 46px rgba(0,0,0,0.35)",
+          overflow: "hidden",
+                      background: "rgba(10, 16, 32, 0.55)",
+                      backdropFilter: "blur(14px)",
+                      minWidth: 0,
+                      width: "100%",
+        }}
+      >
+        <div
+                      aria-hidden="true"
+          style={{
+            position: "absolute",
+                        inset: 0,
+                        backgroundImage: `url(${academyAssets.trainingShot})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+                        opacity: 0.10,
+                        filter: "blur(8px)",
+                      }}
+                    />
+                    <div
+                      aria-hidden="true"
+              style={{
+                        position: "absolute",
+                        inset: 0,
+                        background:
+                          "linear-gradient(135deg, rgba(20,31,58,0.92) 0%, rgba(15,23,42,0.88) 100%)",
+                      }}
+                    />
+
+                    <div style={{ position: "relative", zIndex: 1, padding: spacing.xl, display: "flex", flexDirection: "column", height: "100%" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: spacing.md, marginBottom: spacing.md }}>
                   <div
                     style={{
+                            width: 48,
+                            height: 48,
+                      borderRadius: "50%",
+                            background: `linear-gradient(135deg, ${colors.accent.main} 0%, ${colors.primary.main} 100%)`,
                       display: "flex",
                       alignItems: "center",
-                      gap: spacing.md,
-                      marginBottom: spacing.md,
+                      justifyContent: "center",
+                      flexShrink: 0,
+                            fontSize: 24,
                     }}
+                          aria-hidden="true"
                   >
+                          💻
+                  </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ ...typography.overline, color: colors.primary.main, letterSpacing: "0.14em", marginBottom: 2 }}>
+                            RealVerse
+                          </div>
+                          <h4 style={{ ...typography.h3, color: colors.text.primary, margin: 0, fontSize: typography.fontSize.xl, lineHeight: 1.2 }}>
+                    RealVerse & Data Analytics
+                          </h4>
+              </div>
+                      </div>
+
+                      <p style={{ ...typography.body, color: colors.text.secondary, marginBottom: spacing.lg, lineHeight: 1.7, fontSize: typography.fontSize.sm, opacity: 0.95 }}>
+                        Our integrated digital ecosystem powers every team with real-time data, performance tracking, and seamless communication—giving each player clear insights and actions to improve.
+                      </p>
+
                     <div
                       style={{
-                        width: "48px",
-                        height: "48px",
-                        borderRadius: "50%",
-                        background: `linear-gradient(135deg, ${colors.accent.main} 0%, ${colors.primary.main} 100%)`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        fontSize: "24px",
-                      }}
-                    >
-                      💻
-                    </div>
-                    <h4
-                      style={{
-                        ...typography.h3,
-                        color: colors.text.primary,
-                        margin: 0,
-                        fontSize: typography.fontSize.xl,
-                      }}
-                    >
-                      RealVerse & Data Analytics
-                    </h4>
-                  </div>
-                  {/* Description */}
-                  <p
-                    style={{
-                      ...typography.body,
-                      color: colors.text.secondary,
-                      marginBottom: spacing.lg,
-                      lineHeight: 1.7,
-                      fontSize: typography.fontSize.sm,
-                    }}
-                  >
-                    Our integrated digital ecosystem powers every team with real-time data, performance tracking, and seamless communication—giving each player clear insights and actions to improve.
-                  </p>
-                  {/* Bullets */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm, marginBottom: spacing.lg }}>
-                    {[
-                      "Real-time performance dashboards and KPIs",
-                      "Match & training video review with feedback",
-                      "Individual goals and progression tracking",
-                      "Load management alerts for player welfare",
-                      "Communication hub for schedules and updates",
-                      "Reports that tie effort to outcomes",
-                    ].map((bullet, idx) => (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, x: -10 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: idx * 0.05 }}
-                        viewport={{ once: false }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
+                          display: "grid",
+                          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
                           gap: spacing.sm,
+                          marginBottom: spacing.lg,
                         }}
                       >
-                        <div
-                          style={{
-                            width: "6px",
-                            height: "6px",
-                            borderRadius: "50%",
-                            background: colors.primary.main,
-                            flexShrink: 0,
-                          }}
-                        />
-                        <span
-                          style={{
-                            ...typography.body,
-                            color: colors.text.secondary,
-                            fontSize: typography.fontSize.sm,
-                          }}
-                        >
-                          {bullet}
-                        </span>
-                      </motion.div>
-                    ))}
-                  </div>
-                  {/* CTA */}
-                  <Link to="/realverse/experience" style={{ textDecoration: "none" }}>
-                    <Button variant="primary" size="md" style={{ width: "100%" }}>
+                  {[
+                    "Real-time performance dashboards and KPIs",
+                    "Match & training video review with feedback",
+                    "Individual goals and progression tracking",
+                    "Load management alerts for player welfare",
+                    "Communication hub for schedules and updates",
+                    "Reports that tie effort to outcomes",
+                        ].map((bullet, idx) => (
+                          <motion.div
+                            key={bullet}
+                            initial={{ opacity: 0, y: 8 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.35, delay: idx * 0.03 }}
+                            viewport={{ once: false }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                              gap: spacing.sm,
+                              padding: `${spacing.xs} ${spacing.sm}`,
+                              borderRadius: borderRadius.lg,
+                              background: "rgba(255,255,255,0.04)",
+                              border: "1px solid rgba(255,255,255,0.08)",
+                            }}
+                          >
+                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: colors.primary.main, flexShrink: 0 }} />
+                            <span style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.xs, lineHeight: 1.35 }}>
+                              {bullet}
+                            </span>
+                          </motion.div>
+                  ))}
+                    </div>
+
+                      <div style={{ marginTop: "auto" }}>
+                        <Link to="/realverse/experience" style={{ textDecoration: "none" }}>
+                          <Button variant="primary" size="md" style={{ width: "100%" }}>
                       Experience RealVerse →
-                    </Button>
-                  </Link>
-                </div>
-              </motion.div>
+                        </Button>
+                    </Link>
+                      </div>
+                  </div>
+                </motion.div>
             </motion.div>
+            </div>
+          </motion.div>
           </motion.div>
 
           {/* End integrated-program section */}
-        </div>
+              </motion.div>
       </InfinitySection>
 
+      </div>
 
+
+
+      {/* Fan Club Ecosystem × Sponsor Rewards × Pricing × Sales Enablement */}
+      {/* Fan Club Teaser - Concise single-screen preview */}
+      <InfinitySection
+        id="fan-club-teaser"
+        bridge={true}
+        style={{
+          padding: `${spacing.sectionGap} ${spacing.xl}`,
+          background: "transparent",
+          position: "relative",
+          overflow: "hidden",
+          scrollMarginTop: 120,
+        }}
+        data-section="fan-club"
+      >
+        {/* Lively Background */}
+        <SectionBackground
+          variant="fanclub"
+          type="image"
+          src={galleryAssets.actionShots[2]?.medium || galleryAssets.actionShots[0]?.medium}
+          overlayIntensity="medium"
+          style={{ position: "absolute", inset: 0 }}
+        />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <FanClubTeaserSection isMobile={isMobile} />
+        </div>
+      </InfinitySection>
 
       {/* Unified Content Stream: Shop + Matches + News + Gallery */}
       <InfinitySection
         id="content-stream"
         bridge={true}
         style={{
-          padding: `${spacing["4xl"]} ${spacing.xl}`,
-          background: colors.space.nebula,
+          paddingTop: spacing.sectionGap, // Uniform 64px padding
+          paddingBottom: spacing.sectionGap,
+          paddingLeft: spacing.xl,
+          paddingRight: spacing.xl,
+          background: colors.club.deep, // Football-first background
           position: "relative",
           overflow: "hidden",
         }}
       >
-        {/* Unified background */}
+        {/* Unified background - Football-first with pitch texture */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            background: "radial-gradient(circle at 20% 20%, rgba(0,224,255,0.12) 0%, transparent 35%), radial-gradient(circle at 80% 10%, rgba(255,169,0,0.12) 0%, transparent 35%), linear-gradient(135deg, #050b20 0%, #0a1633 50%, #050b20 100%)",
-            opacity: 0.9,
+            background: colors.club.background, // Use club background from design tokens
+            opacity: 0.95,
             zIndex: 0,
           }}
         />
+        {/* Subtle pitch texture overlay */}
         <div
+          aria-hidden="true"
           style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 0,
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px),
+              repeating-linear-gradient(90deg, transparent, transparent 100px, rgba(10,61,145,0.02) 100px, rgba(10,61,145,0.02) 200px)
+            `,
+            opacity: 0.3,
+          }}
+        />
+                  <div
+                    style={{
             position: "absolute",
             inset: 0,
             backgroundImage: `url(${galleryAssets.actionShots[2].medium})`,
@@ -4610,16 +5723,16 @@ const LandingPage: React.FC = () => {
             viewport={{ once: true, amount: 0.25 }}
             style={{ textAlign: "center", marginBottom: spacing["2xl"] }}
           >
-            <div
-              style={{
+                    <div
+                      style={{
                 ...typography.overline,
                 color: colors.accent.main,
                 letterSpacing: "0.15em",
-                marginBottom: spacing.md,
-              }}
-            >
+                        marginBottom: spacing.md,
+                      }}
+                    >
               Your Complete Club Experience
-            </div>
+                    </div>
             <h2
               style={{
                 ...typography.h1,
@@ -4631,7 +5744,7 @@ const LandingPage: React.FC = () => {
             >
               Connect, Support & Celebrate
             </h2>
-            <p
+                <p
               style={{
                 ...typography.body,
                 color: colors.text.secondary,
@@ -4642,601 +5755,103 @@ const LandingPage: React.FC = () => {
               }}
             >
               From matchday essentials to exclusive moments—everything you need to be part of the FC Real Bengaluru family.
-            </p>
+                </p>
           </motion.div>
 
-          {/* Shared glass container for the stream */}
+          {/* Connect, Support & Celebrate - Vertical Stack Layout */}
+          {/* All breakpoints: Single column stack (Support → Calendar → Gallery) */}
           <div
             style={{
-              background: "rgba(8,12,24,0.25)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 28,
-              backdropFilter: "blur(12px)",
-              boxShadow: "0 18px 60px rgba(0,0,0,0.35)",
-              overflow: "hidden",
+              maxWidth: "1320px",
+              margin: "0 auto",
+              width: "100%",
+              padding: isMobile ? spacing.md : spacing.xl,
             }}
           >
-            <div style={{ padding: `${spacing["3xl"]} ${spacing.lg}`, display: "flex", flexDirection: "column", gap: spacing["3xl"] }}>
+            <div 
+              style={{ 
+                display: "flex",
+                flexDirection: "column",
+                gap: isMobile ? spacing.lg : spacing["2xl"], // 24px mobile, 48px desktop
+                alignItems: "stretch",
+              }}
+              className="connect-support-celebrate-grid"
+            >
 
-              {/* SHOP — Support the Club */}
+              {/* Section 1: Support & Participate */}
               <motion.div
-                initial={{ opacity: 0, y: 18, filter: "blur(6px)" }}
-                whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
                 viewport={{ once: true, amount: 0.25 }}
-                style={{ display: "flex", flexDirection: "column", gap: spacing.lg }}
+                style={{
+                  background: colors.surface.soft,
+                  border: `1px solid rgba(255,255,255,0.10)`,
+                  borderRadius: borderRadius.card,
+                  padding: isMobile ? spacing.md : spacing.lg, // 16px mobile, 24px desktop
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: "auto",
+                  width: "100%",
+                  boxShadow: shadows.card,
+                  overflow: "hidden",
+                }}
               >
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.sm }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.1em", marginBottom: spacing.xs }}>Shop</div>
-                    <h3 style={{ ...typography.h2, color: colors.text.primary, margin: 0, marginBottom: spacing.xs, fontSize: typography.fontSize["2xl"] }}>Wear Your Pride</h3>
-                    <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.base, lineHeight: 1.7, maxWidth: "600px" }}>
-                      Show your support with official FC Real Bengaluru merchandise. Every purchase fuels our journey and connects you to the club.
-                    </p>
-                  </div>
-                  <Link to="/shop" style={{ textDecoration: "none", flexShrink: 0 }}>
-                    <Button variant="primary" size="md">Explore Shop →</Button>
-                  </Link>
-                </div>
-
-                {products.length > 0 ? (
-                  <div
-                    style={{
-                      display: isMobile ? "grid" : "grid",
-                      gridTemplateColumns: isMobile ? "repeat(auto-fit, minmax(220px, 1fr))" : "repeat(auto-fit, minmax(240px, 1fr))",
-                      gap: isMobile ? spacing.md : spacing.xl,
-                      overflowX: isMobile ? "auto" : "visible",
-                      paddingBottom: isMobile ? spacing.sm : 0,
-                    }}
-                  >
-                    {products.map((product, idx) => (
-                      <motion.div
-                        key={product.id}
-                        {...getStaggeredCard(idx)}
-                        whileHover={cardHover}
-                        style={{
-                          background: colors.surface.card,
-                          borderRadius: borderRadius.xl,
-                          overflow: "hidden",
-                          border: `1px solid rgba(255, 255, 255, 0.1)`,
-                          cursor: "pointer",
-                          minWidth: isMobile ? 220 : undefined,
-                        }}
-                      >
-                        <div
-                          style={{
-                            height: 200,
-                            background: colors.surface.soft,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {product.images && product.images[0] ? (
-                            <motion.img
-                              src={product.images[0]}
-                              alt={product.name}
-                              style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "cover" }}
-                              variants={imageVariants}
-                              initial="offscreen"
-                              whileInView="onscreen"
-                              viewport={viewportOnce}
-                            />
-                          ) : (
-                            <div style={{ color: colors.text.muted }}>No Image</div>
-                          )}
-                        </div>
-                        <div style={{ padding: spacing.lg }}>
-                          <div
-                            style={{
-                              ...typography.h4,
-                              color: colors.text.primary,
-                              marginBottom: spacing.sm,
-                            }}
-                          >
-                            {product.name}
-                          </div>
-                          <div
-                            style={{
-                              ...typography.h3,
-                              color: colors.accent.main,
-                              marginBottom: spacing.md,
-                            }}
-                          >
-                            ₹{product.price?.toLocaleString()}
-                          </div>
-                          <Link to={`/shop/${product.slug}`}>
-                            <motion.div
-                              whileHover={secondaryButtonHover}
-                              whileTap={secondaryButtonTap}
-                            >
-                              <Button variant="secondary" size="sm" fullWidth>
-                                View Product →
-                              </Button>
-                            </motion.div>
-                          </Link>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ textAlign: "center", color: colors.text.muted, padding: spacing.xl }}>
-                    No products available at the moment.
-                  </div>
-                )}
+                <SupportCelebrateBelongSection isMobile={isMobile} products={products} latestResult={latestResult} compact={true} />
               </motion.div>
 
-              {/* Soft divider */}
-              <div
-                style={{
-                  height: 1,
-                  background: "linear-gradient(to right, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)",
-                  opacity: 0.4,
-                }}
-              />
-
-              {/* MATCHES — Follow the Action */}
+              {/* Section 2: Club Calendar */}
               <motion.div
-                initial={{ opacity: 0, y: 18, filter: "blur(6px)" }}
-                whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
                 viewport={{ once: true, amount: 0.25 }}
-                style={{ display: "flex", flexDirection: "column", gap: spacing.lg, padding: spacing.xl, background: "rgba(255,255,255,0.02)", borderRadius: borderRadius["2xl"], border: "1px solid rgba(255,255,255,0.06)" }}
+                style={{
+                  background: colors.surface.soft,
+                  border: `1px solid rgba(255,255,255,0.10)`,
+                  borderRadius: borderRadius.card,
+                  padding: isMobile ? spacing.md : spacing.lg, // 16px mobile, 24px desktop
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: "auto",
+                  width: "100%",
+                  boxShadow: shadows.card,
+                  overflow: "hidden",
+                }}
               >
-                <div style={{ marginBottom: spacing.md }}>
-                  <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.1em", marginBottom: spacing.xs }}>Matches</div>
-                  <h3 style={{ ...typography.h2, color: colors.text.primary, margin: 0, marginBottom: spacing.xs, fontSize: typography.fontSize["2xl"] }}>Never Miss a Moment</h3>
-                  <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.base, lineHeight: 1.7 }}>
-                    Track our journey across all competitions. From upcoming fixtures to recent victories—stay connected to every match.
-                  </p>
-                </div>
-
-                {/* Tabs */}
-                <div
-                  style={{
-                    display: "flex",
-                    gap: spacing.md,
-                    justifyContent: "center",
-                  }}
-                >
-                  <Button
-                    variant={activeTab === "fixtures" ? "primary" : "utility"}
-                    onClick={() => setActiveTab("fixtures")}
-                  >
-                    Upcoming Fixtures
-                  </Button>
-                  <Button
-                    variant={activeTab === "results" ? "primary" : "utility"}
-                    onClick={() => setActiveTab("results")}
-                  >
-                    Recent Results
-                  </Button>
-                </div>
-
-                {/* Match List */}
-                <div style={{ maxWidth: "100%", margin: "0 auto", width: "100%" }}>
-                  {fixturesLoading ? (
-                    <div style={{ textAlign: "center", color: colors.text.muted, padding: spacing.lg }}>
-                      Loading matches...
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.md }}>
+                  <div>
+                    <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.14em", marginBottom: spacing.xs }}>
+                      CLUB CALENDAR
                     </div>
-                  ) : (
-                    <motion.div
-                      variants={staggerContainer}
-                      initial="hidden"
-                      whileInView="visible"
-                      viewport={viewportOnce}
-                      style={{ display: "flex", flexDirection: "column", gap: spacing.md }}
-                    >
-                      {(activeTab === "fixtures" ? upcomingFixtures : recentResults).map((match, idx) => {
-                        const matchImage = matchAssets.recentMatchThumbs[idx % matchAssets.recentMatchThumbs.length];
-
-                        return (
-                          <motion.div
-                            key={match.id}
-                            {...getStaggeredListItem(idx)}
-                            style={{
-                              padding: spacing.lg,
-                              background: colors.surface.card,
-                              borderRadius: borderRadius.xl,
-                              border: `1px solid rgba(255, 255, 255, 0.1)`,
-                              display: "grid",
-                              gridTemplateColumns: "auto 1fr auto auto",
-                              gap: spacing.md,
-                              alignItems: "center",
-                              position: "relative",
-                              overflow: "hidden",
-                            }}
-                            className="match-card"
-                          >
-                            <div
-                              style={{
-                                position: "absolute",
-                                top: 0,
-                                right: 0,
-                                width: "40%",
-                                height: "100%",
-                                backgroundImage: `url(${matchImage.opponent})`,
-                                backgroundSize: "cover",
-                                backgroundPosition: "center",
-                                opacity: 0.2,
-                                filter: "blur(5px)",
-                              }}
-                            />
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: spacing.sm,
-                                position: "relative",
-                                zIndex: 1,
-                              }}
-                            >
-                              <img
-                                src={matchImage.fcrbLogo}
-                                alt="FC Real Bengaluru"
-                                style={{ width: 40, height: 40, objectFit: "contain" }}
-                              />
-                              <span style={{ color: colors.text.muted, fontSize: typography.fontSize.sm }}>vs</span>
-                              <img
-                                src={matchImage.opponent}
-                                alt={match.opponent}
-                                style={{ width: 40, height: 40, objectFit: "contain", borderRadius: borderRadius.md }}
-                              />
-                            </div>
-                            <div style={{ position: "relative", zIndex: 1 }}>
-                              <div style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
-                                {match.opponent}
-                              </div>
-                              <div style={{ ...typography.caption, color: colors.text.muted }}>
-                                {match.matchType} • {match.venue}
-                              </div>
-                            </div>
-                            <div style={{ textAlign: "right", position: "relative", zIndex: 1 }}>
-                              <div style={{ ...typography.body, color: colors.text.secondary, fontWeight: typography.fontWeight.semibold }}>
-                                {formatDate(match.matchDate)}
-                              </div>
-                              <div style={{ ...typography.caption, color: colors.text.muted }}>{formatTime(match.matchTime)}</div>
-                            </div>
-                          </motion.div>
-                        );
-                      })}
-                      {((activeTab === "fixtures" ? upcomingFixtures : recentResults).length === 0) && (
-                        <div style={{ textAlign: "center", color: colors.text.muted, padding: spacing.xl }}>
-                          No {activeTab === "fixtures" ? "upcoming fixtures" : "recent results"} available.
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </div>
-              </motion.div>
-
-              {/* Soft divider */}
-              <div
-                style={{
-                  height: 1,
-                  background: "linear-gradient(to right, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)",
-                  opacity: 0.4,
-                }}
-              />
-
-              {/* NEWS — Stay Connected */}
-              <motion.div
-                initial={{ opacity: 0, y: 18, filter: "blur(6px)" }}
-                whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                viewport={{ once: true, amount: 0.25 }}
-                style={{ display: "flex", flexDirection: "column", gap: spacing.lg }}
-              >
-                <div style={{ marginBottom: spacing.sm }}>
-                  <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.1em", marginBottom: spacing.xs }}>News</div>
-                  <h3 style={{ ...typography.h2, color: colors.text.primary, margin: 0, marginBottom: spacing.xs, fontSize: typography.fontSize["2xl"] }}>Stories from the Club</h3>
-                  <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.base, lineHeight: 1.7, maxWidth: "700px" }}>
-                    Get the latest updates, match reports, and behind-the-scenes stories from FC Real Bengaluru.
-                  </p>
-                </div>
-
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={viewportOnce}
-                  style={{
-                    display: isMobile ? "flex" : "grid",
-                    gridTemplateColumns: isMobile ? undefined : "repeat(auto-fit, minmax(280px, 1fr))",
-                    gap: isMobile ? spacing.md : spacing.xl,
-                    overflowX: isMobile ? "auto" : "visible",
-                    paddingBottom: isMobile ? spacing.sm : 0,
-                  }}
-                >
-                  {mockNews.slice(0, 3).map((item, idx) => {
-                    const newsImage = getNewsImage(idx, "medium");
-                    return (
-                      <motion.div
-                        key={item.id}
-                        {...getStaggeredCard(idx)}
-                        whileHover={cardHover}
-                        style={{
-                          background: colors.surface.card,
-                          borderRadius: borderRadius.xl,
-                          overflow: "hidden",
-                          border: `1px solid rgba(255, 255, 255, 0.1)`,
-                          cursor: "pointer",
-                          minWidth: isMobile ? 260 : undefined,
-                        }}
-                      >
-                        <motion.div
-                          style={{
-                            height: 200,
-                            backgroundImage: `url(${newsImage})`,
-                            backgroundSize: "cover",
-                            backgroundPosition: "center",
-                            position: "relative",
-                          }}
-                          variants={imageVariants}
-                          initial="offscreen"
-                          whileInView="onscreen"
-                          viewport={viewportOnce}
-                        >
-                          <div
-                            style={{
-                              position: "absolute",
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              height: "60%",
-                              background: `linear-gradient(to top, rgba(5, 11, 32, 0.9) 0%, transparent 100%)`,
-                            }}
-                          />
-                        </motion.div>
-                        <div style={{ padding: spacing.lg }}>
-                          <div style={{ ...typography.overline, color: colors.accent.main, marginBottom: spacing.sm }}>{item.category}</div>
-                          <div style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.sm }}>{item.title}</div>
-                          <div style={{ ...typography.body, color: colors.text.muted, marginBottom: spacing.md, fontSize: typography.fontSize.sm }}>
-                            {item.summary}
-                          </div>
-                          <div style={{ ...typography.caption, color: colors.text.disabled }}>{formatDate(item.date)}</div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </motion.div>
-              </motion.div>
-
-              {/* Soft divider */}
-              <div
-                style={{
-                  height: 1,
-                  background: "linear-gradient(to right, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)",
-                  opacity: 0.4,
-                }}
-              />
-
-              {/* GALLERY — Relive the Moments */}
-              <motion.div
-                initial={{ opacity: 0, y: 18, filter: "blur(6px)" }}
-                whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                viewport={{ once: true, amount: 0.25 }}
-                style={{ display: "flex", flexDirection: "column", gap: spacing.lg }}
-              >
-                <div style={{ marginBottom: spacing.sm }}>
-                  <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.1em", marginBottom: spacing.xs }}>Gallery</div>
-                  <h3 style={{ ...typography.h2, color: colors.text.primary, margin: 0, marginBottom: spacing.xs, fontSize: typography.fontSize["2xl"] }}>Capture Every Victory</h3>
-                  <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.base, lineHeight: 1.7, maxWidth: "700px" }}>
-                    Experience the passion, dedication, and moments that define FC Real Bengaluru—from training sessions to matchday celebrations.
-                  </p>
-                </div>
-
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={viewportOnce}
-                  style={{
-                    display: isMobile ? "flex" : "grid",
-                    gridTemplateColumns: isMobile ? undefined : "repeat(auto-fit, minmax(220px, 1fr))",
-                    gap: isMobile ? spacing.md : spacing.md,
-                    overflowX: isMobile ? "auto" : "visible",
-                    paddingBottom: isMobile ? spacing.sm : 0,
-                  }}
-                >
-                  {galleryAssets.actionShots.map((image, idx) => (
-                    <motion.div
-                      key={idx}
-                      {...getStaggeredCard(idx)}
-                      whileHover={{ scale: 1.03, y: -2 }}
-                      style={{
-                        borderRadius: borderRadius.xl,
-                        overflow: "hidden",
-                        border: `1px solid rgba(255, 255, 255, 0.1)`,
-                        cursor: "pointer",
-                        aspectRatio: "4/3",
-                        position: "relative",
-                        minWidth: isMobile ? 240 : undefined,
-                        boxShadow: "0 12px 32px rgba(0,0,0,0.25)",
-                      }}
-                    >
-                      <motion.img
-                        src={image.medium}
-                        alt={`Gallery image ${idx + 1}`}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          display: "block",
-                        }}
-                        variants={imageVariants}
-                        initial="offscreen"
-                        whileInView="onscreen"
-                        viewport={viewportOnce}
-                        loading="lazy"
-                      />
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </motion.div>
-
-              {/* Soft divider */}
-              <div
-                style={{
-                  height: 1,
-                  background: "linear-gradient(to right, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)",
-                  opacity: 0.4,
-                }}
-              />
-
-              {/* FAN CLUB — Join the Family */}
-              <motion.div
-                data-section="fan-club"
-                initial={{ opacity: 0, y: 18, filter: "blur(6px)" }}
-                whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                viewport={{ once: true, amount: 0.25 }}
-                style={{ display: "flex", flexDirection: "column", gap: spacing.lg }}
-              >
-                <div style={{ marginBottom: spacing.sm }}>
-                  <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.1em", marginBottom: spacing.xs }}>Fan Club</div>
-                  <h3 style={{ ...typography.h2, color: colors.text.primary, margin: 0, marginBottom: spacing.xs, fontSize: typography.fontSize["2xl"] }}>Become Part of the Legacy</h3>
-                  <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.base, lineHeight: 1.7, maxWidth: "700px" }}>
-                    Join our exclusive fan community and unlock premium benefits, exclusive access, and unforgettable experiences.
-                  </p>
-                </div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                  style={{
-                    background: "rgba(255, 169, 0, 0.08)",
-                    border: `1px solid rgba(255, 169, 0, 0.2)`,
-                    borderRadius: borderRadius.xl,
-                    padding: spacing.xl,
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                  {/* Subtle glow effect */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: -20,
-                      left: -20,
-                      width: 60,
-                      height: 60,
-                      background: `radial-gradient(circle, rgba(255, 169, 0, 0.3) 0%, transparent 70%)`,
-                      borderRadius: "50%",
-                      filter: "blur(8px)",
-                    }}
-                  />
-
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md, marginBottom: spacing.lg }}>
-                    <div
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: "50%",
-                        background: `linear-gradient(135deg, ${colors.accent.main} 0%, rgba(255, 194, 51, 0.8) 100%)`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        boxShadow: `0 4px 16px rgba(255, 169, 0, 0.3)`,
-                      }}
-                    >
-                      <StarIcon size={24} color={colors.text.onPrimary} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <h4
-                        style={{
-                          ...typography.h4,
-                          color: colors.text.primary,
-                          marginBottom: spacing.xs,
-                          fontWeight: typography.fontWeight.bold,
-                        }}
-                      >
-                        Member-Exclusive Perks
-                      </h4>
-                      <p
-                        style={{
-                          ...typography.body,
-                          color: colors.text.secondary,
-                          fontSize: typography.fontSize.sm,
-                          lineHeight: 1.6,
-                        }}
-                      >
-                        Enjoy VIP access, exclusive discounts, early ticket releases, and special events reserved for our fan club members.
-                      </p>
-                    </div>
+                    <div style={{ ...typography.h4, color: colors.text.primary, margin: 0, fontWeight: typography.fontWeight.bold }}>Schedule • Matchdays</div>
                   </div>
+                </div>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: spacing.md }}>
+                  <ClubCalendarModule isMobile={isMobile} />
+                </div>
+              </motion.div>
 
-                  <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
-                    {[
-                      "VIP match access with premium seating",
-                      "Exclusive merchandise discounts & special offers",
-                      "Priority access to tickets & events",
-                      "Meet & greet sessions with players & coaches",
-                      "Special member-only passes & experiences",
-                    ].map((benefit, idx) => (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, x: -12 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true, amount: 0.1 }}
-                        transition={{ duration: 0.4, delay: idx * 0.05 + 0.2 }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: spacing.sm,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: "50%",
-                            background: `linear-gradient(135deg, ${colors.accent.main} 0%, rgba(255, 194, 51, 0.8) 100%)`,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                          }}
-                        >
-                          <CheckIcon size={12} color={colors.text.onPrimary} />
-                        </div>
-                        <span
-                          style={{
-                            ...typography.body,
-                            color: colors.text.primary,
-                            fontSize: typography.fontSize.sm,
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          {benefit}
-                        </span>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  <motion.div
-                    style={{ marginTop: spacing.lg }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      fullWidth
-                      style={{
-                        background: `linear-gradient(135deg, ${colors.primary.main} 0%, ${colors.primary.dark} 100%)`,
-                        border: "none",
-                        boxShadow: `0 4px 20px rgba(0, 224, 255, 0.3)`,
-                      }}
-                    >
-                      Join the Fan Club <ArrowRightIcon size={18} style={{ marginLeft: spacing.xs }} />
-                    </Button>
-                  </motion.div>
-                </motion.div>
+              {/* Section 3: Gallery & Updates */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+                viewport={{ once: true, amount: 0.25 }}
+                style={{
+                  background: colors.surface.soft,
+                  border: `1px solid rgba(255,255,255,0.10)`,
+                  borderRadius: borderRadius.card,
+                  padding: isMobile ? spacing.md : spacing.lg, // 16px mobile, 24px desktop
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: "auto",
+                  width: "100%",
+                  boxShadow: shadows.card,
+                  overflow: "hidden",
+                }}
+              >
+                <GalleryUpdatesModule />
               </motion.div>
             </div>
           </div>
@@ -5269,23 +5884,23 @@ const LandingPage: React.FC = () => {
           style={{ width: "100%", marginTop: "auto", marginBottom: 0, paddingBottom: 0 }}
         >
           <div
-            style={{
+              style={{
               position: "relative",
               width: "100%",
               overflow: "hidden",
             }}
           >
-            <div
+        <div
               style={{
-                position: "absolute",
-                inset: 0,
+            position: "absolute",
+            inset: 0,
                 background: "linear-gradient(180deg, rgba(4,8,18,0.95) 0%, rgba(4,8,18,0.98) 100%)",
-                zIndex: 1,
-              }}
-            />
+            zIndex: 1,
+          }}
+        />
 
             <div
-              style={{
+            style={{
                 position: "relative",
                 zIndex: 2,
               }}
@@ -5310,93 +5925,93 @@ const LandingPage: React.FC = () => {
                   }}
                 />
 
-                <div
-                  style={{
-                    display: "grid",
+          <div
+            style={{
+              display: "grid",
                     gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr 1.2fr",
                     gap: isMobile ? 20 : 24,
-                    alignItems: "flex-start",
-                  }}
-                >
+              alignItems: "flex-start",
+            }}
+          >
                   {/* Logo + Social */}
-                  <div>
-                    <img
-                      src={clubAssets.logo.crestCropped}
-                      alt="FC Real Bengaluru"
+            <div>
+              <img
+                src={clubAssets.logo.crestCropped}
+                alt="FC Real Bengaluru"
                       style={{ width: isMobile ? 90 : 100, height: "auto", marginBottom: isMobile ? spacing.sm : spacing.md }}
-                    />
+              />
                     <div style={{ display: "flex", gap: 10, marginTop: spacing.sm, flexWrap: "wrap" }}>
-                      {[
-                        { name: "Facebook", url: clubInfo.social.facebook, Icon: FacebookIcon },
-                        { name: "Instagram", url: clubInfo.social.instagram, Icon: InstagramIcon },
-                        { name: "TikTok", url: clubInfo.social.tiktok || "#", Icon: TikTokIcon },
-                        { name: "Twitter", url: clubInfo.social.twitter || "#", Icon: TwitterIcon },
-                        { name: "YouTube", url: clubInfo.social.youtube, Icon: YouTubeIcon },
-                      ].map((social) => {
-                        const Icon = social.Icon;
-                        return (
-                          <a
-                            key={social.name}
-                            href={social.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
+                {[
+                  { name: "Facebook", url: clubInfo.social.facebook, Icon: FacebookIcon },
+                  { name: "Instagram", url: clubInfo.social.instagram, Icon: InstagramIcon },
+                  { name: "TikTok", url: clubInfo.social.tiktok || "#", Icon: TikTokIcon },
+                  { name: "Twitter", url: clubInfo.social.twitter || "#", Icon: TwitterIcon },
+                  { name: "YouTube", url: clubInfo.social.youtube, Icon: YouTubeIcon },
+                ].map((social) => {
+                  const Icon = social.Icon;
+                  return (
+                    <a
+                      key={social.name}
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
                               display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
+                        alignItems: "center",
+                        justifyContent: "center",
                               width: 44,
                               height: 44,
                               borderRadius: 12,
                               background: "rgba(255,255,255,0.08)",
                               color: colors.text.primary,
-                              textDecoration: "none",
-                              transition: "all 0.2s ease",
+                        textDecoration: "none",
+                        transition: "all 0.2s ease",
                               boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
-                            }}
-                            onMouseEnter={(e) => {
+                      }}
+                      onMouseEnter={(e) => {
                               e.currentTarget.style.background = `${colors.primary.soft}`;
-                              e.currentTarget.style.color = colors.primary.main;
-                            }}
-                            onMouseLeave={(e) => {
+                        e.currentTarget.style.color = colors.primary.main;
+                      }}
+                      onMouseLeave={(e) => {
                               e.currentTarget.style.background = "rgba(255,255,255,0.08)";
                               e.currentTarget.style.color = colors.text.primary;
-                            }}
-                            title={social.name}
-                          >
+                      }}
+                      title={social.name}
+                    >
                             <Icon size={18} />
-                          </a>
-                        );
-                      })}
-                    </div>
-                  </div>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
 
-                  {/* About Clubs */}
-                  <div>
+            {/* About Clubs */}
+            <div>
                     <div
-                      style={{
+                style={{
                         fontSize: 13,
                         fontWeight: 700,
                         letterSpacing: "0.06em",
-                        textTransform: "uppercase",
-                        color: colors.text.primary,
+                  textTransform: "uppercase",
+                  color: colors.text.primary,
                         opacity: 0.9,
                         marginBottom: isMobile ? 8 : 10,
-                      }}
-                    >
-                      About Clubs
+                }}
+              >
+                About Clubs
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 6 : 8 }}>
-                      {[
-                        { label: "Homepage", to: "#" },
-                        { label: "About Us", to: "#philosophy" },
+                {[
+                  { label: "Homepage", to: "#" },
+                  { label: "About Us", to: "#philosophy" },
                         { label: "Latest News", to: "#content-stream" },
-                      ].map((link) => (
-                        <a
-                          key={link.label}
-                          href={link.to}
-                          style={{
+                ].map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.to}
+                    style={{
                             color: colors.text.secondary,
-                            textDecoration: "none",
+                      textDecoration: "none",
                             fontSize: 13,
                             lineHeight: 1.8,
                             opacity: 0.85,
@@ -5410,27 +6025,27 @@ const LandingPage: React.FC = () => {
                             e.currentTarget.style.opacity = "0.85";
                             e.currentTarget.style.textDecoration = "none";
                           }}
-                        >
-                          {link.label}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </div>
 
-                  {/* Teams Info */}
-                  <div>
+            {/* Teams Info */}
+            <div>
                     <div
-                      style={{
+                style={{
                         fontSize: 13,
                         fontWeight: 700,
                         letterSpacing: "0.06em",
-                        textTransform: "uppercase",
-                        color: colors.text.primary,
+                  textTransform: "uppercase",
+                  color: colors.text.primary,
                         opacity: 0.9,
                         marginBottom: isMobile ? 8 : 10,
-                      }}
-                    >
-                      Teams Info
+                }}
+              >
+                Teams Info
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 6 : 8 }}>
                       {[
@@ -5438,13 +6053,13 @@ const LandingPage: React.FC = () => {
                         { label: "Player Profile", to: "/players" },
                         { label: "Fixtures", to: "#matches" },
                         { label: "Tournament", to: "/tournaments" },
-                      ].map((link) => (
-                        <a
-                          key={link.label}
-                          href={link.to}
-                          style={{
+                ].map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.to}
+                    style={{
                             color: colors.text.secondary,
-                            textDecoration: "none",
+                      textDecoration: "none",
                             fontSize: 13,
                             lineHeight: 1.8,
                             opacity: 0.85,
@@ -5458,27 +6073,27 @@ const LandingPage: React.FC = () => {
                             e.currentTarget.style.opacity = "0.85";
                             e.currentTarget.style.textDecoration = "none";
                           }}
-                        >
-                          {link.label}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </div>
 
-                  {/* Contact Us */}
-                  <div>
-                    <div
-                      style={{
+            {/* Contact Us */}
+            <div>
+              <div
+                style={{
                         fontSize: 13,
                         fontWeight: 700,
                         letterSpacing: "0.06em",
-                        textTransform: "uppercase",
+                  textTransform: "uppercase",
                         color: colors.text.primary,
                         opacity: 0.9,
                         marginBottom: isMobile ? 8 : 10,
-                      }}
-                    >
-                      Contact Us
+                }}
+              >
+                Contact Us
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 8 : 10 }}>
                       <a
@@ -5575,11 +6190,11 @@ const LandingPage: React.FC = () => {
                               borderRadius: borderRadius.lg,
                               padding: spacing.md,
                               border: "1px solid rgba(255,255,255,0.1)",
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: spacing.sm,
-                            }}
-                          >
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: spacing.sm,
+                }}
+              >
                             {/* Centre Number Badge & Name */}
                             <div
                               style={{
@@ -5605,27 +6220,27 @@ const LandingPage: React.FC = () => {
                                 }}
                               >
                                 {idx + 1}
-                              </div>
-                              <h4
-                                style={{
-                                  ...typography.body,
-                                  color: colors.text.primary,
-                                  fontSize: typography.fontSize.sm,
+              </div>
+              <h4
+                style={{
+                  ...typography.body,
+                  color: colors.text.primary,
+                  fontSize: typography.fontSize.sm,
                                   fontWeight: typography.fontWeight.semibold,
                                   margin: 0,
                                   flex: 1,
-                                }}
-                              >
+                }}
+              >
                                 {centre.name}
-                              </h4>
+              </h4>
                             </div>
 
                             {/* Location */}
                             <div
                               style={{
-                                display: "flex",
+                  display: "flex",
                                 alignItems: "flex-start",
-                                gap: spacing.xs,
+                  gap: spacing.xs,
                                 paddingLeft: spacing.md + spacing.xs,
                               }}
                             >
@@ -5639,30 +6254,30 @@ const LandingPage: React.FC = () => {
                                 }}
                               />
                               <div
-                                style={{
-                                  ...typography.body,
+                    style={{
+                      ...typography.body,
                                   color: colors.text.secondary,
                                   fontSize: typography.fontSize.xs,
                                   lineHeight: 1.5,
                                 }}
                               >
                                 {centre.locality}, {centre.city}
-                              </div>
-                            </div>
+                </div>
+                </div>
 
                             {/* Address */}
                             {centre.addressLine && (
                               <div
                                 style={{
                                   ...typography.caption,
-                                  color: colors.text.muted,
+                      color: colors.text.muted,
                                   fontSize: typography.fontSize.xs,
                                   paddingLeft: spacing.md + spacing.xs,
                                   lineHeight: 1.5,
                                 }}
                               >
                                 {centre.addressLine}
-                              </div>
+                </div>
                             )}
 
                             {/* CTA Button */}
@@ -5685,14 +6300,14 @@ const LandingPage: React.FC = () => {
                               </Button>
                             </motion.div>
                           </motion.div>
-                        ))}
-                      </div>
-                    </div>
+                ))}
+              </div>
+            </div>
                   </>
                 )}
 
-                <div
-                  style={{
+          <div
+            style={{
                     marginTop: isMobile ? 20 : 24,
                     paddingTop: isMobile ? 16 : 18,
                     borderTop: "1px solid rgba(255,255,255,0.08)",
@@ -5701,12 +6316,12 @@ const LandingPage: React.FC = () => {
                     color: colors.text.muted,
                     fontSize: 12,
                     opacity: 0.85,
-                    textAlign: "center",
-                  }}
-                >
-                  © {new Date().getFullYear()} FC Real Bengaluru. All rights reserved.
-                </div>
-              </div>
+              textAlign: "center",
+            }}
+          >
+            © {new Date().getFullYear()} FC Real Bengaluru. All rights reserved.
+          </div>
+        </div>
             </div>
           </div>
         </motion.footer>
@@ -5717,3 +6332,4 @@ const LandingPage: React.FC = () => {
 
 export default LandingPage;
 export { LandingPage };
+

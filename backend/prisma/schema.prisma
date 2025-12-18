@@ -40,6 +40,7 @@ model Center {
   seasonPlans SeasonPlan[]
   weeklyLoads PlayerWeeklyLoad[]
   trialEvents TrialEvent[]
+  clubEvents ClubEvent[]
   @@index([shortName])
   @@index([isActive])
   @@index([displayOrder])
@@ -77,6 +78,7 @@ model Coach {
   revisedTrialReports TrialReportRevision[] @relation("TrialReportRevisor")
   createdTrialShortlists TrialShortlist[] @relation("TrialShortlistCreator")
   trialDecisions TrialDecisionLog[] @relation("TrialDecisionMaker")
+  clubEvents ClubEvent[]
 }
 
 model CoachCenter {
@@ -144,12 +146,379 @@ enum Role {
   ADMIN
   COACH
   STUDENT
+  FAN
 }
 
 enum StudentStatus {
   ACTIVE
   INACTIVE
   TRIAL
+}
+
+// ============================
+// FAN CLUB (REALVERSE FAN)
+// ============================
+
+enum FanAccountStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum FanCenterPreference {
+  THREELOK
+  DEPOT18
+  BLITZZ
+  TRONIC
+}
+
+enum RewardCampaignType {
+  STATIC
+  DYNAMIC_ROLLING
+}
+
+enum CouponCodeType {
+  SINGLE_USE
+  MULTI_USE
+}
+
+enum CouponDiscountType {
+  PERCENT
+  FLAT
+  FREEBIE
+}
+
+enum CouponRedemptionStatus {
+  REDEEMED
+  REVOKED
+}
+
+enum FanGameType {
+  QUIZ
+  PREDICT_SCORE
+  SPIN
+  COLLECT
+  STREAK
+}
+
+enum FanConversionLeadStatus {
+  NEW
+  CONTACTED
+  CONVERTED
+  DROPPED
+}
+
+enum FanProgramInterest {
+  EPP
+  SCP
+  WPP
+  FYDP
+}
+
+enum FanPersonaType {
+  PURE_FAN
+  ASPIRING_PLAYER
+  ANALYST
+  COMMUNITY_SUPPORTER
+}
+
+model FanUser {
+  id           Int             @id @default(autoincrement())
+  email        String          @unique
+  passwordHash String
+  role         Role            @default(FAN)
+  status       FanAccountStatus @default(ACTIVE)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  profile FanProfile?
+
+  @@index([role])
+  @@index([status])
+}
+
+model FanProfile {
+  id               Int     @id @default(autoincrement())
+  userId           Int     @unique
+  fullName         String
+  phone            String?
+  city             String?
+  centerPreference FanCenterPreference?
+  tierId           Int?
+  points           Int     @default(0)
+  badges           String[] @default([])
+  streakDays       Int     @default(0)
+  joinedAt         DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user     FanUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier     FanTier? @relation(fields: [tierId], references: [id])
+
+  redemptions CouponRedemption[]
+  gameSessions FanGameSession[]
+  conversionLeads FanConversionLead[]
+  onboarding FanOnboarding?
+  pointLedger FanPointLedger[]
+  badgesEarned FanBadgeEarned[]
+
+  @@index([tierId])
+  @@index([joinedAt])
+}
+
+model FanTier {
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  monthlyPriceINR Int
+  yearlyPriceINR  Int
+  benefitsJson  Json     // array of benefit objects (schema-ready)
+  featureFlags  Json     // module toggles for fan dashboard
+  sortOrder     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  fans FanProfile[]
+
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
+model FanSponsor {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  logoAssetKey String
+  brandPrimary String
+  brandSecondary String
+  description  String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  campaigns RewardCampaign[]
+  couponPools CouponPool[]
+
+  @@index([isActive])
+}
+
+model RewardCampaign {
+  id              Int      @id @default(autoincrement())
+  sponsorId        Int
+  title           String
+  type            RewardCampaignType @default(STATIC)
+  copy            String
+  rulesJson       Json?
+  validFrom       DateTime?
+  validTo         DateTime?
+  tierEligibility Int[]    @default([])
+  isActive        Boolean  @default(true)
+  priority        Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  sponsor FanSponsor @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+
+  @@index([sponsorId])
+  @@index([isActive])
+  @@index([priority])
+}
+
+model CouponPool {
+  id             Int      @id @default(autoincrement())
+  sponsorId       Int
+  name           String
+  codeType       CouponCodeType
+  multiUseCode   String? // used when codeType = MULTI_USE
+  discountType   CouponDiscountType
+  discountValue  Int
+  conditionsText String
+  tierEligibility Int[]   @default([])
+  maxRedemptions Int?
+  expiresAt      DateTime?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  sponsor FanSponsor @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  codes   CouponCode[]
+  redemptions CouponRedemption[]
+
+  @@index([sponsorId])
+  @@index([isActive])
+  @@index([expiresAt])
+}
+
+model CouponCode {
+  id          Int      @id @default(autoincrement())
+  couponPoolId Int
+  code        String
+  isUsed      Boolean  @default(false)
+  usedAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  pool CouponPool @relation(fields: [couponPoolId], references: [id], onDelete: Cascade)
+
+  @@unique([couponPoolId, code])
+  @@index([couponPoolId])
+  @@index([isUsed])
+}
+
+model CouponRedemption {
+  id           Int      @id @default(autoincrement())
+  fanId         Int
+  couponPoolId  Int
+  codeUsed     String
+  redeemedAt   DateTime @default(now())
+  status       CouponRedemptionStatus @default(REDEEMED)
+
+  fan  FanProfile @relation(fields: [fanId], references: [id], onDelete: Cascade)
+  pool CouponPool @relation(fields: [couponPoolId], references: [id], onDelete: Restrict)
+
+  @@index([fanId])
+  @@index([couponPoolId])
+  @@index([redeemedAt])
+  @@unique([fanId, couponPoolId])
+}
+
+model FanQuest {
+  id            Int      @id @default(autoincrement())
+  title         String
+  description   String
+  pointsReward  Int      @default(0)
+  badgeReward   String?
+  unlockRule    String?
+  tierEligibility Int[]  @default([])
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model FanGameSession {
+  id          Int       @id @default(autoincrement())
+  fanId       Int
+  gameType    FanGameType
+  input       Json?
+  result      Json?
+  pointsEarned Int      @default(0)
+  createdAt   DateTime  @default(now())
+
+  fan FanProfile @relation(fields: [fanId], references: [id], onDelete: Cascade)
+
+  @@index([fanId])
+  @@index([gameType])
+  @@index([createdAt])
+}
+
+model FanConversionLead {
+  id            Int      @id @default(autoincrement())
+  fanId         Int
+  programInterest FanProgramInterest
+  status        FanConversionLeadStatus @default(NEW)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  fan FanProfile @relation(fields: [fanId], references: [id], onDelete: Cascade)
+
+  @@index([fanId])
+  @@index([programInterest])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model FanOnboarding {
+  id             Int            @id @default(autoincrement())
+  fanId          Int            @unique
+  persona        FanPersonaType?
+  favoritePlayer String?
+  locality       String?
+  goals          String[]       @default([])
+  assignedTierId Int?
+  completedAt    DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  fan           FanProfile @relation(fields: [fanId], references: [id], onDelete: Cascade)
+  assignedTier  FanTier?   @relation(fields: [assignedTierId], references: [id])
+
+  @@index([assignedTierId])
+  @@index([completedAt])
+}
+
+model FanPointLedger {
+  id        Int      @id @default(autoincrement())
+  fanId     Int
+  delta     Int
+  reason    String
+  source    String?  // e.g. "ADMIN_ADJUST", "GAME", "QUEST", "REWARD"
+  actorId   Int?     // Coach/Admin id (stored as scalar to avoid cross-role relation complexity)
+  createdAt DateTime @default(now())
+
+  fan FanProfile @relation(fields: [fanId], references: [id], onDelete: Cascade)
+
+  @@index([fanId])
+  @@index([createdAt])
+}
+
+model FanBadgeEarned {
+  id        Int      @id @default(autoincrement())
+  fanId     Int
+  badgeKey  String
+  badgeName String?
+  source    String?
+  earnedAt  DateTime @default(now())
+
+  fan FanProfile @relation(fields: [fanId], references: [id], onDelete: Cascade)
+
+  @@unique([fanId, badgeKey])
+  @@index([fanId])
+  @@index([earnedAt])
+}
+
+model MatchdayMoment {
+  id           Int      @id @default(autoincrement())
+  title        String
+  category     String   // e.g. "GOAL", "HIGHLIGHT", "POTW", "BTS"
+  mediaUrl     String?
+  thumbnailUrl String?
+  fixtureId    Int?
+  isFeatured   Boolean  @default(false)
+  isLocked     Boolean  @default(false)
+  unlockAt     DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([fixtureId])
+  @@index([isFeatured])
+  @@index([createdAt])
+}
+
+model DynamicRewardRule {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique // e.g. "WIN_BONUS", "MATCHDAY_SPECIAL"
+  title       String
+  description String
+  rulesJson   Json?
+  isActive    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model AuditLog {
+  id            Int      @id @default(autoincrement())
+  actorAdminId  Int
+  action        String
+  entityType    String
+  entityId      String
+  before        Json?
+  after         Json?
+  createdAt     DateTime @default(now())
+
+  @@index([actorAdminId])
+  @@index([entityType])
+  @@index([createdAt])
 }
 
 model Session {
@@ -257,6 +626,62 @@ enum FixtureStatus {
   COMPLETED
   CANCELLED
   POSTPONED
+}
+
+// ============================================
+// CLUB CALENDAR EVENTS (PUBLIC + ADMIN SCHEDULE)
+// ============================================
+enum ClubEventType {
+  MATCH
+  TRAINING
+  TRIAL
+  SEMINAR
+  MEETING
+  OTHER
+}
+
+enum ClubEventStatus {
+  SCHEDULED
+  CONFIRMED
+  POSTPONED
+  CANCELLED
+  COMPLETED
+}
+
+enum HomeAway {
+  HOME
+  AWAY
+}
+
+model ClubEvent {
+  id              String          @id @default(uuid())
+  type            ClubEventType
+  title           String
+  startAt         DateTime
+  endAt           DateTime?
+  allDay          Boolean         @default(false)
+  venueName       String?
+  venueAddress    String?
+  googleMapsUrl   String?
+  competition     String?
+  opponent        String?
+  homeAway        HomeAway?
+  teamId          Int?
+  centerId        Int?
+  status          ClubEventStatus @default(SCHEDULED)
+  notes           String?
+  createdByUserId Int
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  center          Center?         @relation(fields: [centerId], references: [id])
+  createdBy       Coach           @relation(fields: [createdByUserId], references: [id])
+
+  @@index([startAt])
+  @@index([type])
+  @@index([status])
+  @@index([centerId])
+  @@unique([title, startAt])
 }
 
 model Video {

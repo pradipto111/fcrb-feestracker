@@ -20,50 +20,51 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   const paddingMap = {
     none: '0',
-    sm: spacing.md,
-    md: spacing.lg,
-    lg: spacing.xl,
+    sm: spacing.md, // 16px
+    md: spacing.cardPadding, // 32px - minimum card padding (football-first)
+    lg: spacing.xl, // 32px
+    xl: spacing['40'], // 40px for large cards
   };
 
   const variantStyles: Record<string, React.CSSProperties> = {
-    // Section surface - main content panels
+    // Section surface - main content panels (football-first)
     default: {
-      background: colors.surface.section,
-      backdropFilter: 'blur(20px)',
-      boxShadow: shadows.glassDark,
-      border: `1px solid rgba(255, 255, 255, 0.1)`,
-      borderRadius: borderRadius['3xl'],
+      background: colors.surface.card, // Football-first card background
+      backdropFilter: 'blur(14px)',
+      boxShadow: shadows.card, // Sports broadcast style
+      border: `1px solid rgba(255, 255, 255, 0.10)`, // Subtle border
+      borderRadius: borderRadius.card, // 16px - football-first
     },
-    // Card surface - floating cards
+    // Card surface - floating cards (football-first)
     elevated: {
-      background: colors.surface.card,
-      backdropFilter: 'blur(20px)',
-      boxShadow: shadows.glassDark,
-      border: `1px solid rgba(255, 255, 255, 0.15)`,
-      borderRadius: borderRadius.xl,
+      background: colors.surface.card, // Football-first card background
+      backdropFilter: 'blur(14px)',
+      boxShadow: shadows.cardHover, // Sports broadcast hover shadow
+      border: `1px solid rgba(255, 255, 255, 0.10)`, // Subtle border
+      borderRadius: borderRadius.card, // 16px - football-first
     },
-    // Glass effect - for overlays
+    // Glass effect - for overlays (football-first)
     glass: {
-      background: colors.surface.card,
-      backdropFilter: 'blur(20px)',
-      boxShadow: shadows.glass,
-      border: `1px solid rgba(255, 255, 255, 0.2)`,
-      borderRadius: borderRadius.xl,
+      background: colors.surface.card, // Football-first card background
+      backdropFilter: 'blur(14px)',
+      boxShadow: shadows.card, // Sports broadcast style
+      border: `1px solid rgba(255, 255, 255, 0.10)`, // Subtle border
+      borderRadius: borderRadius.card, // 16px - football-first
     },
-    // Outlined - subtle borders
+    // Outlined - subtle borders (football-first)
     outlined: {
-      background: colors.surface.soft,
+      background: colors.surface.soft, // Soft background
       backdropFilter: 'blur(10px)',
-      border: `1px solid rgba(255, 255, 255, 0.15)`,
-      boxShadow: 'none',
-      borderRadius: borderRadius.xl,
+      border: `1px solid rgba(255, 255, 255, 0.10)`, // Subtle border
+      boxShadow: shadows.sm, // Subtle shadow
+      borderRadius: borderRadius.card, // 16px - football-first
     },
   };
 
   const cardStyle: React.CSSProperties = {
-    borderRadius: borderRadius.xl,
-    padding: paddingMap[padding],
-    transition: 'all 0.2s ease',
+    borderRadius: borderRadius.card, // 16px - football-first
+    padding: paddingMap[padding], // Minimum 32px for readable text zones
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', // Smooth sports feel
     ...variantStyles[variant],
     ...(onClick ? { cursor: 'pointer' } : {}),
     ...style,
@@ -78,8 +79,8 @@ export const Card: React.FC<CardProps> = ({
         ...cardStyle,
         ...(isHovered && onClick
           ? {
-              transform: 'translateY(-4px)',
-              boxShadow: shadows['2xl'],
+              transform: 'translateY(-2px)', // Subtle lift - football-first
+              boxShadow: shadows.cardHover, // Sports broadcast hover shadow
             }
           : {}),
       }}

@@ -21,102 +21,112 @@ export const Button: React.FC<ButtonProps> = ({
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '8px',
-    fontFamily: "'Inter', sans-serif",
-    fontWeight: 600,
+    gap: spacing.sm, // 8px
+    fontFamily: typography.fontFamily.primary,
+    fontWeight: 700, // Bold for sports feel
     border: 'none',
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.button, // 8px - sports badge feel
     cursor: props.disabled ? 'not-allowed' : 'pointer',
-    transition: transitions.fast,
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', // Smooth sports feel
     outline: 'none',
     position: 'relative',
     overflow: 'hidden',
+    // Ensure text is centered, never touching borders
+    textAlign: 'center',
+    whiteSpace: 'nowrap',
     ...style,
   };
 
   const sizeStyles: Record<string, React.CSSProperties> = {
     sm: {
-      padding: '8px 16px',
       fontSize: '0.875rem',
-      minHeight: '32px',
+      minHeight: '36px', // Increased tap area
+      // Padding handled in variantStyles
     },
     md: {
-      padding: '12px 24px',
       fontSize: '1rem',
-      minHeight: '40px',
+      minHeight: '44px', // Increased tap area
+      // Padding handled in variantStyles
     },
     lg: {
-      padding: '16px 32px',
       fontSize: '1.125rem',
-      minHeight: '48px',
+      minHeight: '52px', // Increased tap area
+      // Padding handled in variantStyles
     },
   };
 
-  // STRICT 4-Button System (RealVerse Specification)
+  // Football Club Button System - Solid, Bold, Sports-Badge Feel
   const variantStyles: Record<string, React.CSSProperties> = {
-    // 1. PRIMARY ACTION - Only one per section, gradient (Cyan → Blue or Orange → Yellow) with glow
+    // 1. PRIMARY ACTION - Football gradient (Royal Blue → Gold), sports badge feel
     primary: {
-      background: `linear-gradient(135deg, #00E6FF 0%, ${colors.primary.main} 100%)`,
+      background: `linear-gradient(135deg, ${colors.primary.main} 0%, ${colors.accent.main} 100%)`, // Football-first gradient
       color: colors.text.onPrimary,
-      boxShadow: `0 4px 20px rgba(0, 230, 255, 0.4), ${shadows.md}`,
+      boxShadow: shadows.button, // Sports broadcast style
       border: 'none',
-      fontFamily: "'Space Grotesk', sans-serif",
-      fontWeight: 700,
-      borderRadius: borderRadius.lg,
+      fontFamily: typography.fontFamily.heading, // Bold football typography
+      fontWeight: typography.fontWeight.bold, // 700 - Bold
+      borderRadius: borderRadius.button, // 8px - football-first
+      // Ensure text is centered, never touching borders (minimum 16px padding)
+      padding: size === 'sm' ? `${spacing['10']} ${spacing['20']}` : size === 'md' ? `${spacing.md} ${spacing['28']}` : `${spacing['18']} ${spacing['36']}`,
     },
-    // 2. SECONDARY ACTION - Dark fill or transparent, neon outline on hover
+    // 2. SECONDARY ACTION - Outline with subtle drop-shadow, football-first
     secondary: {
-      background: colors.surface.card,
-      color: colors.text.primary,
-      border: `2px solid rgba(0, 230, 255, 0.3)`,
-      boxShadow: shadows.sm,
-      backdropFilter: 'blur(10px)',
-      fontFamily: "'Inter', sans-serif",
-      fontWeight: 600,
+      background: 'transparent', // Transparent background
+      color: colors.accent.main, // FC Real Bengaluru gold text
+      border: `2px solid ${colors.accent.main}`, // Gold border
+      boxShadow: shadows.button, // Sports broadcast style
+      fontFamily: typography.fontFamily.heading, // Bold football typography
+      fontWeight: typography.fontWeight.bold, // 700 - Bold
+      borderRadius: borderRadius.button, // 8px - football-first
+      padding: size === 'sm' ? `${spacing['10']} ${spacing['20']}` : size === 'md' ? `${spacing.md} ${spacing['28']}` : `${spacing['18']} ${spacing['36']}`,
     },
-    // 3. UTILITY ACTION - Small, icon + label, low-contrast background
+    // 3. UTILITY ACTION - Outline style, low-contrast
     utility: {
-      background: 'rgba(255, 255, 255, 0.05)',
-      color: colors.text.muted,
-      border: `1px solid rgba(255, 255, 255, 0.1)`,
+      background: 'transparent',
+      color: colors.text.secondary,
+      border: `2px solid rgba(255, 255, 255, 0.2)`,
       boxShadow: 'none',
       fontSize: typography.fontSize.sm,
-      padding: `${spacing.xs} ${spacing.sm}`,
-      fontFamily: "'Inter', sans-serif",
-      fontWeight: 500,
+      padding: `${spacing.sm} ${spacing.md}`,
+      fontFamily: typography.fontFamily.primary,
+      fontWeight: 600,
+      borderRadius: borderRadius.button,
     },
     // 4. DANGER - Outline by default, filled red on hover
     danger: {
       background: 'transparent',
       color: colors.danger.main,
-      border: `2px solid rgba(239, 68, 68, 0.3)`,
+      border: `2px solid ${colors.danger.main}`,
       boxShadow: 'none',
-      fontFamily: "'Inter', sans-serif",
-      fontWeight: 600,
+      fontFamily: typography.fontFamily.primary,
+      fontWeight: 700,
+      borderRadius: borderRadius.button,
     },
   };
 
   const hoverStyles: Record<string, React.CSSProperties> = {
     primary: {
-      transform: 'translateY(-1px) scale(1.02)',
-      boxShadow: `0 0 18px rgba(0, 230, 255, 0.4), 0 6px 30px rgba(0, 230, 255, 0.6)`,
+      transform: 'translateY(-2px)',
+      boxShadow: shadows.buttonHover, // Sports broadcast hover shadow
+      background: `linear-gradient(135deg, ${colors.primary.light} 0%, ${colors.accent.light} 100%)`, // Lighter gradient on hover
     },
     secondary: {
-      border: `2px solid rgba(0, 230, 255, 0.6)`,
-      boxShadow: `0 0 15px rgba(0, 230, 255, 0.3), ${shadows.md}`,
-      color: '#CDE7FF',
+      transform: 'translateY(-2px)',
+      boxShadow: shadows.buttonHover, // Sports broadcast hover shadow
+      background: colors.accent.soft, // Subtle gold background on hover
+      border: `2px solid ${colors.accent.light}`, // Lighter gold border
     },
     utility: {
-      background: 'rgba(255, 255, 255, 0.08)',
-      color: colors.text.secondary,
-      border: `1px solid rgba(255, 255, 255, 0.2)`,
+      background: 'rgba(255, 255, 255, 0.1)',
+      color: colors.text.primary,
+      border: `2px solid rgba(255, 255, 255, 0.3)`,
     },
     danger: {
       background: colors.danger.main,
       border: `2px solid ${colors.danger.main}`,
       color: colors.text.onPrimary,
-      boxShadow: `0 4px 20px rgba(239, 68, 68, 0.4)`,
-      transform: 'translateY(-1px)',
+      boxShadow: shadows.buttonHover,
+      transform: 'translateY(-2px)',
     },
   };
 

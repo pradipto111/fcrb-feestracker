@@ -21,6 +21,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import StudentLayout from "./components/StudentLayout";
 import CoachLayout from "./components/CoachLayout";
 import AdminLayout from "./components/AdminLayout";
+import FanLayout from "./components/FanLayout";
 import StudentDashboardOverview from "./pages/student/StudentDashboardOverview";
 import StudentPathwayPage from "./pages/student/StudentPathwayPage";
 import StudentFeedbackPage from "./pages/student/StudentFeedbackPage";
@@ -57,6 +58,7 @@ import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import BrochurePage from "./pages/BrochurePage";
 import InteractiveBrochurePage from "./pages/InteractiveBrochurePage";
 import RealVerseExperiencePage from "./pages/RealVerseExperiencePage";
+import AboutPage from "./pages/AboutPage";
 import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 import AdminStaffPage from "./pages/AdminStaffPage";
 import AdminPaymentsPage from "./pages/AdminPaymentsPage";
@@ -88,11 +90,34 @@ import ElitePathwayProgramPage from "./pages/ElitePathwayProgramPage";
 import SeniorCompetitiveProgramPage from "./pages/SeniorCompetitiveProgramPage";
 import WomenPerformancePathwayPage from "./pages/WomenPerformancePathwayPage";
 import FoundationYouthProgramPage from "./pages/FoundationYouthProgramPage";
+import ScheduleManagementPage from "./pages/ScheduleManagementPage";
+import FanDashboardOverview from "./pages/fan/FanDashboardOverview";
+import FanBenefitsPage from "./pages/fan/FanBenefitsPage";
+import FanGamesPage from "./pages/fan/FanGamesPage";
+import FanMatchdayPage from "./pages/fan/FanMatchdayPage";
+import FanProfilePage from "./pages/fan/FanProfilePage";
+import FanProgramsPage from "./pages/fan/FanProgramsPage";
+import AdminFansPage from "./pages/admin/fans/AdminFansPage";
+import AdminFanTiersPage from "./pages/admin/fans/AdminFanTiersPage";
+import AdminFanRewardsPage from "./pages/admin/fans/AdminFanRewardsPage";
+import AdminFanGamesPage from "./pages/admin/fans/AdminFanGamesPage";
+import AdminFanAnalyticsPage from "./pages/admin/fans/AdminFanAnalyticsPage";
+import AdminFanSettingsPage from "./pages/admin/fans/AdminFanSettingsPage";
+import AdminFanMatchdayContentPage from "./pages/admin/fans/AdminFanMatchdayContentPage";
+import FanClubBenefitsPreviewPage from "./pages/FanClubBenefitsPreviewPage";
+import FanClubPartnerAnalyticsPage from "./pages/FanClubPartnerAnalyticsPage";
 import NotFound from "./pages/NotFound";
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/realverse/login" replace />;
+  return <>{children}</>;
+};
+
+const RequireRole: React.FC<{ roles: Array<"ADMIN" | "COACH" | "STUDENT" | "FAN">; children: React.ReactNode }> = ({ roles, children }) => {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/realverse/login" replace />;
+  if (!roles.includes(user.role)) return <Navigate to="/realverse" replace />;
   return <>{children}</>;
 };
 
@@ -108,6 +133,7 @@ const DashboardSelector: React.FC = () => {
   if (user.role === "ADMIN") return <Navigate to="/realverse/admin" replace />;
   if (user.role === "STUDENT") return <Navigate to="/realverse/student" replace />;
   if (user.role === "COACH") return <Navigate to="/realverse/coach" replace />;
+  if (user.role === "FAN") return <Navigate to="/realverse/fan" replace />;
   return null;
 };
 
@@ -124,6 +150,7 @@ const App: React.FC = () => {
           <Routes>
         {/* Public Landing Page */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/about" element={<AboutPage />} />
         
         {/* Shop Pages */}
         <Route path="/shop" element={<ShopPage />} />
@@ -148,6 +175,7 @@ const App: React.FC = () => {
         <Route path="/programs/scp" element={<SeniorCompetitiveProgramPage />} />
         <Route path="/programs/wpp" element={<WomenPerformancePathwayPage />} />
         <Route path="/programs/fydp" element={<FoundationYouthProgramPage />} />
+        <Route path="/fan-club/benefits" element={<FanClubBenefitsPreviewPage />} />
         
         {/* RealVerse Login */}
         <Route
@@ -176,7 +204,9 @@ const App: React.FC = () => {
           path="/realverse/student"
           element={
             <PrivateRoute>
-              <StudentLayout />
+              <RequireRole roles={["STUDENT"]}>
+                <StudentLayout />
+              </RequireRole>
             </PrivateRoute>
           }
         >
@@ -187,6 +217,25 @@ const App: React.FC = () => {
           <Route path="matches" element={<StudentMatchesPage />} />
           <Route path="wellness" element={<StudentWellnessPage />} />
           <Route path="analytics" element={<PlayerAnalyticsPage />} />
+        </Route>
+
+        {/* Fan Club Section (RealVerse Fan) */}
+        <Route
+          path="/realverse/fan"
+          element={
+            <PrivateRoute>
+              <RequireRole roles={["FAN"]}>
+                <FanLayout />
+              </RequireRole>
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<FanDashboardOverview />} />
+          <Route path="benefits" element={<FanBenefitsPage />} />
+          <Route path="games" element={<FanGamesPage />} />
+          <Route path="matchday" element={<FanMatchdayPage />} />
+          <Route path="profile" element={<FanProfilePage />} />
+          <Route path="programs" element={<FanProgramsPage />} />
         </Route>
 
         {/* Student routes that should use StudentLayout - No Layout wrapper to avoid old sidebar */}
@@ -246,12 +295,16 @@ const App: React.FC = () => {
           path="/realverse/coach"
           element={
             <PrivateRoute>
-              <CoachLayout />
+              <RequireRole roles={["COACH"]}>
+                <CoachLayout />
+              </RequireRole>
             </PrivateRoute>
           }
         >
           <Route index element={<EnhancedCoachDashboard />} />
           <Route path="analytics" element={<CoachAnalyticsPage />} />
+          <Route path="schedule" element={<ScheduleManagementPage />} />
+          <Route path="fan-club-analytics" element={<FanClubPartnerAnalyticsPage />} />
         </Route>
 
         {/* Admin Section - Nested Routes - No Layout wrapper to avoid old sidebar */}
@@ -259,7 +312,9 @@ const App: React.FC = () => {
           path="/realverse/admin"
           element={
             <PrivateRoute>
-              <AdminLayout />
+              <RequireRole roles={["ADMIN"]}>
+                <AdminLayout />
+              </RequireRole>
             </PrivateRoute>
           }
         >
@@ -270,6 +325,7 @@ const App: React.FC = () => {
           <Route path="settings" element={<AdminSettingsPage />} />
           <Route path="attendance" element={<AttendanceManagementPage />} />
           <Route path="fixtures" element={<FixturesManagementPage />} />
+          <Route path="schedule" element={<ScheduleManagementPage />} />
           <Route path="students" element={<EnhancedStudentsPage />} />
           <Route path="batch-review" element={<BatchReviewPage />} />
           <Route path="players/:id/profile" element={<PlayerProfilePage />} />
@@ -281,6 +337,14 @@ const App: React.FC = () => {
           <Route path="season-planning/development-blocks" element={<DevelopmentBlocksPage />} />
           <Route path="season-planning/load-dashboard" element={<PlayerLoadDashboardPage />} />
           <Route path="season-planning/load-dashboard/:studentId" element={<PlayerLoadDashboardPage />} />
+          {/* Fan Club control plane */}
+          <Route path="fans" element={<AdminFansPage />} />
+          <Route path="fans/tiers" element={<AdminFanTiersPage />} />
+          <Route path="fans/rewards" element={<AdminFanRewardsPage />} />
+          <Route path="fans/games" element={<AdminFanGamesPage />} />
+          <Route path="fans/matchday" element={<AdminFanMatchdayContentPage />} />
+          <Route path="fans/analytics" element={<AdminFanAnalyticsPage />} />
+          <Route path="fans/settings" element={<AdminFanSettingsPage />} />
         </Route>
 
         {/* RealVerse Routes - All authenticated routes under /realverse */}
@@ -320,6 +384,17 @@ const App: React.FC = () => {
         <Route
           path="/admin"
           element={<Navigate to="/realverse/admin" replace />}
+        />
+        <Route path="/admin/fans" element={<Navigate to="/realverse/admin/fans" replace />} />
+        <Route path="/admin/fans/tiers" element={<Navigate to="/realverse/admin/fans/tiers" replace />} />
+        <Route path="/admin/fans/rewards" element={<Navigate to="/realverse/admin/fans/rewards" replace />} />
+        <Route path="/admin/fans/games" element={<Navigate to="/realverse/admin/fans/games" replace />} />
+        <Route path="/admin/fans/matchday" element={<Navigate to="/realverse/admin/fans/matchday" replace />} />
+        <Route path="/admin/fans/analytics" element={<Navigate to="/realverse/admin/fans/analytics" replace />} />
+        <Route path="/admin/fans/settings" element={<Navigate to="/realverse/admin/fans/settings" replace />} />
+        <Route
+          path="/admin/schedule"
+          element={<Navigate to="/realverse/admin/schedule" replace />}
         />
         <Route
           path="/realverse/admin/merch"

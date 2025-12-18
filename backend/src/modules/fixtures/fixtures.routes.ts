@@ -5,6 +5,27 @@ import { authRequired, requireRole } from "../../auth/auth.middleware";
 const prisma = new PrismaClient();
 const router = Router();
 
+function normalizeScore(score?: string | null): string | null {
+  if (!score) return null;
+  const s = String(score).trim();
+  const m = s.match(/(\d+)\s*[-:]\s*(\d+)/);
+  return m ? `${m[1]}-${m[2]}` : null;
+}
+
+function mergeScoreIntoNotes(score?: string | null, notes?: string | null): string | null {
+  const normalized = normalizeScore(score);
+  const base = (notes ?? "").trim();
+  if (!normalized) return base.length ? base : null;
+
+  // Strip any existing leading score token to avoid duplication
+  const stripped = base.replace(/^score:\s*\d+\s*[-:]\s*\d+\s*(?:•\s*)?/i, "").trim();
+  return `Score: ${normalized}${stripped ? ` • ${stripped}` : ""}`;
+}
+
+function extractScore(notes?: string | null): string | null {
+  return normalizeScore(notes);
+}
+
 // PUBLIC: Get fixtures for landing page (no auth required)
 router.get("/public", async (req, res) => {
   try {
@@ -48,7 +69,8 @@ router.get("/public", async (req, res) => {
       venue: f.venue || "TBD",
       matchType: f.matchType,
       status: f.status,
-      center: f.center?.shortName || f.center?.name || "FCRB"
+      center: f.center?.shortName || f.center?.name || "FCRB",
+      score: extractScore(f.notes)
     });
 
     res.json({
@@ -73,7 +95,7 @@ async function getCoachCenterIds(coachId: number): Promise<number[]> {
 // Create a fixture (Admin or Coach)
 router.post("/", authRequired, async (req, res) => {
   const { role, id } = req.user!;
-  const { centerId, matchType, opponent, matchDate, matchTime, venue, notes, playerIds } = req.body;
+  const { centerId, matchType, opponent, matchDate, matchTime, venue, notes, score, status, playerIds } = req.body;
 
   if (!centerId || !matchType || !matchDate || !matchTime) {
     return res.status(400).json({ message: "Missing required fields: centerId, matchType, matchDate, matchTime" });
@@ -110,7 +132,8 @@ router.post("/", authRequired, async (req, res) => {
       matchDate: new Date(matchDate),
       matchTime,
       venue: venue || null,
-      notes: notes || null,
+      notes: mergeScoreIntoNotes(score, notes),
+      status: status || undefined,
       players: playerIds && Array.isArray(playerIds) ? {
         create: playerIds.map((playerId: any, index: number) => ({
           studentId: Number(playerId),
@@ -255,7 +278,7 @@ router.get("/:id", authRequired, async (req, res) => {
 router.put("/:id", authRequired, async (req, res) => {
   const { role, id } = req.user!;
   const fixtureId = Number(req.params.id);
-  const { matchType, opponent, matchDate, matchTime, venue, notes, status, playerIds } = req.body;
+  const { matchType, opponent, matchDate, matchTime, venue, notes, score, status, playerIds } = req.body;
 
   const existingFixture = await prisma.fixture.findUnique({
     where: { id: fixtureId }
@@ -293,7 +316,7 @@ router.put("/:id", authRequired, async (req, res) => {
       matchDate: matchDate ? new Date(matchDate) : undefined,
       matchTime,
       venue,
-      notes,
+      notes: mergeScoreIntoNotes(score, notes),
       status
     },
     include: {

@@ -12,7 +12,7 @@ interface NavItem {
 }
 
 interface RoleLayoutProps {
-  role: "STUDENT" | "COACH" | "ADMIN";
+  role: "STUDENT" | "COACH" | "ADMIN" | "FAN";
   navItems: NavItem[];
   getIcon: (iconName: string) => React.ReactNode;
   profileData?: any;
@@ -130,7 +130,7 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
   }, []);
 
   const isActive = (path: string) => {
-    if (path.endsWith("/dashboard") || path.endsWith("/coach") || path.endsWith("/admin")) {
+    if (path.endsWith("/dashboard") || path.endsWith("/coach") || path.endsWith("/admin") || path.endsWith("/fan")) {
       return location.pathname === path || location.pathname === "/realverse";
     }
     return location.pathname.startsWith(path);
@@ -274,8 +274,8 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
       <aside
         style={{
           width: "280px",
-          background: colors.surface.section,
-          borderRight: `1px solid ${colors.surface.soft}`,
+          background: role === "FAN" ? "linear-gradient(180deg, rgba(6,12,28,0.98) 0%, rgba(8,14,34,0.94) 100%)" : colors.surface.section,
+          borderRight: role === "FAN" ? `1px solid rgba(255,255,255,0.10)` : `1px solid ${colors.surface.soft}`,
           padding: spacing.lg,
           display: "flex",
           flexDirection: "column",
@@ -305,12 +305,12 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
             />
             <div>
               <div style={{ ...typography.body, fontWeight: typography.fontWeight.semibold, color: colors.text.primary, fontSize: typography.fontSize.base }}>
-                RealVerse
+                {role === "FAN" ? "Fan Club HQ" : "RealVerse"}
               </div>
             </div>
           </div>
           <div style={{ ...typography.caption, fontSize: typography.fontSize.xs, color: colors.text.muted, paddingLeft: spacing.xs }}>
-            {role} Dashboard
+            {role === "FAN" ? "Matchday • Sponsors • Quests" : `${role} Dashboard`}
           </div>
         </div>
 
@@ -359,8 +359,10 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
                   {section}
                 </div>
               )}
-              {items.map((item) => {
+              {items.map((item, idx) => {
                 const active = isActive(item.path);
+                const isFan = role === "FAN";
+                const jerseyNo = String(idx + 1).padStart(2, "0");
                 return (
                   <Link
                     key={item.path}
@@ -369,36 +371,65 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
                       textDecoration: "none",
                       padding: spacing.md,
                       borderRadius: borderRadius.md,
-                      background: active ? colors.primary.main + "12" : "transparent",
-                      borderLeft: active ? `3px solid ${colors.primary.main}` : "3px solid transparent",
+                      background: isFan
+                        ? active
+                          ? "linear-gradient(135deg, rgba(0,224,255,0.14) 0%, rgba(4,117,255,0.12) 55%, rgba(255,169,0,0.10) 100%)"
+                          : "rgba(255,255,255,0.02)"
+                        : active
+                        ? colors.primary.main + "12"
+                        : "transparent",
+                      borderLeft: isFan ? "none" : active ? `3px solid ${colors.primary.main}` : "3px solid transparent",
                       color: active ? colors.text.primary : colors.text.secondary,
                       transition: "all 0.15s ease-out",
                       display: "flex",
-                      alignItems: "flex-start",
+                      alignItems: "center",
                       gap: spacing.md,
                       cursor: "pointer",
                     }}
                     onMouseEnter={(e) => {
                       if (!active) {
-                        e.currentTarget.style.background = colors.surface.soft;
+                        e.currentTarget.style.background = isFan ? "rgba(255,255,255,0.04)" : colors.surface.soft;
                         e.currentTarget.style.color = colors.text.primary;
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!active) {
-                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.background = isFan ? "rgba(255,255,255,0.02)" : "transparent";
                         e.currentTarget.style.color = colors.text.secondary;
                       }
                     }}
                     onFocus={(e) => {
-                      e.currentTarget.style.outline = `2px solid ${colors.primary.main}40`;
+                      e.currentTarget.style.outline = isFan ? `2px solid rgba(255,169,0,0.45)` : `2px solid ${colors.primary.main}40`;
                       e.currentTarget.style.outlineOffset = "2px";
                     }}
                     onBlur={(e) => {
                       e.currentTarget.style.outline = "none";
                     }}
                   >
-                    <div style={{ color: active ? colors.primary.light : colors.text.muted, opacity: active ? 1 : 0.7, flexShrink: 0, marginTop: "2px", transition: "opacity 0.15s ease-out" }}>
+                    {isFan && (
+                      <div
+                        aria-hidden="true"
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: 12,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: active ? "1px solid rgba(255,169,0,0.35)" : "1px solid rgba(255,255,255,0.10)",
+                          background: active ? "rgba(255,169,0,0.12)" : "rgba(0,0,0,0.18)",
+                          color: colors.text.primary,
+                          ...typography.caption,
+                          fontWeight: typography.fontWeight.bold,
+                          letterSpacing: "0.12em",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {jerseyNo}
+                      </div>
+                    )}
+
+                    <div style={{ color: active ? colors.primary.light : colors.text.muted, opacity: active ? 1 : 0.7, flexShrink: 0, transition: "opacity 0.15s ease-out" }}>
                       {getIcon(item.icon)}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -461,7 +492,10 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
         padding: spacing.xl, 
         overflowY: "auto", 
         overflowX: "hidden",
-        background: colors.surface.bg,
+        background:
+          role === "FAN"
+            ? "radial-gradient(circle at 0% 0%, rgba(7,17,44,1) 0%, rgba(4,8,26,1) 38%, rgba(2,3,19,1) 100%)"
+            : colors.surface.bg,
         minHeight: "100vh",
         width: "100%",
         boxSizing: "border-box",

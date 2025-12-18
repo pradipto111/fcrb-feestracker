@@ -25,9 +25,11 @@ async function request(
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const payloadSize = options.body ? new Blob([options.body as string]).size : 0;
     
-    // Log request (non-sensitive data only)
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[${requestId}] API Request: ${options.method || 'GET'} ${url}`, {
+    // Log request (non-sensitive data only).
+    // Keep console clean by default; enable by setting localStorage.debugApi = "1".
+    const shouldLog = import.meta.env.DEV && localStorage.getItem("debugApi") === "1";
+    if (shouldLog) {
+      console.debug(`[${requestId}] API Request: ${options.method || "GET"} ${url}`, {
         payloadSize: `${payloadSize} bytes`,
         hasAuth: !!currentToken,
       });
@@ -98,10 +100,10 @@ async function request(
 }
 
 export const api = {
-  login(email: string, password: string) {
+  login(email: string, password: string, role?: "ADMIN" | "COACH" | "STUDENT" | "FAN") {
     return request("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, role })
     });
   },
   getDashboardSummary(params?: { from?: string; to?: string; centerId?: string }) {
@@ -316,6 +318,8 @@ export const api = {
     matchTime: string;
     venue?: string;
     notes?: string;
+    status?: string;
+    score?: string;
     playerIds?: number[];
     positions?: string[];
     roles?: string[];
@@ -337,6 +341,59 @@ export const api = {
       return res.json();
     });
   },
+  // Club Calendar / Events (public read + admin/coach CRUD)
+  getEvents(params?: { from?: string; to?: string; type?: string }) {
+    const query = new URLSearchParams();
+    if (params?.from) query.set("from", params.from);
+    if (params?.to) query.set("to", params.to);
+    if (params?.type) query.set("type", params.type);
+    const qs = query.toString();
+    return request(`/events${qs ? `?${qs}` : ""}`);
+  },
+  createEvent(data: {
+    type: string;
+    title: string;
+    startAt: string;
+    endAt?: string | null;
+    allDay?: boolean;
+    venueName?: string | null;
+    venueAddress?: string | null;
+    googleMapsUrl?: string | null;
+    competition?: string | null;
+    opponent?: string | null;
+    homeAway?: "HOME" | "AWAY" | null;
+    teamId?: number | null;
+    centerId?: number | null;
+    status?: string;
+    notes?: string | null;
+  }) {
+    return request("/events", { method: "POST", body: JSON.stringify(data) });
+  },
+  updateEvent(id: string, data: Partial<{
+    type: string;
+    title: string;
+    startAt: string;
+    endAt: string | null;
+    allDay: boolean;
+    venueName: string | null;
+    venueAddress: string | null;
+    googleMapsUrl: string | null;
+    competition: string | null;
+    opponent: string | null;
+    homeAway: "HOME" | "AWAY" | null;
+    teamId: number | null;
+    centerId: number | null;
+    status: string;
+    notes: string | null;
+  }>) {
+    return request(`/events/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+  },
+  deleteEvent(id: string) {
+    return request(`/events/${id}`, { method: "DELETE" });
+  },
+  seedDemoEvents() {
+    return request("/events/seed", { method: "POST" });
+  },
   getFixtures(params?: { centerId?: number; fromDate?: string; toDate?: string; status?: string; upcoming?: boolean }) {
     const query = new URLSearchParams();
     if (params?.centerId) query.set("centerId", params.centerId.toString());
@@ -357,6 +414,7 @@ export const api = {
     venue?: string;
     notes?: string;
     status?: string;
+    score?: string;
     playerIds?: number[];
     positions?: string[];
     roles?: string[];
@@ -1100,6 +1158,136 @@ export const api = {
   },
   getPlayerWorkloadMessage(studentId: number) {
     return request(`/season-planning/players/${studentId}/workload-message`);
+  },
+
+  // Fan Club (RealVerse Fan)
+  getFanMe() {
+    return request("/fan/me");
+  },
+  getFanOnboarding() {
+    return request("/fan/onboarding");
+  },
+  submitFanOnboarding(payload: { persona?: string; favoritePlayer?: string; locality?: string; goals?: string[] }) {
+    return request("/fan/onboarding", { method: "POST", body: JSON.stringify(payload) });
+  },
+  getFanTiers() {
+    return request("/fan/tiers");
+  },
+  getFanSponsors() {
+    return request("/fan/sponsors");
+  },
+  getFanMatchdayMoments() {
+    return request("/fan/matchday/moments");
+  },
+  getFanDynamicRewards() {
+    return request("/fan/dynamic-rewards");
+  },
+  getFanRewards() {
+    return request("/fan/rewards");
+  },
+  getFanCoupons() {
+    return request("/fan/coupons");
+  },
+  getFanQuests() {
+    return request("/fan/quests");
+  },
+  getFanHistory() {
+    return request("/fan/history");
+  },
+  redeemFanCoupon(couponPoolId: number) {
+    return request("/fan/redeem", { method: "POST", body: JSON.stringify({ couponPoolId }) });
+  },
+  submitFanGameSession(payload: { gameType: string; input?: any; result?: any; pointsEarned?: number }) {
+    return request("/fan/game/session", { method: "POST", body: JSON.stringify(payload) });
+  },
+  submitFanProgramInterest(payload: { programInterest: "EPP" | "SCP" | "WPP" | "FYDP"; notes?: string }) {
+    return request("/fan/program-interest", { method: "POST", body: JSON.stringify(payload) });
+  },
+
+  // Admin Fan Club control plane (read-only / CRUD)
+  adminGetFans() {
+    return request("/api/admin/fans");
+  },
+  adminCreateFan(payload: { email: string; fullName: string; phone?: string; city?: string; centerPreference?: string; tierId?: number | null; password?: string }) {
+    return request("/api/admin/fans", { method: "POST", body: JSON.stringify(payload) });
+  },
+  adminUpdateFanStatus(fanUserId: number, status: "ACTIVE" | "SUSPENDED") {
+    return request(`/api/admin/fans/${fanUserId}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
+  },
+  adminAssignFanTier(fanUserId: number, tierId: number | null) {
+    return request(`/api/admin/fans/${fanUserId}/tier`, { method: "PATCH", body: JSON.stringify({ tierId }) });
+  },
+  adminAdjustFanPoints(fanUserId: number, payload: { delta: number; reason?: string }) {
+    return request(`/api/admin/fans/${fanUserId}/points`, { method: "POST", body: JSON.stringify(payload) });
+  },
+  adminAssignFanBadge(fanUserId: number, payload: { badgeKey: string; badgeName?: string; source?: string }) {
+    return request(`/api/admin/fans/${fanUserId}/badges`, { method: "POST", body: JSON.stringify(payload) });
+  },
+  adminResetFanPassword(fanUserId: number, password?: string) {
+    return request(`/api/admin/fans/${fanUserId}/reset-password`, { method: "POST", body: JSON.stringify({ password }) });
+  },
+  adminGetFanTiers() {
+    return request("/api/admin/fans/tiers");
+  },
+  adminCreateFanTier(payload: any) {
+    return request("/api/admin/fans/tiers", { method: "POST", body: JSON.stringify(payload) });
+  },
+  adminUpdateFanTier(tierId: number, payload: any) {
+    return request(`/api/admin/fans/tiers/${tierId}`, { method: "PUT", body: JSON.stringify(payload) });
+  },
+  adminGetFanSponsors() {
+    return request("/api/admin/fans/sponsors");
+  },
+  adminCreateFanSponsor(payload: any) {
+    return request("/api/admin/fans/sponsors", { method: "POST", body: JSON.stringify(payload) });
+  },
+  adminGetFanCampaigns() {
+    return request("/api/admin/fans/campaigns");
+  },
+  adminCreateFanCampaign(payload: any) {
+    return request("/api/admin/fans/campaigns", { method: "POST", body: JSON.stringify(payload) });
+  },
+  adminGetFanCouponPools() {
+    return request("/api/admin/fans/coupon-pools");
+  },
+  adminCreateFanCouponPool(payload: any) {
+    return request("/api/admin/fans/coupon-pools", { method: "POST", body: JSON.stringify(payload) });
+  },
+  adminGetFanQuests() {
+    return request("/api/admin/fans/quests");
+  },
+  adminCreateFanQuest(payload: any) {
+    return request("/api/admin/fans/quests", { method: "POST", body: JSON.stringify(payload) });
+  },
+  adminGetFanAnalyticsSummary() {
+    return request("/api/admin/fans/analytics/summary");
+  },
+  adminGetFanRedemptions() {
+    return request("/api/admin/fans/redemptions");
+  },
+  adminGetFanLeads() {
+    return request("/api/admin/fans/leads");
+  },
+  adminGetFanAuditLogs() {
+    return request("/api/admin/fans/audit");
+  },
+  adminGetFanMatchdayMoments() {
+    return request("/api/admin/fans/moments");
+  },
+  adminCreateFanMatchdayMoment(payload: any) {
+    return request("/api/admin/fans/moments", { method: "POST", body: JSON.stringify(payload) });
+  },
+  adminUpdateFanMatchdayMoment(momentId: number, payload: any) {
+    return request(`/api/admin/fans/moments/${momentId}`, { method: "PUT", body: JSON.stringify(payload) });
+  },
+  adminGetDynamicRewardRules() {
+    return request("/api/admin/fans/dynamic-rewards");
+  },
+  adminCreateDynamicRewardRule(payload: any) {
+    return request("/api/admin/fans/dynamic-rewards", { method: "POST", body: JSON.stringify(payload) });
+  },
+  adminUpdateDynamicRewardRule(ruleId: number, payload: any) {
+    return request(`/api/admin/fans/dynamic-rewards/${ruleId}`, { method: "PUT", body: JSON.stringify(payload) });
   },
   // Trial Management APIs
   getTrialEvents(params?: { centerId?: number; status?: string; coachId?: number }) {

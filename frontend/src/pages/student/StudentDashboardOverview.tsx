@@ -23,6 +23,7 @@ const StudentDashboardOverview: React.FC = () => {
   const [workloadMessage, setWorkloadMessage] = useState<any>(null);
   const [error, setError] = useState("");
   const [analyticsRefreshKey, setAnalyticsRefreshKey] = useState(0);
+  const hasLoadedRef = useRef(false);
   
   // Toned-down motion for internal pages
   const {
@@ -35,21 +36,23 @@ const StudentDashboardOverview: React.FC = () => {
   } = useHomepageAnimation();
 
   useEffect(() => {
+    // React 18 StrictMode runs effects twice in dev; guard to avoid duplicate API bursts.
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+
     const loadData = async () => {
       try {
-        const [dashboardData, attendance, roadmap, workload] = await Promise.all([
+        const [dashboardData, attendance, roadmap] = await Promise.all([
           api.getStudentDashboard(),
           api.getStudentAttendance({
             month: new Date().getMonth() + 1,
             year: new Date().getFullYear(),
           }),
           api.getMyProgressRoadmap().catch(() => null),
-          api.getPlayerWorkloadMessage(data?.student?.id || 0).catch(() => null),
         ]);
         setData(dashboardData);
         setAttendanceData(attendance);
         setRoadmapData(roadmap);
-        setWorkloadMessage(workload);
       } catch (err: any) {
         setError(err.message);
       }

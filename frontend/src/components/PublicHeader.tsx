@@ -54,9 +54,10 @@ const PublicHeader: React.FC = () => {
     { id: "matches", label: "Match Centre" },
     { id: "teams", label: "Teams" },
     { id: "philosophy", label: "Club Philosophy" },
-    { id: "academy", label: "Academy" },
     { id: "centres", label: "Our Centres" },
     { id: "realverse", label: "RealVerse" },
+    { id: "fan-club", label: "Fan Club" },
+    { id: "fanclub-perks", label: "Fan Club Perks" },
     { id: "shop", label: "Shop" },
     { id: "news", label: "News" },
   ];
@@ -428,60 +429,6 @@ const PublicHeader: React.FC = () => {
             )}
           </div>
 
-          {/* Matches */}
-          <button
-            onClick={() => handleHomeSectionClick("matches")}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.sm,
-              fontWeight: typography.fontWeight.medium,
-              color: colors.text.secondary,
-              background: "transparent",
-              border: "none",
-              padding: `${spacing.xs} ${spacing.sm}`,
-              borderRadius: borderRadius.md,
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = colors.text.primary;
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = colors.text.secondary;
-              e.currentTarget.style.background = "transparent";
-            }}
-          >
-            Matches
-          </button>
-
-          {/* Academy */}
-          <button
-            onClick={() => handleHomeSectionClick("academy")}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.sm,
-              fontWeight: typography.fontWeight.medium,
-              color: colors.text.secondary,
-              background: "transparent",
-              border: "none",
-              padding: `${spacing.xs} ${spacing.sm}`,
-              borderRadius: borderRadius.md,
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = colors.text.primary;
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = colors.text.secondary;
-              e.currentTarget.style.background = "transparent";
-            }}
-          >
-            Academy
-          </button>
-
           {/* Programs */}
           <Link
             to="/programs"
@@ -511,6 +458,68 @@ const PublicHeader: React.FC = () => {
             }}
           >
             Programs
+          </Link>
+
+          {/* About Us */}
+          <Link
+            to="/about"
+            style={{
+              textDecoration: "none",
+              ...typography.body,
+              fontSize: typography.fontSize.sm,
+              fontWeight: typography.fontWeight.medium,
+              color: location.pathname === "/about" ? colors.text.primary : colors.text.secondary,
+              background: location.pathname === "/about" ? "rgba(255, 255, 255, 0.05)" : "transparent",
+              padding: `${spacing.xs} ${spacing.sm}`,
+              borderRadius: borderRadius.md,
+              transition: "all 0.2s ease",
+              display: "inline-block",
+            }}
+            onMouseEnter={(e) => {
+              if (location.pathname !== "/about") {
+                e.currentTarget.style.color = colors.text.primary;
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (location.pathname !== "/about") {
+                e.currentTarget.style.color = colors.text.secondary;
+                e.currentTarget.style.background = "transparent";
+              }
+            }}
+          >
+            About Us
+          </Link>
+
+          {/* Public Fan Club preview CTA (no login required) */}
+          <Link
+            to="/fan-club/benefits"
+            style={{
+              textDecoration: "none",
+              ...typography.body,
+              fontSize: typography.fontSize.sm,
+              fontWeight: typography.fontWeight.medium,
+              color: location.pathname.startsWith("/fan-club/benefits") ? colors.text.primary : colors.text.secondary,
+              background: location.pathname.startsWith("/fan-club/benefits") ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.03)",
+              padding: `${spacing.xs} ${spacing.sm}`,
+              borderRadius: borderRadius.md,
+              transition: "all 0.2s ease",
+              display: "inline-block",
+              border: "1px solid rgba(0,224,255,0.18)",
+              boxShadow: "0 0 26px rgba(0,224,255,0.06)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = colors.text.primary;
+              e.currentTarget.style.background = "rgba(0,224,255,0.08)";
+              e.currentTarget.style.border = "1px solid rgba(0,224,255,0.32)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = location.pathname.startsWith("/fan-club/benefits") ? colors.text.primary : colors.text.secondary;
+              e.currentTarget.style.background = location.pathname.startsWith("/fan-club/benefits") ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.03)";
+              e.currentTarget.style.border = "1px solid rgba(0,224,255,0.18)";
+            }}
+          >
+            Your benefits for backing FC Real Bengaluru
           </Link>
 
           {/* Shop */}
@@ -556,6 +565,37 @@ const PublicHeader: React.FC = () => {
             gap: spacing.sm,
           }}
         >
+          {/* Fan Club - Secondary pill CTA (required) */}
+          <button
+            onClick={() => handleHomeSectionClick("fan-club")}
+            style={{
+              ...typography.body,
+              fontSize: "13px",
+              fontWeight: typography.fontWeight.semibold,
+              padding: `8px 14px`,
+              borderRadius: 999,
+              background: "rgba(255,255,255,0.06)",
+              color: colors.text.primary,
+              border: `1px solid rgba(0, 224, 255, 0.28)`,
+              boxShadow: `0 8px 24px rgba(0,0,0,0.25), 0 0 22px rgba(0,224,255,0.10)`,
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              whiteSpace: "nowrap",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-1px)";
+              e.currentTarget.style.borderColor = "rgba(0, 224, 255, 0.55)";
+              e.currentTarget.style.boxShadow = `0 10px 30px rgba(0,0,0,0.30), 0 0 26px rgba(0,224,255,0.18)`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.borderColor = "rgba(0, 224, 255, 0.28)";
+              e.currentTarget.style.boxShadow = `0 8px 24px rgba(0,0,0,0.25), 0 0 22px rgba(0,224,255,0.10)`;
+            }}
+          >
+            Fan Club
+          </button>
+
           {/* Cart Icon - Utility action */}
           <Link
             to="/cart"
@@ -804,52 +844,6 @@ const PublicHeader: React.FC = () => {
             )}
           </div>
 
-          {/* Matches */}
-          <button
-            onClick={() => {
-              handleHomeSectionClick("matches");
-              setIsMobileMenuOpen(false);
-            }}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.base,
-              fontWeight: typography.fontWeight.medium,
-              color: colors.text.secondary,
-              background: "transparent",
-              border: "none",
-              padding: spacing.md,
-              borderRadius: borderRadius.md,
-              textAlign: "left",
-              width: "100%",
-              cursor: "pointer",
-            }}
-          >
-            Matches
-          </button>
-
-          {/* Academy */}
-          <button
-            onClick={() => {
-              handleHomeSectionClick("academy");
-              setIsMobileMenuOpen(false);
-            }}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.base,
-              fontWeight: typography.fontWeight.medium,
-              color: colors.text.secondary,
-              background: "transparent",
-              border: "none",
-              padding: spacing.md,
-              borderRadius: borderRadius.md,
-              textAlign: "left",
-              width: "100%",
-              cursor: "pointer",
-            }}
-          >
-            Academy
-          </button>
-
           {/* Programs */}
           <Link
             to="/programs"
@@ -870,6 +864,80 @@ const PublicHeader: React.FC = () => {
           >
             Programs
           </Link>
+
+          {/* About Us */}
+          <Link
+            to="/about"
+            onClick={() => setIsMobileMenuOpen(false)}
+            style={{
+              textDecoration: "none",
+              ...typography.body,
+              fontSize: typography.fontSize.base,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.text.secondary,
+              background: "transparent",
+              padding: spacing.md,
+              borderRadius: borderRadius.md,
+              textAlign: "left",
+              width: "100%",
+              display: "block",
+            }}
+          >
+            About Us
+          </Link>
+
+          {/* Public Fan Club benefits preview */}
+          <Link
+            to="/fan-club/benefits"
+            onClick={() => setIsMobileMenuOpen(false)}
+            style={{
+              textDecoration: "none",
+              ...typography.body,
+              fontSize: typography.fontSize.base,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.text.secondary,
+              background: "rgba(255,255,255,0.03)",
+              padding: spacing.md,
+              borderRadius: borderRadius.md,
+              textAlign: "left",
+              width: "100%",
+              display: "block",
+              border: "1px solid rgba(0,224,255,0.18)",
+            }}
+          >
+            Your benefits for backing FC Real Bengaluru
+          </Link>
+
+          {/* Fan Club */}
+          <button
+            onClick={() => {
+              handleHomeSectionClick("fan-club");
+              setIsMobileMenuOpen(false);
+            }}
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.base,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.text.secondary,
+              background: "transparent",
+              border: "none",
+              padding: spacing.md,
+              borderRadius: borderRadius.md,
+              textAlign: "left",
+              width: "100%",
+              cursor: "pointer",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = colors.text.primary;
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = colors.text.secondary;
+              e.currentTarget.style.background = "transparent";
+            }}
+          >
+            Fan Club
+          </button>
 
           {/* Shop */}
           <button

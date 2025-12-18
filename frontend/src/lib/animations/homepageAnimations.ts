@@ -59,20 +59,21 @@ export const sectionVariants: Variants = {
   },
 };
 
-// Infinity screen variant - seamless, continuous transitions
+// Infinity screen variant - seamless, continuous transitions (Sports Broadcast Style)
+// Uses easeOutQuad-like and easeInOutCubic curves for smooth football broadcast feel
 export const infinitySectionVariants: Variants = {
   offscreen: {
     opacity: 0,
-    y: 60,
-    scale: 0.98,
+    y: 40, // Reduced from 60 for smoother entry
+    scale: 0.99, // Subtle scale for depth
   },
   onscreen: {
     opacity: 1,
     y: 0,
     scale: 1,
     transition: {
-      duration: 1,
-      ease: easePremium,
+      duration: 0.7, // Faster for responsive feel
+      ease: [0.25, 0.46, 0.45, 0.94], // easeOutQuad-like - smooth deceleration
     },
   },
 };

@@ -85,6 +85,12 @@ import {
   FaSortDown,
   FaFilm,
   FaShoppingBag,
+  FaLock,
+  FaExternalLinkAlt,
+  // Football-themed icons
+  FaShieldAlt,
+  FaFlag,
+  FaHandPaper,
 } from 'react-icons/fa';
 import {
   // Additional icons
@@ -315,6 +321,12 @@ export const PlusIcon: React.FC<IconProps> = ({ size = 16, color, style, classNa
 export const MinusIcon: React.FC<IconProps> = ({ size = 16, color, style, className }) => (
   <span style={style} className={className}>
     <FaMinus size={size} color={color} />
+  </span>
+);
+
+export const LockIcon: React.FC<IconProps> = ({ size = 16, color, style, className }) => (
+  <span style={style} className={className}>
+    <FaLock size={size} color={color} />
   </span>
 );
 
@@ -816,6 +828,136 @@ export const ShoppingBagIcon: React.FC<IconProps> = ({ size = 16, color, style, 
   return (
     <span style={style} className={className}>
       <FaShoppingBag {...iconProps} />
+    </span>
+  );
+};
+
+// ============================================
+// FOOTBALL-THEMED ICONS - Football-First Design
+// ============================================
+
+/**
+ * Stadium Icon - For matchday, venues, locations
+ * Rounded, friendly, football-themed
+ */
+export const StadiumIcon: React.FC<IconProps> = ({ size = 16, color, style, className }) => {
+  const iconSize = typeof size === 'string' ? parseInt(size, 10) || 16 : size;
+  const iconProps: { size: number; color?: string } = { size: iconSize };
+  if (color) iconProps.color = color;
+  
+  return (
+    <span style={style} className={className}>
+      <FaBuilding {...iconProps} />
+    </span>
+  );
+};
+
+/**
+ * Whistle Icon - For matchday, referees, games
+ * Using hand icon as whistle representation
+ */
+export const WhistleIcon: React.FC<IconProps> = ({ size = 16, color, style, className }) => {
+  const iconSize = typeof size === 'string' ? parseInt(size, 10) || 16 : size;
+  const iconProps: { size: number; color?: string } = { size: iconSize };
+  if (color) iconProps.color = color;
+  
+  return (
+    <span style={style} className={className}>
+      <FaHandPaper {...iconProps} />
+    </span>
+  );
+};
+
+/**
+ * Boot Icon - For training, equipment, gear
+ * Using running icon as boot representation
+ */
+export const BootIcon: React.FC<IconProps> = ({ size = 16, color, style, className }) => {
+  const iconSize = typeof size === 'string' ? parseInt(size, 10) || 16 : size;
+  const iconProps: { size: number; color?: string } = { size: iconSize };
+  if (color) iconProps.color = color;
+  
+  return (
+    <span style={style} className={className}>
+      <FaRunning {...iconProps} />
+    </span>
+  );
+};
+
+/**
+ * Shirt Icon - For jerseys, merchandise, kit
+ * Using shield icon as shirt/jersey representation
+ */
+export const ShirtIcon: React.FC<IconProps> = ({ size = 16, color, style, className }) => {
+  const iconSize = typeof size === 'string' ? parseInt(size, 10) || 16 : size;
+  const iconProps: { size: number; color?: string } = { size: iconSize };
+  if (color) iconProps.color = color;
+  
+  return (
+    <span style={style} className={className}>
+      <FaShieldAlt {...iconProps} />
+    </span>
+  );
+};
+
+/**
+ * Badge Icon - For achievements, tiers, recognition
+ * Using medal icon as badge representation
+ */
+export const BadgeIcon: React.FC<IconProps> = ({ size = 16, color, style, className }) => {
+  const iconSize = typeof size === 'string' ? parseInt(size, 10) || 16 : size;
+  const iconProps: { size: number; color?: string } = { size: iconSize };
+  if (color) iconProps.color = color;
+  
+  return (
+    <span style={style} className={className}>
+      <FaMedal {...iconProps} />
+    </span>
+  );
+};
+
+/**
+ * Lightning Icon - For speed, energy, power
+ * Already exists as BoltIcon, but adding alias for consistency
+ */
+export const LightningIcon: React.FC<IconProps> = ({ size = 16, color, style, className }) => {
+  const iconSize = typeof size === 'string' ? parseInt(size, 10) || 16 : size;
+  const iconProps: { size: number; color?: string } = { size: iconSize };
+  if (color) iconProps.color = color;
+  
+  return (
+    <span style={style} className={className}>
+      <FaBolt {...iconProps} />
+    </span>
+  );
+};
+
+/**
+ * Shield Icon - For protection, security, values
+ */
+export const ShieldIcon: React.FC<IconProps> = ({ size = 16, color, style, className }) => {
+  const iconSize = typeof size === 'string' ? parseInt(size, 10) || 16 : size;
+  const iconProps: { size: number; color?: string } = { size: iconSize };
+  if (color) iconProps.color = color;
+  
+  return (
+    <span style={style} className={className}>
+      <FaShieldAlt {...iconProps} />
+    </span>
+  );
+};
+
+/**
+ * Flag Icon - For matchday, events, milestones
+ */
+export const FlagIcon: React.FC<IconProps> = ({ size = 16, color, style, className }) => {
+  const iconSize = typeof size === 'string' ? parseInt(size, 10) || 16 : size;
+  const iconProps: { size: number; color?: string } = { size: iconSize };
+  if (color) iconProps.color = color;
+  
+  return (
+    <span style={style} className={className}>
+      <FaFlag {...iconProps} />
     </span>
   );
 };

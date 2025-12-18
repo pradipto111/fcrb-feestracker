@@ -1,36 +1,41 @@
 /**
  * RealVerse Design System
- * FC Real Bengaluru Brand Identity + Space/Universe Theme
+ * FC Real Bengaluru Brand Identity - Football-First, Community-Oriented
+ * 
+ * Philosophy: Modern, emotional, football-first club identity
+ * Warm, community-oriented, human, energetic - NOT tech-startup/AI-tool aesthetic
  * 
  * Based on: https://www.behance.net/gallery/208845045/FC-REAL-BENGALURU-Brand-Identity
+ * Inspired by: Premier League, LaLiga, MLS, Nike/Adidas layouts, community football NGOs
  */
 
 export const colors = {
-  // FC Real Bengaluru Brand Colors
+  // FC Real Bengaluru Brand Colors - Football-First Palette
   brand: {
-    primaryBlue: '#043DD0',
-    accentOrange: '#FFA900',
+    primaryBlue: '#0A3D91', // Royal blue - primary club color
+    accentGold: '#F5B300', // FC Real Bengaluru gold - secondary club color
     secondaryGreen: '#2A996B',
-    charcoal: '#1F1F1F',
-    neutralGrey: '#A5A5A5',
+    offWhite: '#F5F5F5', // Off-white for backgrounds
+    deepNavy: '#020C1B', // Deep navy for dark sections
+    softGrey: '#1C2430', // Soft grey for subtle elements
     white: '#FFFFFF',
   },
 
-  // Semantic Color System
+  // Semantic Color System - Football Club Identity
   primary: {
-    main: '#043DD0',
-    light: '#2D5FE8',
-    dark: '#032FA0',
-    soft: 'rgba(4, 61, 208, 0.1)',
-    outline: 'rgba(4, 61, 208, 0.2)',
+    main: '#0A3D91', // Royal blue
+    light: '#1E5BB8',
+    dark: '#072A6B',
+    soft: 'rgba(10, 61, 145, 0.1)',
+    outline: 'rgba(10, 61, 145, 0.2)',
   },
 
   accent: {
-    main: '#FFA900',
+    main: '#F5B300', // FC Real Bengaluru gold
     light: '#FFC233',
-    dark: '#CC8700',
-    soft: 'rgba(255, 169, 0, 0.1)',
-    outline: 'rgba(255, 169, 0, 0.2)',
+    dark: '#CC9500',
+    soft: 'rgba(245, 179, 0, 0.1)',
+    outline: 'rgba(245, 179, 0, 0.2)',
   },
 
   success: {
@@ -61,46 +66,49 @@ export const colors = {
     soft: 'rgba(4, 61, 208, 0.1)',
   },
 
-  // Space Theme Backgrounds - RealVerse Specification
-  space: {
-    deep: '#050B20', // Deep navy
-    dark: '#0A1633', // Indigo
-    medium: '#101C3A', // Dark indigo
-    // Unified cosmic gradient for page backgrounds
-    nebula: 'linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)',
-    starfield: 'radial-gradient(circle at 20% 50%, rgba(255, 169, 0, 0.08) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(4, 61, 208, 0.08) 0%, transparent 50%)',
+  // Football Club Backgrounds - Subtle, Warm, Community-Focused
+  club: {
+    deep: '#020C1B', // Deep navy
+    dark: '#0A1633', // Dark blue
+    medium: '#1C2430', // Soft grey
+    // Subtle gradient for page backgrounds (no neon, no hyper-futuristic)
+    background: 'linear-gradient(135deg, #020C1B 0%, #0A1633 30%, #1C2430 60%, #020C1B 100%)',
+    // Subtle overlay for texture (stadium light grain, turf pattern)
+    overlay: 'radial-gradient(circle at 20% 50%, rgba(245, 179, 0, 0.06) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(10, 61, 145, 0.06) 0%, transparent 50%)',
   },
 
-  // Surface System - RealVerse Dark Glass Surfaces (NO WHITE)
+  // Surface System - Football Broadcast Style (Clean, Bold, Readable)
   surface: {
-    // Page background - never use white
-    bg: '#050B20',
-    // Section surface - semi-transparent dark blue glass
-    section: 'rgba(18, 32, 64, 0.85)',
-    // Card surface - slightly lighter than section
-    card: '#141F3A',
-    // Elevated card - for hover states
-    elevated: '#172446',
+    // Page background - deep navy
+    bg: '#020C1B',
+    // Section surface - semi-transparent with subtle texture
+    section: 'rgba(28, 36, 48, 0.85)',
+    // Card surface - clean, readable
+    card: '#1C2430',
+    // Elevated card - for hover states (sports-broadcast style)
+    elevated: '#243040',
     // Soft surface - for subtle backgrounds
-    soft: 'rgba(15, 23, 42, 0.6)',
+    soft: 'rgba(28, 36, 48, 0.6)',
+    // Light surface - for contrast
+    light: '#F5F5F5',
     // Dark surfaces
-    dark: '#1F1F1F',
-    darkElevated: '#2A2A2A',
+    dark: '#0A1633',
+    darkElevated: '#1C2430',
   },
 
-  // Text Colors - RealVerse Specification
+  // Text Colors - Football Club Readability (Bold, Clear, Human)
   text: {
-    primary: '#FFFFFF', // Page titles
-    secondary: '#CDE7FF', // Section titles
-    muted: '#9FB4D1', // Body text
-    disabled: 'rgba(255, 255, 255, 0.45)', // Meta / muted
-    inverted: '#FFFFFF',
+    primary: '#FFFFFF', // Page titles - bold, expressive
+    secondary: '#E8E8E8', // Section titles - warm, readable
+    muted: '#B0B0B0', // Body text - clear, not too light
+    disabled: 'rgba(255, 255, 255, 0.5)', // Meta / muted
+    inverted: '#020C1B', // For light backgrounds
     onPrimary: '#FFFFFF',
-    onAccent: '#1F1F1F',
-    // Accent text colors
-    accent: '#FFA900', // Orange accent
+    onAccent: '#020C1B', // Dark text on gold
+    // Accent text colors - football club palette
+    accent: '#F5B300', // Gold accent
     success: '#2A996B', // Green
-    warning: '#FFA900', // Orange
+    warning: '#F5B300', // Gold
     danger: '#EF4444', // Red
   },
 
@@ -114,8 +122,11 @@ export const colors = {
 
 export const typography = {
   fontFamily: {
+    // Sports-focused typography - bold, expressive, human
     primary: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif",
-    heading: "'Space Grotesk', 'Inter', sans-serif",
+    // Headlines - semi-condensed, bold, expressive (like Nike, Adidas, MLS)
+    heading: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", // Will use bold weights for sports feel
+    // Alternative: Consider adding 'Rubik' or 'Barlow Semi Condensed' for more sports feel
     mono: "'JetBrains Mono', 'Courier New', monospace",
   },
 
@@ -146,47 +157,50 @@ export const typography = {
     relaxed: 1.75,
   },
 
-  // Type Scale
+  // Type Scale - Sports Typography (Bold, Expressive, Human)
   display: {
     fontSize: '3.75rem',    // 60px
-    fontWeight: 700,
-    lineHeight: 1.2,
-    fontFamily: "'Space Grotesk', sans-serif",
+    fontWeight: 800, // Extra bold for sports impact
+    lineHeight: 1.1, // Tighter for impact
+    fontFamily: "'Inter', sans-serif",
+    letterSpacing: '-0.02em', // Slightly condensed
   },
 
   h1: {
-    fontSize: '2.25rem',    // 36px
-    fontWeight: 700,
-    lineHeight: 1.2,
-    fontFamily: "'Space Grotesk', sans-serif",
+    fontSize: '2.5rem',    // 40px - larger for impact
+    fontWeight: 800, // Extra bold
+    lineHeight: 1.15,
+    fontFamily: "'Inter', sans-serif",
+    letterSpacing: '-0.01em',
   },
 
   h2: {
-    fontSize: '1.875rem',   // 30px
-    fontWeight: 700,
-    lineHeight: 1.3,
-    fontFamily: "'Space Grotesk', sans-serif",
+    fontSize: '2rem',   // 32px
+    fontWeight: 700, // Bold
+    lineHeight: 1.2,
+    fontFamily: "'Inter', sans-serif",
+    letterSpacing: '-0.01em',
   },
 
   h3: {
     fontSize: '1.5rem',     // 24px
-    fontWeight: 600,
-    lineHeight: 1.4,
-    fontFamily: "'Space Grotesk', sans-serif",
+    fontWeight: 700, // Bold
+    lineHeight: 1.25,
+    fontFamily: "'Inter', sans-serif",
   },
 
   h4: {
     fontSize: '1.25rem',    // 20px
-    fontWeight: 600,
-    lineHeight: 1.4,
-    fontFamily: "'Space Grotesk', sans-serif",
+    fontWeight: 700, // Bold
+    lineHeight: 1.3,
+    fontFamily: "'Inter', sans-serif",
   },
 
   h5: {
     fontSize: '1.125rem',   // 18px
-    fontWeight: 600,
-    lineHeight: 1.5,
-    fontFamily: "'Space Grotesk', sans-serif",
+    fontWeight: 600, // Semi-bold
+    lineHeight: 1.4,
+    fontFamily: "'Inter', sans-serif",
   },
 
   body: {
@@ -214,6 +228,23 @@ export const typography = {
 };
 
 export const spacing = {
+  // Football Club Spacing System - Exact Scale: 4, 6, 8, 12, 16, 20, 24, 32, 40, 48, 64
+  // Hard rule: 24px minimum text distance from borders (readable text zones)
+  // Hard rule: 32px minimum padding inside all container cards
+  // Hard rule: 48-64px vertical spacing between major sections
+  '4': '0.25rem',   // 4px
+  '6': '0.375rem',  // 6px
+  '8': '0.5rem',    // 8px
+  '12': '0.75rem',  // 12px
+  '16': '1rem',     // 16px
+  '20': '1.25rem',  // 20px
+  '24': '1.5rem',   // 24px - MINIMUM text distance from borders
+  '32': '2rem',     // 32px - MINIMUM card padding
+  '40': '2.5rem',   // 40px
+  '48': '3rem',     // 48px - MINIMUM section spacing
+  '64': '4rem',     // 64px - Preferred section spacing
+  
+  // Legacy aliases for backward compatibility
   xs: '0.25rem',   // 4px
   sm: '0.5rem',    // 8px
   md: '1rem',      // 16px
@@ -222,32 +253,45 @@ export const spacing = {
   '2xl': '3rem',   // 48px
   '3xl': '4rem',   // 64px
   '4xl': '6rem',   // 96px
+  
+  // Card-specific spacing
+  cardPadding: '2rem', // 32px - enforced minimum
+  textZone: '1.5rem', // 24px - minimum text distance from borders
+  sectionGap: '4rem', // 64px - preferred between sections
 };
 
 export const borderRadius = {
+  // Football Club Card Style - Rounded corners 12-16px
   none: '0',
   sm: '0.375rem',  // 6px
   md: '0.5rem',    // 8px
-  lg: '0.75rem',   // 12px
-  xl: '1rem',      // 16px
-  '2xl': '1.5rem', // 24px
-  '3xl': '1.25rem', // 20px - for section surfaces
-  full: '9999px',
+  lg: '0.75rem',   // 12px - Standard card corners
+  xl: '1rem',      // 16px - Preferred card corners
+  '2xl': '1.5rem', // 24px - Large cards
+  '3xl': '1.25rem', // 20px - Section surfaces
+  full: '9999px', // Pills/badges
+  // Football-specific
+  card: '1rem', // 16px - standard card radius
+  button: '0.5rem', // 8px - button radius (sports badge feel)
 };
 
 export const shadows = {
-  sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-  md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-  lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-  xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-  '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+  // Football Broadcast Style Shadows - Soft, Sports-Broadcast Feel
+  sm: '0 2px 4px 0 rgba(0, 0, 0, 0.1)',
+  md: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.1)',
+  lg: '0 8px 16px -4px rgba(0, 0, 0, 0.2), 0 4px 8px -2px rgba(0, 0, 0, 0.1)',
+  xl: '0 12px 24px -6px rgba(0, 0, 0, 0.25), 0 6px 12px -3px rgba(0, 0, 0, 0.15)',
+  '2xl': '0 16px 32px -8px rgba(0, 0, 0, 0.3)',
   
-  // Space-themed glassmorphism
-  glass: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
-  glassDark: '0 8px 32px 0 rgba(0, 0, 0, 0.5)',
+  // Card shadows - sports broadcast style
+  card: '0 8px 24px -4px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+  cardHover: '0 12px 32px -6px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08)',
   
-  // Floating effect
-  floating: '0 20px 40px -12px rgba(4, 61, 208, 0.15), 0 0 0 1px rgba(4, 61, 208, 0.05)',
+  // Button shadows - minimal glow, sports badge feel
+  button: '0 4px 12px -2px rgba(0, 0, 0, 0.2)',
+  buttonHover: '0 6px 16px -3px rgba(0, 0, 0, 0.3)',
+  
+  // NO neon glows - replaced with subtle, warm shadows
 };
 
 export const transitions = {

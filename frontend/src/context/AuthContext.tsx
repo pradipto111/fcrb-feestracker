@@ -4,12 +4,12 @@ import { api, setToken } from "../api/client";
 type User = {
   id: number;
   fullName: string;
-  role: "ADMIN" | "COACH" | "STUDENT";
+  role: "ADMIN" | "COACH" | "STUDENT" | "FAN";
 };
 
 type AuthContextType = {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, role?: User["role"]) => Promise<void>;
   logout: () => void;
 };
 
@@ -21,8 +21,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return stored ? JSON.parse(stored) : null;
   });
 
-  const login = async (email: string, password: string) => {
-    const res = await api.login(email, password);
+  const login = async (email: string, password: string, role?: User["role"]) => {
+    const res = await api.login(email, password, role);
     setToken(res.token);
     setUser(res.user);
     localStorage.setItem("user", JSON.stringify(res.user));

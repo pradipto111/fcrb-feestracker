@@ -40,6 +40,12 @@ const CoachLayout: React.FC = () => {
       description: "Training sessions & attendance",
     },
     {
+      path: "/realverse/coach/schedule",
+      label: "Schedule",
+      icon: "sessions",
+      description: "Calendar & events",
+    },
+    {
       path: "/realverse/coach/feedback",
       label: "Feedback",
       icon: "feedback",
@@ -62,6 +68,12 @@ const CoachLayout: React.FC = () => {
       label: "Analytics",
       icon: "dashboard",
       description: "Squad performance metrics",
+    },
+    {
+      path: "/realverse/coach/fan-club-analytics",
+      label: "Fan Club Analytics",
+      icon: "dashboard",
+      description: "Fan Club & partner KPIs",
     },
     {
       path: "/realverse/scouting/board",

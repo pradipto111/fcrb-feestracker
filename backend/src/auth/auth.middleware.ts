@@ -4,7 +4,7 @@ import { JWT_SECRET } from "../config";
 
 export interface JwtPayload {
   id: number;
-  role: "ADMIN" | "COACH" | "STUDENT";
+  role: "ADMIN" | "COACH" | "STUDENT" | "FAN";
 }
 
 export function authRequired(
@@ -26,9 +26,15 @@ export function authRequired(
   }
 }
 
-export function requireRole(...roles: ("ADMIN" | "COACH" | "STUDENT")[]) {
+type AppRole = JwtPayload["role"];
+
+// Supports both call styles:
+// - requireRole("ADMIN", "COACH")
+// - requireRole(["ADMIN", "COACH"])
+export function requireRole(...rolesOrList: (AppRole | AppRole[])[]) {
+  const roles = rolesOrList.flat() as AppRole[];
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!req.user || !roles.includes(req.user.role as AppRole)) {
       return res.status(403).json({ message: "Forbidden" });
     }
     next();

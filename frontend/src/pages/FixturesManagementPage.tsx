@@ -29,6 +29,8 @@ const FixturesManagementPage: React.FC = () => {
     matchDate: "",
     matchTime: "",
     venue: "",
+    status: "UPCOMING",
+    score: "",
     notes: "",
     selectedPlayers: [] as number[],
     playerPositions: {} as Record<number, string>,
@@ -109,6 +111,8 @@ const FixturesManagementPage: React.FC = () => {
         matchDate: fixtureForm.matchDate,
         matchTime: fixtureForm.matchTime,
         venue: fixtureForm.venue || undefined,
+        status: fixtureForm.status,
+        score: fixtureForm.status === "COMPLETED" ? (fixtureForm.score || undefined) : undefined,
         notes: fixtureForm.notes || undefined,
         playerIds: fixtureForm.selectedPlayers,
         positions: fixtureForm.selectedPlayers.map(id => fixtureForm.playerPositions[id] || ""),
@@ -123,6 +127,8 @@ const FixturesManagementPage: React.FC = () => {
         matchDate: "",
         matchTime: "",
         venue: "",
+        status: "UPCOMING",
+        score: "",
         notes: "",
         selectedPlayers: [],
         playerPositions: {},
@@ -145,6 +151,30 @@ const FixturesManagementPage: React.FC = () => {
       await loadFixtures();
     } catch (err: any) {
       setError(err.message);
+    }
+  };
+
+  const parseScoreFromNotes = (notes?: string) => {
+    if (!notes) return "";
+    const m = notes.match(/score:\s*(\d+\s*[-:]\s*\d+)/i);
+    if (m && m[1]) return m[1].replace(/\s+/g, "").replace(":", "-");
+    const m2 = notes.match(/(\d+)\s*[-:]\s*(\d+)/);
+    return m2 ? `${m2[1]}-${m2[2]}` : "";
+  };
+
+  const handleMarkCompleted = async (fixtureId: number, currentNotes?: string) => {
+    const existing = parseScoreFromNotes(currentNotes);
+    const score = window.prompt("Enter final score for FC Real Bengaluru (e.g., 3-1):", existing || "3-1");
+    if (!score) return;
+    try {
+      setLoading(true);
+      setError("");
+      await api.updateFixture(fixtureId, { status: "COMPLETED", score });
+      await loadFixtures();
+    } catch (err: any) {
+      setError(err.message || "Failed to update fixture");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -508,6 +538,55 @@ const FixturesManagementPage: React.FC = () => {
                 </div>
               </div>
 
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                <div>
+                  <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
+                    Status
+                  </label>
+                  <select
+                    value={fixtureForm.status}
+                    onChange={(e) =>
+                      setFixtureForm({
+                        ...fixtureForm,
+                        status: e.target.value,
+                        score: e.target.value === "COMPLETED" ? fixtureForm.score : "",
+                      })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      border: "2px solid #e0e0e0",
+                      borderRadius: 6,
+                    }}
+                  >
+                    <option value="UPCOMING">UPCOMING</option>
+                    <option value="ONGOING">ONGOING</option>
+                    <option value="COMPLETED">COMPLETED</option>
+                    <option value="POSTPONED">POSTPONED</option>
+                    <option value="CANCELLED">CANCELLED</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
+                    Final Score (FCRB-Opponent)
+                  </label>
+                  <input
+                    type="text"
+                    value={fixtureForm.score}
+                    onChange={(e) => setFixtureForm({ ...fixtureForm, score: e.target.value })}
+                    placeholder="e.g., 3-1"
+                    disabled={fixtureForm.status !== "COMPLETED"}
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      border: "2px solid #e0e0e0",
+                      borderRadius: 6,
+                      opacity: fixtureForm.status === "COMPLETED" ? 1 : 0.6,
+                    }}
+                  />
+                </div>
+              </div>
+
               <div style={{ marginBottom: 20 }}>
                 <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
                   Notes
@@ -745,6 +824,22 @@ const FixturesManagementPage: React.FC = () => {
                         }}>
                           {fixture.status}
                         </div>
+                        {fixture.status === "COMPLETED" && parseScoreFromNotes(fixture.notes) && (
+                          <div
+                            style={{
+                              padding: `${spacing.xs} ${spacing.md}`,
+                              borderRadius: borderRadius.full,
+                              fontSize: typography.fontSize.xs,
+                              fontWeight: typography.fontWeight.bold,
+                              background: "rgba(0,224,255,0.10)",
+                              border: "1px solid rgba(0,224,255,0.22)",
+                              color: colors.text.primary,
+                              letterSpacing: "0.06em",
+                            }}
+                          >
+                            {parseScoreFromNotes(fixture.notes)}
+                          </div>
+                        )}
                       </div>
                       <div style={{ 
                         fontSize: typography.fontSize.base, 
@@ -790,13 +885,33 @@ const FixturesManagementPage: React.FC = () => {
                         Players: {fixture.players?.length || 0} selected
                       </div>
                     </div>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => handleDeleteFixture(fixture.id)}
-                    >
-                      Delete
-                    </Button>
+                    <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm, alignItems: "flex-end" }}>
+                      {fixture.status !== "COMPLETED" && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleMarkCompleted(fixture.id, fixture.notes)}
+                        >
+                          Mark Completed
+                        </Button>
+                      )}
+                      {fixture.status === "COMPLETED" && (
+                        <Button
+                          variant="utility"
+                          size="sm"
+                          onClick={() => handleMarkCompleted(fixture.id, fixture.notes)}
+                        >
+                          Edit Score
+                        </Button>
+                      )}
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleDeleteFixture(fixture.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </div>
                   
                   {fixture.players && fixture.players.length > 0 && (

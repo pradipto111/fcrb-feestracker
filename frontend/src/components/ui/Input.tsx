@@ -16,6 +16,8 @@ export const Input: React.FC<InputProps> = ({
   style,
   ...props
 }) => {
+  const baseBorderColor = error ? colors.danger.main : 'rgba(255, 255, 255, 0.2)';
+
   const inputStyle: React.CSSProperties = {
     width: fullWidth ? '100%' : 'auto',
     padding: `${spacing.md} ${spacing.lg}`, // 16px vertical, 24px horizontal - proper spacing from borders
@@ -23,7 +25,9 @@ export const Input: React.FC<InputProps> = ({
     fontFamily: typography.fontFamily.primary,
     color: colors.text.primary,
     background: colors.surface.card, // Visible background
-    border: `1px solid ${error ? colors.danger.main : 'rgba(255, 255, 255, 0.2)'}`, // Visible border
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: baseBorderColor, // avoid mixing shorthand with borderColor
     borderRadius: borderRadius.md,
     outline: 'none',
     transition: 'all 0.2s ease',
@@ -56,7 +60,7 @@ export const Input: React.FC<InputProps> = ({
           ...inputStyle,
           ...(isFocused
             ? {
-                border: `1px solid ${error ? colors.danger.main : colors.primary.main}`,
+                borderColor: error ? colors.danger.main : colors.primary.main,
                 boxShadow: `0 0 0 3px ${error ? colors.danger.soft : colors.primary.soft}`,
               }
             : {}),
