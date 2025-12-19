@@ -5,15 +5,17 @@ import { api } from "../../api/client";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Section } from "../../components/ui/Section";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { CardHeader } from "../../components/ui/CardHeader";
 import { CardBody } from "../../components/ui/CardBody";
+import { SectionNav } from "../../components/ui/SectionNav";
 import PlayerIdentityHeader from "../../components/PlayerIdentityHeader";
 import NextStepSnapshot from "../../components/NextStepSnapshot";
 import YourAnalytics from "../../components/YourAnalytics";
 import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
 import { useHomepageAnimation } from "../../hooks/useHomepageAnimation";
 import { heroAssets, clubAssets, academyAssets } from "../../config/assets";
-import { ChartBarIcon, ChartLineIcon, ClipboardIcon, RefreshIcon, BoltIcon, LeafIcon, CalendarIcon, ArrowRightIcon } from "../../components/icons/IconSet";
+import { ChartBarIcon, ChartLineIcon, ClipboardIcon, RefreshIcon, BoltIcon, LeafIcon, CalendarIcon, ArrowRightIcon, PlusIcon, MinusIcon } from "../../components/icons/IconSet";
 
 const StudentDashboardOverview: React.FC = () => {
   const navigate = useNavigate();
@@ -23,6 +25,7 @@ const StudentDashboardOverview: React.FC = () => {
   const [workloadMessage, setWorkloadMessage] = useState<any>(null);
   const [error, setError] = useState("");
   const [analyticsRefreshKey, setAnalyticsRefreshKey] = useState(0);
+  const [showPayments, setShowPayments] = useState(false);
   const hasLoadedRef = useRef(false);
   
   // Toned-down motion for internal pages
@@ -95,134 +98,43 @@ const StudentDashboardOverview: React.FC = () => {
 
   return (
     <div>
-      {/* Hero Banner - STUNNING THEME */}
-      <motion.section
-        variants={sectionVariantsLight}
-        initial="offscreen"
-        whileInView="onscreen"
-        viewport={viewportOnce}
-        style={{
-          position: "relative",
-          minHeight: "300px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-          marginBottom: spacing.xl,
-          borderRadius: borderRadius.xl,
-        }}
-      >
-        {/* Background image - ONLY IMAGE, NO VIDEO */}
-        <motion.div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundImage: `url(${academyAssets.trainingShot})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            opacity: 0.4,
-            filter: "blur(6px)",
-            zIndex: 0,
-          }}
-          animate={{
-            scale: [1, 1.02, 1],
-          }}
-          transition={{
-            duration: 15,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
+      <motion.div variants={headingVariants} initial="offscreen" whileInView="onscreen" viewport={viewportOnce}>
+        <PageHeader
+          tone="dark"
+          title="Dashboard"
+          subtitle="A clear overview of your academy journey and what to do next."
+          actions={
+            <Link to="/realverse/student/analytics" style={{ textDecoration: "none" }}>
+              <Button variant="primary" size="md">
+                View Analytics <ArrowRightIcon size={14} style={{ marginLeft: spacing.xs }} />
+              </Button>
+            </Link>
+          }
         />
-        
-        {/* Animated Radial Gradient */}
-        <motion.div
-          style={{
-            position: "absolute",
-            top: "20%",
-            left: "30%",
-            width: "400px",
-            height: "400px",
-            background: "radial-gradient(circle, rgba(0, 224, 255, 0.2) 0%, transparent 70%)",
-            borderRadius: "50%",
-            filter: "blur(50px)",
-            zIndex: 1,
-          }}
-          animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.1, 0.3, 0.1],
-          }}
-          transition={{
-            duration: 6,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-        
-        {/* Dark Overlay */}
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(5, 11, 32, 0.6)",
-            zIndex: 2,
-          }}
-        />
-        
-        {/* Content */}
-        <div
-          style={{
-            position: "relative",
-            zIndex: 3,
-            textAlign: "center",
-            padding: spacing.xl,
-            maxWidth: "700px",
-          }}
-        >
-          <motion.h1
-            variants={headingVariants}
-            style={{
-              ...typography.display,
-              fontSize: typography.fontSize["3xl"],
-              color: colors.text.primary,
-              marginBottom: spacing.sm,
-              textShadow: "0 4px 30px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 224, 255, 0.3)",
-            }}
-          >
-            Dashboard
-          </motion.h1>
-          <motion.p
-            variants={headingVariants}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.lg,
-              color: colors.text.secondary,
-              textShadow: "0 2px 15px rgba(0, 0, 0, 0.5)",
-            }}
-          >
-            Overview of your academy journey and quick access to all features
-          </motion.p>
-        </div>
-        
-      </motion.section>
+      </motion.div>
+
+      <SectionNav
+        items={[
+          { id: "identity", label: "Status" },
+          { id: "next", label: "What’s next" },
+          { id: "quick-actions", label: "Quick actions" },
+          { id: "analytics", label: "Analytics" },
+          { id: "payments", label: "Payments" },
+        ]}
+      />
       
       {/* Player Identity & Status Header */}
-      <PlayerIdentityHeader
-        student={student}
-        attendanceRate={attendanceRate}
-        currentLevel={currentLevel}
-      />
+      <div id="identity" style={{ scrollMarginTop: 90 }}>
+        <PlayerIdentityHeader student={student} attendanceRate={attendanceRate} currentLevel={currentLevel} />
+      </div>
 
       {/* "What's Next for Me?" Snapshot */}
-      <NextStepSnapshot roadmap={roadmapData} />
+      <div id="next" style={{ scrollMarginTop: 90 }}>
+        <NextStepSnapshot roadmap={roadmapData} />
+      </div>
 
       {/* Quick Actions Grid - Organized CTAs */}
-      <Section variant="elevated" style={{ marginBottom: spacing.xl }}>
+      <Section variant="elevated" style={{ marginBottom: spacing.xl }} id="quick-actions">
         <h2 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.lg }}>
           Quick Actions
         </h2>
@@ -348,7 +260,7 @@ const StudentDashboardOverview: React.FC = () => {
       )}
 
       {/* Your Analytics Section */}
-      <Section variant="elevated" style={{ marginBottom: spacing.xl }}>
+      <Section id="analytics" variant="elevated" style={{ marginBottom: spacing.xl }}>
         <Card variant="elevated" padding="none" style={{ background: colors.surface.card }}>
           <CardHeader
             title="Your Analytics"
@@ -376,48 +288,56 @@ const StudentDashboardOverview: React.FC = () => {
         </Card>
       </Section>
 
-      {/* Summary Stats - Compact */}
-      <Section variant="elevated">
-        <h2 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.md }}>
-          Financial Summary
-        </h2>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: spacing.md,
-          }}
-        >
-          <Card variant="default" padding="md" style={{ textAlign: "center" }}>
-            <div style={{ ...typography.overline, color: colors.text.muted, marginBottom: spacing.xs }}>
-              Monthly Fee
-            </div>
-            <div style={{ ...typography.h3, color: colors.text.primary }}>
-              ₹{student.monthlyFeeAmount.toLocaleString()}
-            </div>
-          </Card>
-          <Card variant="default" padding="md" style={{ textAlign: "center" }}>
-            <div style={{ ...typography.overline, color: colors.text.muted, marginBottom: spacing.xs }}>
-              Total Paid
-            </div>
-            <div style={{ ...typography.h3, color: colors.success.main }}>
-              ₹{summary.totalPaid.toLocaleString()}
-            </div>
-          </Card>
-          <Card variant="default" padding="md" style={{ textAlign: "center" }}>
-            <div style={{ ...typography.overline, color: colors.text.muted, marginBottom: spacing.xs }}>
-              Outstanding
-            </div>
-            <div
-              style={{
-                ...typography.h3,
-                color: summary.outstanding > 0 ? colors.danger.main : colors.success.main,
-              }}
-            >
-              ₹{Math.abs(summary.outstanding).toLocaleString()}
-            </div>
-          </Card>
+      {/* Payments (collapsible) */}
+      <Section id="payments" variant="elevated">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.md, flexWrap: "wrap" }}>
+          <div>
+            <h2 style={{ ...typography.h3, color: colors.text.primary, marginBottom: 6 }}>Payments</h2>
+            <p style={{ ...typography.body, color: colors.text.muted, margin: 0 }}>
+              Monthly fee ₹{student.monthlyFeeAmount.toLocaleString()} • Outstanding{" "}
+              <span style={{ color: summary.outstanding > 0 ? colors.danger.main : colors.success.main, fontWeight: typography.fontWeight.semibold }}>
+                ₹{Math.abs(summary.outstanding).toLocaleString()}
+              </span>
+            </p>
+          </div>
+          <Button variant="utility" size="sm" onClick={() => setShowPayments((v) => !v)}>
+            {showPayments ? (
+              <>
+                <MinusIcon size={14} style={{ marginRight: spacing.xs }} /> Hide
+              </>
+            ) : (
+              <>
+                <PlusIcon size={14} style={{ marginRight: spacing.xs }} /> Show
+              </>
+            )}
+          </Button>
         </div>
+
+        {showPayments && (
+          <div
+            style={{
+              marginTop: spacing.lg,
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: spacing.md,
+            }}
+          >
+            <Card variant="default" padding="md" style={{ textAlign: "center" }}>
+              <div style={{ ...typography.overline, color: colors.text.muted, marginBottom: spacing.xs }}>Monthly Fee</div>
+              <div style={{ ...typography.h3, color: colors.text.primary }}>₹{student.monthlyFeeAmount.toLocaleString()}</div>
+            </Card>
+            <Card variant="default" padding="md" style={{ textAlign: "center" }}>
+              <div style={{ ...typography.overline, color: colors.text.muted, marginBottom: spacing.xs }}>Total Paid</div>
+              <div style={{ ...typography.h3, color: colors.success.main }}>₹{summary.totalPaid.toLocaleString()}</div>
+            </Card>
+            <Card variant="default" padding="md" style={{ textAlign: "center" }}>
+              <div style={{ ...typography.overline, color: colors.text.muted, marginBottom: spacing.xs }}>Outstanding</div>
+              <div style={{ ...typography.h3, color: summary.outstanding > 0 ? colors.danger.main : colors.success.main }}>
+                ₹{Math.abs(summary.outstanding).toLocaleString()}
+              </div>
+            </Card>
+          </div>
+        )}
       </Section>
     </div>
     );

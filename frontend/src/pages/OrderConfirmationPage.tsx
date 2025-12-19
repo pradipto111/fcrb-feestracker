@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import PublicHeader from "../components/PublicHeader";
-import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
+import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { heroCTAStyles } from "../theme/hero-design-patterns";
 import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
 import { api } from "../api/client";
 
 const OrderConfirmationPage: React.FC = () => {
@@ -63,7 +64,23 @@ const OrderConfirmationPage: React.FC = () => {
           <Card variant="elevated" padding="xl">
             <h2 style={{ ...typography.h2, marginBottom: spacing.md }}>Order not found</h2>
             <Link to="/shop" style={{ textDecoration: "none" }}>
-              <Button variant="primary">Back to Shop</Button>
+              <motion.div
+                whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  ...heroCTAStyles.blue,
+                  width: "auto",
+                  minWidth: 240,
+                  minHeight: 56,
+                  padding: "12px 18px",
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                  <span style={heroCTAStyles.blue.textStyle}>Back to Shop</span>
+                  <span style={heroCTAStyles.blue.subtitleStyle}>Browse all products</span>
+                </div>
+                <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+              </motion.div>
             </Link>
           </Card>
         </div>
@@ -239,10 +256,46 @@ const OrderConfirmationPage: React.FC = () => {
             }}
           >
             <Link to="/shop" style={{ textDecoration: "none" }}>
-              <Button variant="primary">Continue Shopping</Button>
+              <motion.div
+                whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  ...heroCTAStyles.blue,
+                  width: "auto",
+                  minWidth: 260,
+                  minHeight: 56,
+                  padding: "12px 18px",
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                  <span style={heroCTAStyles.blue.textStyle}>Continue Shopping</span>
+                  <span style={heroCTAStyles.blue.subtitleStyle}>More merch drops incoming</span>
+                </div>
+                <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+              </motion.div>
             </Link>
             <Link to="/" style={{ textDecoration: "none" }}>
-              <Button variant="secondary">Back to Home</Button>
+              <motion.div
+                whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  ...heroCTAStyles.darkWithBorder,
+                  width: "auto",
+                  minWidth: 240,
+                  minHeight: 56,
+                  padding: "12px 18px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: spacing.md,
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                  <span style={heroCTAStyles.darkWithBorder.textStyle}>Back to Home</span>
+                  <span style={heroCTAStyles.darkWithBorder.subtitleStyle}>Explore the RealVerse</span>
+                </div>
+                <span style={{ color: colors.accent.main, fontWeight: 800 }}>→</span>
+              </motion.div>
             </Link>
           </div>
         </Card>

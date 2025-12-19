@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { heroCTAStyles } from "../theme/hero-design-patterns";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { clubAssets, academyAssets, realverseAssets, galleryAssets } from "../config/assets";
 import PublicHeader from "../components/PublicHeader";
@@ -1145,9 +1145,20 @@ const RealVerseExperiencePage: React.FC = () => {
                         setShowLeadForm(true);
                       }}
                     >
-                      <Button variant="primary" size="md" fullWidth>
-                        Get Started →
-                      </Button>
+                      <div
+                        style={{
+                          ...heroCTAStyles.blue,
+                          width: "100%",
+                          minHeight: 60,
+                          padding: "12px 18px",
+                        }}
+                      >
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                          <span style={heroCTAStyles.blue.textStyle}>Get Started</span>
+                          <span style={heroCTAStyles.blue.subtitleStyle}>Request a call from our team</span>
+                        </div>
+                        <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+                      </div>
                     </motion.div>
                   </Card>
                 </motion.div>
@@ -1201,18 +1212,36 @@ const RealVerseExperiencePage: React.FC = () => {
                 whileTap={primaryButtonTap}
                 onClick={() => setShowLeadForm(true)}
               >
-                <Button variant="primary" size="lg">
-                  Start Your Journey →
-                </Button>
+                <div style={{ ...heroCTAStyles.yellow, width: "auto", minWidth: 280 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                    <span style={heroCTAStyles.yellow.textStyle}>Start Your Journey</span>
+                    <span style={heroCTAStyles.yellow.subtitleStyle}>Talk to our coaching team</span>
+                  </div>
+                  <span style={{ color: colors.text.onAccent, fontWeight: 800 }}>→</span>
+                </div>
               </motion.div>
-              <Link to="/brochure">
+              <Link to="/brochure" style={{ textDecoration: "none" }}>
                 <motion.div
                   whileHover={primaryButtonHover}
                   whileTap={primaryButtonTap}
                 >
-                  <Button variant="secondary" size="lg">
-                    Download Brochure
-                  </Button>
+                  <div
+                    style={{
+                      ...heroCTAStyles.darkWithBorder,
+                      width: "auto",
+                      minWidth: 260,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: spacing.md,
+                    }}
+                  >
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                      <span style={heroCTAStyles.darkWithBorder.textStyle}>Download Brochure</span>
+                      <span style={heroCTAStyles.darkWithBorder.subtitleStyle}>Programs, fees, and pathways</span>
+                    </div>
+                    <span style={{ color: colors.accent.main, fontWeight: 800 }}>→</span>
+                  </div>
                 </motion.div>
               </Link>
             </div>
@@ -1456,9 +1485,20 @@ const RealVerseExperiencePage: React.FC = () => {
                       whileHover={primaryButtonHover}
                       whileTap={primaryButtonTap}
                     >
-                      <Button variant="primary" size="lg" fullWidth type="submit">
-                        Submit Inquiry →
-                      </Button>
+                      <button
+                        type="submit"
+                        style={{
+                          ...heroCTAStyles.yellow,
+                          width: "100%",
+                          border: "none",
+                        }}
+                      >
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                          <span style={heroCTAStyles.yellow.textStyle}>Submit Inquiry</span>
+                          <span style={heroCTAStyles.yellow.subtitleStyle}>We’ll contact you within 24–48 hours</span>
+                        </div>
+                        <span style={{ color: colors.text.onAccent, fontWeight: 800 }}>→</span>
+                      </button>
                     </motion.div>
                   </div>
                 </form>

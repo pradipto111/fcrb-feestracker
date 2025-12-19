@@ -8,9 +8,10 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { colors, typography, spacing, borderRadius, shadows } from "../../theme/design-tokens";
+import { heroCTAStyles, heroOverlayGradient, heroTypography } from "../../theme/hero-design-patterns";
 import { Button } from "../ui/Button";
 import { FAN_CLUB_TIERS, SPONSOR_BENEFITS } from "../../data/fanclubBenefits";
-import { ArrowRightIcon, CheckIcon } from "../icons/IconSet";
+import { ArrowRightIcon, CheckIcon, StarIcon } from "../icons/IconSet";
 import { SponsorLogoWall } from "./SponsorLogoWall";
 
 export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
@@ -64,11 +65,9 @@ export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile
         </div>
         <h2
           style={{
-            ...typography.h1,
+            ...heroTypography.heading,
             fontSize: `clamp(2.2rem, 4.4vw, 3.2rem)`,
             margin: 0,
-            color: colors.text.primary,
-            lineHeight: 1.08,
             marginBottom: spacing.md,
           }}
         >
@@ -76,10 +75,8 @@ export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile
         </h2>
         <p
           style={{
-            ...typography.body,
-            color: colors.text.secondary,
+            ...heroTypography.subheading,
             fontSize: typography.fontSize.lg,
-            lineHeight: 1.7,
             maxWidth: "70ch",
             margin: "0 auto",
           }}
@@ -109,12 +106,12 @@ export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile
               whileHover={!reduce ? { y: -4, scale: 1.02 } : undefined}
               style={{
                 borderRadius: borderRadius["2xl"],
-                border: recommended ? `1px solid ${accent}40` : "1px solid rgba(255,255,255,0.10)",
-                background: "rgba(255,255,255,0.03)",
-                backdropFilter: "blur(14px)",
+                border: recommended ? `1px solid ${accent}40` : "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(255,255,255,0.02)",
+                backdropFilter: "blur(12px)",
                 boxShadow: recommended
-                  ? `0 24px 70px rgba(0,0,0,0.45), 0 0 36px ${accent}20`
-                  : shadows.card,
+                  ? `0 12px 40px rgba(0,0,0,0.25), 0 0 24px ${accent}15`
+                  : `0 8px 24px rgba(0,0,0,0.20)`,
                 overflow: "hidden",
                 position: "relative",
                 padding: spacing.cardPadding, // 32px padding
@@ -123,18 +120,18 @@ export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile
                 gap: spacing.md,
               }}
             >
-              {/* Background gradient */}
+              {/* Background gradient - reduced opacity for better background visibility */}
               <div
                 aria-hidden="true"
                 style={{
                   position: "absolute",
                   inset: 0,
                   background: recommended
-                    ? "radial-gradient(circle at 18% 18%, rgba(0,224,255,0.14) 0%, transparent 55%), radial-gradient(circle at 80% 10%, rgba(255,169,0,0.10) 0%, transparent 55%)"
+                    ? "radial-gradient(circle at 18% 18%, rgba(0,224,255,0.08) 0%, transparent 55%), radial-gradient(circle at 80% 10%, rgba(255,169,0,0.06) 0%, transparent 55%)"
                     : tier.id === "inner"
-                      ? "radial-gradient(circle at 16% 18%, rgba(255,169,0,0.18) 0%, transparent 58%), radial-gradient(circle at 88% 22%, rgba(0,224,255,0.16) 0%, transparent 62%)"
-                      : "radial-gradient(circle at 18% 18%, rgba(255,255,255,0.06) 0%, transparent 55%)",
-                  opacity: 0.95,
+                      ? "radial-gradient(circle at 16% 18%, rgba(255,169,0,0.10) 0%, transparent 58%), radial-gradient(circle at 88% 22%, rgba(0,224,255,0.08) 0%, transparent 62%)"
+                      : "radial-gradient(circle at 18% 18%, rgba(255,255,255,0.03) 0%, transparent 55%)",
+                  opacity: 0.7,
                   pointerEvents: "none",
                 }}
               />
@@ -194,10 +191,10 @@ export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile
         <div
           style={{
             borderRadius: borderRadius.card,
-            border: "1px solid rgba(255,255,255,0.10)",
-            background: "rgba(255,255,255,0.03)",
-            backdropFilter: "blur(14px)",
-            boxShadow: shadows.card,
+            border: "1px solid rgba(255,255,255,0.08)",
+            background: "rgba(255,255,255,0.02)",
+            backdropFilter: "blur(12px)",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.20)",
             padding: spacing.lg,
             textAlign: "center",
           }}
@@ -221,12 +218,51 @@ export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile
         </div>
       </motion.div>
 
-      {/* Primary CTA */}
-      <motion.div variants={itemVariants} style={{ textAlign: "center" }}>
-        <Link to="/fan-club/benefits" style={{ textDecoration: "none", display: "inline-block" }}>
-          <Button variant="primary" size="lg" style={{ borderRadius: 999, padding: `${spacing.md} ${spacing.xl}` }}>
-            Explore all Fan Club benefits <ArrowRightIcon size={18} style={{ marginLeft: spacing.sm }} />
-          </Button>
+      {/* Primary CTA - Matching Hero Style */}
+      <motion.div variants={itemVariants} style={{ textAlign: "center", maxWidth: "680px", margin: "0 auto", width: "100%" }}>
+        <Link to="/fan-club/benefits" style={{ textDecoration: "none", display: "block", width: "100%" }}>
+          <motion.div
+            whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+            whileTap={{ scale: 0.98 }}
+            style={{
+              ...heroCTAStyles.darkWithBorder,
+              display: "flex",
+              alignItems: "center",
+              gap: spacing.md,
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: "50%",
+                background: colors.accent.main,
+                border: `2px solid ${colors.accent.main}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: shadows.sm,
+                flexShrink: 0,
+              }}
+            >
+              <StarIcon size={20} style={{ color: colors.text.onAccent }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={heroCTAStyles.darkWithBorder.textStyle}>
+                Explore all Fan Club benefits
+              </div>
+              <div style={heroCTAStyles.darkWithBorder.subtitleStyle}>
+                Exclusive gifts, <span style={{ color: colors.accent.main, fontWeight: typography.fontWeight.semibold }}>VIP access</span>, member-only drops
+              </div>
+            </div>
+            <motion.div
+              animate={{ x: [0, 4, 0] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              style={{ display: "flex", alignItems: "center", flexShrink: 0 }}
+            >
+              <ArrowRightIcon size={20} color={colors.accent.main} />
+            </motion.div>
+          </motion.div>
         </Link>
       </motion.div>
     </motion.section>

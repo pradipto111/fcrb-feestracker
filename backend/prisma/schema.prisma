@@ -278,6 +278,7 @@ model FanTier {
   updatedAt     DateTime @updatedAt
 
   fans FanProfile[]
+  onboardings FanOnboarding[]
 
   @@index([isActive])
   @@index([sortOrder])

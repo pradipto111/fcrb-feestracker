@@ -250,6 +250,9 @@ const StudentLayout: React.FC = () => {
   };
 
   const student = studentData?.student;
+  const allNavItems = [...mainNavItems, ...developmentNavItems, ...contentNavItems];
+  const activeNavItem = allNavItems.find((item) => isActive(item.path));
+  const currentPageLabel = activeNavItem?.label || "Student Dashboard";
 
   if (isMobile) {
     return (
@@ -277,7 +280,7 @@ const StudentLayout: React.FC = () => {
                 RealVerse
               </div>
               <div style={{ ...typography.caption, fontSize: typography.fontSize.xs, color: colors.text.muted }}>
-                Student Dashboard
+                {currentPageLabel}
               </div>
             </div>
             <button
@@ -447,7 +450,9 @@ const StudentLayout: React.FC = () => {
 
         {/* Mobile Content */}
         <div style={{ flex: 1, padding: spacing.lg }}>
-          <Outlet />
+          <div style={{ width: "100%", maxWidth: 1400, margin: "0 auto" }}>
+            <Outlet />
+          </div>
         </div>
       </div>
     );
@@ -961,7 +966,9 @@ const StudentLayout: React.FC = () => {
           boxSizing: "border-box",
         }}
       >
-        <Outlet />
+        <div style={{ width: "100%", maxWidth: 1400, margin: "0 auto" }}>
+          <Outlet />
+        </div>
       </main>
     </div>
   );

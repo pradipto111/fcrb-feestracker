@@ -6,7 +6,9 @@ import WellnessCheck from "../../components/WellnessCheck";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Section } from "../../components/ui/Section";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
+import { ArrowRightIcon, ChartLineIcon } from "../../components/icons/IconSet";
 import { pageVariants } from "../../utils/motion";
 
 const StudentWellnessPage: React.FC = () => {
@@ -15,14 +17,11 @@ const StudentWellnessPage: React.FC = () => {
 
   return (
     <motion.div variants={pageVariants} initial="initial" animate="animate" exit="exit">
-      <div style={{ marginBottom: spacing.xl }}>
-        <h1 style={{ ...typography.h1, color: colors.text.primary, marginBottom: spacing.sm }}>
-          Training Load & Wellness
-        </h1>
-        <p style={{ ...typography.body, color: colors.text.secondary }}>
-          Track your training load, recovery, and wellness to help coaches manage your development
-        </p>
-      </div>
+      <PageHeader
+        tone="dark"
+        title="Training Load & Wellness"
+        subtitle="Track training load, recovery, and wellness to support safe development."
+      />
 
       {/* CTA to Load Dashboard */}
       {user?.id && (
@@ -38,7 +37,7 @@ const StudentWellnessPage: React.FC = () => {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: spacing.md }}>
               <div style={{ flex: 1, minWidth: "250px" }}>
                 <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
-                  📊 Load Dashboard
+                  Load Dashboard
                 </h3>
                 <p style={{ ...typography.body, color: colors.text.secondary, marginBottom: spacing.md }}>
                   View detailed training load trends, weekly/monthly comparisons, and readiness-load correlation insights.
@@ -48,11 +47,25 @@ const StudentWellnessPage: React.FC = () => {
                   size="md"
                   onClick={() => navigate(`/realverse/player/${user.id}/load-dashboard`)}
                 >
-                  View Load Dashboard →
+                  View Load Dashboard <ArrowRightIcon size={14} style={{ marginLeft: spacing.xs }} />
                 </Button>
               </div>
-              <div style={{ fontSize: "3rem", opacity: 0.2, lineHeight: 1 }}>
-                📈
+              <div
+                aria-hidden="true"
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: borderRadius.full,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  color: colors.primary.light,
+                  opacity: 0.9,
+                }}
+              >
+                <ChartLineIcon size={28} />
               </div>
             </div>
           </Card>

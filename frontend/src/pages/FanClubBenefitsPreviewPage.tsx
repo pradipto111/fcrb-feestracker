@@ -4,16 +4,15 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import PublicHeader from "../components/PublicHeader";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
-import { Button } from "../components/ui/Button";
+import { glass } from "../theme/glass";
+import { heroCTAStyles, heroCTAPillStyles } from "../theme/hero-design-patterns";
 import { FAN_CLUB_TIERS, SPONSOR_BENEFITS, type IncentiveTag, type SponsorBenefit } from "../data/fanclubBenefits";
 import { SponsorLogoWall } from "../components/home/SponsorLogoWall";
-import { SectionBackground } from "../components/shared/SectionBackground";
-import { ArrowRightIcon, CalendarIcon, DumbbellIcon, TrophyIcon, LinkIcon, StarIcon, LockIcon } from "../components/icons/IconSet";
-import { galleryAssets } from "../config/assets";
+import { ArrowRightIcon, ArrowDownIcon, CalendarIcon, DumbbellIcon, TrophyIcon, LinkIcon, StarIcon, LockIcon } from "../components/icons/IconSet";
+import { galleryAssets, heroAssets } from "../config/assets";
 
 const IncentiveBadge = ({ tag, accent }: { tag: IncentiveTag; accent: string }) => {
   const meta = useMemo(() => {
@@ -56,7 +55,7 @@ const RewardTile = ({ text, accent, accent2 }: { text: string; accent: string; a
         width: 320,
         borderRadius: borderRadius.card, // 16px - football-first
         border: "1px solid rgba(255,255,255,0.10)",
-        background: colors.surface.card, // Football-first card background
+        ...glass.card,
         boxShadow: shadows.card, // Sports broadcast style
         overflow: "hidden",
         position: "relative",
@@ -190,7 +189,6 @@ const SponsorRewardsCardWithLocks = ({
   previewTier: "rookie" | "regular" | "inner";
 }) => {
   const reduce = useReducedMotion();
-  const tooltip = "Coming soon — Fan Club unlocks perks";
 
   return (
     <motion.div
@@ -201,9 +199,8 @@ const SponsorRewardsCardWithLocks = ({
       whileHover={!reduce ? { y: -4 } : undefined}
       style={{
         borderRadius: borderRadius.card, // 16px - football-first
+        ...glass.card,
         border: `1px solid ${sponsor.accent}40`, // Sponsor-branded border
-        background: colors.surface.card, // Football-first card background
-        backdropFilter: "blur(14px)",
         boxShadow: shadows.card, // Sports broadcast style
         overflow: "hidden",
         position: "relative",
@@ -310,42 +307,24 @@ const SponsorRewardsCardWithLocks = ({
         </div>
 
         {/* Sponsor Website CTA - Prominent but secondary */}
-        <a
+        <motion.a
           href={sponsor.websiteUrl}
           target="_blank"
           rel="noopener noreferrer"
           style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: spacing.xs,
-            padding: `${spacing.xs} ${spacing.sm}`,
-            borderRadius: borderRadius.button,
-            border: `1px solid ${sponsor.accent}40`,
-            background: `${sponsor.accent}08`,
-            color: sponsor.accent2,
+            ...heroCTAPillStyles.base,
+            ...heroCTAPillStyles.gold,
+            padding: "8px 12px",
             textDecoration: "none",
-            ...typography.caption,
-            fontSize: typography.fontSize.xs,
-            fontWeight: typography.fontWeight.semibold,
-            letterSpacing: "0.08em",
-            transition: "all 0.2s ease",
             alignSelf: "flex-start",
           }}
-          onMouseEnter={(e) => {
-            if (!reduce) {
-              e.currentTarget.style.background = `${sponsor.accent}18`;
-              e.currentTarget.style.borderColor = sponsor.accent;
-              e.currentTarget.style.transform = "translateY(-1px)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = `${sponsor.accent}08`;
-            e.currentTarget.style.borderColor = `${sponsor.accent}40`;
-            e.currentTarget.style.transform = "translateY(0)";
-          }}
+          whileHover={!reduce ? { y: -2 } : undefined}
+          whileTap={!reduce ? { scale: 0.98 } : undefined}
         >
-          Visit {sponsor.name} <LinkIcon size={12} color={sponsor.accent2} />
-        </a>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+            Visit {sponsor.name} <LinkIcon size={12} color={colors.accent.main} />
+          </span>
+        </motion.a>
 
         {/* Sponsor Carousel */}
         <SponsorCarousel sponsor={sponsor} previewTier={previewTier} isMobile={isMobile} />
@@ -371,23 +350,36 @@ const SponsorRewardsCardWithLocks = ({
           </div>
         </div>
 
-        {/* Primary CTA */}
-        <div title={tooltip} style={{ marginTop: spacing.xs }}>
-          <Button
-            variant="primary"
-            size="md"
-            disabled
-            aria-disabled="true"
+        {/* Less repetitive: one compact status strip (CTA lives outside cards) */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: spacing.md,
+            paddingTop: spacing.sm,
+            marginTop: spacing.xs,
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ ...typography.caption, color: colors.text.muted, lineHeight: 1.5 }}>
+            Perks unlock when Fan Club memberships go live.
+          </div>
+          <div
             style={{
+              ...typography.caption,
+              color: colors.text.secondary,
+              letterSpacing: "0.14em",
+              padding: "8px 10px",
               borderRadius: 999,
-              padding: isMobile ? "12px 18px" : "12px 22px",
-              background: `linear-gradient(135deg, ${sponsor.accent2} 0%, ${sponsor.accent} 100%)`,
-              boxShadow: `0 8px 26px ${sponsor.glow}`,
-              width: "100%",
+              border: "1px solid rgba(255,255,255,0.14)",
+              background: "rgba(255,255,255,0.04)",
+              whiteSpace: "nowrap",
             }}
           >
-            Join the Fan Club to Unlock Your First Gift
-          </Button>
+            COMING SOON
+          </div>
         </div>
       </div>
     </motion.div>
@@ -397,8 +389,17 @@ const SponsorRewardsCardWithLocks = ({
 const FanClubBenefitsPreviewPage: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [previewTier, setPreviewTier] = useState<"rookie" | "regular" | "inner">("regular");
+  const [showAllPartners, setShowAllPartners] = useState(false);
   const pricingRef = useRef<HTMLDivElement | null>(null);
+  const partnersRef = useRef<HTMLDivElement | null>(null);
   const [tierHint, setTierHint] = useState<null | string>(null);
+  const reduceMotion = useReducedMotion();
+  const heroVideoRef = useRef<HTMLIFrameElement>(null);
+  const accentColor = colors.accent.main;
+  const sectionPadding = isMobile ? `${spacing["3xl"]} ${spacing.lg}` : `${spacing["4xl"]} ${spacing.xl}`;
+  const hoverLift = reduceMotion ? undefined : { y: -2 };
+  const hoverLiftShadow = reduceMotion ? undefined : { y: -2, boxShadow: shadows.buttonHover };
+  const tapPress = reduceMotion ? undefined : { scale: 0.98 };
 
   useEffect(() => {
     document.title = "Fan Club Benefits • FC Real Bengaluru";
@@ -418,89 +419,482 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
     }
   };
 
+  const onScrollToPartners = () => {
+    if (!partnersRef.current) return;
+    const lenis = (window as any).lenis;
+    if (lenis) {
+      lenis.scrollTo(partnersRef.current, { offset: -100, duration: 0.9 });
+    } else {
+      partnersRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: colors.club.deep, // Football-first background
         position: "relative",
       }}
     >
       <PublicHeader />
 
-      {/* Lively Background */}
-      <SectionBackground
-        variant="fanclub"
-        type="image"
-        src={galleryAssets.actionShots[1]?.medium || galleryAssets.actionShots[0]?.medium}
-        overlayIntensity="medium"
-        style={{ position: "absolute", inset: 0 }}
+      {/* Programs-style page background stack (single source of truth)
+          Video stays (desktop), image fallback on mobile. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+                  zIndex: 0,
+                  overflow: "hidden",
+                  pointerEvents: "none",
+                }}
+              >
+        {!isMobile ? (
+                <iframe
+                  ref={heroVideoRef}
+                  src={`${heroAssets.backgroundVideoEmbed}&fs=0&cc_load_policy=0&mute=1&autoplay=1&loop=1&playlist=_iplvxf8JCo&controls=0&showinfo=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&playsinline=1&enablejsapi=0&start=0`}
+                  style={{
+                    position: "absolute",
+              top: "50%",
+              left: "50%",
+              width: "100vw",
+              height: "56.25vw",
+              minWidth: "177.77777778vh",
+              minHeight: "100vh",
+              transform: "translate(-50%, -50%) scale(1.2)",
+                    border: "none",
+              opacity: 0.8,
+                  }}
+            allow="autoplay; encrypted-media; picture-in-picture"
+                  allowFullScreen={false}
+                  loading="eager"
+                  title="Fan Club Benefits Background Video"
+                />
+        ) : (
+          <div
+              style={{
+                position: "absolute",
+              inset: 0,
+                backgroundImage: `url(${galleryAssets.actionShots[1]?.medium || heroAssets.teamBackground1024 || heroAssets.teamBackground})`,
+                backgroundSize: "cover",
+              backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+              }}
+            />
+        )}
+      </div>
+
+      {/* Heavy gradient overlay (Programs cinematic style) */}
+      <div
+        aria-hidden="true"
+              style={{
+          position: "fixed",
+                inset: 0,
+                zIndex: 1,
+                pointerEvents: "none",
+          background: `linear-gradient(135deg, rgba(5, 11, 32, 0.85) 0%, rgba(10, 22, 51, 0.75) 50%, rgba(5, 11, 32, 0.85) 100%), radial-gradient(circle at 30% 30%, ${accentColor}15 0%, transparent 50%)`,
+                }}
+              />
+
+      {/* Subtle grain (Programs cinematic style) */}
+              <div
+        aria-hidden="true"
+                style={{
+          position: "fixed",
+                  inset: 0,
+          zIndex: 2,
+          pointerEvents: "none",
+          background:
+            'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' opacity=\'0.03\'/%3E%3C/svg%3E")',
+        }}
       />
 
-      <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.35 }}
-        style={{
+      <main
+                style={{
           position: "relative",
           zIndex: 3,
-          padding: isMobile ? `${spacing.xl} ${spacing.lg}` : `${spacing["3xl"]} ${spacing.xl}`,
-          paddingTop: isMobile ? "110px" : "120px", // Keep clear of sticky header
+          padding: isMobile ? `0 ${spacing.lg}` : `0 ${spacing.xl}`, // hero handles header clearance
           maxWidth: "1400px",
           margin: "0 auto",
           width: "100%",
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto", position: "relative", zIndex: 2 }}>
-          {/* Section identity */}
-          <motion.div
-            initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
-            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          {/* Hero (homepage-style: video/parallax → lockup → staggered headline → CTAs → scroll cue) */}
+          <motion.section
+            id="fanclub-benefits-hero"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+                style={{
+              position: "relative",
+              minHeight: "100vh",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              padding: isMobile ? `${spacing["3xl"]} ${spacing.lg}` : `${spacing["4xl"]} ${spacing.xl}`,
+              paddingTop: isMobile ? "120px" : "140px", // keep clear of sticky header
+              // Reserve space for the scroll cue so it never overlaps CTAs
+              paddingBottom: spacing["4xl"],
+              overflow: "hidden",
+              // Full-bleed background while keeping page content constrained
+              width: "100vw",
+              marginLeft: "calc(50% - 50vw)",
+              marginRight: "calc(50% - 50vw)",
+            }}
           >
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.3fr 0.7fr", gap: spacing.lg, alignItems: "center", marginBottom: spacing.xl }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em", marginBottom: spacing.sm }}>FAN CLUB ECOSYSTEM</div>
-                <h1 style={{ ...typography.h1, fontSize: `clamp(2.2rem, 4.4vw, 3.2rem)`, margin: 0, color: colors.text.primary, lineHeight: 1.08 }}>
-                  Your Benefits for Backing FC Real Bengaluru
-                </h1>
-                <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.lg, lineHeight: 1.7, marginTop: spacing.md, maxWidth: "70ch" }}>
-                  Backing the club comes with real rewards — on and off the pitch. Explore exclusive perks from our partners and unlock member-only benefits.
-                </p>
-              </div>
+            {/* Background media + overlays are page-level (Programs-style) */}
 
-              <div style={{ display: "flex", justifyContent: isMobile ? "flex-start" : "flex-end", gap: spacing.sm, flexWrap: "wrap" }}>
-                <div title="Coming soon — Fan Club unlocks perks">
-                  <Button variant="primary" size="md" disabled aria-disabled="true" style={{ borderRadius: 999 }}>
-                    Join the Fan Club to Unlock Your First Gift
-                  </Button>
-                </div>
-                <Button variant="secondary" size="md" onClick={onExploreBenefits} style={{ borderRadius: 999 }}>
-                  Explore All Fan Benefits
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Sponsors announcement + logos */}
-          <motion.div
-            initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
-            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          >
+            {/* Content */}
             <div
               style={{
-                borderRadius: borderRadius.card, // 16px - football-first
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: colors.surface.card, // Football-first card background
-                backdropFilter: "blur(14px)",
-                boxShadow: shadows.card, // Sports broadcast style
-                overflow: "hidden",
-                padding: spacing.cardPadding, // 32px minimum - proper padding
+                maxWidth: "1400px",
+                width: "100%",
+                margin: "0 auto",
+                padding: isMobile ? `0 ${spacing.md}` : `0 ${spacing.xl}`,
                 position: "relative",
-                marginBottom: spacing["2xl"],
+                zIndex: 10,
+                display: "grid",
+                gridTemplateColumns: "1fr",
+                alignItems: "center",
+                minHeight: "100%",
+              }}
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                style={{ maxWidth: 900 }}
+              >
+                {/* Club identity lockup + section label */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={{ delay: 0.12, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: spacing.md,
+                    padding: isMobile ? "8px 12px" : "10px 14px",
+                    borderRadius: borderRadius.full,
+                    background: "rgba(10, 16, 32, 0.42)",
+                    border: "1px solid rgba(255,255,255,0.14)",
+                    boxShadow: "0 18px 56px rgba(0,0,0,0.55)",
+                    backdropFilter: "blur(14px)",
+                    marginBottom: spacing.lg,
+                  }}
+                  aria-label="FC Real Bengaluru Fan Club Benefits"
+                >
+                  <img
+                    src="/fcrb-logo.png"
+                    alt="FC Real Bengaluru logo"
+                    style={{
+                      width: isMobile ? 34 : 40,
+                      height: isMobile ? 34 : 40,
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      boxShadow: "0 10px 26px rgba(0,0,0,0.45), 0 0 18px rgba(0,224,255,0.14)",
+                      border: "1px solid rgba(255,255,255,0.14)",
+                      background: "rgba(255,255,255,0.06)",
+                      flexShrink: 0,
+                    }}
+                    loading="eager"
+                  />
+                  <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        ...typography.overline,
+                        color: colors.accent.main,
+                        letterSpacing: "0.18em",
+                        opacity: 0.95,
+                      }}
+                    >
+                      FAN CLUB BENEFITS
+                    </div>
+                    <div
+                      style={{
+                        ...typography.body,
+                        color: colors.text.primary,
+                        fontWeight: typography.fontWeight.bold,
+                        letterSpacing: "-0.01em",
+                        fontSize: isMobile ? typography.fontSize.lg : typography.fontSize.xl,
+                        textShadow: "0 6px 28px rgba(0,0,0,0.65)",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      FC Real Bengaluru
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Headline */}
+                <motion.h1
+                  style={{
+                    ...typography.display,
+                    fontSize: `clamp(2.8rem, 6.8vw, 5.3rem)`,
+                    color: colors.text.primary,
+                    marginBottom: spacing.lg,
+                    lineHeight: 1.02,
+                    fontWeight: typography.fontWeight.bold,
+                    letterSpacing: "-0.03em",
+                    textShadow: "0 6px 50px rgba(0, 0, 0, 0.85), 0 0 70px rgba(0, 224, 255, 0.18)",
+                  }}
+                >
+                  {["Your", "Benefits", "for", "Backing"].map((word, idx) => (
+                    <motion.span
+                      key={word}
+                      initial={{ opacity: 0, y: 22 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.35 + idx * 0.06, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                      style={{ display: "inline-block", marginRight: idx === 3 ? 0 : "0.22em" }}
+                    >
+                      {word}
+                    </motion.span>
+                  ))}
+                  <br />
+                  {["FC", "Real"].map((word, idx) => (
+                    <motion.span
+                      key={word}
+                      initial={{ opacity: 0, y: 22 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.55 + idx * 0.06, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                      style={{ display: "inline-block", marginRight: "0.22em" }}
+                    >
+                      {word}
+                    </motion.span>
+                  ))}
+                  <motion.span
+                    initial={{ opacity: 0, y: 22 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.55 + 2 * 0.06, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                    style={{
+                      display: "inline-block",
+                      background: `linear-gradient(90deg, ${colors.accent.main}, rgba(255, 194, 51, 0.95))`,
+                      WebkitBackgroundClip: "text",
+                      backgroundClip: "text",
+                      color: "transparent",
+                      textShadow: "none",
+                    }}
+                  >
+                    Bengaluru.
+                  </motion.span>
+                </motion.h1>
+
+                {/* Description */}
+                <motion.p
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 0.92, y: 0 }}
+                  transition={{ delay: 0.6, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                  style={{
+                    ...typography.body,
+                    fontSize: `clamp(${typography.fontSize.lg}, 2vw, ${typography.fontSize.xl})`,
+                    color: colors.text.secondary,
+                    marginBottom: spacing.lg,
+                    lineHeight: 1.75,
+                    maxWidth: "780px",
+                    textShadow: "0 2px 24px rgba(0, 0, 0, 0.65)",
+                  }}
+                >
+                  A clean, football-first membership: earn status, unlock partner perks, and stay connected to the club — with a clear progression from top to bottom.
+                </motion.p>
+
+                {/* Hero highlights (captures below-the-fold essentials) */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.72, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 10,
+                    marginBottom: spacing.xl,
+                    maxWidth: "920px",
+                  }}
+                >
+                  {[
+                    "Partner perks (tier unlocks)",
+                    "Pricing + benefits matrix",
+                    "Fan badge + progression",
+                    "Community hub preview",
+                  ].map((t) => (
+                    <div
+                      key={t}
+                      style={{
+                        padding: "10px 12px",
+                        borderRadius: 999,
+                        border: "1px solid rgba(255,255,255,0.14)",
+                        background: "rgba(10, 16, 32, 0.32)",
+                        backdropFilter: "blur(10px)",
+                        color: colors.text.secondary,
+                        ...typography.caption,
+                        letterSpacing: "0.02em",
+                      }}
+                    >
+                      {t}
+                    </div>
+                  ))}
+                </motion.div>
+
+                {/* Primary CTA row */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.85, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                    gap: spacing.md,
+                    alignItems: "stretch",
+                    maxWidth: isMobile ? "100%" : "720px",
+                  }}
+                >
+                  {/* Join (coming soon) */}
+                  <div title="Coming soon — Fan Club unlocks perks">
+                    <div
+                      aria-disabled="true"
+                      style={{
+                        ...heroCTAStyles.yellow,
+                        width: "100%",
+                        minHeight: 72,
+                        padding: `${spacing.lg} ${spacing.xl}`,
+                        opacity: 0.65,
+                        cursor: "not-allowed",
+                      }}
+                    >
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                        <span style={heroCTAStyles.yellow.textStyle}>Join the Fan Club</span>
+                        <span style={heroCTAStyles.yellow.subtitleStyle}>Unlock your first gift (coming soon)</span>
+                      </div>
+                      <LockIcon size={18} color={colors.text.onAccent} style={{ flexShrink: 0 }} />
+                    </div>
+                  </div>
+
+                  {/* Explore pricing */}
+                  <motion.button
+                    type="button"
+                    onClick={onExploreBenefits}
+                    whileHover={hoverLiftShadow}
+                    whileTap={tapPress}
+                    style={{
+                      ...heroCTAStyles.darkWithBorder,
+                      width: "100%",
+                      minHeight: 72,
+                      padding: `${spacing.lg} ${spacing.xl}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: spacing.md,
+                      cursor: "pointer",
+                    }}
+                    aria-label="Explore pricing and tiers"
+                  >
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                      <span style={heroCTAStyles.darkWithBorder.textStyle}>Explore Pricing</span>
+                      <span style={heroCTAStyles.darkWithBorder.subtitleStyle}>Compare tiers + benefits</span>
+                    </div>
+                    <motion.div
+                      animate={!reduceMotion ? { x: [0, 3, 0] } : undefined}
+                      transition={!reduceMotion ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" } : undefined}
+                      style={{ display: "flex", alignItems: "center", flexShrink: 0 }}
+                    >
+                      <ArrowRightIcon size={20} color={colors.accent.main} />
+                    </motion.div>
+                  </motion.button>
+                </motion.div>
+              </motion.div>
+            </div>
+
+            {/* Scroll indicator (match scoreboard ticker style) */}
+            <motion.div
+              style={{
+                position: "absolute",
+                bottom: spacing.xl,
+                left: "50%",
+                transform: "translateX(-50%)",
+                zIndex: 2,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: spacing.sm,
+                pointerEvents: "none",
+              }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.6, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div
+                style={{
+                  padding: `${spacing.xs} ${spacing.md}`,
+                  borderRadius: borderRadius.button,
+                  background: "rgba(10,61,145,0.85)",
+                  border: `1px solid ${colors.accent.main}`,
+                  boxShadow: shadows.button,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: spacing.sm,
+                  backdropFilter: "blur(8px)",
+                }}
+              >
+                <div
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: colors.accent.main,
+                    boxShadow: `0 0 8px ${colors.accent.main}`,
+                  }}
+                />
+                <span
+                  style={{
+                    ...typography.caption,
+                    color: colors.text.primary,
+                    fontWeight: typography.fontWeight.bold,
+                    letterSpacing: "0.1em",
+                    fontSize: "11px",
+                  }}
+                >
+                  SCROLL
+                </span>
+              </div>
+              <motion.div animate={!reduceMotion ? { y: [0, 6, 0] } : undefined} transition={!reduceMotion ? { duration: 1.5, repeat: Infinity, ease: "easeInOut" } : undefined}>
+                <motion.svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ color: colors.accent.main }}>
+                  <path d="M7 10L12 15L17 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                </motion.svg>
+              </motion.div>
+            </motion.div>
+
+            {/* Bottom fade for seamless transition */}
+            <div
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: "200px",
+                background: `linear-gradient(to bottom, transparent 0%, rgba(5, 11, 32, 0.3) 50%, rgba(5, 11, 32, 0.6) 100%)`,
+                zIndex: 5,
+                pointerEvents: "none",
+              }}
+            />
+
+          </motion.section>
+
+          {/* Page sections (Programs-style: transparent sections over one background stack) */}
+
+          {/* Pathway cards (reference image language) */}
+          <section style={{ padding: sectionPadding }}>
+          <motion.div initial={{ opacity: 0, y: 16, filter: "blur(6px)" }} whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }} style={{ marginTop: 0 }}>
+            <div
+              style={{
+                borderRadius: borderRadius["2xl"],
+                border: "1px solid rgba(255,255,255,0.10)",
+                ...glass.panel,
+                overflow: "hidden",
+                position: "relative",
+                padding: isMobile ? spacing.lg : spacing["2xl"],
               }}
             >
               <div
@@ -508,212 +902,304 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                 style={{
                   position: "absolute",
                   inset: 0,
-                  background:
-                    "radial-gradient(circle at 20% 20%, rgba(0,224,255,0.08) 0%, transparent 55%), radial-gradient(circle at 80% 10%, rgba(255,169,0,0.08) 0%, transparent 55%), linear-gradient(135deg, rgba(5,11,32,0.62) 0%, rgba(10,22,51,0.48) 45%, rgba(5,11,32,0.68) 100%)",
-                  opacity: 0.95,
-                  pointerEvents: "none",
+                  backgroundImage: `url(${galleryAssets.actionShots[1]?.medium || galleryAssets.actionShots[0]?.medium || ""})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  filter: "saturate(1.08) contrast(1.05)",
+                  opacity: 0.22,
                 }}
               />
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "radial-gradient(circle at 18% 18%, rgba(0,224,255,0.10) 0%, transparent 60%), radial-gradient(circle at 82% 16%, rgba(255,169,0,0.10) 0%, transparent 62%), linear-gradient(135deg, rgba(5,11,32,0.78) 0%, rgba(10,22,51,0.52) 45%, rgba(5,11,32,0.82) 100%)",
+                  opacity: 0.98,
+                }}
+              />
+              <div aria-hidden="true" style={glass.overlayStrong} />
+
               <div style={{ position: "relative", zIndex: 1 }}>
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.lg, flexWrap: "wrap" }}>
-                  <div>
-                    <div style={{ ...typography.h3, color: colors.text.primary, margin: 0, lineHeight: 1.1 }}>Perks from Our Sponsors</div>
-                    <div style={{ ...typography.caption, color: colors.text.muted, marginTop: spacing.xs }}>
-                      Click any logo to visit our partner's website
-                    </div>
+                <div style={{ textAlign: "center", maxWidth: 860, margin: "0 auto" }}>
+                  <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.18em", marginBottom: spacing.xs }}>
+                    FAN CLUB PATHWAY
                   </div>
-                  <div
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 10,
-                      padding: "10px 14px",
-                      borderRadius: 999,
-                      border: "1px solid rgba(255,255,255,0.14)",
-                      background: "rgba(255,255,255,0.04)",
-                      color: colors.text.secondary,
-                    }}
-                  >
-                    <span style={{ ...typography.caption, letterSpacing: "0.14em", opacity: 0.9 }}>OFFICIAL SPONSORS 2025</span>
-                    <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 999, background: colors.accent.main, boxShadow: "0 0 18px rgba(255,169,0,0.35)" }} />
-                    <span style={{ ...typography.caption, letterSpacing: "0.14em", opacity: 0.85 }}>MEMBERS-ONLY REWARDS</span>
+                  <div style={{ ...typography.h3, color: colors.text.primary, margin: 0 }}>A simple flow: join → unlock → enjoy</div>
+                  <div style={{ ...typography.caption, color: colors.text.muted, marginTop: spacing.xs, lineHeight: 1.6 }}>
+                    Clear progression so the page feels like one story, not scattered blocks.
                   </div>
                 </div>
-                <SponsorLogoWall
-                  sponsors={SPONSOR_BENEFITS.map((s) => ({
-                    id: s.id,
-                    name: s.name,
-                    logoSrc: s.logoSrc,
-                    accent: s.accent,
-                    accent2: s.accent2,
-                    glow: s.glow,
-                    tagline: "",
-                    websiteUrl: s.websiteUrl, // Include website URL for clickable logos
-                  }))}
-                  isMobile={isMobile}
-                />
-              </div>
-            </div>
-          </motion.div>
 
-          {/* Tier Preview */}
-          <motion.div
-            initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
-            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            style={{ marginBottom: spacing.lg }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: isMobile ? "stretch" : "center",
-                justifyContent: "space-between",
-                gap: spacing.md,
-                flexDirection: isMobile ? "column" : "row",
-                padding: spacing.md, // Extra padding
-                borderRadius: borderRadius.card,
-                background: "rgba(255,255,255,0.02)",
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <div style={{ ...typography.overline, color: colors.text.muted, letterSpacing: "0.15em", marginBottom: 6 }}>TIER PREVIEW</div>
-                <div style={{ ...typography.body, color: colors.text.secondary, lineHeight: 1.5 }}>
-                  Rewards appear locked above your tier. Preview what each tier unlocks.
-                </div>
-              </div>
-
-              <div style={{ display: "inline-flex", gap: 10, flexWrap: "wrap" }}>
-                {[
-                  { id: "rookie" as const, label: "Rookie Fan" },
-                  { id: "regular" as const, label: "Matchday Regular" },
-                  { id: "inner" as const, label: "Inner Circle" },
-                ].map((t) => {
-                  const active = previewTier === t.id;
-                  return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => setPreviewTier(t.id)}
+                <div style={{ marginTop: spacing.xl, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))", gap: spacing.lg }}>
+                  {[
+                    { n: 1, kicker: "STEP 1", title: "Join & get your badge", desc: "Pick a tier and claim your Fan Club identity inside RealVerse.", accent: "rgba(255,169,0,0.85)" },
+                    { n: 2, kicker: "STEP 2", title: "Show up & level up", desc: "Matchdays, wins, and community activity move you forward.", accent: "rgba(0,224,255,0.80)" },
+                    { n: 3, kicker: "STEP 3", title: "Unlock partner rewards", desc: "Perks from sponsors open up as your tier increases.", accent: "rgba(34,197,94,0.80)" },
+                  ].map((s) => (
+                    <div
+                      key={s.n}
                       style={{
-                        ...typography.caption,
-                        fontSize: typography.fontSize.sm,
-                        fontWeight: 700,
-                        letterSpacing: "0.08em",
-                        padding: "10px 14px",
-                        borderRadius: 999,
-                        border: active ? "1px solid rgba(0,224,255,0.40)" : "1px solid rgba(255,255,255,0.12)",
-                        background: active ? "rgba(0,224,255,0.10)" : "rgba(255,255,255,0.04)",
-                        color: active ? colors.text.primary : colors.text.secondary,
-                        cursor: "pointer",
-                        boxShadow: active ? "0 12px 32px rgba(0,0,0,0.35), 0 0 24px rgba(0,224,255,0.10)" : "none",
-                        transition: "all 0.18s ease",
+                        borderRadius: borderRadius["2xl"],
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        ...glass.card,
+                        overflow: "hidden",
+                        position: "relative",
+                        minHeight: 168,
+                        padding: spacing.lg,
                       }}
                     >
-                      {t.label}
-                    </button>
-                  );
-                })}
+                      <div aria-hidden="true" style={glass.overlaySoft} />
+                      <div
+                        aria-hidden="true"
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: `radial-gradient(circle at 22% 18%, ${s.accent}18 0%, transparent 62%)`,
+                          opacity: 0.9,
+                        }}
+                      />
+                      <div style={{ position: "relative", zIndex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.md }}>
+                          <div style={{ ...typography.overline, color: colors.text.muted, letterSpacing: "0.16em" }}>{s.kicker}</div>
+                          <div
+                            style={{
+                              width: 34,
+                              height: 34,
+                              borderRadius: 999,
+                              border: `1px solid ${s.accent}55`,
+                              background: "rgba(0,0,0,0.22)",
+                              display: "grid",
+                              placeItems: "center",
+                              boxShadow: `0 0 26px ${s.accent.replace("0.80", "0.18").replace("0.85", "0.18")}`,
+                              color: colors.text.primary,
+                              fontWeight: 800,
+                            }}
+                          >
+                            {s.n}
+                          </div>
+                        </div>
+                        <div style={{ ...typography.h4, color: colors.text.primary, margin: 0, lineHeight: 1.1 }}>{s.title}</div>
+                        <div style={{ ...typography.caption, color: colors.text.muted, marginTop: 10, lineHeight: 1.6 }}>{s.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ marginTop: spacing.xl, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, minmax(0, 1fr))", gap: spacing.md }}>
+                  {[
+                    { label: "Official Sponsors", sub: "Member-only partner perks", Icon: TrophyIcon, accent: colors.accent.main },
+                    { label: "Community", sub: "Discussions + polls", Icon: CalendarIcon, accent: colors.primary.main },
+                    { label: "Progression", sub: "Tier unlocks + badges", Icon: ArrowRightIcon, accent: "rgba(34,197,94,0.9)" },
+                    { label: "Programs", sub: "Future pathway access", Icon: DumbbellIcon, accent: colors.accent.main },
+                  ].map(({ label, sub, Icon, accent }) => (
+                    <div
+                      key={label}
+                      style={{
+                        borderRadius: borderRadius.xl,
+                        border: "1px solid rgba(255,255,255,0.10)",
+                        ...glass.inset,
+                        padding: spacing.md,
+                        display: "flex",
+                        gap: 12,
+                        alignItems: "center",
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div aria-hidden="true" style={glass.overlaySoft} />
+                      <div
+                        style={{
+                          position: "relative",
+                          zIndex: 1,
+                          width: 44,
+                          height: 44,
+                          borderRadius: 16,
+                          border: `1px solid ${accent}40`,
+                          background: `${accent}14`,
+                          display: "grid",
+                          placeItems: "center",
+                          boxShadow: `0 0 24px ${accent}20`,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Icon size={20} color={accent} />
+                      </div>
+                      <div style={{ position: "relative", zIndex: 1, minWidth: 0 }}>
+                        <div style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.semibold, lineHeight: 1.2 }}>{label}</div>
+                        <div style={{ ...typography.caption, color: colors.text.muted, marginTop: 6, lineHeight: 1.45 }}>{sub}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "center", marginTop: spacing.lg }}>
+                  <motion.button
+                    type="button"
+                    onClick={onScrollToPartners}
+                    whileHover={hoverLift}
+                    whileTap={tapPress}
+                    aria-label="Scroll to partner perks"
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 999,
+                      border: "1px solid rgba(255,255,255,0.14)",
+                      background: "rgba(0,0,0,0.22)",
+                      display: "grid",
+                      placeItems: "center",
+                      cursor: "pointer",
+                      boxShadow: "0 18px 48px rgba(0,0,0,0.40)",
+                    }}
+                  >
+                    <ArrowDownIcon size={18} color={colors.accent.main} />
+                  </motion.button>
+                </div>
               </div>
             </div>
           </motion.div>
+          </section>
 
-          {/* What Unlocks Inside RealVerse */}
-          <motion.div
-            initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
-            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            style={{ marginBottom: spacing["2xl"] }}
-          >
-            <div style={{ marginBottom: spacing.lg }}>
-              <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em", marginBottom: spacing.xs }}>
-                REALVERSE INTEGRATION
-              </div>
-              <div style={{ ...typography.h3, color: colors.text.primary, margin: 0 }}>What Unlocks Inside RealVerse</div>
-              <div style={{ ...typography.caption, color: colors.text.muted, marginTop: spacing.xs }}>
-                Your Fan Club membership integrates seamlessly with RealVerse — the club's digital ecosystem
-              </div>
-            </div>
+          {/* Partner perks (tier switch + featured partners, then full wall) */}
+          <section style={{ padding: sectionPadding }}>
+          <div ref={partnersRef} style={{ marginTop: 0, scrollMarginTop: 120 }}>
+            <motion.div initial={{ opacity: 0, y: 16, filter: "blur(6px)" }} whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }} style={{ marginBottom: spacing.lg }}>
+              <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: spacing.md, flexWrap: "wrap" }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.18em", marginBottom: spacing.xs }}>
+                    PARTNER PERKS
+                  </div>
+                  <div style={{ ...typography.h3, color: colors.text.primary, margin: 0 }}>Perks from our sponsors</div>
+                  <div style={{ ...typography.caption, color: colors.text.muted, marginTop: spacing.xs, lineHeight: 1.6 }}>
+                    Pick a tier to preview what unlocks. Each sponsor opens up rewards as you level up.
+                  </div>
+                </div>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : "repeat(4, minmax(0, 1fr))",
-                gap: spacing.md,
-              }}
-            >
-              {[
-                { label: "Sponsors", sub: "Exclusive partner perks", Icon: TrophyIcon, accent: colors.accent.main },
-                { label: "Community", sub: "Discussions & polls", Icon: CalendarIcon, accent: colors.primary.main },
-                { label: "Progression", sub: "Tier unlocks & badges", Icon: ArrowRightIcon, accent: colors.success.main },
-                { label: "Programs", sub: "Pathway access", Icon: DumbbellIcon, accent: colors.accent.main },
-              ].map(({ label, sub, Icon, accent }) => (
-                <div
-                  key={label}
+                <div style={{ display: "inline-flex", gap: 10, flexWrap: "wrap" }}>
+                  {[
+                    { id: "rookie" as const, label: "Rookie" },
+                    { id: "regular" as const, label: "Regular" },
+                    { id: "inner" as const, label: "Inner Circle" },
+                  ].map((t) => {
+                    const active = previewTier === t.id;
+                    return (
+                      <motion.button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setPreviewTier(t.id)}
+                        whileHover={hoverLift}
+                        whileTap={tapPress}
+                        style={{
+                          ...heroCTAPillStyles.base,
+                          padding: "10px 14px",
+                          boxShadow: "none",
+                          border: active ? `2px solid ${colors.accent.main}` : "1px solid rgba(255,255,255,0.14)",
+                          background: active ? "rgba(245,179,0,0.08)" : "rgba(255,255,255,0.03)",
+                          color: active ? colors.text.primary : colors.text.secondary,
+                        }}
+                      >
+                        {t.label}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 16, filter: "blur(6px)" }} whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, minmax(0, 1fr))", gap: spacing.lg, alignItems: "stretch" }}>
+                {(showAllPartners ? SPONSOR_BENEFITS : SPONSOR_BENEFITS.slice(0, isMobile ? 3 : 4)).map((s) => (
+                  <SponsorRewardsCardWithLocks key={s.id} sponsor={s} isMobile={isMobile} previewTier={previewTier} />
+                ))}
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "center", marginTop: spacing.lg }}>
+                <motion.button
+                  type="button"
+                  onClick={() => setShowAllPartners((v) => !v)}
+                  whileHover={hoverLift}
+                  whileTap={tapPress}
                   style={{
-                    borderRadius: borderRadius.card,
+                    ...heroCTAPillStyles.base,
+                    ...heroCTAPillStyles.gold,
+                    padding: "12px 14px",
+                  }}
+                  aria-label={showAllPartners ? "Show fewer partners" : "Show all partners"}
+                >
+                  {showAllPartners ? "Show fewer partners" : `Show all partners (${SPONSOR_BENEFITS.length})`}
+                </motion.button>
+              </div>
+
+              <div style={{ marginTop: spacing["2xl"] }}>
+                <div
+                  style={{
+                    borderRadius: borderRadius["2xl"],
                     border: "1px solid rgba(255,255,255,0.10)",
-                    background: "rgba(255,255,255,0.03)",
-                    padding: spacing.lg,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: spacing.sm,
-                    alignItems: "center",
-                    textAlign: "center",
+                    ...glass.panel,
+                    overflow: "hidden",
+                    padding: isMobile ? spacing.md : spacing.lg,
+                    position: "relative",
                   }}
                 >
                   <div
+                    aria-hidden="true"
                     style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: borderRadius.card,
-                      border: `1px solid ${accent}40`,
-                      background: `${accent}14`,
-                      display: "grid",
-                      placeItems: "center",
-                      boxShadow: `0 0 24px ${accent}20`,
-                      marginBottom: spacing.xs,
+                      position: "absolute",
+                      inset: 0,
+                      background:
+                        "radial-gradient(circle at 20% 20%, rgba(0,224,255,0.08) 0%, transparent 55%), radial-gradient(circle at 80% 10%, rgba(255,169,0,0.08) 0%, transparent 55%), linear-gradient(135deg, rgba(5,11,32,0.62) 0%, rgba(10,22,51,0.48) 45%, rgba(5,11,32,0.68) 100%)",
+                      opacity: 0.95,
+                      pointerEvents: "none",
                     }}
-                  >
-                    <Icon size={24} color={accent} />
+                  />
+                  <div aria-hidden="true" style={glass.overlayStrong} />
+                  <div style={{ position: "relative", zIndex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.md, flexWrap: "wrap" }}>
+                      <div>
+                        <div style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.semibold, lineHeight: 1.2 }}>All partners</div>
+                        <div style={{ ...typography.caption, color: colors.text.muted, marginTop: 6 }}>Click a logo to visit their website</div>
+                      </div>
+                      <div
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 10,
+                          padding: "10px 14px",
+                          borderRadius: 999,
+                          border: "1px solid rgba(255,255,255,0.14)",
+                          background: "rgba(255,255,255,0.04)",
+                          color: colors.text.secondary,
+                        }}
+                      >
+                        <span style={{ ...typography.caption, letterSpacing: "0.14em", opacity: 0.9 }}>OFFICIAL SPONSORS</span>
+                        <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 999, background: colors.accent.main, boxShadow: "0 0 18px rgba(255,169,0,0.35)" }} />
+                        <span style={{ ...typography.caption, letterSpacing: "0.14em", opacity: 0.85 }}>PERKS INSIDE</span>
+                      </div>
+                    </div>
+                    <SponsorLogoWall
+                      sponsors={SPONSOR_BENEFITS.map((s) => ({
+                        id: s.id,
+                        name: s.name,
+                        logoSrc: s.logoSrc,
+                        accent: s.accent,
+                        accent2: s.accent2,
+                        glow: s.glow,
+                        tagline: "",
+                        websiteUrl: s.websiteUrl,
+                      }))}
+                      isMobile={isMobile}
+                    />
                   </div>
-                  <div style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.semibold }}>
-                    {label}
-                  </div>
-                  <div style={{ ...typography.caption, color: colors.text.muted, lineHeight: 1.5 }}>{sub}</div>
                 </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Sponsor Reward Cards */}
-          <motion.div
-            initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
-            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            style={{ marginBottom: spacing["3xl"] }}
-          >
-            <div style={{ marginBottom: spacing.lg }}>
-              <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em", marginBottom: spacing.xs }}>
-                SPONSOR BENEFITS
               </div>
-              <div style={{ ...typography.h3, color: colors.text.primary, margin: 0 }}>Partner Rewards & Offers</div>
-              <div style={{ ...typography.caption, color: colors.text.muted, marginTop: spacing.xs }}>
-                Each sponsor offers unique perks that unlock based on your Fan Club tier
-              </div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, minmax(0, 1fr))", gap: spacing.lg, alignItems: "stretch" }}>
-              {SPONSOR_BENEFITS.map((s) => (
-                <SponsorRewardsCardWithLocks key={s.id} sponsor={s} isMobile={isMobile} previewTier={previewTier} />
-              ))}
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
+          </section>
 
           {/* Pricing & Benefits matrix */}
-          <div ref={pricingRef} style={{ marginTop: spacing["3xl"] }}>
+          <section style={{ padding: sectionPadding }}>
+          <div ref={pricingRef} style={{ marginTop: 0, scrollMarginTop: 120 }}>
             <motion.div
               initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
               whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
@@ -735,8 +1221,8 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                     key={t.id}
                     style={{
                       borderRadius: borderRadius["2xl"],
-                      border: t.highlight ? `1px solid rgba(0,224,255,0.28)` : "1px solid rgba(255,255,255,0.10)",
-                      background: "rgba(255,255,255,0.03)",
+                      ...glass.cardStrong,
+                      border: t.highlight ? `1px solid rgba(0,224,255,0.30)` : glass.cardStrong.border,
                       boxShadow: t.highlight ? "0 24px 70px rgba(0,0,0,0.45), 0 0 36px rgba(0,224,255,0.10)" : "0 18px 56px rgba(0,0,0,0.40)",
                       overflow: "hidden",
                       position: "relative",
@@ -752,10 +1238,12 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                         background: t.highlight
                           ? "radial-gradient(circle at 18% 18%, rgba(0,224,255,0.14) 0%, transparent 55%), radial-gradient(circle at 80% 10%, rgba(255,169,0,0.10) 0%, transparent 55%)"
                           : "radial-gradient(circle at 18% 18%, rgba(255,255,255,0.06) 0%, transparent 55%)",
-                        opacity: 0.95,
+                        opacity: 0.75,
                         pointerEvents: "none",
                       }}
                     />
+                    {/* Blue glass wash overlay (reference style) */}
+                    <div aria-hidden="true" style={glass.overlayStrong} />
                     <div style={{ position: "relative", zIndex: 1, padding: spacing.lg, display: "flex", flexDirection: "column", gap: spacing.md }}>
                       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md }}>
                         <div style={{ ...typography.h4, color: colors.text.primary, margin: 0 }}>{t.name}</div>
@@ -774,9 +1262,21 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                       </div>
 
                       <div title="Coming soon — Fan Club unlocks perks" style={{ marginTop: "auto" }}>
-                        <Button variant={t.highlight ? "primary" : "secondary"} size="md" disabled aria-disabled="true" style={{ width: "100%", borderRadius: 999 }}>
-                          {t.ctaLabel}
-                        </Button>
+                        <div
+                          aria-disabled="true"
+                          style={{
+                            ...heroCTAPillStyles.base,
+                            ...(t.highlight ? heroCTAPillStyles.gold : heroCTAPillStyles.blue),
+                            width: "100%",
+                            justifyContent: "space-between",
+                            padding: "12px 14px",
+                            opacity: 0.65,
+                            cursor: "not-allowed",
+                          }}
+                        >
+                          <span>{t.ctaLabel}</span>
+                          <LockIcon size={16} color={colors.text.muted} />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -784,14 +1284,16 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
               </div>
             </motion.div>
           </div>
+          </section>
 
           {/* Fan Club Onboarding Preview */}
+          <section style={{ padding: sectionPadding }}>
           <motion.div
             initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
             whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            style={{ marginTop: spacing["3xl"], marginBottom: spacing["2xl"] }}
+            style={{ marginTop: 0, marginBottom: 0 }}
           >
             <div style={{ marginBottom: spacing.lg }}>
               <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em", marginBottom: spacing.xs }}>
@@ -807,8 +1309,7 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
               style={{
                 borderRadius: borderRadius["2xl"],
                 border: "1px solid rgba(255,255,255,0.10)",
-                background: "rgba(10,16,32,0.34)",
-                backdropFilter: "blur(14px)",
+                ...glass.panel,
                 boxShadow: "0 22px 64px rgba(0,0,0,0.42)",
                 overflow: "hidden",
                 position: "relative",
@@ -825,6 +1326,8 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                   pointerEvents: "none",
                 }}
               />
+              {/* Blue glass wash for readability */}
+              <div aria-hidden="true" style={glass.overlayStrong} />
 
               <div style={{ position: "relative", zIndex: 1, padding: isMobile ? spacing.lg : spacing["2xl"] }}>
                 <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.1fr 0.9fr", gap: spacing.xl, alignItems: "stretch" }}>
@@ -848,15 +1351,20 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                           style={{
                             borderRadius: borderRadius.xl,
                             border: "1px solid rgba(255,255,255,0.10)",
-                            background: "rgba(255,255,255,0.03)",
+                            ...glass.inset,
                             padding: spacing.md,
                             display: "flex",
                             gap: 12,
                             alignItems: "flex-start",
+                            position: "relative",
+                            overflow: "hidden",
                           }}
                         >
+                          <div aria-hidden="true" style={glass.overlaySoft} />
                           <div
                             style={{
+                              position: "relative",
+                              zIndex: 1,
                               width: 40,
                               height: 40,
                               borderRadius: 14,
@@ -870,7 +1378,7 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                           >
                             <Icon size={18} color={accent.replace("0.55", "1").replace("0.60", "1")} />
                           </div>
-                          <div style={{ minWidth: 0 }}>
+                          <div style={{ minWidth: 0, position: "relative", zIndex: 1 }}>
                             <div style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.semibold, lineHeight: 1.2 }}>
                               {label}
                             </div>
@@ -880,13 +1388,37 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                       ))}
                     </div>
 
-                    <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
-                      <Button variant="primary" size="md" disabled aria-disabled="true" style={{ borderRadius: 999 }}>
-                        Join the Fan Club
-                      </Button>
-                      <Button variant="secondary" size="md" onClick={() => pricingRef.current?.scrollIntoView({ behavior: "smooth" })} style={{ borderRadius: 999 }}>
-                        View Pricing
-                      </Button>
+                    <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap", alignItems: "center" }}>
+                      <motion.button
+                        type="button"
+                        onClick={() => pricingRef.current?.scrollIntoView({ behavior: "smooth" })}
+                        whileHover={hoverLift}
+                        whileTap={tapPress}
+                        style={{
+                          ...heroCTAPillStyles.base,
+                          ...heroCTAPillStyles.gold,
+                          padding: "12px 14px",
+                          width: isMobile ? "100%" : "auto",
+                        }}
+                      >
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                          View Pricing <ArrowRightIcon size={16} style={{ color: colors.accent.main }} />
+                        </span>
+                      </motion.button>
+
+                      <div
+                        style={{
+                          ...typography.caption,
+                          color: colors.text.muted,
+                          padding: "10px 12px",
+                          borderRadius: 999,
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          background: "rgba(255,255,255,0.04)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Memberships launching soon
+                      </div>
                     </div>
                   </div>
 
@@ -901,7 +1433,7 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                       style={{
                         borderRadius: borderRadius["2xl"],
                         border: "1px solid rgba(255,255,255,0.10)",
-                        background: "rgba(255,255,255,0.03)",
+                        ...glass.card,
                         padding: spacing.lg,
                         marginBottom: spacing.md,
                         position: "relative",
@@ -915,9 +1447,10 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                           inset: 0,
                           background:
                             "radial-gradient(circle at 18% 18%, rgba(0,224,255,0.12) 0%, transparent 60%), radial-gradient(circle at 82% 18%, rgba(255,169,0,0.10) 0%, transparent 62%)",
-                          opacity: 0.95,
+                          opacity: 0.75,
                         }}
                       />
+                      <div aria-hidden="true" style={glass.overlayStrong} />
                       <div style={{ position: "relative", zIndex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, marginBottom: spacing.md }}>
                           <div style={{ minWidth: 0 }}>
@@ -1006,11 +1539,15 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                       style={{
                         borderRadius: borderRadius["2xl"],
                         border: "1px solid rgba(255,255,255,0.10)",
-                        background: "rgba(255,255,255,0.03)",
+                        ...glass.card,
                         padding: spacing.lg,
                         marginBottom: spacing.md,
+                        position: "relative",
+                        overflow: "hidden",
                       }}
                     >
+                      <div aria-hidden="true" style={glass.overlayStrong} />
+                      <div style={{ position: "relative", zIndex: 1 }}>
                       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.sm, marginBottom: spacing.sm }}>
                         <div style={{ ...typography.h4, color: colors.text.primary, margin: 0 }}>Rewards Snapshot</div>
                         <div style={{ ...typography.caption, color: colors.text.muted }}>Top 3 perks</div>
@@ -1025,7 +1562,7 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                               style={{
                                 borderRadius: borderRadius.xl,
                                 border: "1px solid rgba(255,255,255,0.10)",
-                                background: "rgba(0,0,0,0.16)",
+                                ...glass.inset,
                                 padding: "12px 12px",
                                 display: "flex",
                                 alignItems: "center",
@@ -1034,6 +1571,7 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                                 overflow: "hidden",
                               }}
                             >
+                              <div aria-hidden="true" style={glass.overlaySoft} />
                               <div
                                 aria-hidden="true"
                                 style={{
@@ -1093,6 +1631,7 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                           );
                         })}
                       </div>
+                      </div>
                     </div>
 
                     {/* Community preview */}
@@ -1100,10 +1639,14 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                       style={{
                         borderRadius: borderRadius["2xl"],
                         border: "1px solid rgba(255,255,255,0.10)",
-                        background: "rgba(255,255,255,0.03)",
+                        ...glass.card,
                         padding: spacing.lg,
+                        position: "relative",
+                        overflow: "hidden",
                       }}
                     >
+                      <div aria-hidden="true" style={glass.overlayStrong} />
+                      <div style={{ position: "relative", zIndex: 1 }}>
                       <div style={{ ...typography.h4, color: colors.text.primary, margin: 0, marginBottom: spacing.sm }}>Community Preview</div>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: spacing.sm }}>
                         {["Fan discussions", "Matchday polls", "Club updates"].map((t) => (
@@ -1116,11 +1659,16 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                               padding: "10px 12px",
                               borderRadius: borderRadius.lg,
                               border: "1px solid rgba(255,255,255,0.10)",
-                              background: "rgba(0,0,0,0.14)",
+                              ...glass.inset,
+                              position: "relative",
+                              overflow: "hidden",
                             }}
                           >
+                            <div aria-hidden="true" style={glass.overlaySoft} />
                             <div
                               style={{
+                                position: "relative",
+                                zIndex: 1,
                                 width: 10,
                                 height: 10,
                                 borderRadius: "50%",
@@ -1128,7 +1676,7 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                                 boxShadow: "0 0 18px rgba(0,224,255,0.18)",
                               }}
                             />
-                            <div style={{ ...typography.body, color: colors.text.secondary }}>{t}</div>
+                            <div style={{ ...typography.body, color: colors.text.secondary, position: "relative", zIndex: 1 }}>{t}</div>
                           </div>
                         ))}
                       </div>
@@ -1137,9 +1685,35 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
                         <div style={{ ...typography.caption, color: colors.text.muted, lineHeight: 1.6, marginBottom: spacing.sm }}>
                           Preview only — join the Fan Club to activate rewards and identity.
                         </div>
-                        <Button variant="primary" size="md" disabled aria-disabled="true" style={{ width: "100%", borderRadius: 999 }}>
-                          Join the Fan Club
-                        </Button>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: spacing.sm, flexWrap: "wrap", alignItems: "center" }}>
+                          <div
+                            style={{
+                              ...typography.caption,
+                              color: colors.text.secondary,
+                              padding: "10px 12px",
+                              borderRadius: 999,
+                              border: "1px solid rgba(255,255,255,0.12)",
+                              background: "rgba(0,0,0,0.18)",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            COMING SOON • Fan Club activation
+                          </div>
+                          <motion.button
+                            type="button"
+                            onClick={onScrollToPartners}
+                            whileHover={hoverLift}
+                            whileTap={tapPress}
+                            style={{
+                              ...heroCTAPillStyles.base,
+                              ...heroCTAPillStyles.gold,
+                              padding: "10px 12px",
+                            }}
+                          >
+                            Explore partner perks <ArrowRightIcon size={14} style={{ color: colors.accent.main }} />
+                          </motion.button>
+                        </div>
+                      </div>
                       </div>
                     </div>
                   </div>
@@ -1147,8 +1721,119 @@ const FanClubBenefitsPreviewPage: React.FC = () => {
               </div>
             </div>
           </motion.div>
+          </section>
+
+          {/* Final CTA (single, consistent end-cap) */}
+          <section style={{ padding: sectionPadding }}>
+          <motion.div
+            initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
+            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            style={{ marginTop: 0, paddingBottom: 0 }}
+          >
+            <div
+              style={{
+                borderRadius: borderRadius["2xl"],
+                border: "1px solid rgba(255,255,255,0.10)",
+                ...glass.panel,
+                overflow: "hidden",
+                position: "relative",
+                padding: isMobile ? spacing.lg : spacing["2xl"],
+              }}
+            >
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "radial-gradient(circle at 16% 22%, rgba(255,169,0,0.12) 0%, transparent 58%), radial-gradient(circle at 88% 18%, rgba(0,224,255,0.10) 0%, transparent 62%), linear-gradient(135deg, rgba(5,11,32,0.70) 0%, rgba(10,22,51,0.44) 42%, rgba(5,11,32,0.72) 100%)",
+                  opacity: 0.95,
+                  pointerEvents: "none",
+                }}
+              />
+              <div aria-hidden="true" style={glass.overlayStrong} />
+              <div style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.3fr 0.7fr", gap: spacing.xl, alignItems: "center" }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.18em", marginBottom: spacing.xs }}>
+                    READY TO BACK THE CLUB?
+                  </div>
+                  <div style={{ ...typography.h3, color: colors.text.primary, margin: 0 }}>One membership. All partner perks.</div>
+                  <div style={{ ...typography.body, color: colors.text.secondary, lineHeight: 1.75, marginTop: spacing.sm }}>
+                    When Fan Club memberships go live, you’ll unlock rewards, identity, and community — with a clear tier progression.
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: spacing.md }}>
+                    {["Tier-based unlocks", "Matchday specials", "Partner discounts", "RealVerse badge"].map((t) => (
+                      <div
+                        key={t}
+                        style={{
+                          padding: "8px 10px",
+                          borderRadius: 999,
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          background: "rgba(255,255,255,0.04)",
+                          color: colors.text.secondary,
+                          ...typography.caption,
+                        }}
+                      >
+                        {t}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm, alignItems: "stretch" }}>
+                  <div title="Coming soon — Fan Club unlocks perks">
+                    <div
+                      aria-disabled="true"
+                      style={{
+                        ...heroCTAStyles.yellow,
+                        width: "100%",
+                        minHeight: 56,
+                        padding: "12px 18px",
+                        opacity: 0.65,
+                        cursor: "not-allowed",
+                      }}
+                    >
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                        <span style={heroCTAStyles.yellow.textStyle}>Join the Fan Club</span>
+                        <span style={heroCTAStyles.yellow.subtitleStyle}>Memberships (coming soon)</span>
+                      </div>
+                      <LockIcon size={18} color={colors.text.onAccent} style={{ flexShrink: 0 }} />
+                    </div>
+                  </div>
+
+                  <motion.button
+                    type="button"
+                    onClick={onExploreBenefits}
+                    whileHover={hoverLift}
+                    whileTap={tapPress}
+                    style={{
+                      ...heroCTAStyles.darkWithBorder,
+                      width: "100%",
+                      minHeight: 56,
+                      padding: "12px 18px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: spacing.md,
+                      cursor: "pointer",
+                    }}
+                    aria-label="Compare pricing and benefits"
+                  >
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                      <span style={heroCTAStyles.darkWithBorder.textStyle}>Compare Tiers</span>
+                      <span style={heroCTAStyles.darkWithBorder.subtitleStyle}>Pricing + benefits</span>
+                    </div>
+                    <ArrowRightIcon size={20} color={colors.accent.main} style={{ flexShrink: 0 }} />
+                  </motion.button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+          </section>
         </div>
-      </motion.main>
+      </main>
     </div>
   );
 };

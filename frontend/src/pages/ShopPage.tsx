@@ -1,63 +1,43 @@
-import React, { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
-import { motion, useInView } from "framer-motion";
+import React from "react";
+import { motion } from "framer-motion";
 import PublicHeader from "../components/PublicHeader";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
-import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
-import { api } from "../api/client";
-import { shopAssets, heroAssets, clubAssets } from "../config/assets";
+import { heroCTAStyles, heroCTAPillStyles } from "../theme/hero-design-patterns";
+import { shopAssets } from "../config/assets";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { useParallaxMotion } from "../hooks/useParallaxMotion";
+import { useShopProducts } from "../hooks/useShopProducts";
+import type { ProductCategory } from "../data/products";
+import { ProductCard } from "../components/shop/ProductCard";
 
-interface Product {
-  id: number;
-  name: string;
-  slug: string;
-  description?: string;
-  images: string[];
-  price: number;
-  sizes: string[];
-  variants?: any;
-  stock?: number;
-  isActive: boolean;
-}
+const FILTER_OPTIONS: { key: "ALL" | ProductCategory; label: string }[] = [
+  { key: "ALL", label: "All" },
+  { key: "MATCHDAY_KITS", label: "Matchday" },
+  { key: "TRAINING_WEAR", label: "Training" },
+  { key: "LIFESTYLE", label: "Lifestyle" },
+  { key: "ACCESSORIES", label: "Accessories" },
+  { key: "FAN_EXCLUSIVES", label: "Fan Club" },
+  { key: "LIMITED_DROPS", label: "Limited" },
+] as const;
 
 const ShopPage: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  
+  const { products } = useShopProducts();
+
   const {
     sectionVariants,
     headingVariants,
-    cardVariants,
-    imageHover,
-    cardHover,
     viewportOnce,
-    getStaggeredCard,
   } = useHomepageAnimation();
-  
-  // Parallax for hero background
   const heroParallax = useParallaxMotion({ speed: 0.1 });
+  const [activeFilter, setActiveFilter] = React.useState<"ALL" | ProductCategory>("ALL");
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  const loadProducts = async () => {
-    try {
-      const data = await api.getProducts();
-      setProducts(data);
-    } catch (error: any) {
-      console.error("Failed to load products:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatPrice = (paise: number) => {
-    return `₹${(paise / 100).toFixed(2)}`;
-  };
+  const filtered = React.useMemo(
+    () =>
+      activeFilter === "ALL"
+        ? products
+        : products.filter((p) => p.category === activeFilter),
+    [products, activeFilter]
+  );
 
   return (
     <div
@@ -68,8 +48,8 @@ const ShopPage: React.FC = () => {
       }}
     >
       <PublicHeader />
-      
-      {/* Hero Banner - STUNNING THEME */}
+
+      {/* HERO HEADER */}
       <motion.section
         ref={heroParallax.ref}
         variants={sectionVariants}
@@ -78,7 +58,7 @@ const ShopPage: React.FC = () => {
         viewport={viewportOnce}
         style={{
           position: "relative",
-          height: "500px",
+          minHeight: "80vh",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -86,7 +66,6 @@ const ShopPage: React.FC = () => {
           marginTop: "80px",
         }}
       >
-        {/* Background image with parallax */}
         <motion.div
           style={{
             position: "absolute",
@@ -94,7 +73,7 @@ const ShopPage: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundImage: `url(${shopAssets.jerseys?.[0] || shopAssets.trainingTees?.[0] || ''})`,
+            backgroundImage: `url(${shopAssets.jerseys?.[0] || shopAssets.trainingTees?.[0] || ""})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             opacity: 0.6,
@@ -103,8 +82,7 @@ const ShopPage: React.FC = () => {
             scale: heroParallax.scale || 1,
           }}
         />
-        
-        {/* Animated Radial Gradient */}
+
         <motion.div
           style={{
             position: "absolute",
@@ -127,8 +105,7 @@ const ShopPage: React.FC = () => {
             ease: "easeInOut",
           }}
         />
-        
-        {/* Additional decorative images with animations */}
+
         <motion.div
           style={{
             position: "absolute",
@@ -136,7 +113,7 @@ const ShopPage: React.FC = () => {
             top: "20%",
             width: "300px",
             height: "300px",
-            backgroundImage: `url(${shopAssets.trainingTees?.[0] || shopAssets.jerseys?.[0] || ''})`,
+            backgroundImage: `url(${shopAssets.trainingTees?.[0] || shopAssets.jerseys?.[0] || ""})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             opacity: 0.4,
@@ -161,7 +138,7 @@ const ShopPage: React.FC = () => {
             bottom: "20%",
             width: "300px",
             height: "300px",
-            backgroundImage: `url(${shopAssets.jerseys[0] || shopAssets.trainingTees[0]})`,
+            backgroundImage: `url(${shopAssets.jerseys?.[0] || shopAssets.trainingTees?.[0] || ""})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             opacity: 0.4,
@@ -179,8 +156,6 @@ const ShopPage: React.FC = () => {
             ease: "easeInOut",
           }}
         />
-        
-        {/* Overlay */}
         <div
           style={{
             position: "absolute",
@@ -191,7 +166,6 @@ const ShopPage: React.FC = () => {
             background: `linear-gradient(135deg, rgba(5, 11, 32, 0.85) 0%, rgba(5, 11, 32, 0.6) 100%)`,
           }}
         />
-        {/* Content */}
         <motion.div 
           style={{ position: "relative", zIndex: 1, textAlign: "center", padding: spacing.xl }}
           variants={headingVariants}
@@ -207,7 +181,7 @@ const ShopPage: React.FC = () => {
             }}
             variants={headingVariants}
           >
-            FC Real Bengaluru Shop
+            Official FC Real Bengaluru Store
           </motion.h1>
           <p
             style={{
@@ -217,144 +191,137 @@ const ShopPage: React.FC = () => {
               maxWidth: "700px",
             }}
           >
-            Official merchandise and gear from FC Real Bengaluru
+            Matchday merch, lifestyle wear, exclusive drops — gear up like the Blue Army.
           </p>
+
+          <div
+            style={{
+              marginTop: spacing["2xl"],
+              display: "flex",
+              gap: spacing.lg,
+              justifyContent: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <motion.button
+              type="button"
+              onClick={() => setActiveFilter("MATCHDAY_KITS")}
+              whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                ...heroCTAStyles.blue,
+                width: "auto",
+                minWidth: 260,
+                minHeight: 56,
+                padding: "12px 18px",
+              }}
+              aria-label="Shop Matchday Kits"
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                <span style={heroCTAStyles.blue.textStyle}>Shop Matchday Kits</span>
+                <span style={heroCTAStyles.blue.subtitleStyle}>Jerseys, shorts, matchday essentials</span>
+              </div>
+              <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+            </motion.button>
+
+            <motion.button
+              type="button"
+              onClick={() => setActiveFilter("LIFESTYLE")}
+              whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                ...heroCTAStyles.darkWithBorder,
+                width: "auto",
+                minWidth: 260,
+                minHeight: 56,
+                padding: "12px 18px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: spacing.md,
+                cursor: "pointer",
+              }}
+              aria-label="Shop Lifestyle Wear"
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                <span style={heroCTAStyles.darkWithBorder.textStyle}>Shop Lifestyle Wear</span>
+                <span style={heroCTAStyles.darkWithBorder.subtitleStyle}>Everyday fits, club-first identity</span>
+              </div>
+              <span style={{ color: colors.accent.main, fontWeight: 800 }}>→</span>
+            </motion.button>
+          </div>
         </motion.div>
       </motion.section>
-      
+
+      {/* SIMPLE FILTER STRIP */}
       <div
         style={{
           maxWidth: "1400px",
           margin: "0 auto",
-          padding: `${spacing["2xl"]} ${spacing.xl}`,
+          padding: `${spacing.lg} ${spacing.xl} 0`,
         }}
       >
-
-        {loading ? (
-          <div style={{ textAlign: "center", color: colors.text.muted, padding: spacing["2xl"] }}>
-            <div style={{ fontSize: typography.fontSize.lg }}>Loading products...</div>
-          </div>
-        ) : products.length === 0 ? (
-          <Card variant="elevated" padding="xl">
-            <div style={{ textAlign: "center", color: colors.text.muted, padding: spacing["2xl"] }}>
-              <div style={{ fontSize: typography.fontSize.xl, marginBottom: spacing.md }}>
-                No products available at the moment
-              </div>
-              <p style={{ fontSize: typography.fontSize.md, color: colors.text.secondary }}>
-                Check back soon for official FC Real Bengaluru merchandise!
-              </p>
-            </div>
-          </Card>
-        ) : (
-          <motion.div
-            variants={sectionVariants}
-            initial="offscreen"
-            whileInView="onscreen"
-            viewport={viewportOnce}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-              gap: spacing.xl,
-            }}
-          >
-            {products.filter(p => p.isActive).map((product, idx) => (
-              <motion.div
-                key={product.id}
-                {...getStaggeredCard(idx)}
-                whileHover={cardHover}
-                style={{ height: "100%" }}
+        <motion.div
+          variants={sectionVariants}
+          initial="offscreen"
+          whileInView="onscreen"
+          viewport={viewportOnce}
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: spacing.sm,
+            justifyContent: "center",
+          }}
+        >
+          {FILTER_OPTIONS.map((filter) => {
+            const active = activeFilter === filter.key;
+            return (
+              <motion.button
+                key={filter.key}
+                type="button"
+                onClick={() => setActiveFilter(filter.key)}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  ...heroCTAPillStyles.base,
+                  padding: "8px 14px",
+                  boxShadow: "none",
+                  border: active ? `2px solid ${colors.accent.main}` : "1px solid rgba(255,255,255,0.14)",
+                  background: active ? "rgba(245,179,0,0.08)" : "rgba(255,255,255,0.03)",
+                  color: active ? colors.text.primary : colors.text.secondary,
+                  textTransform: "uppercase",
+                }}
               >
-                <Card variant="elevated" padding="none" style={{ height: "100%" }}>
-                  {product.images && product.images.length > 0 ? (
-                    <motion.div
-                      style={{
-                        width: "100%",
-                        height: "300px",
-                        overflow: "hidden",
-                        borderRadius: `${borderRadius.xl} ${borderRadius.xl} 0 0`,
-                        background: colors.surface.card,
-                      }}
-                      whileHover={imageHover}
-                    >
-                      <motion.img
-                        src={product.images[0]}
-                        alt={product.name}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          display: "block",
-                        }}
-                        onError={(e) => {
-                          // Fallback to placeholder if image fails to load
-                          (e.target as HTMLImageElement).src = shopAssets.jerseys?.[0] || shopAssets.trainingTees?.[0] || '';
-                        }}
-                      />
-                    </motion.div>
-                  ) : (
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "300px",
-                        backgroundImage: `url(${shopAssets.jerseys?.[0] || shopAssets.trainingTees?.[0] || ''})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                        borderRadius: `${borderRadius.xl} ${borderRadius.xl} 0 0`,
-                        opacity: 0.5,
-                      }}
-                    />
-                  )}
-                  <div style={{ padding: spacing.lg }}>
-                    <h3
-                      style={{
-                        ...typography.h4,
-                        color: colors.text.primary,
-                        marginBottom: spacing.sm,
-                      }}
-                    >
-                      {product.name}
-                    </h3>
-                    {product.description && (
-                      <p
-                        style={{
-                          ...typography.body,
-                          color: colors.text.muted,
-                          fontSize: typography.fontSize.sm,
-                          marginBottom: spacing.md,
-                        }}
-                      >
-                        {product.description.substring(0, 100)}
-                        {product.description.length > 100 ? "..." : ""}
-                      </p>
-                    )}
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginTop: spacing.md,
-                      }}
-                    >
-                      <div
-                        style={{
-                          ...typography.h3,
-                          color: colors.accent.main,
-                        }}
-                      >
-                        {formatPrice(product.price)}
-                      </div>
-                      <Link to={`/shop/${product.slug}`} style={{ textDecoration: "none" }}>
-                        <Button variant="primary" size="sm">
-                          View Details
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
+                {filter.label}
+              </motion.button>
+            );
+          })}
+        </motion.div>
+      </div>
+
+      <div
+        style={{
+          maxWidth: "1400px",
+          margin: "0 auto",
+          padding: `${spacing["2xl"]} ${spacing.xl} ${spacing["3xl"]}`,
+        }}
+      >
+        <motion.div
+          variants={sectionVariants}
+          initial="offscreen"
+          whileInView="onscreen"
+          viewport={viewportOnce}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: spacing.xl,
+            marginTop: spacing["2xl"],
+          }}
+        >
+          {filtered.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </motion.div>
       </div>
     </div>
   );

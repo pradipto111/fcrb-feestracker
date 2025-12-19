@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { animate, motion, useInView, useMotionValue, useReducedMotion } from "framer-motion";
 import { colors, typography } from "../../theme/design-tokens";
+import { heroCTAPillStyles } from "../../theme/hero-design-patterns";
 import type { SupportCelebrateBelongProduct } from "../home/SupportCelebrateBelongSection";
 
 const GAP = 16;
@@ -490,35 +491,26 @@ const ProductCTACard: React.FC<{ product: SupportCelebrateBelongProduct; reduceM
           </div>
 
           {/* Real CTA button (same action as card click) */}
-          <button
+          <motion.button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               goToProduct();
             }}
             aria-label={`View product: ${product.name}`}
+            whileHover={!reduceMotion ? { y: -2 } : undefined}
+            whileTap={!reduceMotion ? { scale: 0.98 } : undefined}
             style={{
-              padding: "8px 10px",
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.14)",
-              background: "rgba(255,255,255,0.05)",
-              color: colors.text.primary,
-              ...typography.caption,
-              fontSize: typography.fontSize.sm,
+              ...heroCTAPillStyles.base,
+              ...heroCTAPillStyles.gold,
+              padding: "10px 12px",
+              boxShadow: "none",
               whiteSpace: "nowrap",
-              cursor: "pointer",
-              boxShadow: reduceMotion ? "none" : "0 0 22px rgba(0,224,255,0.08)",
               outline: "none",
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.boxShadow = "0 0 0 2px rgba(0,224,255,0.22), 0 0 26px rgba(0,224,255,0.10)";
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.boxShadow = reduceMotion ? "none" : "0 0 22px rgba(0,224,255,0.08)";
             }}
           >
             View Product
-          </button>
+          </motion.button>
         </div>
       </div>
     </div>

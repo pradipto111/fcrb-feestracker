@@ -14,6 +14,7 @@ import { SnapshotTimeline } from '../../components/player-profile/SnapshotTimeli
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Section } from '../../components/ui/Section';
+import { ArrowRightIcon } from "../../components/icons/IconSet";
 
 type Tab = 'overview' | 'attributes' | 'development' | 'notes';
 
@@ -55,7 +56,7 @@ interface MetricSnapshot {
   };
 }
 
-const StudentPlayerProfilePage: React.FC = () => {
+export const StudentPlayerProfileView: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const studentId = user?.id || 0;
@@ -187,9 +188,9 @@ const StudentPlayerProfilePage: React.FC = () => {
       animate="onscreen"
       viewport={viewportOnce}
       style={{
-        background: colors.surface.bg,
-        minHeight: '100%',
-        padding: spacing.xl,
+        background: embedded ? "transparent" : colors.surface.bg,
+        minHeight: embedded ? "auto" : "100%",
+        padding: embedded ? 0 : spacing.xl,
       }}
     >
       {/* Header */}
@@ -216,7 +217,7 @@ const StudentPlayerProfilePage: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: spacing.md }}>
             <div style={{ flex: 1, minWidth: '200px' }}>
               <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
-                📊 Load Dashboard
+                Load Dashboard
               </h3>
               <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm }}>
                 View your training load trends and readiness correlation
@@ -227,7 +228,7 @@ const StudentPlayerProfilePage: React.FC = () => {
               size="md"
               onClick={() => navigate(`/realverse/player/${user?.id}/load-dashboard`)}
             >
-              View Load Dashboard →
+              View Load Dashboard <ArrowRightIcon size={14} style={{ marginLeft: spacing.xs }} />
             </Button>
           </div>
         </Card>
@@ -444,6 +445,8 @@ const StudentPlayerProfilePage: React.FC = () => {
     </motion.main>
   );
 };
+
+const StudentPlayerProfilePage: React.FC = () => <StudentPlayerProfileView embedded={false} />;
 
 export default StudentPlayerProfilePage;
 

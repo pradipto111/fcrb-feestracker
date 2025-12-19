@@ -56,6 +56,7 @@ export interface ReadinessIndex {
     topRisks: string[];
     recommendedFocus: string[];
     ruleTriggers: string[];
+    calibrationAdjustment?: number;
   };
 }
 

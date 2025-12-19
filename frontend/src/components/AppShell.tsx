@@ -101,7 +101,7 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
       display: 'flex', 
       minHeight: '100vh', 
       width: '100%',
-      background: colors.space.deep,
+      background: colors.club.deep,
       color: colors.text.inverted
     }}>
       {/* Mobile Header */}
@@ -112,14 +112,14 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
           left: 0,
           right: 0,
           height: 64,
-          background: `linear-gradient(135deg, ${colors.space.dark} 0%, ${colors.space.deep} 100%)`,
+          background: `linear-gradient(135deg, ${colors.club.dark} 0%, ${colors.club.deep} 100%)`,
           color: colors.text.inverted,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: `0 ${spacing.lg}`,
           zIndex: 1001,
-          boxShadow: shadows.glassDark,
+          boxShadow: shadows.lg,
           backdropFilter: 'blur(10px)',
           borderBottom: `1px solid rgba(255, 255, 255, 0.1)`,
         }}>
@@ -196,7 +196,7 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
         bottom: 0,
         width: 280,
         padding: spacing.lg,
-        background: `linear-gradient(180deg, ${colors.space.dark} 0%, ${colors.space.deep} 100%)`,
+        background: `linear-gradient(180deg, ${colors.club.dark} 0%, ${colors.club.deep} 100%)`,
         color: colors.text.inverted,
         display: 'flex',
         flexDirection: 'column',
@@ -209,7 +209,7 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
         scrollBehavior: 'smooth',
         scrollbarGutter: 'stable',
         zIndex: 1000,
-        boxShadow: shadows.glassDark,
+        boxShadow: shadows.xl,
         backdropFilter: 'blur(20px)',
         borderRight: '1px solid rgba(255, 255, 255, 0.1)',
         transition: 'transform 0.3s ease',
@@ -481,7 +481,7 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <main style={{
           flex: 1,
           padding: isMobile ? spacing.lg : spacing.xl,
-          background: colors.space.deep,
+          background: colors.club.deep,
           position: 'relative',
           minHeight: 'calc(100vh - 64px)',
           display: 'flex',
@@ -494,7 +494,9 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: colors.space.nebula,
+            background: `radial-gradient(circle at 0% 0%, rgba(4, 61, 208, 0.25) 0%, transparent 55%),
+                         radial-gradient(circle at 100% 100%, rgba(245, 179, 0, 0.2) 0%, transparent 55%),
+                         ${colors.club.background}`,
             zIndex: 0,
             pointerEvents: 'none',
           }} />
@@ -518,4 +520,3 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
 };
 
 export default AppShell;
-

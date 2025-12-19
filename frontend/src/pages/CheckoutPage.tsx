@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import PublicHeader from "../components/PublicHeader";
-import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
+import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { heroCTAStyles } from "../theme/hero-design-patterns";
 import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { useCart } from "../context/CartContext";
 import { api } from "../api/client";
@@ -194,7 +195,23 @@ const CheckoutPage: React.FC = () => {
           <Card variant="elevated" padding="xl">
             <h2 style={{ ...typography.h2, marginBottom: spacing.md }}>Your cart is empty</h2>
             <Link to="/shop" style={{ textDecoration: "none" }}>
-              <Button variant="primary">Continue Shopping</Button>
+              <motion.div
+                whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  ...heroCTAStyles.blue,
+                  width: "auto",
+                  minWidth: 260,
+                  minHeight: 56,
+                  padding: "12px 18px",
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                  <span style={heroCTAStyles.blue.textStyle}>Continue Shopping</span>
+                  <span style={heroCTAStyles.blue.subtitleStyle}>Back to the store grid</span>
+                </div>
+                <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+              </motion.div>
             </Link>
           </Card>
         </div>
@@ -580,15 +597,27 @@ const CheckoutPage: React.FC = () => {
                 <span>{formatPrice(total)}</span>
               </div>
             </div>
-            <Button
-              variant="primary"
-              size="lg"
-              fullWidth
+            <motion.button
+              type="button"
               onClick={handlePayment}
               disabled={loading}
+              whileHover={!loading ? { y: -2, boxShadow: shadows.buttonHover } : undefined}
+              whileTap={!loading ? { scale: 0.98 } : undefined}
+              style={{
+                ...heroCTAStyles.yellow,
+                width: "100%",
+                minHeight: 64,
+                opacity: loading ? 0.65 : 1,
+                cursor: loading ? "not-allowed" : "pointer",
+              }}
+              aria-label="Pay Now"
             >
-              {loading ? "Processing..." : "Pay Now"}
-            </Button>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                <span style={heroCTAStyles.yellow.textStyle}>{loading ? "Processing..." : "Pay Now"}</span>
+                <span style={heroCTAStyles.yellow.subtitleStyle}>Secure payment via Razorpay</span>
+              </div>
+              <span style={{ color: colors.text.onAccent, fontWeight: 800 }}>→</span>
+            </motion.button>
           </Card>
         </div>
       </div>

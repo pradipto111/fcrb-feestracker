@@ -57,9 +57,9 @@ export const Button: React.FC<ButtonProps> = ({
 
   // Football Club Button System - Solid, Bold, Sports-Badge Feel
   const variantStyles: Record<string, React.CSSProperties> = {
-    // 1. PRIMARY ACTION - Football gradient (Royal Blue → Gold), sports badge feel
+    // 1. PRIMARY ACTION - Match hero "blue CTA"
     primary: {
-      background: `linear-gradient(135deg, ${colors.primary.main} 0%, ${colors.accent.main} 100%)`, // Football-first gradient
+      background: colors.primary.main, // hero blue
       color: colors.text.onPrimary,
       boxShadow: shadows.button, // Sports broadcast style
       border: 'none',
@@ -69,10 +69,10 @@ export const Button: React.FC<ButtonProps> = ({
       // Ensure text is centered, never touching borders (minimum 16px padding)
       padding: size === 'sm' ? `${spacing['10']} ${spacing['20']}` : size === 'md' ? `${spacing.md} ${spacing['28']}` : `${spacing['18']} ${spacing['36']}`,
     },
-    // 2. SECONDARY ACTION - Outline with subtle drop-shadow, football-first
+    // 2. SECONDARY ACTION - Match hero "dark with gold border"
     secondary: {
-      background: 'transparent', // Transparent background
-      color: colors.accent.main, // FC Real Bengaluru gold text
+      background: colors.surface.card,
+      color: colors.text.primary,
       border: `2px solid ${colors.accent.main}`, // Gold border
       boxShadow: shadows.button, // Sports broadcast style
       fontFamily: typography.fontFamily.heading, // Bold football typography
@@ -108,7 +108,7 @@ export const Button: React.FC<ButtonProps> = ({
     primary: {
       transform: 'translateY(-2px)',
       boxShadow: shadows.buttonHover, // Sports broadcast hover shadow
-      background: `linear-gradient(135deg, ${colors.primary.light} 0%, ${colors.accent.light} 100%)`, // Lighter gradient on hover
+      background: colors.primary.light, // subtle lift while keeping hero tone
     },
     secondary: {
       transform: 'translateY(-2px)',

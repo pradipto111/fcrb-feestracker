@@ -1,10 +1,10 @@
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
+import { heroCTAStyles } from "../../theme/hero-design-patterns";
 import type { SponsorOffer, SponsorTheme } from "../../data/sponsors";
 import { OfferCarousel } from "../ui/OfferCarousel";
 import { OfferTile } from "../ui/OfferTile";
-import { Button } from "../ui/Button";
 
 const LockMark = ({ color = "rgba(255,255,255,0.92)" }: { color?: string }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style={{ display: "block" }}>
@@ -157,21 +157,24 @@ export const SponsorPerkCard: React.FC<{
           </div>
 
           <div title={tooltip} style={{ flexShrink: 0 }}>
-            <Button
-              variant="primary"
-              size="md"
-              disabled
+            <div
               aria-disabled="true"
               style={{
-                borderRadius: 999,
-                padding: isMobile ? "12px 18px" : "12px 22px",
-                background: `linear-gradient(135deg, ${sponsor.accent2} 0%, ${sponsor.accent} 100%)`,
-                boxShadow: `0 8px 26px ${sponsor.glow}`,
+                ...heroCTAStyles.yellow,
                 width: isMobile ? "100%" : "auto",
+                minWidth: isMobile ? "100%" : 320,
+                minHeight: 56,
+                padding: "12px 18px",
+                opacity: 0.55,
+                cursor: "not-allowed",
               }}
             >
-              Unlock Your First Perk (Join Fan Club)
-            </Button>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                <span style={heroCTAStyles.yellow.textStyle}>Unlock Your First Perk</span>
+                <span style={heroCTAStyles.yellow.subtitleStyle}>Join Fan Club (coming soon)</span>
+              </div>
+              <span style={{ color: colors.text.onAccent, fontWeight: 800 }}>→</span>
+            </div>
           </div>
         </motion.div>
       </div>

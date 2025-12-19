@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { api } from "../../api/client";
-import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
+import { colors, typography, spacing, borderRadius, shadows } from "../../theme/design-tokens";
+import { heroCTAPillStyles } from "../../theme/hero-design-patterns";
 import { Button } from "../ui/Button";
 import { ArrowRightIcon } from "../icons/IconSet";
 import type { ClubEventDTO, ClubEventType } from "../../types/calendar";
@@ -642,16 +643,18 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                           <div style={{ marginTop: "auto" }}>
                             <Link to="/fixtures" style={{ textDecoration: "none" }}>
                               <motion.div
-                                whileHover={!reduce ? { scale: 1.02, x: 2 } : undefined}
+                                whileHover={!reduce ? { y: -2 } : undefined}
                                 whileTap={!reduce ? { scale: 0.98 } : undefined}
+                                style={{
+                                  ...heroCTAPillStyles.base,
+                                  ...heroCTAPillStyles.gold,
+                                  width: isMobile ? "100%" : "auto",
+                                  justifyContent: "center",
+                                }}
                               >
-                                <Button variant="secondary" size="md" fullWidth={isMobile} style={{ 
-                                  background: "linear-gradient(135deg, rgba(0,224,255,0.12) 0%, rgba(255,169,0,0.08) 100%)",
-                                  border: "1px solid rgba(0,224,255,0.25)",
-                                  boxShadow: "0 4px 16px rgba(0,224,255,0.15)",
-                                }}>
-                                  View Fixtures <ArrowRightIcon size={16} style={{ marginLeft: 8 }} />
-                                </Button>
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                                  View Fixtures <ArrowRightIcon size={16} style={{ color: colors.accent.main }} />
+                                </span>
                               </motion.div>
                             </Link>
                           </div>
@@ -725,19 +728,14 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                       setSelectedDateKey(key);
                     }}
                     style={{
-                      borderRadius: borderRadius.full,
-                      border: "1px solid rgba(255,255,255,0.16)",
-                      background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)",
-                      color: colors.text.primary,
+                      ...heroCTAPillStyles.base,
+                      ...heroCTAPillStyles.gold,
                       padding: "10px 16px",
-                      cursor: "pointer",
-                      ...typography.caption,
-                      fontWeight: typography.fontWeight.semibold,
-                      whiteSpace: "nowrap",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
                     }}
                   >
-                    View details →
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                      View details <ArrowRightIcon size={16} style={{ color: colors.accent.main }} />
+                    </span>
                   </motion.button>
                 </motion.div>
               </motion.div>
@@ -977,12 +975,10 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
               whileTap={reduce ? undefined : { scale: 0.98 }}
               onClick={() => setMonthCursor(startOfMonth(new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1)))}
               style={{
-                padding: "8px 10px",
-                borderRadius: borderRadius.lg,
-                border: "1px solid rgba(255,255,255,0.12)",
-                background: "rgba(255,255,255,0.04)",
+                ...heroCTAPillStyles.base,
+                border: "1px solid rgba(255,255,255,0.14)",
                 color: colors.text.secondary,
-                cursor: "pointer",
+                padding: "8px 12px",
               }}
               aria-label="Previous month"
             >
@@ -993,13 +989,9 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
               whileTap={reduce ? undefined : { scale: 0.98 }}
               onClick={jumpToToday}
               style={{
-                padding: "8px 10px",
-                borderRadius: borderRadius.lg,
-                border: "1px solid rgba(0,224,255,0.18)",
-                background: "rgba(0,224,255,0.06)",
-                color: colors.text.primary,
-                cursor: "pointer",
-                ...typography.caption,
+                ...heroCTAPillStyles.base,
+                ...heroCTAPillStyles.gold,
+                padding: "8px 12px",
               }}
             >
               Today
@@ -1009,12 +1001,10 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
               whileTap={reduce ? undefined : { scale: 0.98 }}
               onClick={() => setMonthCursor(startOfMonth(new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1)))}
               style={{
-                padding: "8px 10px",
-                borderRadius: borderRadius.lg,
-                border: "1px solid rgba(255,255,255,0.12)",
-                background: "rgba(255,255,255,0.04)",
+                ...heroCTAPillStyles.base,
+                border: "1px solid rgba(255,255,255,0.14)",
                 color: colors.text.secondary,
-                cursor: "pointer",
+                padding: "8px 12px",
               }}
               aria-label="Next month"
             >
@@ -1027,32 +1017,27 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         <div style={{ padding: `0 ${spacing.lg}px ${spacing.md}px`, display: "flex", gap: 10, flexWrap: "wrap" }}>
           {(
             [
-              { k: "ALL" as const, label: "All", accent: colors.primary.main },
-              { k: "MATCH" as const, label: "Matches", accent: colors.accent.main },
-              { k: "TRAINING" as const, label: "Trainings", accent: colors.primary.light },
-              { k: "TRIAL" as const, label: "Trials", accent: "rgba(120,160,255,0.95)" },
-              { k: "EVENTS" as const, label: "Events", accent: colors.text.secondary },
+              { k: "ALL" as const, label: "All" },
+              { k: "MATCH" as const, label: "Matches" },
+              { k: "TRAINING" as const, label: "Trainings" },
+              { k: "TRIAL" as const, label: "Trials" },
+              { k: "EVENTS" as const, label: "Events" },
             ] as const
           ).map((f) => (
             <motion.button
               key={f.k}
               type="button"
               onClick={() => setFilter(f.k)}
-              whileHover={!reduce ? { scale: 1.05, y: -1 } : undefined}
+              whileHover={!reduce ? { y: -2 } : undefined}
               whileTap={!reduce ? { scale: 0.98 } : undefined}
               style={{
-                borderRadius: borderRadius.full,
-                border: f.k === filter ? `1px solid ${f.accent}40` : "1px solid rgba(255,255,255,0.12)",
-                background: f.k === filter 
-                  ? `linear-gradient(135deg, ${f.accent}15 0%, ${f.accent}08 100%)` 
-                  : "rgba(255,255,255,0.04)",
-                color: f.k === filter ? colors.text.primary : colors.text.muted,
+                ...heroCTAPillStyles.base,
                 padding: "10px 14px",
-                cursor: "pointer",
-                ...typography.caption,
-                fontWeight: f.k === filter ? typography.fontWeight.semibold : typography.fontWeight.medium,
-                boxShadow: f.k === filter ? `0 4px 12px ${f.accent}20` : "none",
-                transition: "all 0.2s ease",
+                boxShadow: "none",
+                border:
+                  f.k === filter ? `2px solid ${colors.accent.main}` : "1px solid rgba(255,255,255,0.14)",
+                background: f.k === filter ? "rgba(245,179,0,0.08)" : "rgba(255,255,255,0.03)",
+                color: f.k === filter ? colors.text.primary : colors.text.muted,
               }}
             >
               {f.label}

@@ -3,8 +3,8 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import PublicHeader from "../components/PublicHeader";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { heroCTAStyles, heroCTAPillStyles } from "../theme/hero-design-patterns";
 import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
 import { api } from "../api/client";
 import { useCart } from "../context/CartContext";
 import { shopAssets } from "../config/assets";
@@ -142,7 +142,23 @@ const ProductDetailPage: React.FC = () => {
               This product is no longer available or has been removed.
             </p>
             <Link to="/shop" style={{ textDecoration: "none" }}>
-              <Button variant="primary">Continue Shopping</Button>
+              <motion.div
+                whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  ...heroCTAStyles.blue,
+                  width: "auto",
+                  minWidth: 260,
+                  minHeight: 56,
+                  padding: "12px 18px",
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                  <span style={heroCTAStyles.blue.textStyle}>Continue Shopping</span>
+                  <span style={heroCTAStyles.blue.subtitleStyle}>Browse the official store</span>
+                </div>
+                <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+              </motion.div>
             </Link>
           </Card>
         </div>
@@ -181,7 +197,23 @@ const ProductDetailPage: React.FC = () => {
           <Card variant="elevated" padding="xl">
             <h2 style={{ ...typography.h2, marginBottom: spacing.md }}>Product not found</h2>
             <Link to="/shop" style={{ textDecoration: "none" }}>
-              <Button variant="primary">Back to Shop</Button>
+              <motion.div
+                whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  ...heroCTAStyles.blue,
+                  width: "auto",
+                  minWidth: 240,
+                  minHeight: 56,
+                  padding: "12px 18px",
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                  <span style={heroCTAStyles.blue.textStyle}>Back to Shop</span>
+                  <span style={heroCTAStyles.blue.subtitleStyle}>See all products</span>
+                </div>
+                <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+              </motion.div>
             </Link>
           </Card>
         </div>
@@ -305,33 +337,22 @@ const ProductDetailPage: React.FC = () => {
                 </label>
                 <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
                   {product.sizes.map((size) => (
-                    <button
+                    <motion.button
                       key={size}
                       onClick={() => setSelectedSize(size)}
+                      whileHover={{ y: -2 }}
+                      whileTap={{ scale: 0.98 }}
                       style={{
-                        padding: `${spacing.sm} ${spacing.md}`,
-                        background:
-                          selectedSize === size
-                            ? colors.primary.main
-                            : colors.surface.card,
-                        color:
-                          selectedSize === size
-                            ? colors.text.onPrimary
-                            : colors.text.primary,
-                        border: `1px solid ${
-                          selectedSize === size
-                            ? colors.primary.main
-                            : "rgba(255, 255, 255, 0.1)"
-                        }`,
-                        borderRadius: borderRadius.md,
-                        cursor: "pointer",
-                        ...typography.body,
-                        fontSize: typography.fontSize.sm,
-                        transition: "all 0.2s ease",
+                        ...heroCTAPillStyles.base,
+                        ...(selectedSize === size ? heroCTAPillStyles.blue : {}),
+                        padding: "10px 14px",
+                        boxShadow: "none",
+                        background: selectedSize === size ? "rgba(10,61,145,0.20)" : "rgba(255,255,255,0.03)",
+                        border: selectedSize === size ? `2px solid ${colors.primary.main}` : "1px solid rgba(255,255,255,0.14)",
                       }}
                     >
                       {size}
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
               </div>
@@ -352,21 +373,23 @@ const ProductDetailPage: React.FC = () => {
                 Quantity
               </label>
               <div style={{ display: "flex", alignItems: "center", gap: spacing.md }}>
-                <button
+                <motion.button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
                   style={{
+                    ...heroCTAPillStyles.base,
+                    border: "1px solid rgba(255,255,255,0.14)",
+                    background: "rgba(255,255,255,0.03)",
                     width: 40,
                     height: 40,
-                    background: colors.surface.card,
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                    borderRadius: borderRadius.md,
-                    color: colors.text.primary,
-                    cursor: "pointer",
-                    fontSize: typography.fontSize.lg,
+                    padding: 0,
+                    boxShadow: "none",
+                    justifyContent: "center",
                   }}
                 >
                   −
-                </button>
+                </motion.button>
                 <span
                   style={{
                     ...typography.h4,
@@ -376,39 +399,66 @@ const ProductDetailPage: React.FC = () => {
                 >
                   {quantity}
                 </span>
-                <button
+                <motion.button
                   onClick={() => setQuantity(quantity + 1)}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
                   style={{
+                    ...heroCTAPillStyles.base,
+                    border: "1px solid rgba(255,255,255,0.14)",
+                    background: "rgba(255,255,255,0.03)",
                     width: 40,
                     height: 40,
-                    background: colors.surface.card,
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                    borderRadius: borderRadius.md,
-                    color: colors.text.primary,
-                    cursor: "pointer",
-                    fontSize: typography.fontSize.lg,
+                    padding: 0,
+                    boxShadow: "none",
+                    justifyContent: "center",
                   }}
                 >
                   +
-                </button>
+                </motion.button>
               </div>
             </div>
 
             {/* Add to Cart Button */}
-            <Button
-              variant="primary"
-              size="lg"
-              fullWidth
+            <motion.button
+              type="button"
               onClick={handleAddToCart}
-              style={{ marginBottom: spacing.md }}
+              whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                ...heroCTAStyles.blue,
+                width: "100%",
+                marginBottom: spacing.md,
+                minHeight: 64,
+              }}
             >
-              Add to Cart
-            </Button>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                <span style={heroCTAStyles.blue.textStyle}>Add to Cart</span>
+                <span style={heroCTAStyles.blue.subtitleStyle}>Secure checkout in 2 steps</span>
+              </div>
+              <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+            </motion.button>
 
             <Link to="/shop" style={{ textDecoration: "none" }}>
-              <Button variant="secondary" size="lg" fullWidth>
-                Continue Shopping
-              </Button>
+              <motion.div
+                whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  ...heroCTAStyles.darkWithBorder,
+                  width: "100%",
+                  minHeight: 64,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: spacing.md,
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                  <span style={heroCTAStyles.darkWithBorder.textStyle}>Continue Shopping</span>
+                  <span style={heroCTAStyles.darkWithBorder.subtitleStyle}>Back to the store grid</span>
+                </div>
+                <span style={{ color: colors.accent.main, fontWeight: 800 }}>→</span>
+              </motion.div>
             </Link>
           </div>
         </div>

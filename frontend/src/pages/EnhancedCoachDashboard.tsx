@@ -5,7 +5,9 @@ import { api } from "../api/client";
 import { Card } from "../components/ui/Card";
 import { KPICard } from "../components/ui/KPICard";
 import { Button } from "../components/ui/Button";
+import { Section } from "../components/ui/Section";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
+import { glass } from "../theme/glass";
 import { pageVariants, cardVariants } from "../utils/motion";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { centresAssets, adminAssets, heroAssets, clubAssets } from "../config/assets";
@@ -429,8 +431,8 @@ const EnhancedCoachDashboard: React.FC = () => {
           gap: 12, 
           marginBottom: 20,
           padding: 12,
-          background: "#f8f9fa",
-          borderRadius: 8
+          ...glass.inset,
+          borderRadius: borderRadius.md,
         }}>
           <div>
             <label style={{ 
@@ -546,7 +548,7 @@ const EnhancedCoachDashboard: React.FC = () => {
                     <div style={{ 
                       fontSize: 8, 
                       marginTop: 8, 
-                      color: "#666", 
+                      color: colors.text.muted, 
                       fontWeight: 600,
                       transform: "rotate(-45deg)",
                       transformOrigin: "center",
@@ -590,7 +592,7 @@ const EnhancedCoachDashboard: React.FC = () => {
             </div>
           </>
         ) : (
-          <div style={{ textAlign: "center", padding: 48, color: "#999" }}>
+          <div style={{ textAlign: "center", padding: 48, color: colors.text.muted }}>
             No payment data available yet
           </div>
         )}
@@ -627,8 +629,8 @@ const EnhancedCoachDashboard: React.FC = () => {
           gap: 12, 
           marginBottom: 20,
           padding: 12,
-          background: "#f8f9fa",
-          borderRadius: 8
+          ...glass.inset,
+          borderRadius: borderRadius.md,
         }}>
 
           <div>
@@ -710,7 +712,7 @@ const EnhancedCoachDashboard: React.FC = () => {
                     <div style={{ 
                       fontSize: 8, 
                       marginTop: 8, 
-                      color: "#666", 
+                      color: colors.text.muted, 
                       fontWeight: 600,
                       transform: "rotate(-45deg)",
                       transformOrigin: "center",
@@ -780,9 +782,9 @@ const EnhancedCoachDashboard: React.FC = () => {
             </span>
           </h2>
           <div style={{ display: "grid", gap: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 16, background: "#f8f9fa", borderRadius: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 16, ...glass.inset, borderRadius: borderRadius.md }}>
               <div>
-                <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>Collected</div>
+                <div style={{ fontSize: 14, color: colors.text.muted, marginBottom: 4 }}>Collected</div>
                 <div style={{ fontSize: 24, fontWeight: 700, color: "#27ae60" }}>
                   ₹{summary.totalCollected.toLocaleString()}
                 </div>
@@ -790,9 +792,9 @@ const EnhancedCoachDashboard: React.FC = () => {
               <div style={{ fontSize: 48 }}>💰</div>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 16, background: "#fff3cd", borderRadius: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 16, ...glass.inset, borderRadius: borderRadius.md }}>
               <div>
-                <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>Pending</div>
+                <div style={{ fontSize: 14, color: colors.text.muted, marginBottom: 4 }}>Pending</div>
                 <div style={{ fontSize: 24, fontWeight: 700, color: "#f39c12" }}>
                   ₹{summary.approxOutstanding.toLocaleString()}
                 </div>
@@ -800,9 +802,9 @@ const EnhancedCoachDashboard: React.FC = () => {
               <div style={{ fontSize: 48 }}>⏳</div>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 16, background: "#e3f2fd", borderRadius: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 16, ...glass.inset, borderRadius: borderRadius.md }}>
               <div>
-                <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>Potential Monthly</div>
+                <div style={{ fontSize: 14, color: colors.text.muted, marginBottom: 4 }}>Potential Monthly</div>
                 <div style={{ fontSize: 24, fontWeight: 700, color: "#3498db" }}>
                   ₹{totalPotentialRevenue.toLocaleString()}
                 </div>
@@ -827,17 +829,17 @@ const EnhancedCoachDashboard: React.FC = () => {
             </span>
           </h2>
           <div style={{ display: "grid", gap: 12 }}>
-            <div style={{ padding: 12, background: "#d4edda", borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: "#155724", marginBottom: 4 }}>Active</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#155724" }}>{activeStudents}</div>
+            <div style={{ padding: 12, ...glass.inset, borderRadius: borderRadius.md, border: "1px solid rgba(34,197,94,0.26)" }}>
+              <div style={{ fontSize: 12, color: colors.text.muted, marginBottom: 4 }}>Active</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: colors.success.main }}>{activeStudents}</div>
             </div>
-            <div style={{ padding: 12, background: "#fff3cd", borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: "#856404", marginBottom: 4 }}>Trial</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#856404" }}>{trialStudents}</div>
+            <div style={{ padding: 12, ...glass.inset, borderRadius: borderRadius.md, border: "1px solid rgba(245,179,0,0.26)" }}>
+              <div style={{ fontSize: 12, color: colors.text.muted, marginBottom: 4 }}>Trial</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: colors.accent.main }}>{trialStudents}</div>
             </div>
-            <div style={{ padding: 12, background: "#f8d7da", borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: "#721c24", marginBottom: 4 }}>Inactive</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#721c24" }}>
+            <div style={{ padding: 12, ...glass.inset, borderRadius: borderRadius.md, border: "1px solid rgba(239,68,68,0.26)" }}>
+              <div style={{ fontSize: 12, color: colors.text.muted, marginBottom: 4 }}>Inactive</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: colors.danger.main }}>
                 {students.filter(s => s.status === "INACTIVE").length}
               </div>
             </div>
@@ -861,14 +863,14 @@ const EnhancedCoachDashboard: React.FC = () => {
           {Object.entries(frequencyBreakdown).map(([label, count]: [string, any]) => (
             <div key={label} style={{
               padding: 16,
-              background: "#f8f9fa",
-              borderRadius: 8,
+              ...glass.inset,
+              borderRadius: borderRadius.md,
               textAlign: "center"
             }}>
               <div style={{ fontSize: 32, fontWeight: 700, color: "#1E40AF", marginBottom: 4 }}>
                 {count}
               </div>
-              <div style={{ fontSize: 14, color: "#666" }}>{label}</div>
+              <div style={{ fontSize: 14, color: colors.text.muted }}>{label}</div>
             </div>
           ))}
         </div>
@@ -889,7 +891,7 @@ const EnhancedCoachDashboard: React.FC = () => {
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "#f8f9fa", borderBottom: "2px solid #e0e0e0" }}>
+              <tr style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.12)" }}>
                 <th style={{ padding: 12, textAlign: "left", fontWeight: 600 }}>Name</th>
                 <th style={{ padding: 12, textAlign: "left", fontWeight: 600 }}>Program</th>
                 <th style={{ padding: 12, textAlign: "right", fontWeight: 600 }}>Monthly Fee</th>

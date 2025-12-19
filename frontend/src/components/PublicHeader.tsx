@@ -266,6 +266,7 @@ const PublicHeader: React.FC = () => {
             gap: spacing.md,
             flex: 1,
             justifyContent: "center",
+            flexWrap: "nowrap",
           }}
         >
           {/* Home with Dropdown */}
@@ -519,7 +520,7 @@ const PublicHeader: React.FC = () => {
               e.currentTarget.style.border = "1px solid rgba(0,224,255,0.18)";
             }}
           >
-            Your benefits for backing FC Real Bengaluru
+            Explore our Fanclub
           </Link>
 
           {/* Shop */}
@@ -563,39 +564,9 @@ const PublicHeader: React.FC = () => {
             display: !isMobile ? "flex" : "none",
             alignItems: "center",
             gap: spacing.sm,
+            flexWrap: "nowrap",
           }}
         >
-          {/* Fan Club - Secondary pill CTA (required) */}
-          <button
-            onClick={() => handleHomeSectionClick("fan-club")}
-            style={{
-              ...typography.body,
-              fontSize: "13px",
-              fontWeight: typography.fontWeight.semibold,
-              padding: `8px 14px`,
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.06)",
-              color: colors.text.primary,
-              border: `1px solid rgba(0, 224, 255, 0.28)`,
-              boxShadow: `0 8px 24px rgba(0,0,0,0.25), 0 0 22px rgba(0,224,255,0.10)`,
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              whiteSpace: "nowrap",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-1px)";
-              e.currentTarget.style.borderColor = "rgba(0, 224, 255, 0.55)";
-              e.currentTarget.style.boxShadow = `0 10px 30px rgba(0,0,0,0.30), 0 0 26px rgba(0,224,255,0.18)`;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.borderColor = "rgba(0, 224, 255, 0.28)";
-              e.currentTarget.style.boxShadow = `0 8px 24px rgba(0,0,0,0.25), 0 0 22px rgba(0,224,255,0.10)`;
-            }}
-          >
-            Fan Club
-          </button>
-
           {/* Cart Icon - Utility action */}
           <Link
             to="/cart"
@@ -683,7 +654,7 @@ const PublicHeader: React.FC = () => {
             Login
           </Link>
 
-          {/* Join RealVerse Academy - Primary CTA with highest visibility */}
+          {/* Join RealVerse - Primary CTA with highest visibility */}
           <Link
             to="/brochure"
             style={{
@@ -709,7 +680,7 @@ const PublicHeader: React.FC = () => {
               e.currentTarget.style.boxShadow = `0 4px 16px rgba(255, 169, 0, 0.35)`;
             }}
           >
-            Join RealVerse Academy
+            Join RealVerse
           </Link>
         </div>
 
@@ -905,39 +876,8 @@ const PublicHeader: React.FC = () => {
               border: "1px solid rgba(0,224,255,0.18)",
             }}
           >
-            Your benefits for backing FC Real Bengaluru
+            Explore our Fanclub
           </Link>
-
-          {/* Fan Club */}
-          <button
-            onClick={() => {
-              handleHomeSectionClick("fan-club");
-              setIsMobileMenuOpen(false);
-            }}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.base,
-              fontWeight: typography.fontWeight.medium,
-              color: colors.text.secondary,
-              background: "transparent",
-              border: "none",
-              padding: spacing.md,
-              borderRadius: borderRadius.md,
-              textAlign: "left",
-              width: "100%",
-              cursor: "pointer",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = colors.text.primary;
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = colors.text.secondary;
-              e.currentTarget.style.background = "transparent";
-            }}
-          >
-            Fan Club
-          </button>
 
           {/* Shop */}
           <button
@@ -1021,7 +961,7 @@ const PublicHeader: React.FC = () => {
             Login
           </Link>
 
-          {/* Join RealVerse Academy - Primary CTA with highest visibility */}
+          {/* Join RealVerse - Primary CTA with highest visibility */}
           <Link
             to="/brochure"
             onClick={() => setIsMobileMenuOpen(false)}
@@ -1040,7 +980,7 @@ const PublicHeader: React.FC = () => {
               letterSpacing: "0.02em",
             }}
           >
-            Join RealVerse Academy
+            Join RealVerse
           </Link>
         </div>
       )}

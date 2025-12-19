@@ -4,11 +4,10 @@
  * 
  * Sections:
  * (A) Hero Section
- * (B) Pathway Explainer Section
+ * (B) Pathway & Development Section (Merged)
  * (C) Program Cards (RealVerse data)
  * (D) Specialized Programs
  * (E) Training Experience
- * (F) Player Development & Opportunities
  * (G) FAQ
  * (H) Sponsors Strip
  * (I) Contact & Join CTA
@@ -20,38 +19,42 @@ import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import { useInView } from "framer-motion";
 import PublicHeader from "../components/PublicHeader";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { glass } from "../theme/glass";
 import {
   ArrowRightIcon,
   TrophyIcon,
   ChartBarIcon,
-  StarIcon,
   FireIcon,
-  FootballIcon,
-  UsersIcon,
   GraduationCapIcon,
-  MedalIcon,
   ShieldIcon,
-  CalendarIcon,
   DownloadIcon,
   PhoneIcon,
   EmailIcon,
-  LocationIcon,
-  BoltIcon,
   FlagIcon,
 } from "../components/icons/IconSet";
-import { galleryAssets, heroAssets, academyAssets } from "../config/assets";
+import { galleryAssets } from "../config/assets";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
-import { Button } from "../components/ui/Button";
+import { heroCTAStyles, heroCTAPillStyles, programCardOverlay } from "../theme/hero-design-patterns";
 
 const ProgramsOverviewPage: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
-  const { scrollYProgress } = useScroll();
-  const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-  const { infinitySectionVariants, cardVariants, headingVariants, viewportOnce } = useHomepageAnimation();
+  const { infinitySectionVariants, viewportOnce } = useHomepageAnimation();
+  const pathwayRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: pathwayScroll } = useScroll({
+    target: pathwayRef,
+    offset: ["start end", "end start"],
+  });
+  const pathwayBgY = useTransform(pathwayScroll, [0, 1], ["-6%", "6%"]);
+  const pathwayBgOpacity = useTransform(pathwayScroll, [0, 0.25], [0.95, 1]);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => {
+      const w = window.innerWidth;
+      setIsMobile(w <= 768);
+      setIsTablet(w <= 1024);
+    };
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -102,7 +105,7 @@ const ProgramsOverviewPage: React.FC = () => {
             position: "relative",
             marginTop: bridge ? "-100px" : "0",
             marginBottom: bridge ? "-100px" : "0",
-            paddingTop: bridge ? "150px" : style?.paddingTop || spacing.sectionGap,
+            paddingTop: bridge ? "150px" : (style?.paddingTop ?? spacing.sectionGap),
           }}
         >
           {children}
@@ -112,6 +115,7 @@ const ProgramsOverviewPage: React.FC = () => {
   };
 
   // RealVerse Programs Data (Primary Source)
+  // Note: Grassroots & dedicated GK cards removed from the grid as requested.
   const realversePrograms = [
     {
       id: "epp",
@@ -129,6 +133,7 @@ const ProgramsOverviewPage: React.FC = () => {
       ],
       accent: colors.accent.main,
       image: galleryAssets.actionShots[0]?.medium,
+      backgroundImage: "/assets/DSC09619 (1).JPG",
       link: "/programs/epp",
     },
     {
@@ -147,6 +152,7 @@ const ProgramsOverviewPage: React.FC = () => {
       ],
       accent: colors.primary.main,
       image: galleryAssets.actionShots[1]?.medium,
+      backgroundImage: "/assets/Screenshot 2025-12-15 113324.png",
       link: "/programs/scp",
     },
     {
@@ -165,6 +171,7 @@ const ProgramsOverviewPage: React.FC = () => {
       ],
       accent: colors.accent.main,
       image: galleryAssets.actionShots[2]?.medium,
+      backgroundImage: "/assets/IMG_4908.jpg",
       link: "/programs/wpp",
     },
     {
@@ -183,116 +190,61 @@ const ProgramsOverviewPage: React.FC = () => {
       ],
       accent: colors.primary.main,
       image: galleryAssets.actionShots[3]?.medium,
+      backgroundImage: "/assets/NITT8121.jpg",
       link: "/programs/fydp",
     },
-    {
-      id: "grassroots",
-      name: "Grassroots Program",
-      acronym: "GRASSROOTS",
-      positioning: "Open programs for all ages focusing on basic skills, fitness, and love for the game.",
-      ageGroup: "All Ages",
-      intensity: "Moderate",
-      highlights: [
-        "Open to all",
-        "Basic skills development",
-        "Fitness & fun",
-        "Foundation building",
-        "Community focus",
-      ],
-      accent: colors.primary.main,
-      image: galleryAssets.actionShots[4]?.medium || galleryAssets.actionShots[0]?.medium,
-      link: "/realverse/join",
-    },
-    {
-      id: "goalkeeper",
-      name: "Goalkeeper Training Program",
-      acronym: "GK",
-      positioning: "Specialized goalkeeper development with position-specific training.",
-      ageGroup: "All Ages",
-      intensity: "Specialized",
-      highlights: [
-        "Position-specific training",
-        "Technical mastery",
-        "Match preparation",
-        "Professional standards",
-        "RealVerse tracking",
-      ],
-      accent: colors.accent.main,
-      image: galleryAssets.actionShots[5]?.medium || galleryAssets.actionShots[1]?.medium,
-      link: "/realverse/join",
-    },
   ];
 
-  // Pathway Timeline Steps
-  const pathwaySteps = [
+  // Cinematic Pathway (visual-first)
+  const pathwayStages = [
     {
-      step: "Grassroots",
-      next: "Development",
-      ageGroup: "U9-U13",
-      description: "Foundation building with tactical identity from day one.",
-      icon: FootballIcon,
+      id: "stage-1",
+      title: "Grassroots → Development",
+      ageGroup: "U9–U13",
+      description: "Foundations, identity and core habits.",
+      image: "/assets/20251007-DSC_0535.jpg",
     },
     {
-      step: "Development",
-      next: "Competitive",
-      ageGroup: "U15-U17",
-      description: "Structured training with competitive readiness focus.",
-      icon: ChartBarIcon,
+      id: "stage-2",
+      title: "Development → Competitive",
+      ageGroup: "U15–U17",
+      description: "Structured growth with match-ready standards.",
+      image: "/assets/20251007-DSC_0557.jpg",
     },
     {
-      step: "Competitive",
-      next: "Elite Pathway",
+      id: "stage-3",
+      title: "Competitive → Elite Pathway",
       ageGroup: "U17+",
-      description: "Merit-based progression to professional levels.",
-      icon: TrophyIcon,
+      description: "Progression to higher levels and pro targets.",
+      image: "/assets/DSC09619%20(1).JPG",
     },
   ];
 
-  // Training Experience Cards
-  const trainingExperiences = [
+  // “How We Train” merged into pathway as compact tiles (coaching + tech)
+  const pathwayTiles = [
     {
-      title: "Training Camp",
-      description: "Intensive residential camps focusing on technical mastery and tactical understanding.",
-      icon: FireIcon,
+      title: "Licensed Coaches",
+      description: "A-licensed and certified coaches leading every age group.",
+      icon: GraduationCapIcon,
+      image: "/assets/DSC00893.jpg",
     },
     {
-      title: "Year-Round Training",
-      description: "Consistent, structured training sessions aligned with competitive calendars.",
-      icon: CalendarIcon,
-    },
-    {
-      title: "Training Experience",
-      description: "Professional-grade facilities and coaching methodologies used at all levels.",
-      icon: StarIcon,
-    },
-  ];
-
-  // Player Development Opportunities
-  const developmentOpportunities = [
-    {
-      title: "Pathway Progression",
-      description: "Clear, merit-based advancement through program tiers with transparent criteria.",
-      icon: FlagIcon,
-    },
-    {
-      title: "Youth League Integration",
-      description: "Regular competitive exposure through organized youth leagues and tournaments.",
-      icon: TrophyIcon,
-    },
-    {
-      title: "Scouting Exposure",
-      description: "Opportunities for identification and advancement to higher competitive levels.",
-      icon: StarIcon,
-    },
-    {
-      title: "Individualized Development Plans",
-      description: "Personalized training programs based on RealVerse data and coach assessment.",
-      icon: ChartBarIcon,
-    },
-    {
-      title: "Pro Infrastructure Access",
-      description: "Access to professional-grade facilities, equipment, and sports science support.",
+      title: "Unified Club Philosophy",
+      description: "One game model across programs and sessions.",
       icon: ShieldIcon,
+      image: "/assets/20250927-DSC_0446.jpg",
+    },
+    {
+      title: "AI, Data & Metrics",
+      description: "RealVerse tools track progress, loads and decision-making.",
+      icon: ChartBarIcon,
+      image: "/assets/Screenshot%202025-12-15%20113324.png",
+    },
+    {
+      title: "Complete Development Stack",
+      description: "From camps to year-round training and game analysis.",
+      icon: FireIcon,
+      image: "/assets/NITT8121.jpg",
     },
   ];
 
@@ -342,9 +294,70 @@ const ProgramsOverviewPage: React.FC = () => {
 
   return (
     <div style={{ minHeight: "100vh", background: colors.club.deep, position: "relative" }}>
+      {/* Global fixed video background so header + hero sit on the same moving layer */}
+      <motion.div
+        aria-hidden="true"
+        initial={{ opacity: 0.7 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1 }}
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          overflow: "hidden",
+          pointerEvents: "none",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: "50%",
+            width: "100vw",
+            height: "100vh",
+            transform: "translateX(-50%) scale(1.15)",
+          }}
+        >
+          <iframe
+            src="https://www.youtube-nocookie.com/embed/23kUIDR1d7Q?autoplay=1&mute=1&loop=1&playlist=23kUIDR1d7Q&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&playsinline=1&enablejsapi=0&start=1&fs=0&cc_load_policy=0&showinfo=0"
+            title="RealVerse Academy Background"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              border: "none",
+              opacity: 0.9,
+            }}
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          />
+        </div>
+        {/* Dark gradient + subtle noise to match homepage hero look */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: `linear-gradient(135deg, 
+              rgba(5, 11, 32, 0.92) 0%, 
+              rgba(10, 22, 51, 0.86) 50%, 
+              rgba(5, 11, 32, 0.96) 100%)`,
+            mixBlendMode: "multiply",
+          }}
+        />
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E")`,
+          }}
+        />
+      </motion.div>
+
       <PublicHeader />
 
-      {/* (A) HERO SECTION */}
+      {/* (A) HERO SECTION WITH FULL-BLEED VIDEO BACKGROUND */}
       <motion.section
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -353,49 +366,11 @@ const ProgramsOverviewPage: React.FC = () => {
           padding: `${spacing["4xl"]} ${spacing.xl}`,
           position: "relative",
           overflow: "hidden",
-          minHeight: "85vh",
+          minHeight: "100vh",
           display: "flex",
           alignItems: "center",
         }}
       >
-        {/* Background Image with Parallax */}
-        <motion.div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage: `url(${heroAssets.teamBackground})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            y: backgroundY,
-            zIndex: 0,
-          }}
-        />
-
-        {/* Heavy Dark Overlay + Pitch Texture */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: `linear-gradient(135deg, 
-              rgba(5, 11, 32, 0.88) 0%, 
-              rgba(10, 22, 51, 0.82) 50%, 
-              rgba(5, 11, 32, 0.88) 100%)`,
-            zIndex: 1,
-          }}
-        />
-
-        {/* Subtle Pitch Texture Overlay */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E")`,
-            zIndex: 2,
-            pointerEvents: "none",
-          }}
-        />
-
         <div style={{ maxWidth: "1400px", margin: "0 auto", position: "relative", zIndex: 3, width: "100%" }}>
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -519,172 +494,532 @@ const ProgramsOverviewPage: React.FC = () => {
                 alignItems: "center",
               }}
             >
-              <Link to="/realverse/join" style={{ textDecoration: "none" }}>
-                <Button
-                  variant="primary"
-                  size="lg"
+              <Link to="/realverse/join" style={{ textDecoration: "none", width: isMobile ? "100%" : "auto" }}>
+                <motion.div
+                  whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                  whileTap={{ scale: 0.98 }}
                   style={{
-                    borderRadius: borderRadius.full,
-                    padding: `${spacing.md} ${spacing.xl}`,
-                    fontSize: typography.fontSize.base,
-                    fontWeight: typography.fontWeight.bold,
+                    ...heroCTAStyles.yellow,
+                    width: isMobile ? "100%" : "auto",
+                    minWidth: isMobile ? "100%" : 280,
                   }}
                 >
-                  Join RealVerse Academy <ArrowRightIcon size={18} style={{ marginLeft: spacing.sm }} />
-                </Button>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                    <span style={heroCTAStyles.yellow.textStyle}>Join RealVerse Academy</span>
+                    <span style={heroCTAStyles.yellow.subtitleStyle}>Trials, training plans, and placement pathway</span>
+                  </div>
+                  <ArrowRightIcon size={20} color={colors.text.onAccent} style={{ flexShrink: 0 }} />
+                </motion.div>
               </Link>
-              <motion.a
-                href="#"
-                whileHover={{ x: 4 }}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: spacing.sm,
-                  color: colors.text.secondary,
-                  textDecoration: "none",
-                  fontSize: typography.fontSize.base,
-                  fontWeight: typography.fontWeight.semibold,
-                }}
-              >
-                Download Program Brochure <DownloadIcon size={18} />
-              </motion.a>
+
+              <Link to="/brochure" style={{ textDecoration: "none", width: isMobile ? "100%" : "auto" }}>
+                <motion.div
+                  whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{
+                    ...heroCTAStyles.darkWithBorder,
+                    width: isMobile ? "100%" : "auto",
+                    minWidth: isMobile ? "100%" : 280,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: spacing.md,
+                  }}
+                >
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                    <span style={heroCTAStyles.darkWithBorder.textStyle}>Download Program Brochure</span>
+                    <span style={heroCTAStyles.darkWithBorder.subtitleStyle}>Detailed pathways, schedules, and fees</span>
+                  </div>
+                  <DownloadIcon size={18} style={{ color: colors.accent.main, flexShrink: 0 }} />
+                </motion.div>
+              </Link>
             </motion.div>
           </motion.div>
         </div>
       </motion.section>
 
-      {/* (B) PATHWAY EXPLAINER SECTION */}
-      <InfinitySection id="pathway-explainer" bridge={true} style={{ padding: `${spacing["4xl"]} ${spacing.xl}` }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+      {/* (B) PATHWAY & DEVELOPMENT SECTION - Merged */}
+      <InfinitySection id="pathway-explainer" bridge={false} style={{ padding: 0, paddingTop: 0, paddingBottom: 0 }}>
+        <motion.section
+          ref={pathwayRef}
+          style={{
+            position: "relative",
+            overflow: "hidden",
+            padding: `${spacing["3xl"]} ${spacing.xl}`,
+          }}
+        >
+          {/* Cinematic background (local layer above global video) */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewportOnce}
-            transition={{ duration: 0.6 }}
-            style={{ textAlign: "center", marginBottom: spacing["2xl"] }}
-          >
-            <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em", marginBottom: spacing.sm }}>
-              YOUR PATHWAY
-            </div>
-            <h2
-              style={{
-                ...typography.h2,
-                fontSize: `clamp(2rem, 5vw, 3.5rem)`,
-                color: colors.text.primary,
-                marginBottom: spacing.md,
-                fontWeight: typography.fontWeight.bold,
-              }}
-            >
-              Your Pathway Through RealVerse
-            </h2>
-            <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.lg, maxWidth: "800px", margin: "0 auto" }}>
-              A clear progression from grassroots to elite, built on merit, data, and shared tactical identity.
-            </p>
-          </motion.div>
-
-          {/* 3-Step Timeline */}
-          <div
+            aria-hidden="true"
             style={{
-              display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
-              gap: spacing.xl,
-              position: "relative",
+              position: "absolute",
+              inset: -40,
+              zIndex: 0,
+              y: pathwayBgY,
+              opacity: pathwayBgOpacity,
+              filter: "saturate(1.05) contrast(1.05) brightness(0.85)",
+              transform: "translateZ(0)",
             }}
           >
-            {pathwaySteps.map((step, idx) => {
-              const Icon = step.icon;
-              return (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={viewportOnce}
-                  transition={{ duration: 0.6, delay: idx * 0.15 }}
-                  style={{
-                    position: "relative",
-                    background: `rgba(10, 16, 32, 0.6)`,
-                    backdropFilter: "blur(20px)",
-                    borderRadius: borderRadius["2xl"],
-                    border: `1px solid rgba(255,255,255,0.1)`,
-                    padding: spacing.xl,
-                    boxShadow: shadows.lg,
-                  }}
-                >
-                  {/* Step Number */}
-                  <div
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: 48,
-                      height: 48,
-                      borderRadius: "50%",
-                      background: `linear-gradient(135deg, ${colors.accent.main}20, ${colors.primary.main}20)`,
-                      border: `2px solid ${colors.accent.main}40`,
-                      marginBottom: spacing.md,
-                    }}
-                  >
-                    <span style={{ ...typography.h4, color: colors.accent.main, fontWeight: typography.fontWeight.bold }}>
-                      {idx + 1}
-                    </span>
-                  </div>
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              poster="/assets/20251007-DSC_0557.jpg"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                opacity: 0.9,
+              }}
+            >
+              <source src="/assets/night-shoot-render-v1.mp4" type="video/mp4" />
+            </video>
+          </motion.div>
 
-                  {/* Icon */}
-                  <div style={{ marginBottom: spacing.md }}>
-                    <Icon size={32} color={colors.accent.main} />
-                  </div>
+          {/* Navy vignette + scrims */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 1,
+              background: `
+                radial-gradient(1200px 520px at 50% 10%, rgba(0, 224, 255, 0.10), transparent 60%),
+                radial-gradient(900px 560px at 10% 35%, rgba(255, 169, 0, 0.10), transparent 62%),
+                linear-gradient(180deg, rgba(5, 11, 32, 0.86) 0%, rgba(5, 11, 32, 0.72) 45%, rgba(5, 11, 32, 0.92) 100%)
+              `,
+            }}
+          />
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 2,
+              pointerEvents: "none",
+              boxShadow: "inset 0 0 140px rgba(0,0,0,0.75)",
+            }}
+          />
 
-                  {/* Step Name */}
-                  <h3
-                    style={{
-                      ...typography.h4,
-                      color: colors.text.primary,
-                      marginBottom: spacing.xs,
-                      fontWeight: typography.fontWeight.bold,
-                    }}
-                  >
-                    {step.step} → {step.next}
-                  </h3>
+          {/* Subtle grain (animated) */}
+          <motion.div
+            aria-hidden="true"
+            animate={{ backgroundPosition: ["0px 0px", "120px 80px"] }}
+            transition={{ duration: 10, ease: "linear", repeat: Infinity }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 3,
+              opacity: 0.035,
+              mixBlendMode: "overlay",
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.9'/%3E%3C/svg%3E")`,
+              backgroundRepeat: "repeat",
+              backgroundSize: "220px 220px",
+            }}
+          />
 
-                  {/* Age Group */}
-                  <div
-                    style={{
-                      ...typography.overline,
-                      color: colors.accent.main,
-                      letterSpacing: "0.1em",
-                      marginBottom: spacing.sm,
-                      fontSize: typography.fontSize.xs,
-                    }}
-                  >
-                    {step.ageGroup}
-                  </div>
+          <div style={{ maxWidth: "1400px", margin: "0 auto", position: "relative", zIndex: 4 }}>
+            {/* Title (minimal copy) */}
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={viewportOnce}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                textAlign: "center",
+                marginBottom: spacing["2xl"],
+              }}
+            >
+              <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em", marginBottom: spacing.sm }}>
+                REALVERSE PATHWAY
+              </div>
+              <h2
+                style={{
+                  ...typography.h2,
+                  fontSize: `clamp(2rem, 5vw, 3.5rem)`,
+                  color: colors.text.primary,
+                  marginBottom: spacing.md,
+                  fontWeight: typography.fontWeight.bold,
+                  textShadow: "0 10px 50px rgba(0,0,0,0.65)",
+                }}
+              >
+                Your Pathway Through RealVerse
+              </h2>
+              <p
+                style={{
+                  ...typography.body,
+                  color: colors.text.secondary,
+                  fontSize: typography.fontSize.lg,
+                  maxWidth: "860px",
+                  margin: "0 auto",
+                  lineHeight: 1.75,
+                  textShadow: "0 6px 30px rgba(0,0,0,0.65)",
+                }}
+              >
+                Where every player grows — from grassroots to elite — guided by licensed coaches, a unified club philosophy,
+                and RealVerse data tools that support development at every stage.
+              </p>
+            </motion.div>
 
-                  {/* Description */}
-                  <p style={{ ...typography.body, color: colors.text.secondary, lineHeight: 1.7, marginBottom: spacing.md }}>
-                    {step.description}
-                  </p>
+            {/* Cinematic ribbon (film strip) */}
+            <div style={{ position: "relative", marginBottom: spacing.xl }}>
+              {/* Progression thread */}
+              <motion.div
+                aria-hidden="true"
+                initial={{ opacity: 0, scaleX: 0 }}
+                whileInView={{ opacity: 1, scaleX: 1 }}
+                viewport={viewportOnce}
+                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                style={{
+                  transformOrigin: "left center",
+                  position: "absolute",
+                  left: isMobile ? 28 : 24,
+                  right: isMobile ? "auto" : 24,
+                  top: isMobile ? 18 : "50%",
+                  width: isMobile ? 2 : "auto",
+                  height: isMobile ? "calc(100% - 36px)" : 2,
+                  opacity: isMobile ? 1 : isTablet ? 0 : 1,
+                  background: isMobile
+                    ? `linear-gradient(180deg, ${colors.accent.main}00, ${colors.accent.main}AA, ${colors.primary.main}80, ${colors.accent.main}00)`
+                    : `linear-gradient(90deg, ${colors.accent.main}00, ${colors.accent.main}AA, ${colors.primary.main}80, ${colors.accent.main}00)`,
+                  boxShadow: `0 0 26px ${colors.accent.main}35`,
+                  borderRadius: 999,
+                }}
+              />
 
-                  {/* CTA */}
-                  <Link to="/realverse/join" style={{ textDecoration: "none" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, minmax(0, 1fr))" : "repeat(3, minmax(0, 1fr))",
+                  gap: isMobile ? spacing.lg : isTablet ? spacing.lg : 0,
+                  alignItems: "stretch",
+                }}
+              >
+                {pathwayStages.map((stage, idx) => {
+                  return (
                     <motion.div
-                      whileHover={{ x: 4 }}
+                      key={stage.id}
+                      initial={{ opacity: 0, y: 18 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={viewportOnce}
+                      transition={{ duration: 0.7, delay: idx * 0.12, ease: [0.22, 1, 0.36, 1] }}
+                      whileHover={{
+                        y: -6,
+                        filter: "brightness(1.06)",
+                        boxShadow: shadows.cardHover,
+                      }}
                       style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: spacing.xs,
-                        color: colors.accent.main,
-                        fontSize: typography.fontSize.sm,
-                        fontWeight: typography.fontWeight.semibold,
+                        position: "relative",
+                        overflow: "hidden",
+                        minHeight: isMobile ? 168 : 260,
+                        borderRadius: borderRadius["2xl"],
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        boxShadow: shadows.card,
+                        ...(isMobile || isTablet
+                          ? {}
+                          : {
+                              marginLeft: idx === 0 ? 0 : -24,
+                              zIndex: 10 + idx,
+                            }),
+                        background: "rgba(10, 16, 32, 0.35)",
+                        backdropFilter: "blur(10px)",
                       }}
                     >
-                      Explore this program <ArrowRightIcon size={14} />
+                      {/* Background image */}
+                      <div
+                        aria-hidden="true"
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          backgroundImage: `url("${stage.image}")`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                          transform: "scale(1.05)",
+                          filter: "saturate(1.02) contrast(1.05)",
+                          opacity: 0.72,
+                        }}
+                      />
+                      {/* Dark-blue overlay for readability */}
+                      <div
+                        aria-hidden="true"
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background:
+                            "linear-gradient(90deg, rgba(5, 11, 32, 0.92) 0%, rgba(5, 11, 32, 0.62) 45%, rgba(5, 11, 32, 0.90) 100%)",
+                        }}
+                      />
+                      <div
+                        aria-hidden="true"
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "radial-gradient(560px 260px at 20% 30%, rgba(0,224,255,0.12), transparent 60%)",
+                          opacity: 0.9,
+                        }}
+                      />
+
+                      {/* Stage content */}
+                      <div
+                        style={{
+                          position: "relative",
+                          zIndex: 2,
+                          padding: spacing.xl,
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "space-between",
+                          height: "100%",
+                          gap: spacing.md,
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.md }}>
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                            <div
+                              aria-hidden="true"
+                              style={{
+                                width: 46,
+                                height: 46,
+                                borderRadius: 999,
+                                background: `linear-gradient(135deg, ${colors.accent.main}22, ${colors.primary.main}18)`,
+                                border: `1px solid ${colors.accent.main}55`,
+                                boxShadow: `0 0 30px ${colors.accent.main}22`,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <span style={{ ...typography.h4, color: colors.accent.main, fontWeight: typography.fontWeight.bold }}>
+                                {idx + 1}
+                              </span>
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                              <div
+                                style={{
+                                  ...typography.overline,
+                                  color: colors.accent.main,
+                                  letterSpacing: "0.12em",
+                                  fontSize: typography.fontSize.xs,
+                                }}
+                              >
+                                {stage.ageGroup}
+                              </div>
+                              <div
+                                style={{
+                                  ...typography.h4,
+                                  color: colors.text.primary,
+                                  fontWeight: typography.fontWeight.bold,
+                                  lineHeight: 1.15,
+                                }}
+                              >
+                                {stage.title}
+                              </div>
+                            </div>
+                          </div>
+                          {!isMobile && (
+                            <div
+                              aria-hidden="true"
+                              style={{
+                                width: 10,
+                                height: 10,
+                                borderRadius: 999,
+                                background: colors.accent.main,
+                                boxShadow: `0 0 22px ${colors.accent.main}`,
+                                opacity: 0.75,
+                              }}
+                            />
+                          )}
+                        </div>
+                        <div
+                          style={{
+                            ...typography.body,
+                            color: "rgba(255,255,255,0.82)",
+                            fontSize: typography.fontSize.sm,
+                            lineHeight: 1.5,
+                            maxWidth: 360,
+                          }}
+                        >
+                          {stage.description}
+                        </div>
+                      </div>
                     </motion.div>
-                  </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Compact tiles (merged coaching + training USP) */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))",
+                gap: spacing.lg,
+                alignItems: "stretch",
+                marginBottom: spacing.xl,
+              }}
+            >
+              {pathwayTiles.map((tile, idx) => {
+                const Icon = tile.icon;
+                return (
+                  <motion.div
+                    key={`${tile.title}-${idx}`}
+                    initial={{ opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={viewportOnce}
+                    transition={{ duration: 0.6, delay: 0.05 + idx * 0.08 }}
+                    whileHover={{
+                      y: -4,
+                      boxShadow: `0 18px 60px rgba(0,0,0,0.45), 0 0 46px ${colors.accent.main}22`,
+                    }}
+                    style={{
+                      borderRadius: borderRadius.xl,
+                      position: "relative",
+                      overflow: "hidden",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      background: "rgba(255,255,255,0.04)",
+                      boxShadow: shadows.md,
+                      padding: spacing.xl,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: spacing.sm,
+                      minHeight: isMobile ? "auto" : 120,
+                    }}
+                  >
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        backgroundImage: `url("${tile.image}")`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                        opacity: 0.22,
+                        filter: "saturate(1.02) contrast(1.06)",
+                        transform: "scale(1.08)",
+                      }}
+                    />
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background:
+                          "linear-gradient(180deg, rgba(5, 11, 32, 0.90) 0%, rgba(5, 11, 32, 0.70) 55%, rgba(5, 11, 32, 0.92) 100%)",
+                      }}
+                    />
+                    <motion.div
+                      aria-hidden="true"
+                      initial={{ opacity: 0.45 }}
+                      whileHover={{ opacity: 0.85 }}
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: `radial-gradient(520px 220px at 20% 30%, ${colors.accent.main}14, transparent 60%)`,
+                        transition: "opacity 220ms ease",
+                      }}
+                    />
+
+                    <div style={{ position: "relative", zIndex: 1, display: "flex", gap: spacing.md, alignItems: "flex-start" }}>
+                      <div
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: borderRadius.lg,
+                          background: `linear-gradient(135deg, ${colors.accent.main}20, ${colors.primary.main}16)`,
+                          border: `1px solid rgba(255,255,255,0.14)`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          boxShadow: `0 0 24px ${colors.accent.main}1f`,
+                        }}
+                      >
+                        <Icon size={20} color={colors.accent.main} />
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div
+                          style={{
+                            ...typography.h5,
+                            color: colors.text.primary,
+                            fontWeight: typography.fontWeight.bold,
+                            lineHeight: 1.1,
+                          }}
+                        >
+                          {tile.title}
+                        </div>
+                        <div
+                          style={{
+                            ...typography.body,
+                            color: "rgba(255,255,255,0.78)",
+                            fontSize: typography.fontSize.sm,
+                            lineHeight: 1.45,
+                          }}
+                        >
+                          {tile.description}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Scroll cue (icon-only, not a CTA) */}
+            <div style={{ display: "flex", justifyContent: "center", paddingTop: spacing.sm }}>
+              <motion.button
+                type="button"
+                aria-label="Scroll down"
+                onClick={() => {
+                  const next = document.getElementById("programs-grid");
+                  next?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={viewportOnce}
+                transition={{ duration: 0.6, delay: 0.05 }}
+                whileHover={{ opacity: 1 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  width: 44,
+                  height: 44,
+                  border: "none",
+                  cursor: "pointer",
+                  borderRadius: 999,
+                  background: "transparent",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: 0.78,
+                }}
+              >
+                <motion.div
+                  aria-hidden="true"
+                  animate={{ y: [0, -4, 0] }}
+                  transition={{ duration: 2.2, ease: "easeInOut", repeat: Infinity }}
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 999,
+                    border: `1px solid rgba(255,255,255,0.14)`,
+                    background: "rgba(255,255,255,0.04)",
+                    backdropFilter: "blur(10px)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: `0 10px 30px rgba(0,0,0,0.35)`,
+                  }}
+                >
+                  <div style={{ transform: "rotate(90deg)" }}>
+                    <ArrowRightIcon size={18} color={colors.accent.main} />
+                  </div>
                 </motion.div>
-              );
-            })}
+              </motion.button>
+            </div>
           </div>
-        </div>
+        </motion.section>
       </InfinitySection>
 
       {/* (C) PROGRAM CARDS SECTION */}
@@ -724,7 +1059,22 @@ const ProgramsOverviewPage: React.FC = () => {
               gap: spacing.xl,
             }}
           >
-            {realversePrograms.map((program, idx) => (
+            {realversePrograms.map((program, idx) => {
+              // Encode the background image URL to handle spaces and special characters in filenames
+              // Only encode the filename part (last segment), keep the path as-is
+              const encodedBackgroundImage = program.backgroundImage 
+                ? (() => {
+                    const lastSlashIndex = program.backgroundImage.lastIndexOf('/');
+                    if (lastSlashIndex === -1) {
+                      return encodeURIComponent(program.backgroundImage);
+                    }
+                    const path = program.backgroundImage.substring(0, lastSlashIndex + 1);
+                    const filename = program.backgroundImage.substring(lastSlashIndex + 1);
+                    return path + encodeURIComponent(filename);
+                  })()
+                : null;
+              
+              return (
               <motion.div
                 key={program.id}
                 initial={{ opacity: 0, y: 30 }}
@@ -737,10 +1087,18 @@ const ProgramsOverviewPage: React.FC = () => {
                   <motion.div
                     style={{
                       position: "relative",
-                      background: `rgba(10, 16, 32, 0.6)`,
-                      backdropFilter: "blur(20px)",
+                      ...glass.card,
+                      ...(encodedBackgroundImage
+                        ? {
+                            backgroundImage: `url("${encodedBackgroundImage}")`,
+                            backgroundPosition: "center",
+                            backgroundSize: "cover",
+                            backgroundRepeat: "no-repeat",
+                          }
+                        : {
+                            background: `rgba(10, 16, 32, 0.9)`,
+                          }),
                       borderRadius: borderRadius["2xl"],
-                      border: `1px solid rgba(255,255,255,0.1)`,
                       padding: spacing.xl,
                       height: "100%",
                       cursor: "pointer",
@@ -757,26 +1115,10 @@ const ProgramsOverviewPage: React.FC = () => {
                       e.currentTarget.style.boxShadow = "none";
                     }}
                   >
-                    {/* Background Image */}
-                    {program.image && (
-                      <div
-                        className="card-bg"
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          backgroundImage: `url(${program.image})`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                          opacity: 0.15,
-                          filter: "blur(8px)",
-                          transition: "opacity 0.4s ease",
-                          zIndex: 0,
-                        }}
-                      />
-                    )}
-
-                    {/* Content */}
-                    <div style={{ position: "relative", zIndex: 1, height: "100%", display: "flex", flexDirection: "column" }}>
+                    {/* Branded overlay stack for text readability (blue + gold + subtle blur) */}
+                    <div aria-hidden="true" style={{ ...programCardOverlay(program.accent), zIndex: 0 }} />
+                    <div aria-hidden="true" style={{ ...glass.overlay, zIndex: 1, opacity: 0.55 }} />
+                    <div style={{ position: "relative", zIndex: 2, height: "100%", display: "flex", flexDirection: "column" }}>
                       {/* Acronym Badge */}
                       <div style={{ marginBottom: spacing.md }}>
                         <span
@@ -804,6 +1146,7 @@ const ProgramsOverviewPage: React.FC = () => {
                           marginBottom: spacing.sm,
                           fontWeight: typography.fontWeight.bold,
                           lineHeight: 1.2,
+                          textShadow: "0 2px 18px rgba(0,0,0,0.65)",
                         }}
                       >
                         {program.name}
@@ -817,6 +1160,7 @@ const ProgramsOverviewPage: React.FC = () => {
                           marginBottom: spacing.md,
                           lineHeight: 1.7,
                           opacity: 0.9,
+                          textShadow: "0 2px 14px rgba(0,0,0,0.55)",
                         }}
                       >
                         {program.positioning}
@@ -846,7 +1190,15 @@ const ProgramsOverviewPage: React.FC = () => {
                                 boxShadow: `0 0 12px ${program.accent}60`,
                               }}
                             />
-                            <span style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm, opacity: 0.85 }}>
+                            <span
+                              style={{
+                                ...typography.body,
+                                color: colors.text.secondary,
+                                fontSize: typography.fontSize.sm,
+                                opacity: 0.9,
+                                textShadow: "0 2px 12px rgba(0,0,0,0.55)",
+                              }}
+                            >
                               {highlight}
                             </span>
                           </div>
@@ -856,293 +1208,24 @@ const ProgramsOverviewPage: React.FC = () => {
                       {/* CTA */}
                       <motion.div
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: spacing.sm,
-                          color: program.accent,
+                          ...heroCTAPillStyles.base,
+                          ...(program.accent === colors.primary.main ? heroCTAPillStyles.blue : heroCTAPillStyles.gold),
                           marginTop: "auto",
                         }}
-                        whileHover={{ x: 4 }}
+                        whileHover={{ y: -2 }}
                       >
-                        <span style={{ ...typography.body, fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.semibold }}>
-                          Learn More
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                          Learn More{" "}
+                          <ArrowRightIcon
+                            size={16}
+                            style={{ color: program.accent === colors.primary.main ? colors.primary.main : colors.accent.main }}
+                          />
                         </span>
-                        <ArrowRightIcon size={18} />
                       </motion.div>
                     </div>
                   </motion.div>
                 </Link>
               </motion.div>
-            ))}
-          </div>
-        </div>
-      </InfinitySection>
-
-      {/* (D) SPECIALIZED PROGRAMS */}
-      <InfinitySection id="specialized-programs" bridge={true} style={{ padding: `${spacing["4xl"]} ${spacing.xl}` }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewportOnce}
-            transition={{ duration: 0.6 }}
-            style={{ textAlign: "center", marginBottom: spacing["2xl"] }}
-          >
-            <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em", marginBottom: spacing.sm }}>
-              SPECIALIZED PATHWAYS
-            </div>
-            <h2
-              style={{
-                ...typography.h2,
-                fontSize: `clamp(2rem, 5vw, 3.5rem)`,
-                color: colors.text.primary,
-                marginBottom: spacing.md,
-                fontWeight: typography.fontWeight.bold,
-              }}
-            >
-              Specialized Programs
-            </h2>
-          </motion.div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
-              gap: spacing.xl,
-            }}
-          >
-            {[
-              {
-                title: "Elite Pathway",
-                subtitle: "Professional Academy equivalent",
-                description: "For players targeting top-tier football with highest intensity training and Super Division focus.",
-                link: "/programs/epp",
-              },
-              {
-                title: "Junior Development",
-                subtitle: "Junior Academy equivalent",
-                description: "Foundation building for young players with tactical identity and data-assisted development.",
-                link: "/programs/fydp",
-              },
-              {
-                title: "Women's Competitive Pathway",
-                subtitle: "Women's Academy equivalent",
-                description: "Unified pathway for women footballers with equal standards and professional development.",
-                link: "/programs/wpp",
-              },
-            ].map((program, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={viewportOnce}
-                transition={{ duration: 0.6, delay: idx * 0.15 }}
-                style={{
-                  background: `rgba(10, 16, 32, 0.6)`,
-                  backdropFilter: "blur(20px)",
-                  borderRadius: borderRadius["2xl"],
-                  border: `1px solid rgba(255,255,255,0.1)`,
-                  padding: spacing.xl,
-                  boxShadow: shadows.lg,
-                }}
-              >
-                <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs, fontWeight: typography.fontWeight.bold }}>
-                  {program.title}
-                </h3>
-                <div
-                  style={{
-                    ...typography.overline,
-                    color: colors.accent.main,
-                    letterSpacing: "0.1em",
-                    marginBottom: spacing.sm,
-                    fontSize: typography.fontSize.xs,
-                  }}
-                >
-                  {program.subtitle}
-                </div>
-                <p style={{ ...typography.body, color: colors.text.secondary, lineHeight: 1.7, marginBottom: spacing.md }}>
-                  {program.description}
-                </p>
-                <Link to={program.link} style={{ textDecoration: "none" }}>
-                  <motion.div
-                    whileHover={{ x: 4 }}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: spacing.xs,
-                      color: colors.accent.main,
-                      fontSize: typography.fontSize.sm,
-                      fontWeight: typography.fontWeight.semibold,
-                    }}
-                  >
-                    Explore Program <ArrowRightIcon size={14} />
-                  </motion.div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </InfinitySection>
-
-      {/* (E) TRAINING EXPERIENCE SECTION */}
-      <InfinitySection id="training-experience" bridge={true} style={{ padding: `${spacing["4xl"]} ${spacing.xl}` }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewportOnce}
-            transition={{ duration: 0.6 }}
-            style={{ textAlign: "center", marginBottom: spacing["2xl"] }}
-          >
-            <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em", marginBottom: spacing.sm }}>
-              TRAINING EXPERIENCE
-            </div>
-            <h2
-              style={{
-                ...typography.h2,
-                fontSize: `clamp(2rem, 5vw, 3.5rem)`,
-                color: colors.text.primary,
-                marginBottom: spacing.md,
-                fontWeight: typography.fontWeight.bold,
-              }}
-            >
-              How We Train
-            </h2>
-          </motion.div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
-              gap: spacing.xl,
-            }}
-          >
-            {trainingExperiences.map((exp, idx) => {
-              const Icon = exp.icon;
-              return (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={viewportOnce}
-                  transition={{ duration: 0.6, delay: idx * 0.15 }}
-                  style={{
-                    background: `rgba(10, 16, 32, 0.6)`,
-                    backdropFilter: "blur(20px)",
-                    borderRadius: borderRadius["2xl"],
-                    border: `1px solid rgba(255,255,255,0.1)`,
-                    padding: spacing.xl,
-                    boxShadow: shadows.lg,
-                  }}
-                >
-                  <div style={{ marginBottom: spacing.md }}>
-                    <Icon size={32} color={colors.accent.main} />
-                  </div>
-                  <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.sm, fontWeight: typography.fontWeight.bold }}>
-                    {exp.title}
-                  </h3>
-                  <p style={{ ...typography.body, color: colors.text.secondary, lineHeight: 1.7, marginBottom: spacing.md }}>
-                    {exp.description}
-                  </p>
-                  <motion.div
-                    whileHover={{ x: 4 }}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: spacing.xs,
-                      color: colors.accent.main,
-                      fontSize: typography.fontSize.sm,
-                      fontWeight: typography.fontWeight.semibold,
-                    }}
-                  >
-                    Learn More <ArrowRightIcon size={14} />
-                  </motion.div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </InfinitySection>
-
-      {/* (F) PLAYER DEVELOPMENT & OPPORTUNITIES */}
-      <InfinitySection id="development-opportunities" bridge={true} style={{ padding: `${spacing["4xl"]} ${spacing.xl}` }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewportOnce}
-            transition={{ duration: 0.6 }}
-            style={{ textAlign: "center", marginBottom: spacing["2xl"] }}
-          >
-            <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em", marginBottom: spacing.sm }}>
-              PLAYER DEVELOPMENT
-            </div>
-            <h2
-              style={{
-                ...typography.h2,
-                fontSize: `clamp(2rem, 5vw, 3.5rem)`,
-                color: colors.text.primary,
-                marginBottom: spacing.md,
-                fontWeight: typography.fontWeight.bold,
-              }}
-            >
-              Development & Opportunities
-            </h2>
-            <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.lg, maxWidth: "800px", margin: "0 auto" }}>
-              Every player gets access to comprehensive development pathways and professional infrastructure.
-            </p>
-          </motion.div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
-              gap: spacing.xl,
-            }}
-          >
-            {developmentOpportunities.map((opp, idx) => {
-              const Icon = opp.icon;
-              return (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={viewportOnce}
-                  transition={{ duration: 0.6, delay: idx * 0.1 }}
-                  style={{
-                    background: `rgba(10, 16, 32, 0.6)`,
-                    backdropFilter: "blur(20px)",
-                    borderRadius: borderRadius["2xl"],
-                    border: `1px solid rgba(255,255,255,0.1)`,
-                    padding: spacing.xl,
-                    boxShadow: shadows.lg,
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md }}>
-                    <div
-                      style={{
-                        flexShrink: 0,
-                        width: 48,
-                        height: 48,
-                        borderRadius: borderRadius.lg,
-                        background: `linear-gradient(135deg, ${colors.accent.main}20, ${colors.primary.main}20)`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Icon size={24} color={colors.accent.main} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ ...typography.h5, color: colors.text.primary, marginBottom: spacing.xs, fontWeight: typography.fontWeight.bold }}>
-                        {opp.title}
-                      </h3>
-                      <p style={{ ...typography.body, color: colors.text.secondary, lineHeight: 1.7, fontSize: typography.fontSize.sm }}>
-                        {opp.description}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
               );
             })}
           </div>
@@ -1184,10 +1267,8 @@ const ProgramsOverviewPage: React.FC = () => {
                 viewport={viewportOnce}
                 transition={{ duration: 0.6 }}
                 style={{
-                  background: `rgba(10, 16, 32, 0.6)`,
-                  backdropFilter: "blur(20px)",
                   borderRadius: borderRadius.xl,
-                  border: `1px solid rgba(255,255,255,0.1)`,
+                  ...glass.card,
                   overflow: "hidden",
                   boxShadow: shadows.md,
                 }}
@@ -1353,49 +1434,52 @@ const ProgramsOverviewPage: React.FC = () => {
                 marginBottom: spacing["2xl"],
               }}
             >
-              <Link to="/realverse/join" style={{ textDecoration: "none" }}>
-                <Button
-                  variant="primary"
-                  size="lg"
+              <Link to="/realverse/join" style={{ textDecoration: "none", width: isMobile ? "100%" : "auto" }}>
+                <motion.div
+                  whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                  whileTap={{ scale: 0.98 }}
                   style={{
-                    borderRadius: borderRadius.full,
-                    padding: `${spacing.md} ${spacing.xl}`,
-                    fontSize: typography.fontSize.base,
-                    fontWeight: typography.fontWeight.bold,
+                    ...heroCTAStyles.yellow,
+                    width: isMobile ? "100%" : "auto",
+                    minWidth: isMobile ? "100%" : 280,
                   }}
                 >
-                  Join RealVerse Academy <ArrowRightIcon size={18} style={{ marginLeft: spacing.sm }} />
-                </Button>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                    <span style={heroCTAStyles.yellow.textStyle}>Join RealVerse Academy</span>
+                    <span style={heroCTAStyles.yellow.subtitleStyle}>Start with a trial and pathway mapping</span>
+                  </div>
+                  <ArrowRightIcon size={20} color={colors.text.onAccent} style={{ flexShrink: 0 }} />
+                </motion.div>
               </Link>
+
               <motion.a
                 href="tel:+918660843598"
-                whileHover={{ x: 4 }}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: spacing.sm,
-                  color: colors.text.secondary,
+                  ...heroCTAPillStyles.base,
+                  ...heroCTAPillStyles.gold,
                   textDecoration: "none",
-                  fontSize: typography.fontSize.base,
-                  fontWeight: typography.fontWeight.semibold,
                 }}
               >
-                <PhoneIcon size={18} /> +91 8660843598
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <PhoneIcon size={16} style={{ color: colors.accent.main }} /> +91 8660843598
+                </span>
               </motion.a>
+
               <motion.a
                 href="mailto:contact@realbengaluru.com"
-                whileHover={{ x: 4 }}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: spacing.sm,
-                  color: colors.text.secondary,
+                  ...heroCTAPillStyles.base,
+                  ...heroCTAPillStyles.gold,
                   textDecoration: "none",
-                  fontSize: typography.fontSize.base,
-                  fontWeight: typography.fontWeight.semibold,
                 }}
               >
-                <EmailIcon size={18} /> contact@realbengaluru.com
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <EmailIcon size={16} style={{ color: colors.accent.main }} /> contact@realbengaluru.com
+                </span>
               </motion.a>
             </div>
           </motion.div>

@@ -1,10 +1,10 @@
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
+import { heroCTAStyles } from "../../theme/hero-design-patterns";
 import { SPONSORS, DUMMY_OFFERS } from "../../data/sponsors";
 import { SponsorLogoWall } from "./SponsorLogoWall";
 import { SponsorPerkCard } from "./SponsorPerkCard";
-import { Button } from "../ui/Button";
 
 export const SponsorPerksSection: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
   const reduce = useReducedMotion();
@@ -162,20 +162,24 @@ export const SponsorPerksSection: React.FC<{ isMobile: boolean }> = ({ isMobile 
               </div>
 
               <div title={tooltip} style={{ display: "flex", justifyContent: isMobile ? "stretch" : "flex-end" }}>
-                <Button
-                  variant="primary"
-                  size="lg"
-                  disabled
+                <div
                   aria-disabled="true"
                   style={{
-                    borderRadius: 999,
+                    ...heroCTAStyles.yellow,
                     width: isMobile ? "100%" : "auto",
-                    background: `linear-gradient(135deg, ${colors.accent.main} 0%, ${colors.primary.main} 100%)`,
-                    boxShadow: `0 10px 30px rgba(0,224,255,0.22)`,
+                    minWidth: isMobile ? "100%" : 280,
+                    minHeight: 56,
+                    padding: "12px 18px",
+                    opacity: 0.55,
+                    cursor: "not-allowed",
                   }}
                 >
-                  Join Fan Club (Coming Soon)
-                </Button>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                    <span style={heroCTAStyles.yellow.textStyle}>Join Fan Club</span>
+                    <span style={heroCTAStyles.yellow.subtitleStyle}>Coming soon — unlock perks</span>
+                  </div>
+                  <span style={{ color: colors.text.onAccent, fontWeight: 800 }}>→</span>
+                </div>
               </div>
             </div>
           </div>

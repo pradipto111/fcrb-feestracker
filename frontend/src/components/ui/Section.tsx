@@ -6,6 +6,7 @@
  */
 import React from 'react';
 import { colors, spacing, borderRadius } from '../../theme/design-tokens';
+import { glass } from '../../theme/glass';
 
 interface SectionProps {
   children: React.ReactNode;
@@ -32,13 +33,12 @@ export const Section: React.FC<SectionProps> = ({
       padding: 0,
     },
     elevated: {
-      background: colors.surface.section,
+      ...glass.panel,
       borderRadius: borderRadius.xl,
       padding: spacing.lg,
-      border: `1px solid rgba(255, 255, 255, 0.1)`,
     },
     subtle: {
-      background: colors.surface.soft,
+      ...glass.inset,
       borderRadius: borderRadius.lg,
       padding: spacing.md,
     },
@@ -54,6 +54,13 @@ export const Section: React.FC<SectionProps> = ({
         ...style,
       }}
     >
+      {variant !== 'default' && (
+        <div
+          aria-hidden="true"
+          style={variant === 'subtle' ? glass.overlaySoft : glass.overlay}
+        />
+      )}
+      <div style={{ position: 'relative', zIndex: 1 }}>
       {(title || description) && (
         <div style={{ marginBottom: spacing.lg }}>
           {title && (
@@ -84,6 +91,7 @@ export const Section: React.FC<SectionProps> = ({
         </div>
       )}
       {children}
+      </div>
     </section>
   );
 };

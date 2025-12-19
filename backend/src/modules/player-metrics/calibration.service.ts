@@ -546,7 +546,7 @@ export async function getPlayerConsensus(
       where: {
         studentId,
         ...(options?.includeInactive ? {} : {
-          student: { isActive: true },
+          student: { status: 'ACTIVE' },
         }),
       },
       include: {

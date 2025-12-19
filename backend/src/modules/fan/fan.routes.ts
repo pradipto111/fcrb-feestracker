@@ -202,10 +202,12 @@ router.get("/coupons", async (req, res) => {
     const pools = await (prisma as any).couponPool?.findMany({
       where: {
         isActive: true,
-        OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
-        ...(tierId
-          ? { OR: [{ tierEligibility: { equals: [] } }, { tierEligibility: { has: tierId } }] }
-          : { tierEligibility: { equals: [] } }),
+        AND: [
+          { OR: [{ expiresAt: null }, { expiresAt: { gte: now } }] },
+          ...(tierId
+            ? [{ OR: [{ tierEligibility: { equals: [] } }, { tierEligibility: { has: tierId } }] }]
+            : [{ tierEligibility: { equals: [] } }]),
+        ],
       },
       include: {
         sponsor: true,

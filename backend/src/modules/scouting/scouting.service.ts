@@ -174,6 +174,13 @@ export async function comparePlayers(params: ComparePlayersParams): Promise<Play
             },
             positional: true,
             readiness: true,
+            coachNotes: {
+              take: 5,
+              orderBy: { createdAt: 'desc' },
+            },
+            student: {
+              include: { center: true },
+            },
           },
         });
         
@@ -201,8 +208,12 @@ export async function comparePlayers(params: ComparePlayersParams): Promise<Play
         },
       });
 
-      let trends = {
-        direction: 'plateau' as const,
+      let trends: {
+        direction: 'improving' | 'plateau' | 'declining';
+        metricsImproved: number;
+        metricsDeclined: number;
+      } = {
+        direction: 'plateau',
         metricsImproved: 0,
         metricsDeclined: 0,
       };

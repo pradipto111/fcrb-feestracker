@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
+import { heroCTAPillStyles } from "../../theme/hero-design-patterns";
 import { Button } from "../ui/Button";
 import { CheckIcon, StarIcon, TrophyIcon, ArrowRightIcon, LockIcon } from "../icons/IconSet";
 import { FAN_CLUB_TIERS, SPONSOR_BENEFITS } from "../../data/fanclubBenefits";
@@ -219,24 +220,36 @@ export const FanClubSection: React.FC<{ isMobile: boolean }> = ({ isMobile }) =>
           </div>
 
           <div style={{ display: "flex", gap: spacing.sm, justifyContent: isMobile ? "flex-start" : "flex-end", flexWrap: "wrap" }}>
-            <Button
-              variant="secondary"
-              size="md"
+            <motion.button
+              type="button"
               onClick={() => setStep(1)}
-              style={{ borderRadius: 999, opacity: joined ? 1 : 0.85 }}
+              whileHover={!reduce ? { y: -2 } : undefined}
+              whileTap={!reduce ? { scale: 0.98 } : undefined}
+              style={{
+                ...heroCTAPillStyles.base,
+                padding: "10px 14px",
+                boxShadow: "none",
+                opacity: joined ? 1 : 0.85,
+              }}
               {...ctaHoverHandlers("fanclub_cta_restart")}
             >
               See Your Progress
-            </Button>
-            <Button
-              variant="primary"
-              size="md"
+            </motion.button>
+            <motion.button
+              type="button"
               onClick={() => setStep(joined ? 4 : 1)}
-              style={{ borderRadius: 999 }}
+              whileHover={!reduce ? { y: -2 } : undefined}
+              whileTap={!reduce ? { scale: 0.98 } : undefined}
+              style={{
+                ...heroCTAPillStyles.base,
+                ...heroCTAPillStyles.gold,
+                padding: "10px 14px",
+                boxShadow: "none",
+              }}
               {...ctaHoverHandlers("fanclub_cta_primary")}
             >
               {joined ? "Explore Fan Benefits" : "Join the Fan Club"}
-            </Button>
+            </motion.button>
           </div>
         </div>
       </motion.div>

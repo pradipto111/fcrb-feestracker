@@ -270,7 +270,7 @@ const DrillsPage: React.FC = () => {
             </select>
           </div>
         </div>
-
+        
       {/* Videos Grid */}
       {loading ? (
         <Card variant="elevated" padding="xl">
@@ -458,7 +458,7 @@ const DrillsPage: React.FC = () => {
               maxHeight: "90vh",
               overflowY: "auto",
               position: "relative",
-              background: colors.space.dark,
+              background: colors.surface.section,
               border: `1px solid rgba(255, 255, 255, 0.1)`,
               animation: "scaleIn 0.3s ease-out",
             }}
@@ -521,7 +521,7 @@ const DrillsPage: React.FC = () => {
                 height: 0,
                 overflow: "hidden",
                 borderRadius: borderRadius.xl,
-                background: colors.space.deep,
+                background: colors.surface.bg,
                 marginBottom: spacing.lg,
               }}>
                 {selectedVideo.platform === "YOUTUBE" && selectedVideo.embedUrl ? (
@@ -607,6 +607,3 @@ const DrillsPage: React.FC = () => {
 };
 
 export default DrillsPage;
-
-
-

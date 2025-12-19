@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import PublicHeader from "../components/PublicHeader";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { heroCTAStyles, heroCTAPillStyles } from "../theme/hero-design-patterns";
 import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { api } from "../api/client";
 
@@ -176,10 +177,22 @@ const RealVerseJoinPage: React.FC = () => {
               }}
             >
               <Link to="/" style={{ textDecoration: "none" }}>
-                <Button variant="primary">Go Back to Home</Button>
+                <motion.div
+                  whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{ ...heroCTAPillStyles.base, ...heroCTAPillStyles.blue, padding: "10px 14px" }}
+                >
+                  Go Back to Home
+                </motion.div>
               </Link>
               <Link to="/shop" style={{ textDecoration: "none" }}>
-                <Button variant="secondary">Visit Shop</Button>
+                <motion.div
+                  whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{ ...heroCTAPillStyles.base, ...heroCTAPillStyles.gold, padding: "10px 14px" }}
+                >
+                  Visit Shop
+                </motion.div>
               </Link>
               <a
                 href="https://www.instagram.com/realbengaluru/"
@@ -187,7 +200,13 @@ const RealVerseJoinPage: React.FC = () => {
                 rel="noopener noreferrer"
                 style={{ textDecoration: "none" }}
               >
-                <Button variant="secondary">Follow Us on Instagram</Button>
+                <motion.div
+                  whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{ ...heroCTAPillStyles.base, padding: "10px 14px" }}
+                >
+                  Follow Us on Instagram
+                </motion.div>
               </a>
             </div>
           </Card>
@@ -294,40 +313,48 @@ const RealVerseJoinPage: React.FC = () => {
                 borderBottom: `1px solid rgba(255, 255, 255, 0.1)`,
               }}
             >
-              <button
+              <motion.button
+                type="button"
                 onClick={() => setActiveTab("apply")}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.99 }}
                 style={{
                   flex: 1,
                   padding: spacing.lg,
-                  background: activeTab === "apply" ? colors.surface.card : "transparent",
+                  ...heroCTAPillStyles.base,
+                  borderRadius: 0,
+                  boxShadow: "none",
                   border: "none",
-                  borderBottom: activeTab === "apply" ? `2px solid ${colors.primary.main}` : "2px solid transparent",
+                  borderBottom: activeTab === "apply" ? `2px solid ${colors.accent.main}` : "2px solid transparent",
+                  background: activeTab === "apply" ? "rgba(255,255,255,0.04)" : "transparent",
                   color: activeTab === "apply" ? colors.text.primary : colors.text.muted,
-                  ...typography.body,
                   fontWeight: activeTab === "apply" ? typography.fontWeight.semibold : typography.fontWeight.medium,
-                  cursor: "pointer",
                   transition: "all 0.2s ease",
                 }}
               >
                 Apply to RealVerse Academy
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                type="button"
                 onClick={() => setActiveTab("login")}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.99 }}
                 style={{
                   flex: 1,
                   padding: spacing.lg,
-                  background: activeTab === "login" ? colors.surface.card : "transparent",
+                  ...heroCTAPillStyles.base,
+                  borderRadius: 0,
+                  boxShadow: "none",
                   border: "none",
-                  borderBottom: activeTab === "login" ? `2px solid ${colors.primary.main}` : "2px solid transparent",
+                  borderBottom: activeTab === "login" ? `2px solid ${colors.accent.main}` : "2px solid transparent",
+                  background: activeTab === "login" ? "rgba(255,255,255,0.04)" : "transparent",
                   color: activeTab === "login" ? colors.text.primary : colors.text.muted,
-                  ...typography.body,
                   fontWeight: activeTab === "login" ? typography.fontWeight.semibold : typography.fontWeight.medium,
-                  cursor: "pointer",
                   transition: "all 0.2s ease",
                 }}
               >
                 Already a member? Log in
-              </button>
+              </motion.button>
             </div>
 
             {/* Tab Content */}
@@ -792,15 +819,25 @@ const RealVerseJoinPage: React.FC = () => {
                         />
                       </div>
 
-                      <Button
+                      <motion.button
                         type="submit"
-                        variant="primary"
-                        size="lg"
-                        fullWidth
                         disabled={loading}
+                        whileHover={!loading ? { y: -2, boxShadow: shadows.buttonHover } : undefined}
+                        whileTap={!loading ? { scale: 0.98 } : undefined}
+                        style={{
+                          ...heroCTAStyles.yellow,
+                          width: "100%",
+                          opacity: loading ? 0.65 : 1,
+                          cursor: loading ? "not-allowed" : "pointer",
+                        }}
+                        aria-label="Submit Application"
                       >
-                        {loading ? "Submitting..." : "Submit Application"}
-                      </Button>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                          <span style={heroCTAStyles.yellow.textStyle}>{loading ? "Submitting..." : "Submit Application"}</span>
+                          <span style={heroCTAStyles.yellow.subtitleStyle}>We’ll contact you within 24–48 hours</span>
+                        </div>
+                        <span style={{ color: colors.text.onAccent, fontWeight: 800 }}>→</span>
+                      </motion.button>
                     </div>
                   </form>
                 </div>
@@ -827,9 +864,17 @@ const RealVerseJoinPage: React.FC = () => {
                     view attendance, manage payments, and stay connected with your team.
                   </p>
                   <Link to="/realverse/login" style={{ textDecoration: "none" }}>
-                    <Button variant="primary" size="lg" fullWidth>
-                      Go to Login Page
-                    </Button>
+                    <motion.div
+                      whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                      whileTap={{ scale: 0.98 }}
+                      style={{ ...heroCTAStyles.blue, width: "100%" }}
+                    >
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                        <span style={heroCTAStyles.blue.textStyle}>Go to Login Page</span>
+                        <span style={heroCTAStyles.blue.subtitleStyle}>Access your dashboard and updates</span>
+                      </div>
+                      <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+                    </motion.div>
                   </Link>
                 </div>
               )}

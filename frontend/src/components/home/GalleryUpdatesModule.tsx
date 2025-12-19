@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { colors, typography } from "../../theme/design-tokens";
+import { heroCTAStyles, heroCTAPillStyles, heroOverlayGradient, heroTypography } from "../../theme/hero-design-patterns";
 import { Button } from "../ui/Button";
 import InfoModal from "../InfoModal";
 import { ArrowRightIcon } from "../icons/IconSet";
@@ -57,25 +58,44 @@ const PillButton: React.FC<{
   iconRight?: boolean;
   fullWidth?: boolean;
 }> = ({ children, onClick, asLinkTo, iconRight = false, fullWidth = false }) => {
-  const content = (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-      {children}
-      {iconRight ? <ArrowRightIcon size={16} /> : null}
-    </span>
-  );
   if (asLinkTo) {
     return (
-      <Link to={asLinkTo} style={{ textDecoration: "none" }}>
-        <Button variant="secondary" size="sm" fullWidth={fullWidth}>
-          {content}
-        </Button>
+      <Link to={asLinkTo} style={{ textDecoration: "none", width: fullWidth ? "100%" : undefined, display: "inline-block" }}>
+        <motion.div
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          style={{
+            ...heroCTAPillStyles.base,
+            ...heroCTAPillStyles.gold,
+            width: fullWidth ? "100%" : "auto",
+            justifyContent: "center",
+          }}
+        >
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+            {children}
+            {iconRight ? <ArrowRightIcon size={16} style={{ color: colors.accent.main }} /> : null}
+          </span>
+        </motion.div>
       </Link>
     );
   }
   return (
-    <Button variant="secondary" size="sm" onClick={onClick} fullWidth={fullWidth}>
-      {content}
-    </Button>
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      style={{
+        ...heroCTAPillStyles.base,
+        ...heroCTAPillStyles.gold,
+        width: fullWidth ? "100%" : "auto",
+      }}
+    >
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+        {children}
+        {iconRight ? <ArrowRightIcon size={16} style={{ color: colors.accent.main }} /> : null}
+      </span>
+    </motion.button>
   );
 };
 
@@ -185,11 +205,11 @@ export const GalleryUpdatesModule: React.FC = () => {
               >
                 BELONGING &amp; EMOTION
               </div>
-              <div style={{ ...typography.h3, color: colors.text.primary, margin: 0 }}>Gallery • Updates</div>
+              <div style={{ ...heroTypography.heading, fontSize: typography.fontSize["2xl"], color: colors.text.primary, margin: 0 }}>Gallery • Updates</div>
               <div
                 style={{
-                  ...typography.body,
-                  color: colors.text.muted,
+                  ...heroTypography.subheading,
+                  color: colors.text.secondary,
                   marginTop: 6,
                   whiteSpace: "nowrap",
                   overflow: "hidden",
@@ -237,10 +257,10 @@ export const GalleryUpdatesModule: React.FC = () => {
               style={{
                 position: "absolute",
                 inset: 0,
-                background:
-                  "radial-gradient(circle at 18% 18%, rgba(255,169,0,0.12) 0%, transparent 52%), radial-gradient(circle at 85% 25%, rgba(0,224,255,0.10) 0%, transparent 55%), linear-gradient(135deg, rgba(5,11,32,0.55) 0%, rgba(10,22,51,0.45) 45%, rgba(5,11,32,0.62) 100%)",
+                background: heroOverlayGradient,
                 opacity: 0.95,
                 pointerEvents: "none",
+                zIndex: 0,
               }}
             />
 
@@ -332,13 +352,13 @@ export const GalleryUpdatesModule: React.FC = () => {
                           TRAINING • THIS WEEK
                         </div>
 
-                        {/* overlay gradient for readability */}
+                        {/* overlay gradient for readability - matching hero */}
                         <div
                           aria-hidden="true"
                           style={{
                             position: "absolute",
                             inset: 0,
-                            background: "linear-gradient(to top, rgba(5,11,32,0.88) 0%, rgba(5,11,32,0.35) 52%, rgba(5,11,32,0.15) 100%)",
+                            background: heroOverlayGradient,
                           }}
                         />
 
@@ -365,21 +385,20 @@ export const GalleryUpdatesModule: React.FC = () => {
 
                     {/* MediaQuickActions */}
                     <div style={{ marginTop: 12, display: "flex", gap: GAP_SM, flexWrap: "wrap" }}>
-                      <button
+                      <motion.button
                         type="button"
                         onClick={() => openGalleryAt(1)}
+                        whileHover={{ y: -2 }}
+                        whileTap={{ scale: 0.98 }}
                         style={{
-                          borderRadius: RADIUS_PILL,
-                          border: BORDER_1,
-                          background: "rgba(255,255,255,0.04)",
-                          color: colors.text.primary,
-                          padding: "10px 12px",
-                          cursor: "pointer",
-                          ...typography.caption,
+                          ...heroCTAPillStyles.base,
+                          ...heroCTAPillStyles.gold,
                         }}
                       >
-                        View Gallery
-                      </button>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                          View Gallery <ArrowRightIcon size={16} style={{ color: colors.accent.main }} />
+                        </span>
+                      </motion.button>
                       <div
                         style={{
                           borderRadius: RADIUS_PILL,
@@ -421,22 +440,24 @@ export const GalleryUpdatesModule: React.FC = () => {
                       {/* Filter chips (lightweight) */}
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                         {(["All", "Achievements", "News", "Academy"] as UpdateCategory[]).map((c) => (
-                          <button
+                          <motion.button
                             key={c}
                             type="button"
                             onClick={() => setFilter(c)}
+                            whileHover={!reduce ? { y: -2 } : undefined}
+                            whileTap={!reduce ? { scale: 0.98 } : undefined}
                             style={{
-                              borderRadius: RADIUS_PILL,
-                              border: BORDER_1,
-                              background: c === filter ? "rgba(0,224,255,0.12)" : "rgba(255,255,255,0.04)",
+                              ...heroCTAPillStyles.base,
+                              padding: "8px 12px",
+                              boxShadow: "none",
+                              border:
+                                c === filter ? `2px solid ${colors.accent.main}` : "1px solid rgba(255,255,255,0.14)",
+                              background: c === filter ? "rgba(245,179,0,0.08)" : "rgba(255,255,255,0.03)",
                               color: c === filter ? colors.text.primary : colors.text.muted,
-                              padding: "8px 10px",
-                              cursor: "pointer",
-                              ...typography.caption,
                             }}
                           >
                             {c}
-                          </button>
+                          </motion.button>
                         ))}
                       </div>
                     </div>
@@ -483,8 +504,7 @@ export const GalleryUpdatesModule: React.FC = () => {
                             style={{
                               position: "absolute",
                               inset: 0,
-                              background:
-                                "linear-gradient(135deg, rgba(5,11,32,0.86) 0%, rgba(5,11,32,0.35) 55%, rgba(5,11,32,0.90) 100%)",
+                              background: heroOverlayGradient,
                             }}
                           />
 

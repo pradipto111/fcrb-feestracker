@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { Card } from "./ui/Card";
 import { Button } from "./ui/Button";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { heroTypography } from "../theme/hero-design-patterns";
 
 interface Centre {
   id: number;
@@ -92,7 +93,7 @@ const OurCentresSection: React.FC = () => {
         id="centres"
         style={{
           padding: `${spacing["2xl"]} ${spacing.xl}`,
-          background: `linear-gradient(135deg, #050B20 0%, #0A1633 100%)`,
+          background: colors.club.background,
         }}
       >
         <div style={{ textAlign: "center", color: colors.text.muted }}>
@@ -111,7 +112,7 @@ const OurCentresSection: React.FC = () => {
       id="centres"
       style={{
         padding: `${spacing["2xl"]} ${spacing.xl}`,
-        background: `linear-gradient(135deg, #050B20 0%, #0A1633 100%)`,
+        background: colors.club.background,
         position: "relative",
         overflow: "hidden",
       }}
@@ -147,20 +148,16 @@ const OurCentresSection: React.FC = () => {
         >
           <h2
             style={{
-              ...typography.h2,
-              color: colors.text.primary,
-              marginBottom: spacing.sm,
+              ...heroTypography.heading,
               fontSize: isMobile ? typography.fontSize["2xl"] : typography.fontSize["3xl"],
-              fontWeight: typography.fontWeight.bold,
-              letterSpacing: "-0.02em",
+              marginBottom: spacing.sm,
             }}
           >
             Our Centres
           </h2>
           <p
             style={{
-              ...typography.body,
-              color: colors.text.muted,
+              ...heroTypography.subheading,
               fontSize: typography.fontSize.lg,
               maxWidth: "600px",
               margin: "0 auto",
@@ -188,7 +185,7 @@ const OurCentresSection: React.FC = () => {
               borderRadius: borderRadius.xl,
               overflow: "hidden",
               boxShadow: `0 20px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)`,
-              background: colors.space.dark,
+              background: colors.surface.section,
               position: "relative",
             }}
           >

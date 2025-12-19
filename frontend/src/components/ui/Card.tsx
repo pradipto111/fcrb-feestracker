@@ -1,10 +1,11 @@
-import React from 'react';
-import { colors, borderRadius, shadows, spacing } from '../../theme/design-tokens';
+import React from "react";
+import { borderRadius, shadows, spacing } from "../../theme/design-tokens";
+import { glass } from "../../theme/glass";
 
 interface CardProps {
   children: React.ReactNode;
   variant?: 'default' | 'elevated' | 'glass' | 'outlined';
-  padding?: 'none' | 'sm' | 'md' | 'lg';
+  padding?: "none" | "sm" | "md" | "lg" | "xl";
   style?: React.CSSProperties;
   className?: string;
   onClick?: (e?: React.MouseEvent) => void;
@@ -27,37 +28,29 @@ export const Card: React.FC<CardProps> = ({
   };
 
   const variantStyles: Record<string, React.CSSProperties> = {
-    // Section surface - main content panels (football-first)
+    // Default surface: blue glass overlay for readability over busy backgrounds
     default: {
-      background: colors.surface.card, // Football-first card background
-      backdropFilter: 'blur(14px)',
-      boxShadow: shadows.card, // Sports broadcast style
-      border: `1px solid rgba(255, 255, 255, 0.10)`, // Subtle border
-      borderRadius: borderRadius.card, // 16px - football-first
+      ...glass.card,
+      boxShadow: shadows.card,
+      borderRadius: borderRadius.card,
     },
-    // Card surface - floating cards (football-first)
+    // Elevated: same surface but stronger lift
     elevated: {
-      background: colors.surface.card, // Football-first card background
-      backdropFilter: 'blur(14px)',
-      boxShadow: shadows.cardHover, // Sports broadcast hover shadow
-      border: `1px solid rgba(255, 255, 255, 0.10)`, // Subtle border
-      borderRadius: borderRadius.card, // 16px - football-first
+      ...glass.card,
+      boxShadow: shadows.cardHover,
+      borderRadius: borderRadius.card,
     },
-    // Glass effect - for overlays (football-first)
+    // Glass: explicit glass surface (same as default; kept for API compatibility)
     glass: {
-      background: colors.surface.card, // Football-first card background
-      backdropFilter: 'blur(14px)',
-      boxShadow: shadows.card, // Sports broadcast style
-      border: `1px solid rgba(255, 255, 255, 0.10)`, // Subtle border
-      borderRadius: borderRadius.card, // 16px - football-first
+      ...glass.card,
+      boxShadow: shadows.card,
+      borderRadius: borderRadius.card,
     },
-    // Outlined - subtle borders (football-first)
+    // Outlined: inset surface for secondary blocks
     outlined: {
-      background: colors.surface.soft, // Soft background
-      backdropFilter: 'blur(10px)',
-      border: `1px solid rgba(255, 255, 255, 0.10)`, // Subtle border
-      boxShadow: shadows.sm, // Subtle shadow
-      borderRadius: borderRadius.card, // 16px - football-first
+      ...glass.inset,
+      boxShadow: shadows.sm,
+      borderRadius: borderRadius.card,
     },
   };
 
@@ -71,6 +64,11 @@ export const Card: React.FC<CardProps> = ({
   };
 
   const [isHovered, setIsHovered] = React.useState(false);
+  // If the caller provides a custom background, assume they control readability.
+  // This prevents double-overlays on special cards (error states, media cards, etc).
+  const hasCustomBackground = Boolean(style?.background || style?.backgroundColor || (style as any)?.backgroundImage);
+  const showOverlay = variant !== "outlined" && !hasCustomBackground;
+  const overlayStyle = glass.overlay;
 
   return (
     <div
@@ -88,7 +86,8 @@ export const Card: React.FC<CardProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {children}
+      {showOverlay && <div aria-hidden="true" style={overlayStyle} />}
+      <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
     </div>
   );
 };

@@ -199,6 +199,24 @@
   }
 }
 
+/* Horizontal marquee for sponsor/logo flows */
+@keyframes rv-marquee-x {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.rv-sponsor-marquee {
+  display: flex;
+  gap: 24px;
+  animation: rv-marquee-x 36s linear infinite;
+  will-change: transform;
+}
+
+
 @keyframes orbit {
   from {
     transform: rotate(0deg);

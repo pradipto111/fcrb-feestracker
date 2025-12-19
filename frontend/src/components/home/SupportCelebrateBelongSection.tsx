@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
+import { colors, typography, spacing, borderRadius, shadows } from "../../theme/design-tokens";
+import { heroCTAStyles, heroOverlayGradient, heroTypography } from "../../theme/hero-design-patterns";
 import { Button } from "../ui/Button";
 import { ArrowRightIcon } from "../icons/IconSet";
 import ShopMarquee from "./ShopMarquee";
@@ -71,16 +72,15 @@ const SectionHeader: React.FC<{ isMobile: boolean }> = ({ isMobile }) => (
     </div>
     <div
       style={{
-        ...typography.h2,
-        color: colors.text.primary,
-        margin: 0,
+        ...heroTypography.heading,
         fontSize: isMobile ? "clamp(22px, 6vw, 26px)" : "clamp(28px, 2.6vw, 34px)",
+        margin: 0,
         lineHeight: 1.12,
       }}
     >
       Support, Celebrate &amp; Belong
     </div>
-    <div style={{ ...typography.body, color: colors.text.secondary, maxWidth: "65ch", lineHeight: 1.6, marginTop: 8 }}>
+    <div style={{ ...heroTypography.subheading, maxWidth: "65ch", marginTop: 8 }}>
       Merch that fuels the journey, results that prove the work, a fan club that keeps you close.
     </div>
   </div>
@@ -104,8 +104,7 @@ const ModuleShell: React.FC<{ isMobile: boolean; children: React.ReactNode }> = 
       style={{
         position: "absolute",
         inset: 0,
-        background:
-          "radial-gradient(circle at 18% 18%, rgba(255,169,0,0.12) 0%, transparent 52%), radial-gradient(circle at 85% 25%, rgba(0,224,255,0.10) 0%, transparent 55%), linear-gradient(135deg, rgba(5,11,32,0.55) 0%, rgba(10,22,51,0.45) 45%, rgba(5,11,32,0.62) 100%)",
+            background: heroOverlayGradient,
         opacity: 0.95,
         pointerEvents: "none",
       }}
@@ -258,12 +257,12 @@ const ProductCard: React.FC<{
           </div>
         )}
 
-        {/* Overlay gradient + text */}
+        {/* Overlay gradient + text - matching hero */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(to top, rgba(5,11,32,0.86) 0%, rgba(5,11,32,0.22) 62%, transparent 100%)",
+            background: heroOverlayGradient,
           }}
         />
         <div style={{ position: "absolute", left: spacing.md, right: spacing.md, bottom: spacing.md }}>
@@ -338,158 +337,53 @@ export const SupportCelebrateBelongSection: React.FC<{
     <>
       <SectionHeader isMobile={isMobile} />
       <motion.div initial={sectionIn.initial} whileInView={sectionIn.whileInView} viewport={{ once: true, amount: 0.25 }} transition={{ delay: 0.06 } as any}>
-        {/* TopGrid */}
+        {/* TopGrid – single pane filling the width */}
         <div
           style={{
             display: "grid",
             gap: isMobile ? GAP_MD : GAP_LG,
-            gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr",
+            gridTemplateColumns: "1fr",
             alignItems: "stretch",
           }}
         >
-              {/* MerchPane */}
-              <motion.div variants={stagger} initial="initial" whileInView="animate" viewport={{ once: true, amount: 0.25 }} style={{ minWidth: 0 }}>
-                <div style={{ minWidth: 0 }}>
-                  <PaneShell isMobile={isMobile}>
-                    <PaneHeader
-                      isMobile={isMobile}
-                      kicker="SUPPORT & PARTICIPATE"
-                      title="Wear Your Pride"
-                      subtitle="Official merch. Real impact."
-                      rightCTA={
-                        <Link to="/shop" style={{ textDecoration: "none" }}>
-                          <Button
-                            variant="primary"
-                            size="md"
-                            style={{
-                              width: isMobile ? "100%" : "auto",
-                              transform: "translateZ(0)",
-                            }}
-                          >
-                            Explore Shop <ArrowRightIcon size={18} style={{ marginLeft: 8 }} />
-                          </Button>
-                        </Link>
-                      }
-                    />
-
-                    {/* MerchCarousel */}
-                    <div style={{ marginTop: 14 }}>
-                      <ShopMarquee products={products} isMobile={isMobile} />
-                    </div>
-                  </PaneShell>
-                </div>
-              </motion.div>
-
-              {/* ResultPane */}
-              <motion.div initial={rightSlide.initial} whileInView={rightSlide.animate} viewport={{ once: true, amount: 0.25 }} style={{ minWidth: 0 }}>
-                <PaneShell isMobile={isMobile} minHeight={260}>
-                  <PaneHeader isMobile={isMobile} kicker="NEXT STEPS" title="Latest Result" />
-
-                  {/* LatestResultCard */}
-                  <div style={{ marginTop: 14, flex: 1, display: "flex" }}>
-                    <div
-                      style={{
-                        flex: 1,
-                        alignSelf: "stretch",
-                        borderRadius: RADIUS_CARD,
-                        border: BORDER_1,
-                        background: "rgba(10,16,32,0.30)",
-                        padding: 14,
-                        position: "relative",
-                        overflow: "hidden",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <div
-                        aria-hidden="true"
+          {/* MerchPane */}
+          <motion.div variants={stagger} initial="initial" whileInView="animate" viewport={{ once: true, amount: 0.25 }} style={{ minWidth: 0 }}>
+            <div style={{ minWidth: 0 }}>
+              <PaneShell isMobile={isMobile} minHeight={isMobile ? 0 : 320}>
+                <PaneHeader
+                  isMobile={isMobile}
+                  kicker="SUPPORT & PARTICIPATE"
+                  title="Wear Your Pride"
+                  subtitle="Official merch. Real impact."
+                  rightCTA={
+                    <Link to="/shop" style={{ textDecoration: "none", width: isMobile ? "100%" : "auto" }}>
+                      <motion.div
+                        whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                        whileTap={{ scale: 0.98 }}
                         style={{
-                          position: "absolute",
-                          inset: 0,
-                          background:
-                            "radial-gradient(circle at 20% 20%, rgba(255,169,0,0.14) 0%, transparent 55%), radial-gradient(circle at 85% 85%, rgba(0,224,255,0.10) 0%, transparent 60%)",
-                          opacity: 0.9,
+                          ...heroCTAStyles.blue,
+                          width: isMobile ? "100%" : "auto",
+                          minWidth: isMobile ? "100%" : "200px",
                         }}
-                      />
-
-                      {latestResult ? (
-                        <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
-                          <div style={{ ...typography.caption, color: colors.text.muted, letterSpacing: "0.14em" }}>LATEST RESULT</div>
-
-                          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-                            <div style={{ minWidth: 0 }}>
-                              <div
-                                style={{
-                                  ...typography.body,
-                                  color: colors.text.primary,
-                                  fontWeight: typography.fontWeight.semibold,
-                                  fontSize: typography.fontSize.sm,
-                                  lineHeight: 1.25,
-                                  overflow: "hidden",
-                                  display: "-webkit-box",
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: "vertical",
-                                }}
-                              >
-                                FC Real Bengaluru vs {latestResult.opponent}
-                              </div>
-                              <div style={{ ...typography.caption, color: colors.text.muted, marginTop: 4 }}>
-                                {latestResult.matchType || "Match"} • {latestResult.venue || "TBA"}
-                              </div>
-                            </div>
-
-                            <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                              <div
-                                style={{
-                                  padding: "6px 10px",
-                                  borderRadius: RADIUS_PILL,
-                                  border: "1px solid rgba(255,169,0,0.28)",
-                                  background: "rgba(255,169,0,0.08)",
-                                  color: colors.text.secondary,
-                                  ...typography.caption,
-                                  fontWeight: typography.fontWeight.semibold,
-                                }}
-                              >
-                                W
-                              </div>
-                              <div
-                                style={{
-                                  padding: "6px 12px",
-                                  borderRadius: RADIUS_PILL,
-                                  border: "1px solid rgba(0,224,255,0.28)",
-                                  background: "rgba(0,224,255,0.10)",
-                                  color: colors.text.primary,
-                                  ...typography.body,
-                                  fontSize: typography.fontSize.sm,
-                                  fontWeight: typography.fontWeight.bold,
-                                  letterSpacing: "0.06em",
-                                }}
-                              >
-                                {latestResult.score || "—"}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Secondary link (route exists) */}
-                          <div style={{ marginTop: "auto" }}>
-                            <Link to="/fixtures" style={{ textDecoration: "none" }}>
-                              <Button variant="secondary" size="sm" fullWidth={isMobile}>
-                                View Fixtures <ArrowRightIcon size={16} style={{ marginLeft: 8 }} />
-                              </Button>
-                            </Link>
-                          </div>
+                      >
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                          <span style={heroCTAStyles.blue.textStyle}>Explore Shop</span>
+                          <span style={heroCTAStyles.blue.subtitleStyle}>Official FC Real Bengaluru merchandise</span>
                         </div>
-                      ) : (
-                        <div style={{ position: "relative", zIndex: 1, ...typography.body, color: colors.text.muted, fontSize: typography.fontSize.sm }}>
-                          Loading last result…
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </PaneShell>
-              </motion.div>
+                        <ArrowRightIcon size={20} color={colors.text.onPrimary} style={{ flexShrink: 0 }} />
+                      </motion.div>
+                    </Link>
+                  }
+                />
+
+                {/* MerchCarousel */}
+                <div style={{ marginTop: 14 }}>
+                  <ShopMarquee products={products} isMobile={isMobile} />
+                </div>
+              </PaneShell>
             </div>
+          </motion.div>
+        </div>
 
             {/* FlowConnectorRow */}
             <div style={{ height: isMobile ? 18 : 24, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -513,7 +407,11 @@ export const SupportCelebrateBelongSection: React.FC<{
 
   if (compact) {
     // Compact mode: no outer wrappers, content directly
-    return <motion.div initial={sectionIn.initial} whileInView={sectionIn.whileInView} viewport={{ once: true, amount: 0.25 }}>{mainContent}</motion.div>;
+    return (
+      <motion.div initial={sectionIn.initial} whileInView={sectionIn.whileInView} viewport={{ once: true, amount: 0.25 }}>
+        {mainContent}
+      </motion.div>
+    );
   }
 
   // Full mode: with SectionShell and ModuleShell wrappers
@@ -523,19 +421,19 @@ export const SupportCelebrateBelongSection: React.FC<{
         <SectionHeader isMobile={isMobile} />
         <motion.div initial={sectionIn.initial} whileInView={sectionIn.whileInView} viewport={{ once: true, amount: 0.25 }} transition={{ delay: 0.06 } as any}>
           <ModuleShell isMobile={isMobile}>
-            {/* TopGrid */}
+            {/* TopGrid – single pane filling the width */}
             <div
               style={{
                 display: "grid",
                 gap: isMobile ? GAP_MD : GAP_LG,
-                gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr",
+                gridTemplateColumns: "1fr",
                 alignItems: "stretch",
               }}
             >
               {/* MerchPane */}
               <motion.div variants={stagger} initial="initial" whileInView="animate" viewport={{ once: true, amount: 0.25 }} style={{ minWidth: 0 }}>
                 <div style={{ minWidth: 0 }}>
-                  <PaneShell isMobile={isMobile}>
+                  <PaneShell isMobile={isMobile} minHeight={isMobile ? 0 : 320}>
                     <PaneHeader
                       isMobile={isMobile}
                       kicker="SUPPORT & PARTICIPATE"
@@ -563,116 +461,6 @@ export const SupportCelebrateBelongSection: React.FC<{
                     </div>
                   </PaneShell>
                 </div>
-              </motion.div>
-
-              {/* ResultPane */}
-              <motion.div initial={rightSlide.initial} whileInView={rightSlide.animate} viewport={{ once: true, amount: 0.25 }} style={{ minWidth: 0 }}>
-                <PaneShell isMobile={isMobile} minHeight={260}>
-                  <PaneHeader isMobile={isMobile} kicker="NEXT STEPS" title="Latest Result" />
-
-                  {/* LatestResultCard */}
-                  <div style={{ marginTop: 14, flex: 1, display: "flex" }}>
-                    <div
-                      style={{
-                        flex: 1,
-                        alignSelf: "stretch",
-                        borderRadius: RADIUS_CARD,
-                        border: BORDER_1,
-                        background: "rgba(10,16,32,0.30)",
-                        padding: 14,
-                        position: "relative",
-                        overflow: "hidden",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <div
-                        aria-hidden="true"
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          background:
-                            "radial-gradient(circle at 20% 20%, rgba(255,169,0,0.14) 0%, transparent 55%), radial-gradient(circle at 85% 85%, rgba(0,224,255,0.10) 0%, transparent 60%)",
-                          opacity: 0.9,
-                        }}
-                      />
-
-                      {latestResult ? (
-                        <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
-                          <div style={{ ...typography.caption, color: colors.text.muted, letterSpacing: "0.14em" }}>LATEST RESULT</div>
-
-                          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-                            <div style={{ minWidth: 0 }}>
-                              <div
-                                style={{
-                                  ...typography.body,
-                                  color: colors.text.primary,
-                                  fontWeight: typography.fontWeight.semibold,
-                                  fontSize: typography.fontSize.sm,
-                                  lineHeight: 1.25,
-                                  overflow: "hidden",
-                                  display: "-webkit-box",
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: "vertical",
-                                }}
-                              >
-                                FC Real Bengaluru vs {latestResult.opponent}
-                              </div>
-                              <div style={{ ...typography.caption, color: colors.text.muted, marginTop: 4 }}>
-                                {latestResult.matchType || "Match"} • {latestResult.venue || "TBA"}
-                              </div>
-                            </div>
-
-                            <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                              <div
-                                style={{
-                                  padding: "6px 10px",
-                                  borderRadius: RADIUS_PILL,
-                                  border: "1px solid rgba(255,169,0,0.28)",
-                                  background: "rgba(255,169,0,0.08)",
-                                  color: colors.text.secondary,
-                                  ...typography.caption,
-                                  fontWeight: typography.fontWeight.semibold,
-                                }}
-                              >
-                                W
-                              </div>
-                              <div
-                                style={{
-                                  padding: "6px 12px",
-                                  borderRadius: RADIUS_PILL,
-                                  border: "1px solid rgba(0,224,255,0.28)",
-                                  background: "rgba(0,224,255,0.10)",
-                                  color: colors.text.primary,
-                                  ...typography.body,
-                                  fontSize: typography.fontSize.sm,
-                                  fontWeight: typography.fontWeight.bold,
-                                  letterSpacing: "0.06em",
-                                }}
-                              >
-                                {latestResult.score || "—"}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Secondary link (route exists) */}
-                          <div style={{ marginTop: "auto" }}>
-                            <Link to="/fixtures" style={{ textDecoration: "none" }}>
-                              <Button variant="secondary" size="sm" fullWidth={isMobile}>
-                                View Fixtures <ArrowRightIcon size={16} style={{ marginLeft: 8 }} />
-                              </Button>
-                            </Link>
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{ position: "relative", zIndex: 1, ...typography.body, color: colors.text.muted, fontSize: typography.fontSize.sm }}>
-                          Loading last result…
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </PaneShell>
               </motion.div>
             </div>
 

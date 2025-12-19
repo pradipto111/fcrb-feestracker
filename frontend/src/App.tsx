@@ -59,6 +59,7 @@ import BrochurePage from "./pages/BrochurePage";
 import InteractiveBrochurePage from "./pages/InteractiveBrochurePage";
 import RealVerseExperiencePage from "./pages/RealVerseExperiencePage";
 import AboutPage from "./pages/AboutPage";
+import TeamsPage from "./pages/TeamsPage";
 import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 import AdminStaffPage from "./pages/AdminStaffPage";
 import AdminPaymentsPage from "./pages/AdminPaymentsPage";
@@ -151,6 +152,7 @@ const App: React.FC = () => {
         {/* Public Landing Page */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/teams" element={<TeamsPage />} />
         
         {/* Shop Pages */}
         <Route path="/shop" element={<ShopPage />} />
