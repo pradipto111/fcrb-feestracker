@@ -17,6 +17,14 @@ export interface Product {
   tags?: string[];
   available: boolean;
   fanTierRequired?: string;
+  _apiData?: {
+    id: number;
+    slug: string;
+    description?: string | null;
+    images: string[];
+    sizes: string[];
+    stock?: number | null;
+  };
 }
 
 const fallbackImage =

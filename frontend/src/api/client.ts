@@ -619,6 +619,62 @@ export const api = {
       method: "POST"
     });
   },
+  // Legacy Leads endpoints
+  createLegacyLead(data: {
+    name: string;
+    phone: string;
+    age: number;
+    heightCmInput: number;
+    weightKgInput: number;
+    heightCmBucket: number;
+    weightKgBucket: number;
+    matchedPlayerId: string;
+    matchedPlayerName: string;
+    matchedPlayerPosition: string;
+    matchedPlayerArchetype: string;
+    matchedPlayerLegacy: any;
+    consent: boolean;
+  }) {
+    return request("/legacy", {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+  },
+  getLegacyLeads(params?: { status?: string; fromDate?: string; toDate?: string; search?: string }) {
+    const query = new URLSearchParams();
+    if (params?.status) query.set("status", params.status);
+    if (params?.fromDate) query.set("fromDate", params.fromDate);
+    if (params?.toDate) query.set("toDate", params.toDate);
+    if (params?.search) query.set("search", params.search);
+    return request(`/legacy?${query.toString()}`);
+  },
+  getLegacyLead(id: number) {
+    return request(`/legacy/${id}`);
+  },
+  updateLegacyLead(id: number, data: {
+    status?: string;
+    notes?: string | null;
+  }) {
+    return request(`/legacy/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data)
+    });
+  },
+  async exportLegacyLeadsCSV(params?: { status?: string; fromDate?: string; toDate?: string }) {
+    const query = new URLSearchParams();
+    if (params?.status) query.set("status", params.status);
+    if (params?.fromDate) query.set("fromDate", params.fromDate);
+    if (params?.toDate) query.set("toDate", params.toDate);
+    
+    const currentToken = localStorage.getItem("token");
+    const headers: HeadersInit = {};
+    if (currentToken) headers["Authorization"] = `Bearer ${currentToken}`;
+    
+    const url = `${API_BASE}/legacy/export/csv?${query.toString()}`;
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error(`Export failed: ${res.statusText}`);
+    return await res.blob();
+  },
   // Shop endpoints
   getProducts() {
     return request("/shop/products");

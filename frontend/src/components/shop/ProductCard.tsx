@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { colors, typography, spacing, borderRadius, shadows } from "../../theme/design-tokens";
+import { glass } from "../../theme/glass";
 import { heroCTAPillStyles } from "../../theme/hero-design-patterns";
 import type { Product } from "../../data/products";
 import { formatShopPrice, getPrimaryTag, isFanLocked } from "../../utils/shop";
@@ -11,29 +13,35 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+  const navigate = useNavigate();
   const [quickViewOpen, setQuickViewOpen] = useState(false);
 
   const primaryTag = getPrimaryTag(product);
   const locked = isFanLocked(product);
 
+  const handleCardClick = () => {
+    // Use slug if available (from API), otherwise use ID (local products)
+    const productSlug = (product as any)._apiData?.slug || product.id;
+    navigate(`/shop/${productSlug}`);
+  };
+
   return (
     <>
       <motion.div
         whileHover={{
-          y: -6,
-          scale: 1.02,
-          boxShadow: shadows.lg,
+          y: -4,
+          scale: 1.01,
+          boxShadow: shadows.cardHover,
         }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
         style={{
+          ...glass.card,
           borderRadius: borderRadius.xl,
-          border: "1px solid rgba(255,255,255,0.10)",
-          background:
-            "radial-gradient(circle at top left, rgba(0,224,255,0.12) 0%, rgba(5,11,32,0.96) 42%, rgba(5,11,32,1) 100%)",
           overflow: "hidden",
           position: "relative",
-          cursor: "default",
+          cursor: "pointer",
         }}
+        onClick={handleCardClick}
       >
         {/* Tag ribbon */}
         {primaryTag && (
@@ -62,18 +70,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <div
           style={{
             position: "relative",
-            height: 220,
+            height: 240,
             backgroundImage: `url(${product.image})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
+            overflow: "hidden",
           }}
+          onClick={(e) => e.stopPropagation()}
         >
+          {/* Subtle overlay for image readability */}
           <div
             style={{
               position: "absolute",
               inset: 0,
               background:
-                "linear-gradient(180deg, rgba(5,11,32,0.1) 0%, rgba(5,11,32,0.9) 100%)",
+                "linear-gradient(180deg, rgba(5,11,32,0.15) 0%, rgba(5,11,32,0.75) 100%)",
             }}
           />
         </div>
@@ -81,18 +92,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* Content */}
         <div
           style={{
-            padding: spacing.lg,
+            padding: spacing.xl,
             display: "flex",
             flexDirection: "column",
-            gap: spacing.sm,
+            gap: spacing.md,
+            position: "relative",
+            zIndex: 1,
           }}
         >
+          {/* Product Name */}
           <div>
             <h3
               style={{
                 ...typography.h4,
                 color: colors.text.primary,
-                marginBottom: 4,
+                marginBottom: spacing.xs,
+                fontWeight: typography.fontWeight.bold,
+                lineHeight: 1.3,
               }}
             >
               {product.name}
@@ -103,6 +119,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   ...typography.caption,
                   fontSize: typography.fontSize.xs,
                   color: colors.accent.main,
+                  marginTop: 4,
                 }}
               >
                 Unlock with {product.fanTierRequired} Fan Club tier
@@ -110,21 +127,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             )}
           </div>
 
+          {/* Price and Actions */}
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "center",
-              marginTop: spacing.sm,
+              alignItems: "flex-end",
               gap: spacing.md,
+              marginTop: "auto",
             }}
           >
-            <div>
+            <div style={{ flex: 1 }}>
               <div
                 style={{
                   ...typography.h3,
                   color: colors.accent.main,
                   fontWeight: typography.fontWeight.bold,
+                  marginBottom: spacing.xs,
                 }}
               >
                 {formatShopPrice(product.price)}
@@ -146,14 +165,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: 6,
+                gap: spacing.sm,
                 alignItems: "flex-end",
               }}
             >
-              <AddToCartButton productId={product.id} />
+              <div onClick={(e) => e.stopPropagation()}>
+                <AddToCartButton productId={product.id} product={product} />
+              </div>
               <motion.button
                 type="button"
-                onClick={() => setQuickViewOpen(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setQuickViewOpen(true);
+                }}
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 style={{
@@ -162,6 +186,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   padding: "8px 12px",
                   boxShadow: "none",
                   color: colors.text.secondary,
+                  fontSize: typography.fontSize.xs,
                 }}
               >
                 Quick view
@@ -197,10 +222,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               style={{
                 width: "min(520px, 92vw)",
                 borderRadius: borderRadius["2xl"],
-                background:
-                  "radial-gradient(circle at top left, rgba(0,224,255,0.16) 0%, rgba(5,11,32,0.98) 50%, rgba(5,11,32,1) 100%)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                boxShadow: shadows.xl,
+                ...glass.cardStrong,
                 overflow: "hidden",
               }}
               onClick={(e) => e.stopPropagation()}
@@ -208,10 +230,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               <div
                 style={{
                   position: "relative",
-                  height: 260,
+                  height: 280,
                   backgroundImage: `url(${product.image})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
+                  overflow: "hidden",
                 }}
               >
                 <div
@@ -219,7 +242,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                     position: "absolute",
                     inset: 0,
                     background:
-                      "linear-gradient(180deg, rgba(5,11,32,0.1) 0%, rgba(5,11,32,0.9) 100%)",
+                      "linear-gradient(180deg, rgba(5,11,32,0.2) 0%, rgba(5,11,32,0.85) 100%)",
                   }}
                 />
               </div>
@@ -275,7 +298,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                     >
                       {formatShopPrice(product.price)}
                     </div>
-                    <AddToCartButton productId={product.id} />
+                    <AddToCartButton productId={product.id} product={product} />
                   </div>
                 </div>
                 <div

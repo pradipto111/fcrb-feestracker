@@ -530,7 +530,7 @@ const BrochurePage: React.FC = () => {
           </h3>
           <Link to="/realverse/join" style={{ textDecoration: "none" }}>
             <Button variant="primary" size="lg">
-              Join RealVerse Academy
+              Join our Academy
             </Button>
           </Link>
         </motion.section>
@@ -1159,7 +1159,7 @@ const BrochurePage: React.FC = () => {
           >
             <Link to="/realverse/join" style={{ textDecoration: "none" }}>
               <Button variant="primary" size="lg">
-                Join RealVerse
+                Join our Academy
               </Button>
             </Link>
             <Link to="/realverse/join" style={{ textDecoration: "none" }}>

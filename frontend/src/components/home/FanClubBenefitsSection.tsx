@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { colors, typography, spacing, borderRadius, shadows } from "../../theme/design-tokens";
 import { FAN_CLUB_TIERS, SPONSOR_BENEFITS, type IncentiveTag, type SponsorBenefit } from "../../data/fanclubBenefits";
@@ -103,6 +104,7 @@ const HorizontalSnap = ({ children, isMobile }: { children: React.ReactNode; isM
 // (Legacy card left in history; replaced by SponsorRewardsCardWithLocks below for tier-lock UX)
 
 export const FanClubBenefitsSection: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
+  const navigate = useNavigate();
   const pricingRef = useRef<HTMLDivElement | null>(null);
   const [tierHint, setTierHint] = useState<null | string>(null);
   const [previewTier, setPreviewTier] = useState<"rookie" | "regular" | "inner">("regular");
@@ -117,6 +119,10 @@ export const FanClubBenefitsSection: React.FC<{ isMobile: boolean }> = ({ isMobi
     } else {
       pricingRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+  };
+
+  const onJoinFanClub = () => {
+    navigate("/fan-club/join");
   };
 
   return (
@@ -135,11 +141,9 @@ export const FanClubBenefitsSection: React.FC<{ isMobile: boolean }> = ({ isMobi
           </div>
 
           <div style={{ display: "flex", justifyContent: isMobile ? "flex-start" : "flex-end", gap: spacing.sm, flexWrap: "wrap" }}>
-            <div title={tooltip}>
-              <Button variant="primary" size="md" disabled aria-disabled="true" style={{ borderRadius: 999 }}>
-                Join the Fan Club to Unlock Your First Gift
-              </Button>
-            </div>
+            <Button variant="primary" size="md" onClick={onJoinFanClub} style={{ borderRadius: 999 }}>
+              Join the Fan Club
+            </Button>
             <Button variant="secondary" size="md" onClick={onExploreBenefits} style={{ borderRadius: 999 }}>
               Explore All Fan Benefits
             </Button>
@@ -320,8 +324,8 @@ export const FanClubBenefitsSection: React.FC<{ isMobile: boolean }> = ({ isMobi
                     ))}
                   </div>
 
-                  <div title={tooltip} style={{ marginTop: "auto" }}>
-                    <Button variant={t.highlight ? "primary" : "secondary"} size="md" disabled aria-disabled="true" style={{ width: "100%", borderRadius: 999 }}>
+                  <div style={{ marginTop: "auto" }}>
+                    <Button variant={t.highlight ? "primary" : "secondary"} size="md" onClick={onJoinFanClub} style={{ width: "100%", borderRadius: 999 }}>
                       {t.ctaLabel}
                     </Button>
                   </div>
@@ -499,12 +503,11 @@ const SponsorRewardsCardWithLocks = ({
             ) : null}
             <div style={{ ...typography.caption, color: colors.text.muted, marginTop: 6, opacity: 0.9 }}>Dynamic rewards (rolling soon)</div>
           </div>
-          <div title={tooltip} style={{ flexShrink: 0 }}>
+          <div style={{ flexShrink: 0 }}>
             <Button
               variant="primary"
               size="md"
-              disabled
-              aria-disabled="true"
+              onClick={onJoinFanClub}
               style={{
                 borderRadius: 999,
                 padding: isMobile ? "12px 18px" : "12px 22px",
@@ -513,7 +516,7 @@ const SponsorRewardsCardWithLocks = ({
                 width: isMobile ? "100%" : "auto",
               }}
             >
-              Join the Fan Club to Unlock Your First Gift
+              Join the Fan Club
             </Button>
           </div>
         </div>

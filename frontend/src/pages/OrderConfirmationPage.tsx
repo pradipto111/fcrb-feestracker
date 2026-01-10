@@ -72,14 +72,13 @@ const OrderConfirmationPage: React.FC = () => {
                   width: "auto",
                   minWidth: 240,
                   minHeight: 56,
-                  padding: "12px 18px",
                 }}
               >
                 <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
                   <span style={heroCTAStyles.blue.textStyle}>Back to Shop</span>
                   <span style={heroCTAStyles.blue.subtitleStyle}>Browse all products</span>
                 </div>
-                <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+                <span style={{ color: colors.text.onPrimary, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
               </motion.div>
             </Link>
           </Card>
@@ -264,14 +263,13 @@ const OrderConfirmationPage: React.FC = () => {
                   width: "auto",
                   minWidth: 260,
                   minHeight: 56,
-                  padding: "12px 18px",
                 }}
               >
                 <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
                   <span style={heroCTAStyles.blue.textStyle}>Continue Shopping</span>
                   <span style={heroCTAStyles.blue.subtitleStyle}>More merch drops incoming</span>
                 </div>
-                <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+                <span style={{ color: colors.text.onPrimary, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
               </motion.div>
             </Link>
             <Link to="/" style={{ textDecoration: "none" }}>
@@ -283,7 +281,6 @@ const OrderConfirmationPage: React.FC = () => {
                   width: "auto",
                   minWidth: 240,
                   minHeight: 56,
-                  padding: "12px 18px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
@@ -294,7 +291,7 @@ const OrderConfirmationPage: React.FC = () => {
                   <span style={heroCTAStyles.darkWithBorder.textStyle}>Back to Home</span>
                   <span style={heroCTAStyles.darkWithBorder.subtitleStyle}>Explore the RealVerse</span>
                 </div>
-                <span style={{ color: colors.accent.main, fontWeight: 800 }}>→</span>
+                <span style={{ color: colors.accent.main, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
               </motion.div>
             </Link>
           </div>

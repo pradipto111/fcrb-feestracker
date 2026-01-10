@@ -868,6 +868,99 @@ interface Centre {
   displayOrder: number;
 }
 
+// Scroll Indicator Component - Reusable transition element between subsections
+const ScrollIndicator: React.FC<{ delay?: number }> = ({ delay = 0 }) => {
+  return (
+    <motion.div
+      style={{
+        position: "relative",
+        width: "100%",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: `${spacing.xl} 0`,
+        zIndex: 10,
+        pointerEvents: "none",
+      }}
+      initial={{ opacity: 0, y: -10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: false, amount: 0.1 }}
+      transition={{ delay, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: spacing.sm,
+        }}
+      >
+        {/* Match Scoreboard Ticker Style */}
+        <div
+          style={{
+            padding: `${spacing.xs} ${spacing.md}`,
+            borderRadius: borderRadius.button,
+            background: "rgba(10,61,145,0.85)",
+            border: `1px solid ${colors.accent.main}`,
+            boxShadow: shadows.button,
+            display: "flex",
+            alignItems: "center",
+            gap: spacing.sm,
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <div
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: colors.accent.main,
+              boxShadow: `0 0 8px ${colors.accent.main}`,
+            }}
+          />
+          <span
+            style={{
+              ...typography.caption,
+              color: colors.text.primary,
+              fontWeight: typography.fontWeight.bold,
+              letterSpacing: "0.1em",
+              fontSize: "11px",
+            }}
+          >
+            SCROLL
+          </span>
+        </div>
+        <motion.div
+          animate={{
+            y: [0, 6, 0],
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        >
+          <motion.svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            style={{ color: colors.accent.main }}
+          >
+            <path
+              d="M7 10L12 15L17 10"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </motion.svg>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+};
+
 // Infinity Section Wrapper - Seamless, continuous flow like a movie
 const InfinitySection: React.FC<{
   children: React.ReactNode;
@@ -938,8 +1031,9 @@ const InfinitySection: React.FC<{
           marginTop: bridge ? "-100px" : "0",
           marginBottom: bridge ? "-100px" : "0",
           // Fixed header overlap - ensure top padding accounts for sticky header (120px)
+          // Consistent spacing matching hero-to-our-story gap: 64px top + 96px bottom = 160px total
           paddingTop: bridge ? "150px" : (style?.paddingTop !== undefined ? style.paddingTop : spacing.sectionGap),
-          paddingBottom: bridge ? "150px" : (style?.paddingBottom !== undefined ? style.paddingBottom : spacing.sectionGap),
+          paddingBottom: bridge ? "150px" : (style?.paddingBottom !== undefined ? style.paddingBottom : spacing["4xl"]),
           zIndex: bridge ? 2 : 1,
           overflow: "visible",
           overflowY: "visible",
@@ -2873,42 +2967,6 @@ const LandingPage: React.FC = () => {
             opacity: 0.4,
           }}
         />
-        
-        {/* FC Real Bengaluru Strip Motif - Diagonal Club Strip */}
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          style={{
-            position: "absolute",
-            top: "20%",
-            left: "-10%",
-            width: "40%",
-            height: "8px",
-            background: `linear-gradient(90deg, ${colors.primary.main} 0%, ${colors.accent.main} 50%, ${colors.primary.main} 100%)`,
-            transform: "rotate(-12deg)",
-            zIndex: 2,
-            boxShadow: `0 0 20px ${colors.primary.main}40`,
-            opacity: 0.6,
-          }}
-        />
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          style={{
-            position: "absolute",
-            top: "25%",
-            left: "-8%",
-            width: "35%",
-            height: "6px",
-            background: `linear-gradient(90deg, ${colors.accent.main} 0%, ${colors.primary.main} 50%, ${colors.accent.main} 100%)`,
-            transform: "rotate(-12deg)",
-            zIndex: 2,
-            boxShadow: `0 0 15px ${colors.accent.main}40`,
-            opacity: 0.5,
-          }}
-        />
         </motion.div>
 
         {/* Stadium Light Effect - Subtle, Warm, Football-Focused */}
@@ -2960,51 +3018,6 @@ const LandingPage: React.FC = () => {
             transition={{ delay: 0.15, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             style={{ maxWidth: "860px" }}
           >
-            {/* Floating Stat Badges - Football Broadcast Style */}
-            {!isMobile && (
-              <>
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ delay: 0.5, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            style={{
-                    position: "absolute",
-                    top: "10%",
-                    right: "5%",
-                    padding: `${spacing['8']} ${spacing['16']}`,
-                    borderRadius: borderRadius.button,
-                    background: colors.surface.card,
-                    border: `1px solid ${colors.accent.main}40`,
-                    boxShadow: shadows.card,
-                    backdropFilter: "blur(12px)",
-                    zIndex: 5,
-                  }}
-                >
-                  <div style={{ ...typography.overline, color: colors.text.muted, fontSize: "10px", marginBottom: 2 }}>FOUNDED</div>
-                  <div style={{ ...typography.h5, color: colors.accent.main, margin: 0, fontWeight: typography.fontWeight.bold }}>2024</div>
-                </motion.div>
-                
-            <motion.div
-                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ delay: 0.6, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                  style={{
-                    position: "absolute",
-                    top: "20%",
-                    right: "8%",
-                    padding: `${spacing['8']} ${spacing['16']}`,
-                    borderRadius: borderRadius.button,
-                    background: colors.surface.card,
-                    border: `1px solid ${colors.primary.main}40`,
-                    boxShadow: shadows.card,
-                    backdropFilter: "blur(12px)",
-                    zIndex: 5,
-                  }}
-                >
-                  {/* Floating hero stat badges removed as requested */}
-                </motion.div>
-              </>
-            )}
 
             {/* Club identity lockup (logo + full name) */}
             <motion.div
@@ -3310,87 +3323,6 @@ const LandingPage: React.FC = () => {
 
           {/* RIGHT: Interactive CTA cards (removed per request) */}
         </div>
-
-        {/* SCROLL INDICATOR - Match Scoreboard Ticker Style */}
-        <motion.div
-          style={{
-            position: "absolute",
-            bottom: spacing.xl,
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 2,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: spacing.sm,
-            pointerEvents: "none",
-          }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.6, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {/* Match Scoreboard Ticker Style */}
-          <div
-            style={{
-              padding: `${spacing.xs} ${spacing.md}`,
-              borderRadius: borderRadius.button,
-              background: "rgba(10,61,145,0.85)",
-              border: `1px solid ${colors.accent.main}`,
-              boxShadow: shadows.button,
-              display: "flex",
-              alignItems: "center",
-              gap: spacing.sm,
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <div
-            style={{
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                background: colors.accent.main,
-                boxShadow: `0 0 8px ${colors.accent.main}`,
-              }}
-            />
-            <span
-              style={{
-                ...typography.caption,
-                color: colors.text.primary,
-                fontWeight: typography.fontWeight.bold,
-              letterSpacing: "0.1em",
-                fontSize: "11px",
-            }}
-          >
-              SCROLL
-            </span>
-          </div>
-          <motion.div
-            animate={{
-              y: [0, 6, 0],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          >
-            <motion.svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              style={{ color: colors.accent.main }}
-            >
-              <path
-                d="M7 10L12 15L17 10"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </motion.svg>
-          </motion.div>
-        </motion.div>
 
         {/* Bottom fade gradient for seamless transition */}
         <div
@@ -3969,6 +3901,9 @@ const LandingPage: React.FC = () => {
         </div>
       </InfinitySection>
 
+      {/* Scroll Indicator - Transition between Origin and Our Story */}
+      <ScrollIndicator delay={0.2} />
+
       {/* 4. 2026 VISION - I-LEAGUE 3 (removed) */}
 
       {/* Post-Hero Story Weave Wrapper (Act 1 → Act 2 → Act 3) - Smooth Continuity */}
@@ -3991,17 +3926,31 @@ const LandingPage: React.FC = () => {
           margin: 0,
           minHeight: "100vh",
           height: "100vh",
-          background: "transparent", // Explicitly transparent to allow backgroundImage
-          backgroundImage: "url('/assets/20251007-DSC_0535.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          backgroundAttachment: "fixed", // Fixed attachment for full coverage
+          background: "transparent",
           position: "relative",
-          overflow: "hidden",
+          overflow: "visible",
         }}
       >
-        {/* Content wrapper with padding - transparent to show background image */}
+        {/* Full viewport background - covers entire screen, above page background */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundImage: "url('/assets/20250927-DSC_0446.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            backgroundAttachment: "fixed",
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        />
+        
+        {/* Content wrapper - completely transparent, no blue overlay or padding */}
         <div
           style={{
             position: "relative",
@@ -4011,7 +3960,7 @@ const LandingPage: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             padding: isMobile ? `${spacing['48']} ${spacing.xl}` : `${spacing['64']} ${spacing.xl}`,
-            background: "transparent", // Explicitly transparent
+            background: "transparent",
             zIndex: 1,
           }}
         >
@@ -4022,93 +3971,97 @@ const LandingPage: React.FC = () => {
             position: "relative",
             zIndex: 3, // Above background layers
             width: "100%",
-            padding: isMobile ? `${spacing.xl} ${spacing.md}` : `${spacing["2xl"]} ${spacing.xl}`, // Horizontal padding for readable text zones
             opacity: act1Opacity,
             y: act1Y,
             scale: act1Scale,
             textAlign: "center",
+            willChange: "transform, opacity",
           }}
           initial={{ opacity: 0, y: 14 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false, amount: 0.2 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
+          {/* Glassmorphism container - translucent overlay matching Fan Club Pathway design */}
           <div
-                style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: spacing.sm,
-                  padding: `${spacing.xs} ${spacing.md}`,
-              background: colors.surface.soft, // Football-first background
-              border: `1px solid ${colors.accent.main}40`, // Subtle accent border
-                  borderRadius: borderRadius.full,
-              backdropFilter: "blur(12px)",
-              boxShadow: shadows.sm, // Sports broadcast style
-                  marginBottom: spacing.lg,
-                }}
-          >
-            <span style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.18em" }}>OUR STORY</span>
-          </div>
-
-          <h2
-                style={{
-                  ...typography.h1,
-              fontSize: `clamp(2.2rem, 5vw, 3.4rem)`,
-                  color: colors.text.primary,
-              marginBottom: spacing.md,
-              lineHeight: 1.12,
-              fontWeight: typography.fontWeight.bold,
-              letterSpacing: "-0.02em",
-              textShadow: "0 8px 56px rgba(0,0,0,0.65)",
+            style={{
+              ...glass.card,
+              borderRadius: borderRadius["2xl"],
+              padding: isMobile ? spacing.xl : spacing["2xl"],
+              position: "relative",
+              overflow: "hidden",
+              maxWidth: "900px",
+              margin: "0 auto",
+              width: "100%",
             }}
           >
-            Born in <span style={{ color: colors.accent.main }}>2024</span>, Built for{" "}
-            <span style={{ color: colors.primary.main }}>Tomorrow</span>
-          </h2>
-
-          <p
-                style={{
-                  ...typography.body,
-                  fontSize: typography.fontSize.lg,
-                  color: colors.text.secondary,
-              maxWidth: "72ch",
-              margin: `0 auto ${spacing.lg}`,
-              lineHeight: 1.85,
-              opacity: 0.92,
-              textShadow: "0 4px 28px rgba(0,0,0,0.55)",
-            }}
-          >
-            FC Real Bengaluru is a relatively new club that is making its mark in the Indian football landscape. Founded recently, it has quickly established itself as a force to be reckoned with in the KSFA Super Division, while winning the D division and finishing as runner's up in C Division. With a strong emphasis on youth development using data and a commitment to building a winning culture, FC Real Bengaluru aims to climb the Indian football ladder and achieve national and international success.
-          </p>
-
-          <Link to="/about" className="hero-link" style={{ textDecoration: "none", display: "inline-block" }}>
-              <motion.div
-              whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
-              whileTap={{ scale: 0.98 }}
+            {/* Subtle overlay for additional depth */}
+            <div aria-hidden="true" style={glass.overlaySoft} />
+            
+            {/* Content wrapper */}
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <h2
                     style={{
-                display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                gap: spacing.sm,
-                padding: `${spacing.md} ${spacing.xl}`, // 16px 32px - readable text zones
-                borderRadius: borderRadius.button, // 8px - football-first
-                background: colors.primary.main, // Royal blue - football-first solid button
-                border: "none",
-                boxShadow: shadows.button, // Sports broadcast style
-                color: colors.text.onPrimary,
-                transition: "all 0.2s ease",
-                fontWeight: typography.fontWeight.bold, // Bold for football-first
-              }}
-            >
-              <span style={{ ...typography.body, fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.bold }}>
-                To know more About Us
-              </span>
-              <ArrowRightIcon size={18} color={colors.text.onPrimary} />
-                  </motion.div>
-          </Link>
+                      ...typography.h1,
+                  fontSize: `clamp(2.2rem, 5vw, 3.4rem)`,
+                      color: colors.text.primary,
+                  marginBottom: spacing.md,
+                  lineHeight: 1.12,
+                  fontWeight: typography.fontWeight.bold,
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                Born in <span style={{ color: colors.accent.main }}>2024</span>, Built for{" "}
+                <span style={{ color: colors.primary.main }}>Tomorrow</span>
+              </h2>
+
+              <p
+                    style={{
+                      ...typography.body,
+                      fontSize: typography.fontSize.lg,
+                      color: colors.text.secondary,
+                  maxWidth: "72ch",
+                  margin: `0 auto ${spacing.lg}`,
+                  lineHeight: 1.85,
+                  opacity: 0.95,
+                }}
+              >
+                FC Real Bengaluru is a relatively new club that is making its mark in the Indian football landscape. Founded recently, it has quickly established itself as a force to be reckoned with in the KSFA Super Division, while winning the D division and finishing as runner's up in C Division. With a strong emphasis on youth development using data and a commitment to building a winning culture, FC Real Bengaluru aims to climb the Indian football ladder and achieve national and international success.
+              </p>
+
+              <Link to="/about" className="hero-link" style={{ textDecoration: "none", display: "inline-block" }}>
+                  <motion.div
+                  whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                  whileTap={{ scale: 0.98 }}
+                        style={{
+                    display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                    gap: spacing.md,
+                    padding: `${spacing.md} ${spacing['40']}`, // 16px vertical, 40px horizontal - thinner button
+                    borderRadius: borderRadius.button,
+                    background: colors.primary.main,
+                    border: "none",
+                    boxShadow: shadows.button,
+                    color: colors.text.onPrimary,
+                    transition: "all 0.2s ease",
+                    fontWeight: typography.fontWeight.bold,
+                  }}
+                >
+                  <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1, ...typography.body, fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.bold }}>
+                    To know more About Us
+                  </span>
+                  <ArrowRightIcon size={18} color={colors.text.onPrimary} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                      </motion.div>
+              </Link>
+            </div>
+          </div>
         </motion.div>
         </div>
       </InfinitySection>
+
+      {/* Scroll Indicator - Transition between Our Story and Integrated Program */}
+      <ScrollIndicator delay={0.2} />
 
         {/* 5. INTEGRATED FOOTBALL PROGRAM - Teams, Tech, Data & Training */}
       <InfinitySection
@@ -4148,21 +4101,6 @@ const LandingPage: React.FC = () => {
               whileInView="onscreen"
             viewport={viewportOnce}
           >
-            <motion.div
-              style={{
-                display: "inline-block",
-                padding: `${spacing.xs} ${spacing.md}`,
-                background: colors.surface.soft, // Football-first background
-                border: `1px solid ${colors.accent.main}40`, // Subtle accent border
-                borderRadius: borderRadius.full,
-                marginBottom: spacing.lg,
-                boxShadow: shadows.sm, // Sports broadcast style
-              }}
-            >
-              <span style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em" }}>
-                OUR FOOTBALL PROGRAM
-              </span>
-            </motion.div>
             <h2
               style={{
                 ...typography.h1,
@@ -4871,11 +4809,11 @@ const LandingPage: React.FC = () => {
                 style={{
                           ...typography.h1,
                           fontSize: `clamp(2rem, 4vw, 2.5rem)`,
-                          color: stat.signature === "scan" ? colors.primary.light : stat.glowColor,
+                          color: stat.signature === "scan" ? colors.accent.main : stat.glowColor,
                           fontWeight: typography.fontWeight.bold,
                           textShadow:
                             stat.signature === "scan"
-                              ? `0 2px 0 rgba(0,0,0,0.55), 0 10px 28px ${colors.primary.light}88, 0 0 22px rgba(0,224,255,0.16)`
+                              ? `0 2px 0 rgba(0,0,0,0.55), 0 10px 28px ${colors.accent.main}88, 0 0 22px rgba(245,179,0,0.16)`
                               : `0 4px 20px ${stat.glowColor}40`,
                           letterSpacing: "-0.02em",
                           lineHeight: 1.1,
@@ -4911,7 +4849,7 @@ const LandingPage: React.FC = () => {
                     <div
                       style={{
                         ...typography.body,
-                          color: stat.signature === "scan" ? colors.primary.light : stat.glowColor,
+                          color: stat.signature === "scan" ? colors.accent.main : stat.glowColor,
                           fontSize: typography.fontSize.sm,
                           fontWeight: typography.fontWeight.medium,
                           textShadow: stat.signature === "scan" ? "0 2px 10px rgba(0,0,0,0.55)" : undefined,
@@ -4968,18 +4906,6 @@ const LandingPage: React.FC = () => {
                         >
                           {stat.program}
                         </div>
-                        {stat.programDesc && (
-                <div
-                  style={{
-                              ...typography.body,
-                              color: colors.text.muted,
-                              fontSize: typography.fontSize.xs,
-                              lineHeight: 1.5,
-                            }}
-                          >
-                            {stat.programDesc}
-                          </div>
-                        )}
                         <div style={{ marginTop: spacing.sm, display: "flex", justifyContent: "center" }}>
                           {(() => {
                             const cta = (() => {
@@ -5071,17 +4997,9 @@ const LandingPage: React.FC = () => {
                                 }
                                 whileTap={cta ? { scale: 0.98 } : undefined}
                               >
-                                <div style={{ position: "relative", zIndex: 1, display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
-                                  <ArrowRightIcon size={16} style={{ color: unifiedAccent }} />
-                                  <span style={textStyle}>{cta ? cta.label : "Explore Program (coming soon)"}</span>
-                                  <motion.div
-                                    aria-hidden="true"
-                                    animate={cta ? { x: [0, 3, 0] } : undefined}
-                                    transition={cta ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" } : undefined}
-                                    style={{ display: "inline-flex" }}
-                                  >
-                                    <ArrowRightIcon size={14} style={{ color: unifiedAccent }} />
-                                  </motion.div>
+                                <div style={{ position: "relative", zIndex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: spacing.xs }}>
+                                  <span style={{ ...textStyle, display: "inline-flex", alignItems: "center", lineHeight: 1 }}>{cta ? cta.label : "Explore Program (coming soon)"}</span>
+                                  <ArrowRightIcon size={16} style={{ color: unifiedAccent, display: "flex", alignItems: "center", flexShrink: 0 }} />
                                 </div>
                               </motion.div>
                             );
@@ -5553,7 +5471,8 @@ const LandingPage: React.FC = () => {
       {/* End Post-Hero Story Weave Wrapper */}
       </div>
 
-
+      {/* Scroll Indicator - Transition between Integrated Program and Fan Club */}
+      <ScrollIndicator delay={0.2} />
 
       {/* Fan Club Ecosystem × Sponsor Rewards × Pricing × Sales Enablement */}
       {/* Fan Club Teaser - Concise single-screen preview */}
@@ -5573,19 +5492,70 @@ const LandingPage: React.FC = () => {
             overflow: "hidden",
             scrollMarginTop: 120,
             minHeight: "100vh",
-            backgroundImage: "url('/assets/DSC_0205-3.jpg')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-            backgroundAttachment: "scroll",
           }}
           data-section="fan-club"
         >
-          <div style={{ position: "relative", zIndex: 1 }}>
+          {/* Background Image Layer */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.5 }}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: "url('/assets/DSC09768.JPG')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              backgroundAttachment: "fixed",
+              opacity: 0.15,
+              filter: "blur(10px)",
+              zIndex: 0,
+            }}
+            aria-hidden="true"
+          />
+          
+          {/* Dark Overlay for better text readability */}
+          <motion.div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: `rgba(5, 11, 32, 0.6)`,
+              zIndex: 1,
+            }}
+            aria-hidden="true"
+          />
+          
+          {/* Gradient Overlay - matching other sections */}
+          <motion.div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: `linear-gradient(135deg, 
+                rgba(4, 61, 208, 0.4) 0%, 
+                rgba(255, 169, 0, 0.3) 100%)`,
+              zIndex: 2,
+            }}
+            aria-hidden="true"
+          />
+          
+          <div style={{ position: "relative", zIndex: 3 }}>
             <FanClubTeaserSection isMobile={isMobile} />
           </div>
         </InfinitySection>
       </div>
+
+      {/* Scroll Indicator - Transition between Fan Club and Content Stream */}
+      <ScrollIndicator delay={0.2} />
 
       {/* Unified Content Stream: Shop + Matches + News + Gallery */}
       <InfinitySection
@@ -5630,16 +5600,6 @@ const LandingPage: React.FC = () => {
             viewport={{ once: true, amount: 0.25 }}
             style={{ textAlign: "center", marginBottom: spacing["2xl"] }}
           >
-                    <div
-                      style={{
-                ...typography.overline,
-                color: colors.accent.main,
-                letterSpacing: "0.15em",
-                        marginBottom: spacing.md,
-                      }}
-                    >
-              Your Complete Club Experience
-                    </div>
             <h2
               style={{
                 ...typography.display,
@@ -5854,7 +5814,6 @@ const LandingPage: React.FC = () => {
                 {[
                   { name: "Facebook", url: clubInfo.social.facebook, Icon: FacebookIcon },
                   { name: "Instagram", url: clubInfo.social.instagram, Icon: InstagramIcon },
-                  { name: "TikTok", url: clubInfo.social.tiktok || "#", Icon: TikTokIcon },
                   { name: "Twitter", url: clubInfo.social.twitter || "#", Icon: TwitterIcon },
                   { name: "YouTube", url: clubInfo.social.youtube, Icon: YouTubeIcon },
                 ].map((social) => {

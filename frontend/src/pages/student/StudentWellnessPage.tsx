@@ -47,7 +47,10 @@ const StudentWellnessPage: React.FC = () => {
                   size="md"
                   onClick={() => navigate(`/realverse/player/${user.id}/load-dashboard`)}
                 >
-                  View Load Dashboard <ArrowRightIcon size={14} style={{ marginLeft: spacing.xs }} />
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Load Dashboard</span>
+                    <ArrowRightIcon size={14} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                  </span>
                 </Button>
               </div>
               <div

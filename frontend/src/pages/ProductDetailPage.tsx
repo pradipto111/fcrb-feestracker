@@ -8,8 +8,10 @@ import { Card } from "../components/ui/Card";
 import { api } from "../api/client";
 import { useCart } from "../context/CartContext";
 import { shopAssets } from "../config/assets";
+import { products as localProducts, type Product as LocalProduct } from "../data/products";
+import { formatShopPrice } from "../utils/shop";
 
-interface Product {
+interface ApiProduct {
   id: number;
   name: string;
   slug: string;
@@ -21,6 +23,8 @@ interface Product {
   stock?: number;
   isActive: boolean;
 }
+
+type Product = ApiProduct | (LocalProduct & { images: string[]; sizes?: string[] });
 
 const ProductDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -39,30 +43,60 @@ const ProductDetailPage: React.FC = () => {
   }, [slug]);
 
   const loadProduct = async () => {
+    setLoading(true);
+    
+    // Try API first (admin-managed products)
     try {
       const data = await api.getProduct(slug!);
-      // Check if product is active (shop API should already filter, but double-check)
       if (!data.isActive) {
         setProduct(null);
+        setLoading(false);
         return;
       }
-      setProduct(data);
+      setProduct({
+        id: data.id,
+        name: data.name,
+        slug: data.slug,
+        description: data.description || undefined,
+        images: data.images || [],
+        price: data.price,
+        sizes: data.sizes || [],
+        variants: data.variants,
+        stock: data.stock || undefined,
+        isActive: data.isActive,
+      } as Product);
       if (data.sizes && data.sizes.length > 0) {
         setSelectedSize(data.sizes[0]);
       }
+      setLoading(false);
+      return;
     } catch (error: any) {
-      console.error("Failed to load product:", error);
-      // If 404, product doesn't exist or is inactive
-      if (error.message && error.message.includes("not found")) {
-        setProduct(null);
+      // If API fails, try local products as fallback
+      console.warn("API product not found, trying local products:", error.message);
+      
+      const localProduct = localProducts.find((p) => p.id === slug);
+      if (localProduct) {
+        setProduct({
+          id: typeof localProduct.id === "string" ? 0 : localProduct.id,
+          name: localProduct.name,
+          slug: typeof localProduct.id === "string" ? localProduct.id : localProduct.id.toString(),
+          description: undefined,
+          images: [localProduct.image],
+          price: localProduct.price,
+          sizes: [],
+          variants: undefined,
+          stock: undefined,
+          isActive: localProduct.available,
+        } as Product);
+        setLoading(false);
+        return;
       }
+      
+      // Product not found
+      setProduct(null);
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatPrice = (paise: number) => {
-    return `₹${(paise / 100).toFixed(2)}`;
   };
 
   const handleAddToCart = () => {
@@ -74,10 +108,10 @@ const ProductDetailPage: React.FC = () => {
     }
 
     addItem({
-      productId: product.id,
+      productId: product.id, // API products use numeric ID, local use string
       productName: product.name,
       productSlug: product.slug,
-      productImage: product.images?.[0],
+      productImage: product.images?.[0] || "",
       variant: selectedVariant || undefined,
       size: selectedSize || undefined,
       quantity,
@@ -150,14 +184,13 @@ const ProductDetailPage: React.FC = () => {
                   width: "auto",
                   minWidth: 260,
                   minHeight: 56,
-                  padding: "12px 18px",
                 }}
               >
                 <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
                   <span style={heroCTAStyles.blue.textStyle}>Continue Shopping</span>
                   <span style={heroCTAStyles.blue.subtitleStyle}>Browse the official store</span>
                 </div>
-                <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+                <span style={{ color: colors.text.onPrimary, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
               </motion.div>
             </Link>
           </Card>
@@ -205,14 +238,13 @@ const ProductDetailPage: React.FC = () => {
                   width: "auto",
                   minWidth: 240,
                   minHeight: 56,
-                  padding: "12px 18px",
                 }}
               >
                 <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
                   <span style={heroCTAStyles.blue.textStyle}>Back to Shop</span>
                   <span style={heroCTAStyles.blue.subtitleStyle}>See all products</span>
                 </div>
-                <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+                <span style={{ color: colors.text.onPrimary, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
               </motion.div>
             </Link>
           </Card>
@@ -304,10 +336,10 @@ const ProductDetailPage: React.FC = () => {
                 marginBottom: spacing.lg,
               }}
             >
-              {formatPrice(product.price)}
+              {formatShopPrice(product.price)}
             </div>
 
-            {product.description && (
+            {product.description ? (
               <p
                 style={{
                   ...typography.body,
@@ -317,6 +349,17 @@ const ProductDetailPage: React.FC = () => {
                 }}
               >
                 {product.description}
+              </p>
+            ) : (
+              <p
+                style={{
+                  ...typography.body,
+                  color: colors.text.secondary,
+                  marginBottom: spacing.xl,
+                  lineHeight: 1.7,
+                }}
+              >
+                Match-ready fit, breathable fabric, and club-first detailing built for Indian conditions.
               </p>
             )}
 
@@ -436,7 +479,7 @@ const ProductDetailPage: React.FC = () => {
                 <span style={heroCTAStyles.blue.textStyle}>Add to Cart</span>
                 <span style={heroCTAStyles.blue.subtitleStyle}>Secure checkout in 2 steps</span>
               </div>
-              <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+              <span style={{ color: colors.text.onPrimary, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
             </motion.button>
 
             <Link to="/shop" style={{ textDecoration: "none" }}>
@@ -457,7 +500,7 @@ const ProductDetailPage: React.FC = () => {
                   <span style={heroCTAStyles.darkWithBorder.textStyle}>Continue Shopping</span>
                   <span style={heroCTAStyles.darkWithBorder.subtitleStyle}>Back to the store grid</span>
                 </div>
-                <span style={{ color: colors.accent.main, fontWeight: 800 }}>→</span>
+                <span style={{ color: colors.accent.main, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
               </motion.div>
             </Link>
           </div>

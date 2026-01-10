@@ -13,6 +13,104 @@ const safeJson = (v: string, fallback: any) => {
   }
 };
 
+const TierRow: React.FC<{ tier: any; onUpdate: (tierId: number, patch: any) => Promise<void> }> = ({ tier, onUpdate }) => {
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editData, setEditData] = React.useState({
+    name: tier.name,
+    monthlyPriceINR: String(tier.monthlyPriceINR || 0),
+    yearlyPriceINR: String(tier.yearlyPriceINR || 0),
+    sortOrder: String(tier.sortOrder || 0),
+    benefitsJson: JSON.stringify(tier.benefitsJson || [], null, 2),
+    isActive: tier.isActive,
+  });
+
+  const handleSave = async () => {
+    await onUpdate(tier.id, {
+      name: editData.name,
+      monthlyPriceINR: Number(editData.monthlyPriceINR || 0),
+      yearlyPriceINR: Number(editData.yearlyPriceINR || 0),
+      sortOrder: Number(editData.sortOrder || 0),
+      benefitsJson: safeJson(editData.benefitsJson, []),
+      isActive: editData.isActive,
+    });
+    setIsEditing(false);
+  };
+
+  return (
+    <div style={{ borderRadius: borderRadius["2xl"], border: "1px solid rgba(255,255,255,0.10)", background: "rgba(0,0,0,0.16)", padding: spacing.lg }}>
+      {!isEditing ? (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: spacing.md, alignItems: "baseline" }}>
+            <div>
+              <div style={{ ...typography.h4, color: colors.text.primary, margin: 0 }}>{tier.name}</div>
+              <div style={{ ...typography.caption, color: colors.text.muted, marginTop: 6 }}>
+                Monthly ₹{tier.monthlyPriceINR} • Yearly ₹{tier.yearlyPriceINR} • Sort {tier.sortOrder} • {tier.isActive ? "Active" : "Inactive"}
+              </div>
+              <div style={{ marginTop: spacing.sm }}>
+                <div style={{ ...typography.caption, color: colors.text.muted, marginBottom: spacing.xs }}>Benefits:</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {Array.isArray(tier.benefitsJson) && tier.benefitsJson.length > 0 ? (
+                    tier.benefitsJson.map((b: any, idx: number) => (
+                      <div key={idx} style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm }}>
+                        • {typeof b === "string" ? b : b.title || b.note || ""}
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ ...typography.caption, color: colors.text.muted, fontStyle: "italic" }}>No benefits configured</div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <Button variant="secondary" size="sm" onClick={() => setIsEditing(true)} style={{ borderRadius: 999 }}>
+                Edit
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => onUpdate(tier.id, { isActive: !tier.isActive })} style={{ borderRadius: 999 }}>
+                {tier.isActive ? "Deactivate" : "Activate"}
+              </Button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: spacing.md }}>
+            <Input label="Name" value={editData.name} onChange={(e) => setEditData((s) => ({ ...s, name: e.target.value }))} fullWidth />
+            <Input label="Monthly price (INR)" value={editData.monthlyPriceINR} onChange={(e) => setEditData((s) => ({ ...s, monthlyPriceINR: e.target.value }))} fullWidth />
+            <Input label="Yearly price (INR)" value={editData.yearlyPriceINR} onChange={(e) => setEditData((s) => ({ ...s, yearlyPriceINR: e.target.value }))} fullWidth />
+            <Input label="Sort order" value={editData.sortOrder} onChange={(e) => setEditData((s) => ({ ...s, sortOrder: e.target.value }))} fullWidth />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ ...typography.caption, color: colors.text.muted }}>Benefits JSON (array of strings or objects with 'title'/'note')</div>
+            <textarea
+              value={editData.benefitsJson}
+              onChange={(e) => setEditData((s) => ({ ...s, benefitsJson: e.target.value }))}
+              style={{
+                width: "100%",
+                minHeight: 120,
+                borderRadius: 14,
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgba(0,0,0,0.18)",
+                color: colors.text.primary,
+                padding: 12,
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                fontSize: typography.fontSize.sm,
+              }}
+            />
+          </div>
+          <div style={{ display: "flex", gap: spacing.sm }}>
+            <Button variant="primary" size="sm" onClick={handleSave} style={{ borderRadius: 999 }}>
+              Save
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setIsEditing(false)} style={{ borderRadius: 999 }}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const AdminFanTiersPage: React.FC = () => {
   const [tiers, setTiers] = useState<any[]>([]);
   const [toast, setToast] = useState("");
@@ -64,9 +162,9 @@ const AdminFanTiersPage: React.FC = () => {
       <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", flexDirection: "column", gap: spacing.xl }}>
         <div>
           <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em", marginBottom: spacing.sm }}>REALVERSE • ADMIN</div>
-          <h1 style={{ ...typography.h1, margin: 0 }}>Fan Club — Tiers</h1>
+          <h1 style={{ ...typography.h1, margin: 0 }}>Fan Club — Package Configuration</h1>
           <p style={{ ...typography.body, color: colors.text.secondary, marginTop: spacing.md, lineHeight: 1.7 }}>
-            Pricing + benefits matrix + module feature flags. Everything here drives the Fan dashboard.
+            Configure pricing, benefits, and feature flags for Fan Club membership packages. These packages are displayed on the join page where users can compare and select their preferred tier. Changes here will be reflected immediately on the public join page.
           </p>
         </div>
 
@@ -107,21 +205,7 @@ const AdminFanTiersPage: React.FC = () => {
 
           <div style={{ display: "grid", gap: spacing.md }}>
             {tierRows.map((t) => (
-              <div key={t.id} style={{ borderRadius: borderRadius["2xl"], border: "1px solid rgba(255,255,255,0.10)", background: "rgba(0,0,0,0.16)", padding: spacing.lg }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: spacing.md, alignItems: "baseline" }}>
-                  <div>
-                    <div style={{ ...typography.h4, color: colors.text.primary, margin: 0 }}>{t.name}</div>
-                    <div style={{ ...typography.caption, color: colors.text.muted, marginTop: 6 }}>
-                      Monthly ₹{t.monthlyPriceINR} • Yearly ₹{t.yearlyPriceINR} • Sort {t.sortOrder} • {t.isActive ? "Active" : "Inactive"}
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <Button variant="secondary" size="sm" onClick={() => updateTier(t.id, { isActive: !t.isActive })} style={{ borderRadius: 999 }}>
-                      {t.isActive ? "Deactivate" : "Activate"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              <TierRow key={t.id} tier={t} onUpdate={updateTier} />
             ))}
           </div>
         </Card>

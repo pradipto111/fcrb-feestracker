@@ -17,7 +17,7 @@ export const heroOverlayGradient = "linear-gradient(135deg, rgba(5, 11, 32, 0.85
 export const heroCTAStyles = {
   // Blue CTA: "Support the Club" style
   blue: {
-    padding: `${spacing.lg} ${spacing.xl}`,
+    padding: `${spacing.xl} ${spacing['40']}`, // 32px vertical, 40px horizontal - adequate padding for text
     borderRadius: borderRadius.button,
     background: colors.primary.main, // Royal blue
     border: "none",
@@ -45,7 +45,7 @@ export const heroCTAStyles = {
   
   // Yellow CTA: "Train With Us" style
   yellow: {
-    padding: `${spacing.lg} ${spacing.xl}`,
+    padding: `${spacing.xl} ${spacing['40']}`, // 32px vertical, 40px horizontal - adequate padding for text
     borderRadius: borderRadius.button,
     background: colors.accent.main, // FC Real Bengaluru gold
     border: "none",
@@ -73,7 +73,7 @@ export const heroCTAStyles = {
   
   // Dark with border CTA: "Join the Journey" style
   darkWithBorder: {
-    padding: `${spacing.lg} ${spacing.xl}`,
+    padding: `${spacing.xl} ${spacing['40']}`, // 32px vertical, 40px horizontal - adequate padding for text
     borderRadius: borderRadius.button,
     background: colors.surface.card, // Dark card background
     border: `2px solid ${colors.accent.main}`, // Gold border
@@ -176,16 +176,20 @@ export const sectionBackgroundOverlay = {
  */
 export const programCardOverlay = (accent: string) => {
   const secondary = accent === colors.primary.main ? colors.accent.main : colors.primary.main;
+  // Enhanced blue gradient for better visibility when accent is blue
+  const accentIntensity = accent === colors.primary.main ? '28' : '1A';
+  const accentGlow = accent === colors.primary.main ? 'rgba(45, 127, 214, 0.15)' : `${accent}1A`;
   return {
     position: "absolute" as const,
     inset: 0,
     pointerEvents: "none" as const,
     // Subtle blur for busy photos (balanced)
     backdropFilter: "blur(6px)",
-    // Dark club wash + branded highlights (blue/gold)
+    // Dark club wash + branded highlights (blue/gold) - enhanced blue gradients for visibility
     background: `linear-gradient(135deg, rgba(5,11,32,0.78) 0%, rgba(10,22,51,0.62) 45%, rgba(5,11,32,0.86) 100%),
       radial-gradient(circle at 18% 18%, ${secondary}22 0%, transparent 58%),
-      radial-gradient(circle at 82% 14%, ${accent}1A 0%, transparent 60%)`,
+      radial-gradient(circle at 82% 14%, ${accentGlow} 0%, transparent 60%),
+      ${accent === colors.primary.main ? `radial-gradient(circle at 50% 50%, rgba(10, 61, 145, 0.12) 0%, transparent 70%)` : ''}`,
     opacity: 0.9,
   };
 };

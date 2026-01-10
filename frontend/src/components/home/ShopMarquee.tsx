@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
 import { colors, typography, spacing, borderRadius, shadows } from "../../theme/design-tokens";
+import { heroCTAPillStyles } from "../../theme/hero-design-patterns";
 import { Button } from "../ui/Button";
 import { ArrowRightIcon } from "../icons/IconSet";
 import { useMarquee } from "../../hooks/useMarquee";
@@ -399,20 +400,16 @@ function MarqueeCard({
         >
           <div
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: spacing.sm,
-              padding: `${spacing['10']} ${spacing['12']}`, // 10px 12px - readable text zones
-              borderRadius: borderRadius.button, // 8px - football-first
-              background: `linear-gradient(135deg, ${colors.primary.main} 0%, ${colors.accent.main} 100%)`, // Football-first gradient
-              border: "none",
-              color: colors.text.onPrimary,
-              fontWeight: typography.fontWeight.bold,
-              letterSpacing: "0.02em",
-              boxShadow: shadows.buttonHover, // Sports broadcast style
+              ...heroCTAPillStyles.base,
+              ...heroCTAPillStyles.gold,
+              padding: `${spacing.sm} ${spacing.md}`, // 8px 16px - adequate padding
+              boxShadow: shadows.button,
             }}
           >
-            View Product <ArrowRightIcon size={16} />
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1, color: colors.text.primary }}>View Product</span>
+              <ArrowRightIcon size={16} style={{ color: colors.accent.main, display: "flex", alignItems: "center", flexShrink: 0 }} />
+            </span>
           </div>
         </div>
       </div>

@@ -120,12 +120,6 @@ export const SponsorLogoWall: React.FC<{
           );
         })}
       </div>
-
-      <div style={{ marginTop: spacing.sm, textAlign: "center" }}>
-        <div style={{ ...typography.caption, color: colors.text.muted, letterSpacing: "0.12em", opacity: 0.85 }}>
-          OFFICIAL SPONSORS • MEMBERS-ONLY PERKS
-        </div>
-      </div>
     </motion.div>
   );
 };

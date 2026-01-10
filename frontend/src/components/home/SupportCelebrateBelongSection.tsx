@@ -55,23 +55,6 @@ const SectionHeader: React.FC<{ isMobile: boolean }> = ({ isMobile }) => (
   <div style={{ marginBottom: isMobile ? 10 : 14 }}>
     <div
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 10,
-        padding: "8px 12px",
-        borderRadius: RADIUS_PILL,
-        border: BORDER_1,
-        background: "rgba(255,255,255,0.04)",
-        color: colors.text.secondary,
-        ...typography.overline,
-        letterSpacing: "0.16em",
-        marginBottom: 10,
-      }}
-    >
-      SUPPORT THE CLUB
-    </div>
-    <div
-      style={{
         ...heroTypography.heading,
         fontSize: isMobile ? "clamp(22px, 6vw, 26px)" : "clamp(28px, 2.6vw, 34px)",
         margin: 0,
@@ -143,7 +126,7 @@ const PaneHeader: React.FC<{
 }> = ({ isMobile, kicker, title, subtitle, rightCTA }) => (
   <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "stretch" : "flex-start", justifyContent: "space-between", gap: isMobile ? 12 : 16 }}>
     <div style={{ minWidth: 0 }}>
-      <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.10em", fontSize: 12, marginBottom: 4 }}>{kicker}</div>
+      {kicker ? <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.10em", fontSize: 12, marginBottom: 4 }}>{kicker}</div> : null}
       <div style={{ ...typography.h4, color: colors.text.primary, fontSize: 20, margin: 0, lineHeight: 1.15 }}>{title}</div>
       {subtitle ? (
         <div style={{ ...typography.body, color: colors.text.muted, fontSize: 14, lineHeight: 1.5, marginTop: 6 }}>
@@ -352,7 +335,7 @@ export const SupportCelebrateBelongSection: React.FC<{
               <PaneShell isMobile={isMobile} minHeight={isMobile ? 0 : 320}>
                 <PaneHeader
                   isMobile={isMobile}
-                  kicker="SUPPORT & PARTICIPATE"
+                  kicker=""
                   title="Wear Your Pride"
                   subtitle="Official merch. Real impact."
                   rightCTA={
@@ -436,7 +419,7 @@ export const SupportCelebrateBelongSection: React.FC<{
                   <PaneShell isMobile={isMobile} minHeight={isMobile ? 0 : 320}>
                     <PaneHeader
                       isMobile={isMobile}
-                      kicker="SUPPORT & PARTICIPATE"
+                      kicker=""
                       title="Wear Your Pride"
                       subtitle="Official merch. Real impact."
                       rightCTA={
@@ -449,7 +432,10 @@ export const SupportCelebrateBelongSection: React.FC<{
                               transform: "translateZ(0)",
                             }}
                           >
-                            Explore Shop <ArrowRightIcon size={18} style={{ marginLeft: 8 }} />
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                              <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Explore Shop</span>
+                              <ArrowRightIcon size={18} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                            </span>
                           </Button>
                         </Link>
                       }

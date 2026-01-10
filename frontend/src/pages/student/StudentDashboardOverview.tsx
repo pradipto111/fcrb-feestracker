@@ -106,7 +106,10 @@ const StudentDashboardOverview: React.FC = () => {
           actions={
             <Link to="/realverse/student/analytics" style={{ textDecoration: "none" }}>
               <Button variant="primary" size="md">
-                View Analytics <ArrowRightIcon size={14} style={{ marginLeft: spacing.xs }} />
+                <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Analytics</span>
+                  <ArrowRightIcon size={14} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                </span>
               </Button>
             </Link>
           }
@@ -157,7 +160,10 @@ const StudentDashboardOverview: React.FC = () => {
                   View your performance metrics, readiness, and positional suitability
                 </p>
                 <div style={{ ...typography.caption, color: colors.primary.main, fontWeight: typography.fontWeight.medium }}>
-                  View Profile <ArrowRightIcon size={12} style={{ marginLeft: spacing.xs }} />
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Profile</span>
+                    <ArrowRightIcon size={12} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                  </span>
                 </div>
               </div>
             </div>
@@ -183,7 +189,10 @@ const StudentDashboardOverview: React.FC = () => {
                     Monitor your training load trends and readiness correlation
                   </p>
                   <div style={{ ...typography.caption, color: colors.primary.main, fontWeight: typography.fontWeight.medium }}>
-                    View Dashboard <ArrowRightIcon size={12} style={{ marginLeft: spacing.xs }} />
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Dashboard</span>
+                      <ArrowRightIcon size={12} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                    </span>
                   </div>
                 </div>
               </div>
@@ -204,7 +213,10 @@ const StudentDashboardOverview: React.FC = () => {
                   View your progress reports and development insights
                 </p>
                 <div style={{ ...typography.caption, color: colors.primary.main, fontWeight: typography.fontWeight.medium }}>
-                  View Reports <ArrowRightIcon size={12} style={{ marginLeft: spacing.xs }} />
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Reports</span>
+                    <ArrowRightIcon size={12} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                  </span>
                 </div>
               </div>
             </div>
@@ -276,7 +288,10 @@ const StudentDashboardOverview: React.FC = () => {
                 </Button>
                 <Link to="/realverse/student/analytics" style={{ textDecoration: "none" }}>
                   <Button variant="primary" size="sm">
-                    View Full <ArrowRightIcon size={12} style={{ marginLeft: spacing.xs }} />
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Full</span>
+                      <ArrowRightIcon size={12} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                    </span>
                   </Button>
                 </Link>
               </div>

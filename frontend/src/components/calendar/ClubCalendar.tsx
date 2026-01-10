@@ -451,59 +451,6 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         />
 
         <div style={{ position: "relative", zIndex: 1 }}>
-          {/* Header art strip - Enhanced */}
-          <div
-            style={{
-              position: "relative",
-              height: isMobile ? 110 : 130,
-              overflow: "hidden",
-              padding: spacing.lg,
-              borderBottom: "1px solid rgba(255,255,255,0.12)",
-            }}
-          >
-            <div
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                inset: 0,
-                backgroundImage: `url(${galleryAssets.actionShots[1]?.medium || galleryAssets.actionShots[0]?.medium || ""})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                opacity: 0.22,
-                filter: "blur(12px)",
-              }}
-            />
-            <div
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "linear-gradient(135deg, rgba(5,11,32,0.85) 0%, rgba(5,11,32,0.60) 45%, rgba(5,11,32,0.90) 100%)",
-              }}
-            />
-            <div
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                inset: 0,
-                background:
-                  "radial-gradient(circle at 20% 20%, rgba(0,224,255,0.12) 0%, transparent 55%), radial-gradient(circle at 80% 80%, rgba(255,169,0,0.10) 0%, transparent 60%)",
-                opacity: 0.8,
-              }}
-            />
-
-            <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.md }}>
-              <div>
-                <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.16em", marginBottom: 6, fontWeight: typography.fontWeight.semibold }}>CLUB CALENDAR</div>
-                <div style={{ ...typography.h3, color: colors.text.primary, margin: 0, fontSize: isMobile ? typography.fontSize.xl : typography.fontSize["2xl"], fontWeight: typography.fontWeight.bold }}>Schedule • Matchdays</div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ ...typography.body, color: colors.text.secondary, fontWeight: typography.fontWeight.semibold, fontSize: typography.fontSize.sm }}>{formatDateLongInIST(new Date())}</div>
-                <div style={{ ...typography.caption, color: colors.text.muted, marginTop: 2 }}>Updates weekly</div>
-              </div>
-            </div>
-          </div>
-
           <div style={{ padding: spacing.md, display: "flex", flexDirection: "column", gap: spacing.md }}>
             {/* Latest Result Card - Enhanced with better styling */}
             <motion.div variants={moduleIn} initial="hidden" animate="show">
@@ -522,24 +469,9 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                   position: "relative",
                 }}
               >
-                {/* Enhanced background gradient */}
-                <div
-                  aria-hidden="true"
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background:
-                      "radial-gradient(circle at 20% 20%, rgba(255,169,0,0.16) 0%, transparent 55%), radial-gradient(circle at 85% 85%, rgba(0,224,255,0.12) 0%, transparent 60%)",
-                    opacity: 0.95,
-                    pointerEvents: "none",
-                    zIndex: 0,
-                  }}
-                />
-                
                 <div style={{ position: "relative", zIndex: 1 }}>
                   <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "stretch" : "flex-start", justifyContent: "space-between", gap: isMobile ? 12 : 16, marginBottom: spacing.md }}>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.12em", fontSize: 11, marginBottom: 6, fontWeight: typography.fontWeight.semibold }}>NEXT STEPS</div>
                       <div style={{ ...typography.h3, color: colors.text.primary, fontSize: 22, margin: 0, lineHeight: 1.2, fontWeight: typography.fontWeight.bold }}>Latest Result</div>
                     </div>
                   </div>
@@ -652,8 +584,9 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                                   justifyContent: "center",
                                 }}
                               >
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                                  View Fixtures <ArrowRightIcon size={16} style={{ color: colors.accent.main }} />
+                                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                                  <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Fixtures</span>
+                                  <ArrowRightIcon size={16} style={{ color: colors.accent.main, display: "flex", alignItems: "center", flexShrink: 0 }} />
                                 </span>
                               </motion.div>
                             </Link>
@@ -733,8 +666,9 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                       padding: "10px 16px",
                     }}
                   >
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                      View details <ArrowRightIcon size={16} style={{ color: colors.accent.main }} />
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View details</span>
+                      <ArrowRightIcon size={16} style={{ color: colors.accent.main, display: "flex", alignItems: "center", flexShrink: 0 }} />
                     </span>
                   </motion.button>
                 </motion.div>
@@ -922,18 +856,6 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
             </div>
 
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <div
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: borderRadius.full,
-                  border: "1px solid rgba(255,255,255,0.10)",
-                  background: "rgba(255,255,255,0.04)",
-                  ...typography.caption,
-                  color: colors.text.muted,
-                }}
-              >
-                Tip: Use filters + click a day for details
-              </div>
             </div>
           </div>
         </div>
@@ -1014,7 +936,7 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         </div>
 
         {/* Filters */}
-        <div style={{ padding: `0 ${spacing.lg}px ${spacing.md}px`, display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ padding: `${spacing.xl} ${spacing.lg} ${spacing.md}`, display: "flex", gap: spacing.sm, flexWrap: "wrap", alignItems: "center" }}>
           {(
             [
               { k: "ALL" as const, label: "All" },
@@ -1032,15 +954,18 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
               whileTap={!reduce ? { scale: 0.98 } : undefined}
               style={{
                 ...heroCTAPillStyles.base,
-                padding: "10px 14px",
-                boxShadow: "none",
+                padding: `${spacing.sm} ${spacing.md}`, // 8px 16px - adequate padding
+                boxShadow: shadows.button,
                 border:
                   f.k === filter ? `2px solid ${colors.accent.main}` : "1px solid rgba(255,255,255,0.14)",
                 background: f.k === filter ? "rgba(245,179,0,0.08)" : "rgba(255,255,255,0.03)",
                 color: f.k === filter ? colors.text.primary : colors.text.muted,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              {f.label}
+              <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>{f.label}</span>
             </motion.button>
           ))}
         </div>

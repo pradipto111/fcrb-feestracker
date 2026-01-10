@@ -8,14 +8,13 @@
  * (C) Program Cards (RealVerse data)
  * (D) Specialized Programs
  * (E) Training Experience
- * (G) FAQ
+ * (G) FAQ (with Ready to Begin Your Journey? CTA merged)
  * (H) Sponsors Strip
- * (I) Contact & Join CTA
  */
 
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useInView } from "framer-motion";
 import PublicHeader from "../components/PublicHeader";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
@@ -31,23 +30,55 @@ import {
   PhoneIcon,
   EmailIcon,
   FlagIcon,
+  FacebookIcon,
+  InstagramIcon,
+  TwitterIcon,
+  YouTubeIcon,
+  LocationIcon,
+  StarIcon,
 } from "../components/icons/IconSet";
-import { galleryAssets } from "../config/assets";
+import { galleryAssets, clubAssets, heroAssets } from "../config/assets";
+import { clubInfo } from "../data/club";
+import { Button } from "../components/ui/Button";
+import { api } from "../api/client";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
+import { useHeroParallax } from "../hooks/useParallaxMotion";
 import { heroCTAStyles, heroCTAPillStyles, programCardOverlay } from "../theme/hero-design-patterns";
 
+// Interface for centres
+interface Centre {
+  id: number;
+  name: string;
+  shortName: string;
+  addressLine: string;
+  locality: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  latitude: number;
+  longitude: number;
+  googleMapsUrl: string;
+  displayOrder: number;
+}
+
 const ProgramsOverviewPage: React.FC = () => {
+  const reduceMotion = useReducedMotion();
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
-  const { infinitySectionVariants, viewportOnce } = useHomepageAnimation();
-  const pathwayRef = useRef<HTMLElement>(null);
-  const { scrollYProgress: pathwayScroll } = useScroll({
-    target: pathwayRef,
-    offset: ["start end", "end start"],
-  });
-  const pathwayBgY = useTransform(pathwayScroll, [0, 1], ["-6%", "6%"]);
-  const pathwayBgOpacity = useTransform(pathwayScroll, [0, 0.25], [0.95, 1]);
+  const [centres, setCentres] = useState<Centre[]>([]);
+  const { 
+    infinitySectionVariants, 
+    viewportOnce,
+    heroVariants,
+    heroContentVariants,
+    headingVariants,
+    cardVariants,
+    staggerContainer,
+  } = useHomepageAnimation();
+  const heroParallax = useHeroParallax({ speed: 0.15 });
+  const heroVideoRef = useRef<HTMLIFrameElement>(null);
+  const overlayVideoRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -60,9 +91,46 @@ const ProgramsOverviewPage: React.FC = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Ensure video starts playing immediately on load
+  useEffect(() => {
+    if (heroVideoRef.current) {
+      heroVideoRef.current.style.opacity = "0.7";
+      heroVideoRef.current.style.visibility = "visible";
+    }
+    if (overlayVideoRef.current) {
+      overlayVideoRef.current.style.opacity = "1";
+      overlayVideoRef.current.style.visibility = "visible";
+    }
+  }, []);
+
   useEffect(() => {
     document.title = "The RealVerse Football Academy | FC Real Bengaluru";
   }, []);
+
+  // Load centres for footer
+  useEffect(() => {
+    const loadCentres = async () => {
+      try {
+        const data = await api.getPublicCentres();
+        setCentres(data);
+      } catch (error) {
+        console.error("Error loading centres:", error);
+      }
+    };
+    loadCentres();
+  }, []);
+
+  const handleOpenInMaps = (centre: Centre) => {
+    if (centre.googleMapsUrl) {
+      window.open(centre.googleMapsUrl, "_blank");
+    } else if (centre.latitude && centre.longitude) {
+      // Fallback: create Google Maps URL from coordinates
+      window.open(
+        `https://www.google.com/maps/search/?api=1&query=${centre.latitude},${centre.longitude}`,
+        "_blank"
+      );
+    }
+  };
 
   // InfinitySection wrapper component
   const InfinitySection: React.FC<{
@@ -70,7 +138,8 @@ const ProgramsOverviewPage: React.FC = () => {
     id?: string;
     style?: React.CSSProperties;
     bridge?: boolean;
-  }> = ({ children, id, style, bridge = false }) => {
+    backgroundImage?: string;
+  }> = ({ children, id, style, bridge = false, backgroundImage }) => {
     const sectionRef = useRef<HTMLElement>(null);
     const isInView = useInView(sectionRef, {
       once: false,
@@ -78,39 +147,83 @@ const ProgramsOverviewPage: React.FC = () => {
       margin: "-100px",
     });
 
+    // Extract padding values from style prop, with minimal defaults
+    const paddingTop = style?.paddingTop ?? (isMobile ? spacing["2xl"] : spacing["3xl"]);
+    const paddingBottom = style?.paddingBottom ?? (isMobile ? spacing["2xl"] : spacing["3xl"]);
+    const paddingHorizontal = isMobile ? spacing.lg : spacing.xl;
+
+    // Merge style but ensure critical properties are not overridden
+    const sectionStyle: React.CSSProperties = {
+      position: "relative",
+      marginTop: 0, // Remove negative margins to prevent overlap
+      marginBottom: 0,
+      paddingTop: paddingTop,
+      paddingBottom: paddingBottom,
+      paddingLeft: 0,
+      paddingRight: 0,
+      overflow: "hidden",
+      zIndex: 1, // Ensure proper stacking
+      ...(style || {}),
+      // Override any conflicting properties from style prop
+      ...(backgroundImage ? {
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "scroll",
+        width: "100vw",
+        marginLeft: "calc(50% - 50vw)",
+        marginRight: "calc(50% - 50vw)",
+        paddingLeft: 0,
+        paddingRight: 0,
+      } : {}),
+    };
+
     return (
-      <>
-        {bridge && (
-          <div
-            style={{
-              position: "relative",
-              height: "100px",
-              marginTop: "-100px",
-              zIndex: 1,
-              background: "transparent",
-              pointerEvents: "none",
-            }}
-          />
+      <motion.section
+        ref={sectionRef}
+        id={id}
+        initial="offscreen"
+        animate={isInView ? "onscreen" : "offscreen"}
+        variants={infinitySectionVariants}
+        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+        viewport={{ once: false, amount: 0.1 }}
+        style={sectionStyle}
+      >
+        {/* Background Image with blur overlay */}
+        {backgroundImage && (
+          <>
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                inset: 0,
+                backgroundImage: `url(${backgroundImage})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                filter: "blur(18px)",
+                opacity: 0.18,
+                transform: "scale(1.06)",
+                zIndex: 0,
+              }}
+            />
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                inset: 0,
+                background:
+                  "radial-gradient(circle at 18% 25%, rgba(0,224,255,0.20) 0%, transparent 55%), radial-gradient(circle at 78% 70%, rgba(255,169,0,0.14) 0%, transparent 60%), linear-gradient(135deg, rgba(5,11,32,0.82) 0%, rgba(10,22,51,0.62) 50%, rgba(5,11,32,0.86) 100%)",
+                opacity: 0.98,
+                zIndex: 0,
+              }}
+            />
+          </>
         )}
-        <motion.section
-          ref={sectionRef}
-          id={id}
-          initial="offscreen"
-          animate={isInView ? "onscreen" : "offscreen"}
-          variants={infinitySectionVariants}
-          transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-          viewport={{ once: false, amount: 0.1 }}
-          style={{
-            ...style,
-            position: "relative",
-            marginTop: bridge ? "-100px" : "0",
-            marginBottom: bridge ? "-100px" : "0",
-            paddingTop: bridge ? "150px" : (style?.paddingTop ?? spacing.sectionGap),
-          }}
-        >
+        <div style={{ position: "relative", zIndex: 2, paddingLeft: paddingHorizontal, paddingRight: paddingHorizontal }}>
           {children}
-        </motion.section>
-      </>
+        </div>
+      </motion.section>
     );
   };
 
@@ -133,7 +246,7 @@ const ProgramsOverviewPage: React.FC = () => {
       ],
       accent: colors.accent.main,
       image: galleryAssets.actionShots[0]?.medium,
-      backgroundImage: "/assets/DSC09619 (1).JPG",
+      backgroundImage: "/assets/DSC09768.JPG",
       link: "/programs/epp",
     },
     {
@@ -152,7 +265,7 @@ const ProgramsOverviewPage: React.FC = () => {
       ],
       accent: colors.primary.main,
       image: galleryAssets.actionShots[1]?.medium,
-      backgroundImage: "/assets/Screenshot 2025-12-15 113324.png",
+      backgroundImage: "/assets/DSC09918.JPG",
       link: "/programs/scp",
     },
     {
@@ -171,7 +284,7 @@ const ProgramsOverviewPage: React.FC = () => {
       ],
       accent: colors.accent.main,
       image: galleryAssets.actionShots[2]?.medium,
-      backgroundImage: "/assets/IMG_4908.jpg",
+      backgroundImage: "/assets/DSC09828.JPG",
       link: "/programs/wpp",
     },
     {
@@ -190,7 +303,7 @@ const ProgramsOverviewPage: React.FC = () => {
       ],
       accent: colors.primary.main,
       image: galleryAssets.actionShots[3]?.medium,
-      backgroundImage: "/assets/NITT8121.jpg",
+      backgroundImage: "/assets/DSC09927.JPG",
       link: "/programs/fydp",
     },
   ];
@@ -202,21 +315,21 @@ const ProgramsOverviewPage: React.FC = () => {
       title: "Grassroots → Development",
       ageGroup: "U9–U13",
       description: "Foundations, identity and core habits.",
-      image: "/assets/20251007-DSC_0535.jpg",
+      image: "/assets/DSC_0205-3.jpg",
     },
     {
       id: "stage-2",
       title: "Development → Competitive",
       ageGroup: "U15–U17",
       description: "Structured growth with match-ready standards.",
-      image: "/assets/20251007-DSC_0557.jpg",
+      image: "/assets/DSC09723.JPG",
     },
     {
       id: "stage-3",
       title: "Competitive → Elite Pathway",
       ageGroup: "U17+",
       description: "Progression to higher levels and pro targets.",
-      image: "/assets/DSC09619%20(1).JPG",
+      image: "/assets/DSC09957.JPG",
     },
   ];
 
@@ -226,25 +339,25 @@ const ProgramsOverviewPage: React.FC = () => {
       title: "Licensed Coaches",
       description: "A-licensed and certified coaches leading every age group.",
       icon: GraduationCapIcon,
-      image: "/assets/DSC00893.jpg",
+      image: "/assets/20251007-DSC_0563.jpg",
     },
     {
       title: "Unified Club Philosophy",
       description: "One game model across programs and sessions.",
       icon: ShieldIcon,
-      image: "/assets/20250927-DSC_0446.jpg",
+      image: "/assets/DSC09619 (1).JPG",
     },
     {
       title: "AI, Data & Metrics",
       description: "RealVerse tools track progress, loads and decision-making.",
       icon: ChartBarIcon,
-      image: "/assets/Screenshot%202025-12-15%20113324.png",
+      image: "/assets/Screenshot 2025-12-15 110643.png",
     },
     {
       title: "Complete Development Stack",
       description: "From camps to year-round training and game analysis.",
       icon: FireIcon,
-      image: "/assets/NITT8121.jpg",
+      image: "/assets/Screenshot 2025-12-15 111322.png",
     },
   ];
 
@@ -293,34 +406,87 @@ const ProgramsOverviewPage: React.FC = () => {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: colors.club.deep, position: "relative" }}>
-      {/* Global fixed video background so header + hero sit on the same moving layer */}
-      <motion.div
-        aria-hidden="true"
-        initial={{ opacity: 0.7 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1 }}
+    <div
+      style={{
+        position: "relative",
+        background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,
+        color: colors.text.primary,
+        overflowX: "hidden",
+        overflowY: "visible",
+        width: "100%",
+        maxWidth: "100vw",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* Subtle fixed header that stays visible */}
+      <div
         style={{
           position: "fixed",
-          inset: 0,
-          zIndex: 0,
-          overflow: "hidden",
-          pointerEvents: "none",
+          top: spacing.sm,
+          left: 0,
+          right: 0,
+          zIndex: 1200,
+          padding: `0 ${spacing.md}`,
+          pointerEvents: "auto",
+          background: "transparent",
         }}
       >
-        <div
+        <PublicHeader />
+      </div>
+
+      <main
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minHeight: 0,
+          paddingTop: 0,
+          position: "relative",
+          overflow: "visible",
+          overflowY: "visible",
+        }}
+      >
+      {/* (A) HERO SECTION - Matching Homepage Design */}
+      <motion.section
+        ref={heroParallax.ref}
+        id="hero"
+        variants={heroVariants}
+        initial="initial"
+        animate="animate"
+        style={{
+          position: "relative",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          paddingTop: isMobile ? "120px" : "140px",
+          paddingBottom: spacing["4xl"],
+          overflow: "hidden",
+        }}
+      >
+        {/* Multi-layer Background System - Matching Homepage */}
+        {/* Layer 1: Background Video */}
+        <motion.div
           style={{
             position: "absolute",
-            top: 0,
+            top: "-10%",
             left: "50%",
-            width: "100vw",
-            height: "100vh",
-            transform: "translateX(-50%) scale(1.15)",
+            width: "177.77777778vh",
+            height: "120vh",
+            minWidth: "100%",
+            minHeight: "calc(56.25vw + 20vh)",
+            transform: "translateX(-50%) scale(1.2)",
+            zIndex: -1,
+            opacity: 0.7,
+            overflow: "hidden",
+            pointerEvents: "none",
           }}
+          initial={{ opacity: 0.7 }}
         >
           <iframe
-            src="https://www.youtube-nocookie.com/embed/23kUIDR1d7Q?autoplay=1&mute=1&loop=1&playlist=23kUIDR1d7Q&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&playsinline=1&enablejsapi=0&start=1&fs=0&cc_load_policy=0&showinfo=0"
-            title="RealVerse Academy Background"
+            ref={heroVideoRef}
+            src={`https://www.youtube-nocookie.com/embed/23kUIDR1d7Q?autoplay=1&mute=1&loop=1&playlist=23kUIDR1d7Q&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&playsinline=1&enablejsapi=0&start=1&fs=0&cc_load_policy=0&showinfo=0`}
             style={{
               position: "absolute",
               top: 0,
@@ -328,702 +494,755 @@ const ProgramsOverviewPage: React.FC = () => {
               width: "100%",
               height: "100%",
               border: "none",
-              opacity: 0.9,
+              pointerEvents: "none",
+              opacity: 1,
             }}
             allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            allowFullScreen={false}
+            loading="eager"
+            title="Background Video"
           />
-        </div>
-        {/* Dark gradient + subtle noise to match homepage hero look */}
-        <div
+        </motion.div>
+
+        {/* Layer 2: Background image fallback with parallax */}
+        <motion.div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `url(${heroAssets.teamBackground})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center center",
+            backgroundRepeat: "no-repeat",
+            zIndex: -1,
+            display: "none",
+            y: heroParallax.y,
+            opacity: heroParallax.opacity,
+          }}
+        />
+
+        {/* Layer 3: Video background with animated gradient overlay */}
+        <motion.div
           style={{
             position: "absolute",
             inset: 0,
-            background: `linear-gradient(135deg, 
-              rgba(5, 11, 32, 0.92) 0%, 
-              rgba(10, 22, 51, 0.86) 50%, 
-              rgba(5, 11, 32, 0.96) 100%)`,
-            mixBlendMode: "multiply",
+            zIndex: 1,
+            overflow: "hidden",
           }}
-        />
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E")`,
-          }}
-        />
-      </motion.div>
-
-      <PublicHeader />
-
-      {/* (A) HERO SECTION WITH FULL-BLEED VIDEO BACKGROUND */}
-      <motion.section
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
-        style={{
-          padding: `${spacing["4xl"]} ${spacing.xl}`,
-          position: "relative",
-          overflow: "hidden",
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <div style={{ maxWidth: "1400px", margin: "0 auto", position: "relative", zIndex: 3, width: "100%" }}>
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1 }}
+        >
+          {/* YouTube Video Background */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            style={{ textAlign: "left", maxWidth: "900px" }}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: "100vw",
+              height: "100vh",
+              zIndex: 0,
+              overflow: "hidden",
+              pointerEvents: "none",
+            }}
+            initial={{ opacity: 1 }}
           >
-            {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
+            <iframe
+              ref={overlayVideoRef}
+              src="https://www.youtube-nocookie.com/embed/23kUIDR1d7Q?autoplay=1&mute=1&loop=1&playlist=23kUIDR1d7Q&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&playsinline=1&enablejsapi=0&start=1&fs=0&cc_load_policy=0&showinfo=0&origin=https://www.youtube.com"
               style={{
-                display: "inline-block",
-                padding: `${spacing.xs} ${spacing.md}`,
-                background: "rgba(0, 224, 255, 0.1)",
-                border: `1px solid ${colors.accent.main}40`,
-                borderRadius: borderRadius.full,
-                marginBottom: spacing.lg,
-                backdropFilter: "blur(10px)",
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                width: "100vw",
+                height: "56.25vw",
+                minWidth: "177.77777778vh",
+                minHeight: "100vh",
+                transform: "translate(-50%, -50%)",
+                border: "none",
+                pointerEvents: "none",
+                opacity: 1,
               }}
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen={false}
+              loading="eager"
+              title="Overlay Background Video"
+            />
+          </motion.div>
+          
+          {/* Stadium Light Overlay - Soft Vignette */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: `radial-gradient(ellipse at center top, transparent 0%, rgba(2,12,27,0.4) 40%, rgba(2,12,27,0.85) 100%),
+                          linear-gradient(135deg, rgba(10,61,145,0.15) 0%, transparent 50%, rgba(245,179,0,0.08) 100%)`,
+              zIndex: 1,
+              pointerEvents: "none",
+            }}
+          />
+        
+          {/* Pitch Texture Gradient Overlay */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 1,
+              pointerEvents: "none",
+              backgroundImage: `
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px),
+                repeating-linear-gradient(90deg, transparent, transparent 100px, rgba(10,61,145,0.03) 100px, rgba(10,61,145,0.03) 200px)
+              `,
+              opacity: 0.4,
+            }}
+          />
+        </motion.div>
+
+        {/* Stadium Light Effect */}
+        <motion.div
+          style={{
+            position: "absolute",
+            top: "15%",
+            left: "50%",
+            width: "800px",
+            height: "600px",
+            background: "radial-gradient(ellipse, rgba(245,179,0,0.08) 0%, transparent 70%)",
+            borderRadius: "50%",
+            filter: "blur(80px)",
+            zIndex: 1,
+            transform: "translateX(-50%)",
+          }}
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.08, 0.12, 0.08],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
+        {/* HERO CONTENT */}
+        <div
+          style={{
+            maxWidth: "1400px",
+            width: "100%",
+            margin: "0 auto",
+            padding: `0 ${spacing.xl}`,
+            position: "relative",
+            zIndex: 10,
+            display: "grid",
+            gridTemplateColumns: isMobile ? "1fr" : "1.15fr 0.85fr",
+            gap: isMobile ? spacing["2xl"] : spacing["3xl"],
+            alignItems: "center",
+            minHeight: "calc(100vh - 96px)",
+            paddingBottom: spacing["3xl"],
+          }}
+        >
+          {/* LEFT: Message + Primary actions */}
+          <motion.div 
+            initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ delay: 0.15, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            style={{ maxWidth: "860px" }}
+          >
+            {/* Club identity lockup (logo + full name) */}
+            <motion.div
+              initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ delay: 0.12, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: spacing.md,
+                padding: isMobile ? "8px 12px" : "10px 14px",
+                borderRadius: borderRadius.full,
+                background: "rgba(10, 16, 32, 0.42)",
+                border: "1px solid rgba(255,255,255,0.14)",
+                boxShadow: "0 18px 56px rgba(0,0,0,0.55)",
+                backdropFilter: "blur(14px)",
+                marginBottom: spacing.lg,
+              }}
+              aria-label="FC Real Bengaluru"
             >
-              <span style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em" }}>
-                OUR FOOTBALL ACADEMY
-              </span>
+              <img
+                src="/fcrb-logo.png"
+                alt="FC Real Bengaluru logo"
+                style={{
+                  width: isMobile ? 34 : 40,
+                  height: isMobile ? 34 : 40,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  boxShadow: "0 10px 26px rgba(0,0,0,0.45), 0 0 18px rgba(0,224,255,0.14)",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  background: "rgba(255,255,255,0.06)",
+                  flexShrink: 0,
+                }}
+                loading="eager"
+              />
+              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
+                <div
+                  style={{
+                    ...typography.overline,
+                    color: colors.text.muted,
+                    letterSpacing: "0.16em",
+                    opacity: 0.9,
+                  }}
+                >
+                  FOOTBALL CLUB
+                </div>
+                <div
+                  style={{
+                    ...typography.body,
+                    color: colors.text.primary,
+                    fontWeight: typography.fontWeight.bold,
+                    letterSpacing: "-0.01em",
+                    fontSize: isMobile ? typography.fontSize.lg : typography.fontSize.xl,
+                    textShadow: "0 6px 28px rgba(0,0,0,0.65)",
+                  }}
+                >
+                  FC Real Bengaluru
+                </div>
+              </div>
             </motion.div>
 
-            {/* Title */}
+            {/* Headline */}
             <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
               style={{
-                ...typography.h1,
-                fontSize: `clamp(2.5rem, 7vw, 5.5rem)`,
+                ...typography.display,
+                fontSize: `clamp(3.2rem, 8.6vw, 6.2rem)`,
                 color: colors.text.primary,
-                marginBottom: spacing.md,
-                lineHeight: 1.05,
+                marginBottom: spacing.lg,
+                lineHeight: 1.02,
                 fontWeight: typography.fontWeight.bold,
-                textShadow: "0 4px 40px rgba(0, 0, 0, 0.9), 0 0 60px rgba(0, 224, 255, 0.2)",
-                letterSpacing: "-0.02em",
+                letterSpacing: "-0.03em",
+                textShadow: "0 6px 50px rgba(0, 0, 0, 0.85), 0 0 70px rgba(0, 224, 255, 0.18)",
               }}
             >
-              The RealVerse
+              <motion.span
+                initial={{ opacity: 0, y: 22 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+              >
+                The Real Bengaluru
+              </motion.span>
               <br />
-              <span style={{ color: colors.accent.main }}>Football Academy</span>
+              <motion.span
+                initial={{ opacity: 0, y: 22 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.48, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <span
+                  style={{ 
+                    background: `linear-gradient(90deg, ${colors.accent.main}, rgba(255, 194, 51, 0.95))`,
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                    color: "transparent",
+                    textShadow: "none",
+                  }}
+                >
+                  Football Academy
+                </span>
+              </motion.span>
             </motion.h1>
 
-            {/* Subtitle */}
+            {/* Description */}
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 0.92, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
               style={{
                 ...typography.body,
-                fontSize: typography.fontSize.xl,
+                fontSize: `clamp(${typography.fontSize.lg}, 2vw, ${typography.fontSize.xl})`,
                 color: colors.text.secondary,
-                lineHeight: 1.8,
-                maxWidth: "700px",
-                textShadow: "0 2px 20px rgba(0, 0, 0, 0.7)",
-                marginBottom: spacing["2xl"],
+                marginBottom: spacing.xl,
+                lineHeight: 1.75,
+                maxWidth: "720px",
+                textShadow: "0 2px 24px rgba(0, 0, 0, 0.65)",
               }}
             >
-              Where Bengaluru's next generation learns, trains, and rises. A modern academy that blends football
-              tradition + science + community.
+              A modern, structured pathway from grassroots to elite, backed by licensed coaches and data-driven development.
             </motion.p>
 
-            {/* 3 Pillar Badges */}
+            {/* Primary CTA row */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.8 }}
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: spacing.md,
-                marginBottom: spacing["2xl"],
+              transition={{ delay: 0.85, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              style={{ 
+                display: "grid",
+                gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                gap: spacing.md, 
+                alignItems: "stretch",
+                maxWidth: isMobile ? "100%" : "680px",
               }}
             >
-              {[
-                { label: "Player Pathways", icon: FlagIcon },
-                { label: "Professional Coaching", icon: TrophyIcon },
-                { label: "Data-Driven Development", icon: ChartBarIcon },
-              ].map((pillar, idx) => {
-                const Icon = pillar.icon;
-                return (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.8 + idx * 0.1, duration: 0.5 }}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: spacing.sm,
-                      padding: `${spacing.xs} ${spacing.md}`,
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: `1px solid rgba(255, 255, 255, 0.12)`,
-                      borderRadius: borderRadius.full,
-                      backdropFilter: "blur(10px)",
-                    }}
-                  >
-                    <Icon size={16} color={colors.accent.main} />
-                    <span style={{ ...typography.caption, color: colors.text.secondary, fontSize: typography.fontSize.sm }}>
-                      {pillar.label}
-                    </span>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-
-            {/* CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1, duration: 0.8 }}
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: spacing.md,
-                alignItems: "center",
-              }}
-            >
-              <Link to="/realverse/join" style={{ textDecoration: "none", width: isMobile ? "100%" : "auto" }}>
+              {/* Primary CTA - Join Academy */}
+              <Link
+                to="/realverse/join"
+                style={{ textDecoration: "none", width: "100%" }}
+              >
                 <motion.div
                   whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
                   whileTap={{ scale: 0.98 }}
                   style={{
-                    ...heroCTAStyles.yellow,
-                    width: isMobile ? "100%" : "auto",
-                    minWidth: isMobile ? "100%" : 280,
+                    padding: `${spacing.lg} ${spacing.xl}`,
+                    borderRadius: borderRadius.button,
+                    background: colors.accent.main,
+                    border: "none",
+                    boxShadow: shadows.button,
+                    display: "flex", 
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: spacing.md,
+                    cursor: "pointer",
+                    width: "100%",
+                    minHeight: 72,
+                    transition: "all 0.2s ease",
                   }}
                 >
                   <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
-                    <span style={heroCTAStyles.yellow.textStyle}>Join RealVerse Academy</span>
-                    <span style={heroCTAStyles.yellow.subtitleStyle}>Trials, training plans, and placement pathway</span>
+                    <span style={{ ...typography.body, color: colors.text.onAccent, fontWeight: typography.fontWeight.bold, fontSize: typography.fontSize.lg }}>
+                      Join our Academy
+                    </span>
+                    <span style={{ ...typography.caption, color: "rgba(2,12,27,0.85)", fontSize: typography.fontSize.sm }}>
+                      Start your football journey with us
+                    </span>
                   </div>
                   <ArrowRightIcon size={20} color={colors.text.onAccent} style={{ flexShrink: 0 }} />
                 </motion.div>
               </Link>
 
-              <Link to="/brochure" style={{ textDecoration: "none", width: isMobile ? "100%" : "auto" }}>
+              <Link to="/brochure" style={{ textDecoration: "none", width: "100%" }}>
                 <motion.div
                   whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
                   whileTap={{ scale: 0.98 }}
                   style={{
-                    ...heroCTAStyles.darkWithBorder,
-                    width: isMobile ? "100%" : "auto",
-                    minWidth: isMobile ? "100%" : 280,
+                    padding: `${spacing.lg} ${spacing.xl}`,
+                    borderRadius: borderRadius.button,
+                    background: colors.primary.main,
+                    border: "none",
+                    boxShadow: shadows.button,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                     gap: spacing.md,
+                    cursor: "pointer",
+                    width: "100%",
+                    minHeight: 72,
+                    transition: "all 0.2s ease",
                   }}
                 >
                   <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
-                    <span style={heroCTAStyles.darkWithBorder.textStyle}>Download Program Brochure</span>
-                    <span style={heroCTAStyles.darkWithBorder.subtitleStyle}>Detailed pathways, schedules, and fees</span>
+                    <span style={{ ...typography.body, color: colors.text.onPrimary, fontWeight: typography.fontWeight.bold, fontSize: typography.fontSize.lg }}>
+                      Explore Programs
+                    </span>
+                    <span style={{ ...typography.caption, color: "rgba(255,255,255,0.85)", fontSize: typography.fontSize.sm }}>
+                      Discover our training pathways
+                    </span>
                   </div>
-                  <DownloadIcon size={18} style={{ color: colors.accent.main, flexShrink: 0 }} />
+                  <motion.div
+                    animate={{ x: [0, 3, 0] }}
+                    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                    style={{ display: "flex", alignItems: "center", flexShrink: 0 }}
+                  >
+                    <ArrowRightIcon size={20} color={colors.text.onPrimary} />
+                  </motion.div>
                 </motion.div>
               </Link>
             </motion.div>
+
+            {/* Pathway Indicator */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.05, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                ...typography.caption,
+                color: colors.text.muted,
+                fontSize: typography.fontSize.sm,
+                letterSpacing: "0.05em",
+                marginTop: spacing.md,
+              }}
+            >
+              From grassroots to elite — one unified pathway
+            </motion.div>
           </motion.div>
         </div>
+
+        {/* Bottom fade gradient for seamless transition */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: "200px",
+            background: `linear-gradient(to bottom, 
+              transparent 0%, 
+              rgba(5, 11, 32, 0.3) 50%, 
+              rgba(5, 11, 32, 0.6) 100%)`,
+            zIndex: 5,
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Mobile Optimizations & Video Fixes */}
+        <style>{`
+          /* Prevent overflow and ensure smooth flow */
+          * {
+            box-sizing: border-box;
+          }
+          
+          @media (max-width: 768px) {
+            #hero > div {
+              padding: 0 ${spacing.md} !important;
+            }
+            #hero iframe {
+              display: none !important;
+            }
+            
+            /* Reduce bridge padding on mobile */
+            section[style*="bridge"] {
+              padding-top: 80px !important;
+              padding-bottom: 80px !important;
+              margin-top: -50px !important;
+              margin-bottom: -50px !important;
+            }
+            
+            /* Ensure no horizontal overflow */
+            section {
+              max-width: 100vw !important;
+              overflow-x: hidden !important;
+            }
+          }
+          
+          /* Hide YouTube thumbnail, branding, and prevent black bars */
+          #hero iframe {
+            pointer-events: none !important;
+          }
+          
+          /* Ensure video covers full area without black bars on desktop */
+          @media (min-width: 769px) {
+            #hero iframe {
+              width: 177.77777778vh !important;
+              height: 100vh !important;
+              min-width: 100% !important;
+              min-height: 56.25vw !important;
+              transform: translate(-50%, -50%) scale(1.2) !important;
+              overflow: hidden !important;
+            }
+          }
+          
+          /* Ensure all sections respect viewport */
+          section {
+            max-width: 100vw;
+            overflow-x: hidden;
+          }
+        `}</style>
       </motion.section>
 
-      {/* (B) PATHWAY & DEVELOPMENT SECTION - Merged */}
-      <InfinitySection id="pathway-explainer" bridge={false} style={{ padding: 0, paddingTop: 0, paddingBottom: 0 }}>
-        <motion.section
-          ref={pathwayRef}
-          style={{
-            position: "relative",
-            overflow: "hidden",
-            padding: `${spacing["3xl"]} ${spacing.xl}`,
-          }}
-        >
-          {/* Cinematic background (local layer above global video) */}
+      {/* (B) PATHWAY SECTION - Below Hero, Clean & Scannable */}
+      <InfinitySection 
+        id="pathways-section" 
+        backgroundImage="/assets/DSC00893.jpg"
+        style={{ paddingTop: isMobile ? spacing["3xl"] : spacing["4xl"], paddingBottom: isMobile ? spacing["3xl"] : spacing["4xl"] }}
+      >
+        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
           <motion.div
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              inset: -40,
-              zIndex: 0,
-              y: pathwayBgY,
-              opacity: pathwayBgOpacity,
-              filter: "saturate(1.05) contrast(1.05) brightness(0.85)",
-              transform: "translateZ(0)",
-            }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewportOnce}
+            transition={{ duration: 0.6 }}
+            style={{ marginBottom: spacing["2xl"] }}
           >
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              poster="/assets/20251007-DSC_0557.jpg"
+            <h2
               style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                opacity: 0.9,
+                ...typography.h2,
+                fontSize: `clamp(1.75rem, 4vw, 2.5rem)`,
+                color: colors.text.primary,
+                marginBottom: spacing.sm,
+                fontWeight: typography.fontWeight.bold,
               }}
             >
-              <source src="/assets/night-shoot-render-v1.mp4" type="video/mp4" />
-            </video>
+              Your Pathway Through RealVerse
+            </h2>
+            <p
+              style={{
+                ...typography.body,
+                color: colors.text.secondary,
+                fontSize: typography.fontSize.lg,
+                maxWidth: "800px",
+                lineHeight: 1.75,
+              }}
+            >
+              Where every player grows — from grassroots to elite — guided by licensed coaches, a unified club philosophy,
+              and RealVerse data tools that support development at every stage.
+            </p>
           </motion.div>
 
-          {/* Navy vignette + scrims */}
+          {/* Pathway Cards - Simplified, Equal Height, Minimal Text */}
           <div
-            aria-hidden="true"
             style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 1,
-              background: `
-                radial-gradient(1200px 520px at 50% 10%, rgba(0, 224, 255, 0.10), transparent 60%),
-                radial-gradient(900px 560px at 10% 35%, rgba(255, 169, 0, 0.10), transparent 62%),
-                linear-gradient(180deg, rgba(5, 11, 32, 0.86) 0%, rgba(5, 11, 32, 0.72) 45%, rgba(5, 11, 32, 0.92) 100%)
-              `,
+              display: "grid",
+              gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, minmax(0, 1fr))" : "repeat(3, minmax(0, 1fr))",
+              gap: isMobile ? spacing.lg : spacing.md,
+              alignItems: "stretch",
             }}
-          />
-          <div
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 2,
-              pointerEvents: "none",
-              boxShadow: "inset 0 0 140px rgba(0,0,0,0.75)",
-            }}
-          />
-
-          {/* Subtle grain (animated) */}
-          <motion.div
-            aria-hidden="true"
-            animate={{ backgroundPosition: ["0px 0px", "120px 80px"] }}
-            transition={{ duration: 10, ease: "linear", repeat: Infinity }}
-            style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 3,
-              opacity: 0.035,
-              mixBlendMode: "overlay",
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.9'/%3E%3C/svg%3E")`,
-              backgroundRepeat: "repeat",
-              backgroundSize: "220px 220px",
-            }}
-          />
-
-          <div style={{ maxWidth: "1400px", margin: "0 auto", position: "relative", zIndex: 4 }}>
-            {/* Title (minimal copy) */}
-            <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={viewportOnce}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              style={{
-                textAlign: "center",
-                marginBottom: spacing["2xl"],
-              }}
-            >
-              <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em", marginBottom: spacing.sm }}>
-                REALVERSE PATHWAY
-              </div>
-              <h2
-                style={{
-                  ...typography.h2,
-                  fontSize: `clamp(2rem, 5vw, 3.5rem)`,
-                  color: colors.text.primary,
-                  marginBottom: spacing.md,
-                  fontWeight: typography.fontWeight.bold,
-                  textShadow: "0 10px 50px rgba(0,0,0,0.65)",
-                }}
-              >
-                Your Pathway Through RealVerse
-              </h2>
-              <p
-                style={{
-                  ...typography.body,
-                  color: colors.text.secondary,
-                  fontSize: typography.fontSize.lg,
-                  maxWidth: "860px",
-                  margin: "0 auto",
-                  lineHeight: 1.75,
-                  textShadow: "0 6px 30px rgba(0,0,0,0.65)",
-                }}
-              >
-                Where every player grows — from grassroots to elite — guided by licensed coaches, a unified club philosophy,
-                and RealVerse data tools that support development at every stage.
-              </p>
-            </motion.div>
-
-            {/* Cinematic ribbon (film strip) */}
-            <div style={{ position: "relative", marginBottom: spacing.xl }}>
-              {/* Progression thread */}
-              <motion.div
-                aria-hidden="true"
-                initial={{ opacity: 0, scaleX: 0 }}
-                whileInView={{ opacity: 1, scaleX: 1 }}
-                viewport={viewportOnce}
-                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-                style={{
-                  transformOrigin: "left center",
-                  position: "absolute",
-                  left: isMobile ? 28 : 24,
-                  right: isMobile ? "auto" : 24,
-                  top: isMobile ? 18 : "50%",
-                  width: isMobile ? 2 : "auto",
-                  height: isMobile ? "calc(100% - 36px)" : 2,
-                  opacity: isMobile ? 1 : isTablet ? 0 : 1,
-                  background: isMobile
-                    ? `linear-gradient(180deg, ${colors.accent.main}00, ${colors.accent.main}AA, ${colors.primary.main}80, ${colors.accent.main}00)`
-                    : `linear-gradient(90deg, ${colors.accent.main}00, ${colors.accent.main}AA, ${colors.primary.main}80, ${colors.accent.main}00)`,
-                  boxShadow: `0 0 26px ${colors.accent.main}35`,
-                  borderRadius: 999,
-                }}
-              />
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, minmax(0, 1fr))" : "repeat(3, minmax(0, 1fr))",
-                  gap: isMobile ? spacing.lg : isTablet ? spacing.lg : 0,
-                  alignItems: "stretch",
-                }}
-              >
-                {pathwayStages.map((stage, idx) => {
-                  return (
-                    <motion.div
-                      key={stage.id}
-                      initial={{ opacity: 0, y: 18 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={viewportOnce}
-                      transition={{ duration: 0.7, delay: idx * 0.12, ease: [0.22, 1, 0.36, 1] }}
-                      whileHover={{
-                        y: -6,
-                        filter: "brightness(1.06)",
-                        boxShadow: shadows.cardHover,
-                      }}
-                      style={{
-                        position: "relative",
-                        overflow: "hidden",
-                        minHeight: isMobile ? 168 : 260,
-                        borderRadius: borderRadius["2xl"],
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        boxShadow: shadows.card,
-                        ...(isMobile || isTablet
-                          ? {}
-                          : {
-                              marginLeft: idx === 0 ? 0 : -24,
-                              zIndex: 10 + idx,
-                            }),
-                        background: "rgba(10, 16, 32, 0.35)",
-                        backdropFilter: "blur(10px)",
-                      }}
-                    >
-                      {/* Background image */}
-                      <div
-                        aria-hidden="true"
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          backgroundImage: `url("${stage.image}")`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                          transform: "scale(1.05)",
-                          filter: "saturate(1.02) contrast(1.05)",
-                          opacity: 0.72,
-                        }}
-                      />
-                      {/* Dark-blue overlay for readability */}
-                      <div
-                        aria-hidden="true"
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          background:
-                            "linear-gradient(90deg, rgba(5, 11, 32, 0.92) 0%, rgba(5, 11, 32, 0.62) 45%, rgba(5, 11, 32, 0.90) 100%)",
-                        }}
-                      />
-                      <div
-                        aria-hidden="true"
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          background: "radial-gradient(560px 260px at 20% 30%, rgba(0,224,255,0.12), transparent 60%)",
-                          opacity: 0.9,
-                        }}
-                      />
-
-                      {/* Stage content */}
-                      <div
-                        style={{
-                          position: "relative",
-                          zIndex: 2,
-                          padding: spacing.xl,
-                          display: "flex",
-                          flexDirection: "column",
-                          justifyContent: "space-between",
-                          height: "100%",
-                          gap: spacing.md,
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.md }}>
-                          <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                            <div
-                              aria-hidden="true"
-                              style={{
-                                width: 46,
-                                height: 46,
-                                borderRadius: 999,
-                                background: `linear-gradient(135deg, ${colors.accent.main}22, ${colors.primary.main}18)`,
-                                border: `1px solid ${colors.accent.main}55`,
-                                boxShadow: `0 0 30px ${colors.accent.main}22`,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                flexShrink: 0,
-                              }}
-                            >
-                              <span style={{ ...typography.h4, color: colors.accent.main, fontWeight: typography.fontWeight.bold }}>
-                                {idx + 1}
-                              </span>
-                            </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                              <div
-                                style={{
-                                  ...typography.overline,
-                                  color: colors.accent.main,
-                                  letterSpacing: "0.12em",
-                                  fontSize: typography.fontSize.xs,
-                                }}
-                              >
-                                {stage.ageGroup}
-                              </div>
-                              <div
-                                style={{
-                                  ...typography.h4,
-                                  color: colors.text.primary,
-                                  fontWeight: typography.fontWeight.bold,
-                                  lineHeight: 1.15,
-                                }}
-                              >
-                                {stage.title}
-                              </div>
-                            </div>
-                          </div>
-                          {!isMobile && (
-                            <div
-                              aria-hidden="true"
-                              style={{
-                                width: 10,
-                                height: 10,
-                                borderRadius: 999,
-                                background: colors.accent.main,
-                                boxShadow: `0 0 22px ${colors.accent.main}`,
-                                opacity: 0.75,
-                              }}
-                            />
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            ...typography.body,
-                            color: "rgba(255,255,255,0.82)",
-                            fontSize: typography.fontSize.sm,
-                            lineHeight: 1.5,
-                            maxWidth: 360,
-                          }}
-                        >
-                          {stage.description}
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Compact tiles (merged coaching + training USP) */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))",
-                gap: spacing.lg,
-                alignItems: "stretch",
-                marginBottom: spacing.xl,
-              }}
-            >
-              {pathwayTiles.map((tile, idx) => {
-                const Icon = tile.icon;
-                return (
-                  <motion.div
-                    key={`${tile.title}-${idx}`}
-                    initial={{ opacity: 0, y: 12 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={viewportOnce}
-                    transition={{ duration: 0.6, delay: 0.05 + idx * 0.08 }}
-                    whileHover={{
-                      y: -4,
-                      boxShadow: `0 18px 60px rgba(0,0,0,0.45), 0 0 46px ${colors.accent.main}22`,
-                    }}
+          >
+            {pathwayStages.map((stage, idx) => {
+              return (
+                <motion.div
+                  key={stage.id}
+                  initial={{ opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={viewportOnce}
+                  transition={{ duration: 0.6, delay: idx * 0.1 }}
+                  whileHover={{
+                    y: -6,
+                    filter: "brightness(1.06)",
+                    boxShadow: shadows.cardHover,
+                  }}
+                  style={{
+                    position: "relative",
+                    overflow: "hidden",
+                    minHeight: isMobile ? 200 : 240,
+                    borderRadius: borderRadius["2xl"],
+                    ...glass.card,
+                  }}
+                >
+                  {/* Background image */}
+                  <div
+                    aria-hidden="true"
                     style={{
-                      borderRadius: borderRadius.xl,
+                      position: "absolute",
+                      inset: 0,
+                      backgroundImage: `url("${stage.image}")`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      transform: "scale(1.05)",
+                      filter: "saturate(1.02) contrast(1.05)",
+                      opacity: 0.65,
+                    }}
+                  />
+                  {/* Glass overlay */}
+                  <div aria-hidden="true" style={{ ...glass.overlay, zIndex: 1 }} />
+
+                  {/* Stage content */}
+                  <div
+                    style={{
                       position: "relative",
-                      overflow: "hidden",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      background: "rgba(255,255,255,0.04)",
-                      boxShadow: shadows.md,
+                      zIndex: 2,
                       padding: spacing.xl,
                       display: "flex",
                       flexDirection: "column",
-                      gap: spacing.sm,
-                      minHeight: isMobile ? "auto" : 120,
+                      justifyContent: "space-between",
+                      height: "100%",
+                      gap: spacing.md,
                     }}
                   >
-                    <div
-                      aria-hidden="true"
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        backgroundImage: `url("${tile.image}")`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                        opacity: 0.22,
-                        filter: "saturate(1.02) contrast(1.06)",
-                        transform: "scale(1.08)",
-                      }}
-                    />
-                    <div
-                      aria-hidden="true"
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        background:
-                          "linear-gradient(180deg, rgba(5, 11, 32, 0.90) 0%, rgba(5, 11, 32, 0.70) 55%, rgba(5, 11, 32, 0.92) 100%)",
-                      }}
-                    />
-                    <motion.div
-                      aria-hidden="true"
-                      initial={{ opacity: 0.45 }}
-                      whileHover={{ opacity: 0.85 }}
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        background: `radial-gradient(520px 220px at 20% 30%, ${colors.accent.main}14, transparent 60%)`,
-                        transition: "opacity 220ms ease",
-                      }}
-                    />
-
-                    <div style={{ position: "relative", zIndex: 1, display: "flex", gap: spacing.md, alignItems: "flex-start" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: spacing.md }}>
                       <div
+                        aria-hidden="true"
                         style={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: borderRadius.lg,
-                          background: `linear-gradient(135deg, ${colors.accent.main}20, ${colors.primary.main}16)`,
-                          border: `1px solid rgba(255,255,255,0.14)`,
+                          width: 46,
+                          height: 46,
+                          borderRadius: 999,
+                          background: `linear-gradient(135deg, ${colors.accent.main}22, ${colors.primary.main}18)`,
+                          border: `1px solid ${colors.accent.main}55`,
+                          boxShadow: `0 0 30px ${colors.accent.main}22`,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           flexShrink: 0,
-                          boxShadow: `0 0 24px ${colors.accent.main}1f`,
                         }}
                       >
-                        <Icon size={20} color={colors.accent.main} />
+                        <span style={{ ...typography.h4, color: colors.accent.main, fontWeight: typography.fontWeight.bold }}>
+                          {idx + 1}
+                        </span>
                       </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                         <div
                           style={{
-                            ...typography.h5,
-                            color: colors.text.primary,
-                            fontWeight: typography.fontWeight.bold,
-                            lineHeight: 1.1,
+                            ...typography.overline,
+                            color: colors.accent.main,
+                            letterSpacing: "0.12em",
+                            fontSize: typography.fontSize.xs,
                           }}
                         >
-                          {tile.title}
+                          {stage.ageGroup}
                         </div>
                         <div
                           style={{
-                            ...typography.body,
-                            color: "rgba(255,255,255,0.78)",
-                            fontSize: typography.fontSize.sm,
-                            lineHeight: 1.45,
+                            ...typography.h4,
+                            color: colors.text.primary,
+                            fontWeight: typography.fontWeight.bold,
+                            lineHeight: 1.15,
                           }}
                         >
-                          {tile.description}
+                          {stage.title}
                         </div>
                       </div>
                     </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-
-            {/* Scroll cue (icon-only, not a CTA) */}
-            <div style={{ display: "flex", justifyContent: "center", paddingTop: spacing.sm }}>
-              <motion.button
-                type="button"
-                aria-label="Scroll down"
-                onClick={() => {
-                  const next = document.getElementById("programs-grid");
-                  next?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={viewportOnce}
-                transition={{ duration: 0.6, delay: 0.05 }}
-                whileHover={{ opacity: 1 }}
-                whileTap={{ scale: 0.98 }}
-                style={{
-                  width: 44,
-                  height: 44,
-                  border: "none",
-                  cursor: "pointer",
-                  borderRadius: 999,
-                  background: "transparent",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  opacity: 0.78,
-                }}
-              >
-                <motion.div
-                  aria-hidden="true"
-                  animate={{ y: [0, -4, 0] }}
-                  transition={{ duration: 2.2, ease: "easeInOut", repeat: Infinity }}
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 999,
-                    border: `1px solid rgba(255,255,255,0.14)`,
-                    background: "rgba(255,255,255,0.04)",
-                    backdropFilter: "blur(10px)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: `0 10px 30px rgba(0,0,0,0.35)`,
-                  }}
-                >
-                  <div style={{ transform: "rotate(90deg)" }}>
-                    <ArrowRightIcon size={18} color={colors.accent.main} />
+                    <div
+                      style={{
+                        ...typography.body,
+                        color: "rgba(255,255,255,0.82)",
+                        fontSize: typography.fontSize.sm,
+                        lineHeight: 1.5,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {stage.description}
+                    </div>
                   </div>
                 </motion.div>
-              </motion.button>
-            </div>
+              );
+            })}
           </div>
-        </motion.section>
+        </div>
+      </InfinitySection>
+
+      {/* (B.2) FEATURE STRIP - What You Get */}
+      <InfinitySection 
+        backgroundImage="/assets/20251007-DSC_0535.jpg"
+        style={{ paddingTop: isMobile ? spacing["2xl"] : spacing["3xl"], paddingBottom: isMobile ? spacing["2xl"] : spacing["3xl"] }}
+      >
+        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewportOnce}
+            transition={{ duration: 0.6 }}
+            style={{ marginBottom: spacing.xl }}
+          >
+            <h3
+              style={{
+                ...typography.h3,
+                color: colors.text.primary,
+                marginBottom: spacing.md,
+                fontWeight: typography.fontWeight.bold,
+                textAlign: "center",
+              }}
+            >
+              What You Get
+            </h3>
+          </motion.div>
+
+          {/* Feature Strip - 4 Icon Cards in Row */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))",
+              gap: spacing.md,
+              alignItems: "stretch",
+            }}
+          >
+            {pathwayTiles.map((tile, idx) => {
+              const Icon = tile.icon;
+              return (
+                <motion.div
+                  key={`${tile.title}-${idx}`}
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={viewportOnce}
+                  transition={{ duration: 0.6, delay: idx * 0.08 }}
+                  whileHover={{
+                    y: -4,
+                    boxShadow: `0 18px 60px rgba(0,0,0,0.45), 0 0 46px ${colors.accent.main}22`,
+                  }}
+                  style={{
+                    borderRadius: borderRadius.xl,
+                    position: "relative",
+                    overflow: "hidden",
+                    ...glass.card,
+                    padding: spacing.lg,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: spacing.sm,
+                    minHeight: isMobile ? "auto" : 140,
+                  }}
+                >
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      backgroundImage: `url("${tile.image}")`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      opacity: 0.18,
+                      filter: "saturate(1.02) contrast(1.06)",
+                      transform: "scale(1.08)",
+                    }}
+                  />
+                  <div aria-hidden="true" style={{ ...glass.overlaySoft, zIndex: 1 }} />
+
+                  <div style={{ position: "relative", zIndex: 2, display: "flex", gap: spacing.md, alignItems: "flex-start" }}>
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: borderRadius.lg,
+                        background: `linear-gradient(135deg, ${colors.accent.main}20, ${colors.primary.main}16)`,
+                        border: `1px solid rgba(255,255,255,0.14)`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        boxShadow: `0 0 24px ${colors.accent.main}1f`,
+                      }}
+                    >
+                      <Icon size={20} color={colors.accent.main} />
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div
+                        style={{
+                          ...typography.h5,
+                          color: colors.text.primary,
+                          fontWeight: typography.fontWeight.bold,
+                          lineHeight: 1.1,
+                        }}
+                      >
+                        {tile.title}
+                      </div>
+                      <div
+                        style={{
+                          ...typography.body,
+                          color: "rgba(255,255,255,0.78)",
+                          fontSize: typography.fontSize.sm,
+                          lineHeight: 1.45,
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {tile.description}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
       </InfinitySection>
 
       {/* (C) PROGRAM CARDS SECTION */}
-      <InfinitySection id="programs-grid" bridge={true} style={{ padding: `${spacing["4xl"]} ${spacing.xl}` }}>
+      <InfinitySection 
+        id="programs-grid" 
+        backgroundImage="/assets/20250927-DSC_0446.jpg"
+        style={{ paddingTop: isMobile ? spacing["3xl"] : spacing["4xl"], paddingBottom: isMobile ? spacing["3xl"] : spacing["4xl"] }}
+      >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1032,9 +1251,6 @@ const ProgramsOverviewPage: React.FC = () => {
             transition={{ duration: 0.6 }}
             style={{ textAlign: "center", marginBottom: spacing["2xl"] }}
           >
-            <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em", marginBottom: spacing.sm }}>
-              REALVERSE PROGRAMS
-            </div>
             <h2
               style={{
                 ...typography.h2,
@@ -1124,14 +1340,15 @@ const ProgramsOverviewPage: React.FC = () => {
                         <span
                           style={{
                             ...typography.overline,
-                            color: program.accent,
+                            color: program.accent === colors.primary.main ? colors.primary.light : program.accent,
                             letterSpacing: "0.1em",
                             fontSize: typography.fontSize.xs,
                             padding: `${spacing.xs} ${spacing.md}`,
-                            background: `${program.accent}15`,
-                            border: `1px solid ${program.accent}40`,
+                            background: program.accent === colors.primary.main ? `${colors.primary.main}25` : `${program.accent}20`,
+                            border: program.accent === colors.primary.main ? `1px solid ${colors.primary.light}60` : `1px solid ${program.accent}50`,
                             borderRadius: borderRadius.full,
                             display: "inline-block",
+                            fontWeight: typography.fontWeight.semibold,
                           }}
                         >
                           {program.acronym}
@@ -1185,9 +1402,11 @@ const ProgramsOverviewPage: React.FC = () => {
                                 width: 6,
                                 height: 6,
                                 borderRadius: "50%",
-                                background: program.accent,
+                                background: program.accent === colors.primary.main ? colors.primary.light : program.accent,
                                 flexShrink: 0,
-                                boxShadow: `0 0 12px ${program.accent}60`,
+                                boxShadow: program.accent === colors.primary.main 
+                                  ? `0 0 12px ${colors.primary.light}80, 0 0 6px ${colors.primary.main}60`
+                                  : `0 0 12px ${program.accent}80`,
                               }}
                             />
                             <span
@@ -1214,11 +1433,16 @@ const ProgramsOverviewPage: React.FC = () => {
                         }}
                         whileHover={{ y: -2 }}
                       >
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                          Learn More{" "}
+                        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Learn More</span>
                           <ArrowRightIcon
                             size={16}
-                            style={{ color: program.accent === colors.primary.main ? colors.primary.main : colors.accent.main }}
+                            style={{ 
+                              color: program.accent === colors.primary.main ? colors.primary.light : colors.accent.main,
+                              display: "flex",
+                              alignItems: "center",
+                              flexShrink: 0
+                            }}
                           />
                         </span>
                       </motion.div>
@@ -1229,11 +1453,49 @@ const ProgramsOverviewPage: React.FC = () => {
               );
             })}
           </div>
+
+          {/* CTA Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewportOnce}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginTop: spacing["2xl"],
+            }}
+          >
+            <Link to="/brochure" style={{ textDecoration: "none" }}>
+              <motion.div
+                whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  ...heroCTAPillStyles.base,
+                  ...heroCTAPillStyles.gold,
+                  padding: `${spacing.md} ${spacing.xl}`,
+                  minWidth: isMobile ? "100%" : 320,
+                  width: isMobile ? "100%" : "auto",
+                }}
+              >
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1, color: colors.text.primary }}>
+                    Click here to find Your Program
+                  </span>
+                  <ArrowRightIcon size={18} style={{ color: colors.accent.main, display: "flex", alignItems: "center", flexShrink: 0 }} />
+                </span>
+              </motion.div>
+            </Link>
+          </motion.div>
         </div>
       </InfinitySection>
 
       {/* (G) FAQ SECTION */}
-      <InfinitySection id="faq" bridge={true} style={{ padding: `${spacing["4xl"]} ${spacing.xl}` }}>
+      <InfinitySection 
+        id="faq" 
+        backgroundImage="/assets/DSC09619 (1).JPG"
+        style={{ paddingTop: isMobile ? spacing["3xl"] : spacing["4xl"], paddingBottom: isMobile ? spacing["3xl"] : spacing["4xl"] }}
+      >
         <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1258,7 +1520,7 @@ const ProgramsOverviewPage: React.FC = () => {
             </h2>
           </motion.div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: spacing.md, marginBottom: spacing["2xl"] }}>
             {faqData.map((faq) => (
               <motion.div
                 key={faq.id}
@@ -1324,90 +1586,14 @@ const ProgramsOverviewPage: React.FC = () => {
               </motion.div>
             ))}
           </div>
-        </div>
-      </InfinitySection>
 
-      {/* (H) SPONSORS STRIP */}
-      <InfinitySection id="sponsors" bridge={true} style={{ padding: `${spacing["4xl"]} ${spacing.xl}` }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+          {/* Ready to Begin Your Journey? CTA Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={viewportOnce}
             transition={{ duration: 0.6 }}
-            style={{ textAlign: "center", marginBottom: spacing["2xl"] }}
-          >
-            <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em", marginBottom: spacing.sm }}>
-              OUR SPONSORS
-            </div>
-            <h2
-              style={{
-                ...typography.h2,
-                fontSize: `clamp(2rem, 5vw, 3.5rem)`,
-                color: colors.text.primary,
-                marginBottom: spacing.md,
-                fontWeight: typography.fontWeight.bold,
-              }}
-            >
-              Proud Partners
-            </h2>
-          </motion.div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(3, 1fr)",
-              gap: spacing.md,
-            }}
-          >
-            {sponsors.map((sponsor, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={viewportOnce}
-                transition={{ duration: 0.6, delay: idx * 0.1 }}
-                style={{
-                  borderRadius: borderRadius.xl,
-                  border: "1px solid rgba(255,255,255,0.10)",
-                  background: "rgba(255,255,255,0.03)",
-                  padding: isMobile ? 12 : 14,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  minHeight: isMobile ? 74 : 84,
-                  position: "relative",
-                  overflow: "hidden",
-                  boxShadow: shadows.md,
-                }}
-              >
-                <img
-                  src={sponsor.logoSrc}
-                  alt={`${sponsor.name} logo`}
-                  loading="lazy"
-                  style={{
-                    width: "100%",
-                    maxWidth: 220,
-                    height: 44,
-                    objectFit: "contain",
-                    filter: "grayscale(100%) brightness(1.25)",
-                    opacity: 0.92,
-                  }}
-                />
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </InfinitySection>
-
-      {/* (I) CONTACT & JOIN CTA */}
-      <InfinitySection id="contact-cta" bridge={false} style={{ padding: `${spacing["4xl"]} ${spacing.xl}` }}>
-        <div style={{ maxWidth: "1000px", margin: "0 auto", textAlign: "center" }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewportOnce}
-            transition={{ duration: 0.6 }}
+            style={{ textAlign: "center", marginTop: spacing["2xl"] }}
           >
             <h2
               style={{
@@ -1431,7 +1617,6 @@ const ProgramsOverviewPage: React.FC = () => {
                 gap: spacing.md,
                 justifyContent: "center",
                 alignItems: "center",
-                marginBottom: spacing["2xl"],
               }}
             >
               <Link to="/realverse/join" style={{ textDecoration: "none", width: isMobile ? "100%" : "auto" }}>
@@ -1445,7 +1630,7 @@ const ProgramsOverviewPage: React.FC = () => {
                   }}
                 >
                   <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
-                    <span style={heroCTAStyles.yellow.textStyle}>Join RealVerse Academy</span>
+                    <span style={heroCTAStyles.yellow.textStyle}>Join Real Bengaluru Academy</span>
                     <span style={heroCTAStyles.yellow.subtitleStyle}>Start with a trial and pathway mapping</span>
                   </div>
                   <ArrowRightIcon size={20} color={colors.text.onAccent} style={{ flexShrink: 0 }} />
@@ -1485,6 +1670,467 @@ const ProgramsOverviewPage: React.FC = () => {
           </motion.div>
         </div>
       </InfinitySection>
+
+      {/* Footer */}
+      <section
+        id="footer"
+        style={{
+          position: "relative",
+          width: "100%",
+          overflow: "hidden",
+          background: "linear-gradient(180deg, rgba(4,8,18,0.95) 0%, rgba(4,8,18,0.98) 100%)",
+        }}
+      >
+        <motion.footer
+          initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
+          whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          style={{ width: "100%", marginTop: "auto", marginBottom: 0, paddingBottom: 0 }}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(180deg, rgba(4,8,18,0.95) 0%, rgba(4,8,18,0.98) 100%)",
+                zIndex: 1,
+              }}
+            />
+
+            <div
+              style={{
+                position: "relative",
+                zIndex: 2,
+              }}
+            >
+              <div
+                style={{
+                  maxWidth: "1400px",
+                  margin: "0 auto",
+                  paddingTop: isMobile ? 40 : 48,
+                  paddingBottom: 0,
+                  paddingLeft: isMobile ? 16 : 32,
+                  paddingRight: isMobile ? 16 : 32,
+                }}
+              >
+                <div
+                  style={{
+                    width: "100%",
+                    height: 1,
+                    background: "linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent)",
+                    opacity: 0.6,
+                    marginBottom: isMobile ? 20 : 24,
+                  }}
+                />
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr 1.2fr",
+                    gap: isMobile ? 20 : 24,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  {/* Logo + Social */}
+                  <div>
+                    <img
+                      src={clubAssets.logo.crestCropped}
+                      alt="FC Real Bengaluru"
+                      style={{ width: isMobile ? 90 : 100, height: "auto", marginBottom: isMobile ? spacing.sm : spacing.md }}
+                    />
+                    <div style={{ display: "flex", gap: 10, marginTop: spacing.sm, flexWrap: "wrap" }}>
+                      {[
+                        { name: "Facebook", url: clubInfo.social.facebook, Icon: FacebookIcon },
+                        { name: "Instagram", url: clubInfo.social.instagram, Icon: InstagramIcon },
+                        { name: "Twitter", url: clubInfo.social.twitter || "#", Icon: TwitterIcon },
+                        { name: "YouTube", url: clubInfo.social.youtube, Icon: YouTubeIcon },
+                      ].map((social) => {
+                        const Icon = social.Icon;
+                        return (
+                          <a
+                            key={social.name}
+                            href={social.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 44,
+                              height: 44,
+                              borderRadius: 12,
+                              background: "rgba(255,255,255,0.08)",
+                              color: colors.text.primary,
+                              textDecoration: "none",
+                              transition: "all 0.2s ease",
+                              boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = `${colors.primary.soft}`;
+                              e.currentTarget.style.color = colors.primary.main;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+                              e.currentTarget.style.color = colors.text.primary;
+                            }}
+                            title={social.name}
+                          >
+                            <Icon size={18} />
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* About Clubs */}
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        color: colors.text.primary,
+                        opacity: 0.9,
+                        marginBottom: isMobile ? 8 : 10,
+                      }}
+                    >
+                      About Clubs
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 6 : 8 }}>
+                      {[
+                        { label: "Homepage", to: "/" },
+                        { label: "About Us", to: "/about" },
+                        { label: "Latest News", to: "/#content-stream" },
+                      ].map((link) => (
+                        <a
+                          key={link.label}
+                          href={link.to}
+                          style={{
+                            color: colors.text.secondary,
+                            textDecoration: "none",
+                            fontSize: 13,
+                            lineHeight: 1.8,
+                            opacity: 0.85,
+                            transition: "all 0.2s ease",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.opacity = "1";
+                            e.currentTarget.style.textDecoration = "underline";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.opacity = "0.85";
+                            e.currentTarget.style.textDecoration = "none";
+                          }}
+                        >
+                          {link.label}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Teams Info */}
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        color: colors.text.primary,
+                        opacity: 0.9,
+                        marginBottom: isMobile ? 8 : 10,
+                      }}
+                    >
+                      Teams Info
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 6 : 8 }}>
+                      {[
+                        { label: "Player & Coach", to: "/student" },
+                        { label: "Player Profile", to: "/players" },
+                        { label: "Fixtures", to: "/#matches" },
+                        { label: "Tournament", to: "/tournaments" },
+                      ].map((link) => (
+                        <a
+                          key={link.label}
+                          href={link.to}
+                          style={{
+                            color: colors.text.secondary,
+                            textDecoration: "none",
+                            fontSize: 13,
+                            lineHeight: 1.8,
+                            opacity: 0.85,
+                            transition: "all 0.2s ease",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.opacity = "1";
+                            e.currentTarget.style.textDecoration = "underline";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.opacity = "0.85";
+                            e.currentTarget.style.textDecoration = "none";
+                          }}
+                        >
+                          {link.label}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Contact Us */}
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        color: colors.text.primary,
+                        opacity: 0.9,
+                        marginBottom: isMobile ? 8 : 10,
+                      }}
+                    >
+                      Contact Us
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 8 : 10 }}>
+                      <a
+                        href={`tel:${clubInfo.contact.phone}`}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          color: colors.text.secondary,
+                          textDecoration: "none",
+                          fontSize: 13,
+                          opacity: 0.9,
+                        }}
+                      >
+                        <PhoneIcon size={16} />
+                        <span>{clubInfo.contact.phone}</span>
+                      </a>
+                      <a
+                        href={`mailto:${clubInfo.contact.email}`}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          color: colors.text.secondary,
+                          textDecoration: "none",
+                          fontSize: 13,
+                          opacity: 0.9,
+                        }}
+                      >
+                        <EmailIcon size={16} />
+                        <span>{clubInfo.contact.email}</span>
+                      </a>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 10,
+                          color: colors.text.secondary,
+                          fontSize: 13,
+                          lineHeight: 1.6,
+                          opacity: 0.9,
+                        }}
+                      >
+                        <LocationIcon size={16} style={{ marginTop: 2 }} />
+                        <span>{clubInfo.contact.address}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Training Centres Subsection */}
+                {centres.length > 0 && (
+                  <>
+                    <div
+                      style={{
+                        marginTop: isMobile ? 32 : 40,
+                        marginBottom: isMobile ? 20 : 24,
+                        paddingTop: isMobile ? 20 : 24,
+                        borderTop: "1px solid rgba(255,255,255,0.08)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                          color: colors.text.primary,
+                          opacity: 0.9,
+                          marginBottom: isMobile ? 16 : 20,
+                          textAlign: "center",
+                        }}
+                      >
+                        Our Training Centres
+                      </div>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
+                          gap: isMobile ? spacing.md : spacing.lg,
+                          maxWidth: "1200px",
+                          margin: "0 auto",
+                        }}
+                      >
+                        {centres.map((centre, idx) => (
+                          <motion.div
+                            key={centre.id}
+                            initial={{ opacity: 0, y: 12 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.2 }}
+                            transition={{ duration: 0.4, delay: idx * 0.05 }}
+                            style={{
+                              background: "rgba(255,255,255,0.05)",
+                              borderRadius: borderRadius.lg,
+                              padding: spacing.md,
+                              border: "1px solid rgba(255,255,255,0.1)",
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: spacing.sm,
+                            }}
+                          >
+                            {/* Centre Number Badge & Name */}
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: spacing.sm,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: 28,
+                                  height: 28,
+                                  borderRadius: "50%",
+                                  background: `linear-gradient(135deg, rgba(4, 61, 208, 0.3) 0%, rgba(4, 61, 208, 0.2) 100%)`,
+                                  border: `2px solid ${colors.primary.main}`,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: typography.fontSize.xs,
+                                  fontWeight: typography.fontWeight.bold,
+                                  color: colors.text.onPrimary,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {idx + 1}
+                              </div>
+                              <h4
+                                style={{
+                                  ...typography.body,
+                                  color: colors.text.primary,
+                                  fontSize: typography.fontSize.sm,
+                                  fontWeight: typography.fontWeight.semibold,
+                                  margin: 0,
+                                  flex: 1,
+                                }}
+                              >
+                                {centre.name}
+                              </h4>
+                            </div>
+
+                            {/* Location */}
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "flex-start",
+                                gap: spacing.xs,
+                                paddingLeft: spacing.md + spacing.xs,
+                              }}
+                            >
+                              <LocationIcon
+                                style={{
+                                  width: 14,
+                                  height: 14,
+                                  flexShrink: 0,
+                                  marginTop: "2px",
+                                  color: colors.text.secondary,
+                                }}
+                              />
+                              <div
+                                style={{
+                                  ...typography.body,
+                                  color: colors.text.secondary,
+                                  fontSize: typography.fontSize.xs,
+                                  lineHeight: 1.5,
+                                }}
+                              >
+                                {centre.locality}, {centre.city}
+                              </div>
+                            </div>
+
+                            {/* Address */}
+                            {centre.addressLine && (
+                              <div
+                                style={{
+                                  ...typography.caption,
+                                  color: colors.text.muted,
+                                  fontSize: typography.fontSize.xs,
+                                  paddingLeft: spacing.md + spacing.xs,
+                                  lineHeight: 1.5,
+                                }}
+                              >
+                                {centre.addressLine}
+                              </div>
+                            )}
+
+                            {/* CTA Button */}
+                            <motion.div
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              style={{ marginTop: spacing.xs }}
+                            >
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                fullWidth
+                                onClick={() => handleOpenInMaps(centre)}
+                                style={{
+                                  fontSize: typography.fontSize.xs,
+                                  padding: `${spacing.xs} ${spacing.sm}`,
+                                }}
+                              >
+                                View on Google Maps →
+                              </Button>
+                            </motion.div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div
+                  style={{
+                    marginTop: isMobile ? 20 : 24,
+                    paddingTop: isMobile ? 16 : 18,
+                    borderTop: "1px solid rgba(255,255,255,0.08)",
+                    display: "flex",
+                    justifyContent: "center",
+                    color: colors.text.muted,
+                    fontSize: 12,
+                    opacity: 0.85,
+                    textAlign: "center",
+                  }}
+                >
+                  © {new Date().getFullYear()} FC Real Bengaluru. All rights reserved.
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.footer>
+      </section>
+      </main>
     </div>
   );
 };

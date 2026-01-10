@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import PublicHeader from "../components/PublicHeader";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
@@ -203,14 +203,13 @@ const CheckoutPage: React.FC = () => {
                   width: "auto",
                   minWidth: 260,
                   minHeight: 56,
-                  padding: "12px 18px",
                 }}
               >
                 <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
                   <span style={heroCTAStyles.blue.textStyle}>Continue Shopping</span>
                   <span style={heroCTAStyles.blue.subtitleStyle}>Back to the store grid</span>
                 </div>
-                <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+                <span style={{ color: colors.text.onPrimary, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
               </motion.div>
             </Link>
           </Card>
@@ -616,7 +615,7 @@ const CheckoutPage: React.FC = () => {
                 <span style={heroCTAStyles.yellow.textStyle}>{loading ? "Processing..." : "Pay Now"}</span>
                 <span style={heroCTAStyles.yellow.subtitleStyle}>Secure payment via Razorpay</span>
               </div>
-              <span style={{ color: colors.text.onAccent, fontWeight: 800 }}>→</span>
+              <span style={{ color: colors.text.onAccent, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
             </motion.button>
           </Card>
         </div>

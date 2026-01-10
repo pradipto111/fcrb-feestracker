@@ -860,6 +860,33 @@ enum LeadStatus {
   CONTACTED
   CONVERTED
   LOST
+  QUALIFIED
+  CONTACT_REQUESTED
+}
+
+model LegacyLead {
+  id                Int       @id @default(autoincrement())
+  source            String    @default("Find Your Legacy")
+  name              String
+  phone             String
+  age               Int
+  heightCmInput     Int       // Original user input
+  weightKgInput     Int       // Original user input
+  heightCmBucket    Int       // Snapped to nearest 5cm bucket [150..205]
+  weightKgBucket    Int       // Snapped to nearest 5kg bucket [45..115]
+  matchedPlayerId   String?   // ID from dataset JSON
+  matchedPlayerName String?
+  matchedPlayerPosition String?
+  matchedPlayerArchetype String?
+  matchedPlayerLegacy Json?   // Full legacy timeline data
+  consent           Boolean   @default(false)
+  status            LeadStatus @default(NEW)
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  @@index([status])
+  @@index([createdAt])
+  @@index([matchedPlayerId])
 }
 
 model Product {

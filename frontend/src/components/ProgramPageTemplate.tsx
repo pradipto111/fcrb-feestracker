@@ -1000,7 +1000,10 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
                     window.location.href = "/realverse/experience";
                   }}
                 >
-                  Explore RealVerse <ArrowRightIcon size={18} style={{ marginLeft: spacing.xs }} />
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Explore RealVerse</span>
+                    <ArrowRightIcon size={18} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                  </span>
                 </Button>
                 <Button
                   variant="secondary"

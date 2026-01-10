@@ -140,6 +140,20 @@ const AdminLayout: React.FC = () => {
       section: "System",
     },
     {
+      path: "/realverse/admin/leads",
+      label: "Website Leads",
+      icon: "players",
+      description: "General website leads",
+      section: "System",
+    },
+    {
+      path: "/realverse/admin/legacy-leads",
+      label: "Legacy Leads",
+      icon: "players",
+      description: "Find Your Legacy campaign leads",
+      section: "System",
+    },
+    {
       path: "/realverse/admin/settings",
       label: "Settings",
       icon: "settings",

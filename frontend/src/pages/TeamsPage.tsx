@@ -179,10 +179,16 @@ const TeamsPage: React.FC = () => {
             </p>
             <div style={{ display: "flex", gap: spacing.md, flexWrap: "wrap" }}>
               <Button variant="primary" size="md" onClick={() => scrollToSection("senior")} style={{ borderRadius: 999 }}>
-                View First Team <ArrowRightIcon size={18} style={{ marginLeft: spacing.sm }} />
+                <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.sm }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View First Team</span>
+                  <ArrowRightIcon size={18} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                </span>
               </Button>
               <Button variant="secondary" size="md" onClick={() => scrollToSection("academy")} style={{ borderRadius: 999 }}>
-                Explore Academy Pathway <ArrowRightIcon size={18} style={{ marginLeft: spacing.sm }} />
+                <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.sm }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Explore Academy Pathway</span>
+                  <ArrowRightIcon size={18} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                </span>
               </Button>
             </div>
           </motion.div>
@@ -423,7 +429,10 @@ const TeamsPage: React.FC = () => {
                   Training philosophy, player development engine, and data‑driven coaching all come together to move players from U13 squads to the KSFA Super Division first team.
                 </p>
                 <Button variant="primary" size="md" style={{ borderRadius: 999 }}>
-                  Join RealVerse Academy <ArrowRightIcon size={18} style={{ marginLeft: spacing.sm }} />
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.sm }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Join our Academy</span>
+                    <ArrowRightIcon size={18} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                  </span>
                 </Button>
               </div>
 

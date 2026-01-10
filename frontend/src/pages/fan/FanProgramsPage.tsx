@@ -150,7 +150,10 @@ const FanProgramsPage: React.FC = () => {
                     <div style={{ ...typography.caption, color: colors.text.secondary, marginTop: 10, lineHeight: 1.6 }}>{p.one}</div>
                     <div style={{ marginTop: "auto" }}>
                       <Button variant="primary" size="md" style={{ width: "100%" }} onClick={() => createLead(p.id)}>
-                        Train with us <ArrowRightIcon size={16} style={{ marginLeft: 8 }} />
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Train with us</span>
+                          <ArrowRightIcon size={16} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                        </span>
                       </Button>
                     </div>
                   </div>

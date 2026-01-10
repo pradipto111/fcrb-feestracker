@@ -1,6 +1,6 @@
 /**
  * Fan Club Teaser Section - Homepage
- * Concise single-screen teaser with tier cards and sponsor strip
+ * Beautifully redesigned section with enhanced tier cards and sponsor integration
  * Links to /fan-club/benefits for full details
  */
 
@@ -8,8 +8,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { colors, typography, spacing, borderRadius, shadows } from "../../theme/design-tokens";
-import { heroCTAStyles, heroOverlayGradient, heroTypography } from "../../theme/hero-design-patterns";
-import { Button } from "../ui/Button";
+import { heroCTAStyles, heroTypography } from "../../theme/hero-design-patterns";
 import { FAN_CLUB_TIERS, SPONSOR_BENEFITS } from "../../data/fanclubBenefits";
 import { ArrowRightIcon, CheckIcon, StarIcon } from "../icons/IconSet";
 import { SponsorLogoWall } from "./SponsorLogoWall";
@@ -22,20 +21,20 @@ export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.1,
+        staggerChildren: 0.12,
+        delayChildren: 0.15,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20, filter: "blur(6px)" },
+    hidden: { opacity: 0, y: 24, filter: "blur(8px)" },
     show: {
       opacity: 1,
       y: 0,
       filter: "blur(0px)",
       transition: {
-        duration: 0.55,
+        duration: 0.65,
         ease: [0.22, 1, 0.36, 1],
       },
     },
@@ -46,29 +45,53 @@ export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile
       variants={containerVariants}
       initial="hidden"
       whileInView="show"
-      viewport={{ once: true, amount: 0.2 }}
+      viewport={{ once: true, amount: 0.15 }}
       style={{
         maxWidth: "1400px",
         margin: "0 auto",
-        padding: isMobile ? `${spacing.xl} ${spacing.lg}` : `${spacing["3xl"]} ${spacing.xl}`,
-        minHeight: isMobile ? "auto" : "80vh",
+        padding: isMobile ? `${spacing["2xl"]} ${spacing.lg}` : `${spacing["4xl"]} ${spacing.xl}`,
+        minHeight: isMobile ? "auto" : "85vh",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        gap: spacing["2xl"],
+        gap: spacing["3xl"],
       }}
     >
-      {/* Header */}
-      <motion.div variants={itemVariants} style={{ textAlign: "center" }}>
-        <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em", marginBottom: spacing.sm }}>
-          FAN CLUB ECOSYSTEM
-        </div>
+      {/* Header Section - Enhanced */}
+      <motion.div variants={itemVariants} style={{ textAlign: "center", marginBottom: spacing.md }}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: spacing.sm,
+            padding: `${spacing.xs} ${spacing.md}`,
+            borderRadius: 999,
+            border: `1px solid ${colors.accent.main}40`,
+            background: `linear-gradient(135deg, ${colors.accent.main}15, ${colors.primary.main}15)`,
+            backdropFilter: "blur(8px)",
+            marginBottom: spacing.lg,
+          }}
+        >
+          <StarIcon size={16} color={colors.accent.main} />
+          <span style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em" }}>
+            FAN CLUB ECOSYSTEM
+          </span>
+        </motion.div>
         <h2
           style={{
             ...heroTypography.heading,
-            fontSize: `clamp(2.2rem, 4.4vw, 3.2rem)`,
+            fontSize: `clamp(2.5rem, 5vw, 3.75rem)`,
             margin: 0,
-            marginBottom: spacing.md,
+            marginBottom: spacing.lg,
+            background: `linear-gradient(135deg, ${colors.text.primary} 0%, ${colors.text.secondary} 100%)`,
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            color: "transparent",
+            lineHeight: 1.1,
           }}
         >
           Your Benefits for Backing FC Real Bengaluru
@@ -77,107 +100,185 @@ export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile
           style={{
             ...heroTypography.subheading,
             fontSize: typography.fontSize.lg,
-            maxWidth: "70ch",
+            maxWidth: "72ch",
             margin: "0 auto",
+            lineHeight: 1.75,
+            color: colors.text.secondary,
           }}
         >
           Backing the club comes with real rewards — on and off the pitch. Explore sponsor perks, tier benefits, and exclusive member rewards.
         </p>
       </motion.div>
 
-      {/* Tier Cards Row */}
+      {/* Tier Cards Row - Redesigned */}
       <motion.div
         variants={itemVariants}
         style={{
           display: "grid",
           gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))",
-          gap: spacing.lg,
-          marginBottom: spacing.lg,
+          gap: isMobile ? spacing.lg : spacing.xl,
+          marginBottom: spacing["2xl"],
         }}
       >
         {FAN_CLUB_TIERS.map((tier, idx) => {
           const recommended = tier.highlight;
-          const accent = recommended ? colors.primary.main : tier.id === "inner" ? colors.accent.main : "rgba(255,255,255,0.14)";
+          const isInner = tier.id === "inner";
+          const isRookie = tier.id === "rookie";
+          
+          // Brand color assignments
+          const primaryAccent = recommended 
+            ? colors.primary.main 
+            : isInner 
+              ? colors.accent.main 
+              : colors.text.muted;
+          const secondaryAccent = recommended 
+            ? colors.accent.main 
+            : isInner 
+              ? colors.primary.main 
+              : colors.text.muted;
 
           return (
             <motion.div
               key={tier.id}
               variants={itemVariants}
-              whileHover={!reduce ? { y: -4, scale: 1.02 } : undefined}
+              whileHover={!reduce ? { y: -8, scale: 1.03, transition: { duration: 0.3 } } : undefined}
               style={{
                 borderRadius: borderRadius["2xl"],
-                border: recommended ? `1px solid ${accent}40` : "1px solid rgba(255,255,255,0.08)",
-                background: "rgba(255,255,255,0.02)",
-                backdropFilter: "blur(12px)",
+                border: recommended 
+                  ? `2px solid ${primaryAccent}60` 
+                  : `1px solid rgba(255,255,255,0.12)`,
+                background: recommended
+                  ? `linear-gradient(135deg, rgba(10, 61, 145, 0.15) 0%, rgba(5, 11, 32, 0.25) 100%)`
+                  : `linear-gradient(135deg, rgba(28, 36, 48, 0.4) 0%, rgba(10, 22, 51, 0.3) 100%)`,
+                backdropFilter: "blur(16px)",
                 boxShadow: recommended
-                  ? `0 12px 40px rgba(0,0,0,0.25), 0 0 24px ${accent}15`
-                  : `0 8px 24px rgba(0,0,0,0.20)`,
+                  ? `0 20px 60px rgba(0,0,0,0.4), 0 0 40px ${primaryAccent}20, inset 0 1px 0 rgba(255,255,255,0.1)`
+                  : `0 12px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)`,
                 overflow: "hidden",
                 position: "relative",
-                padding: spacing.cardPadding, // 32px padding
+                padding: spacing.cardPadding,
                 display: "flex",
                 flexDirection: "column",
-                gap: spacing.md,
+                gap: spacing.lg,
+                minHeight: isMobile ? "auto" : "480px",
               }}
             >
-              {/* Background gradient - reduced opacity for better background visibility */}
+              {/* Enhanced Background Gradients */}
               <div
                 aria-hidden="true"
                 style={{
                   position: "absolute",
                   inset: 0,
                   background: recommended
-                    ? "radial-gradient(circle at 18% 18%, rgba(0,224,255,0.08) 0%, transparent 55%), radial-gradient(circle at 80% 10%, rgba(255,169,0,0.06) 0%, transparent 55%)"
-                    : tier.id === "inner"
-                      ? "radial-gradient(circle at 16% 18%, rgba(255,169,0,0.10) 0%, transparent 58%), radial-gradient(circle at 88% 22%, rgba(0,224,255,0.08) 0%, transparent 62%)"
-                      : "radial-gradient(circle at 18% 18%, rgba(255,255,255,0.03) 0%, transparent 55%)",
-                  opacity: 0.7,
+                    ? `radial-gradient(circle at 20% 20%, ${primaryAccent}25 0%, transparent 60%), 
+                        radial-gradient(circle at 85% 15%, ${secondaryAccent}20 0%, transparent 65%),
+                        linear-gradient(135deg, rgba(10, 61, 145, 0.08) 0%, transparent 50%)`
+                    : isInner
+                      ? `radial-gradient(circle at 18% 22%, ${colors.accent.main}20 0%, transparent 58%), 
+                          radial-gradient(circle at 88% 18%, ${colors.primary.main}15 0%, transparent 62%)`
+                      : `radial-gradient(circle at 18% 18%, rgba(255,255,255,0.05) 0%, transparent 55%)`,
+                  opacity: 0.9,
                   pointerEvents: "none",
                 }}
               />
 
-              <div style={{ position: "relative", zIndex: 1 }}>
-                {/* Badge */}
-                {recommended && (
-                  <div
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "6px 10px",
-                      borderRadius: 999,
-                      border: "1px solid rgba(0,224,255,0.28)",
-                      background: "rgba(0,224,255,0.10)",
-                      color: colors.text.primary,
-                      ...typography.caption,
-                      fontSize: typography.fontSize.xs,
-                      marginBottom: spacing.sm,
-                    }}
-                  >
-                    Recommended
-                  </div>
-                )}
+              {/* Accent Border Glow */}
+              {recommended && (
+                <motion.div
+                  animate={{ opacity: [0.3, 0.5, 0.3] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  style={{
+                    position: "absolute",
+                    inset: -2,
+                    borderRadius: borderRadius["2xl"],
+                    background: `linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.25))`,
+                    zIndex: -1,
+                    filter: "blur(8px)",
+                    opacity: 0.4,
+                  }}
+                />
+              )}
 
-                {/* Tier Name & Price */}
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.sm }}>
-                  <div>
-                    <div style={{ ...typography.h4, color: colors.text.primary, margin: 0 }}>{tier.name}</div>
-                    <div style={{ ...typography.overline, marginTop: 4, color: colors.text.muted, letterSpacing: "0.14em" }}>
-                      {tier.id.toUpperCase()}
-                    </div>
+              <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", height: "100%" }}>
+                {/* Tier Name & Subtitle - Enhanced */}
+                <div style={{ marginBottom: spacing.md }}>
+                  <div style={{ 
+                    ...typography.overline, 
+                    color: tier.id === "regular" ? colors.text.muted : (recommended ? primaryAccent : colors.text.muted), 
+                    letterSpacing: "0.16em",
+                    marginBottom: spacing.xs,
+                    fontWeight: typography.fontWeight.bold,
+                  }}>
+                    {tier.id.toUpperCase()}
                   </div>
-                  <div style={{ ...typography.h3, color: colors.text.primary }}>{tier.priceLabel}</div>
+                  <div style={{ 
+                    ...typography.h3, 
+                    color: colors.text.primary, 
+                    margin: 0,
+                    marginBottom: spacing.sm,
+                    fontWeight: typography.fontWeight.extrabold,
+                  }}>
+                    {tier.name}
+                  </div>
+                  <div style={{ 
+                    ...typography.h2, 
+                    color: tier.id === "regular" ? colors.text.primary : (recommended ? primaryAccent : colors.text.primary),
+                    margin: 0,
+                    fontSize: typography.fontSize["2xl"],
+                    fontWeight: typography.fontWeight.bold,
+                  }}>
+                    {tier.priceLabel}
+                  </div>
                 </div>
 
-                {/* Benefits (3-4 bullets max) */}
-                <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs, marginTop: spacing.md }}>
-                  {tier.benefits.slice(0, 4).map((benefit) => (
-                    <div key={benefit} style={{ display: "flex", gap: spacing.xs, alignItems: "flex-start" }}>
-                      <CheckIcon size={16} color={colors.success.main} style={{ flexShrink: 0, marginTop: 2 }} />
-                      <span style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm, lineHeight: 1.5 }}>
+                {/* Benefits - Enhanced */}
+                <div style={{ 
+                  display: "flex", 
+                  flexDirection: "column", 
+                  gap: spacing.sm, 
+                  flex: 1,
+                  marginTop: spacing.md,
+                }}>
+                  {tier.benefits.slice(0, 4).map((benefit, benefitIdx) => (
+                    <motion.div
+                      key={benefit}
+                      initial={{ opacity: 0, x: -10 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.1 * benefitIdx }}
+                      style={{ 
+                        display: "flex", 
+                        gap: spacing.sm, 
+                        alignItems: "flex-start",
+                        padding: `${spacing.xs} 0`,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: "50%",
+                          background: `linear-gradient(135deg, ${colors.success.main}, ${colors.success.light})`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          marginTop: 2,
+                          boxShadow: `0 2px 8px ${colors.success.main}30`,
+                        }}
+                      >
+                        <CheckIcon size={12} color={colors.text.onPrimary} />
+                      </div>
+                      <span style={{ 
+                        ...typography.body, 
+                        color: colors.text.secondary, 
+                        fontSize: typography.fontSize.sm, 
+                        lineHeight: 1.6,
+                        flex: 1,
+                      }}>
                         {benefit}
                       </span>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -186,81 +287,134 @@ export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile
         })}
       </motion.div>
 
-      {/* Sponsor Strip */}
-      <motion.div variants={itemVariants} style={{ marginBottom: spacing.lg }}>
+      {/* Sponsor Strip - Enhanced */}
+      <motion.div variants={itemVariants} style={{ marginBottom: spacing.xl }}>
         <div
           style={{
-            borderRadius: borderRadius.card,
-            border: "1px solid rgba(255,255,255,0.08)",
-            background: "rgba(255,255,255,0.02)",
-            backdropFilter: "blur(12px)",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.20)",
-            padding: spacing.lg,
+            borderRadius: borderRadius.xl,
+            border: `1px solid rgba(255,255,255,0.12)`,
+            background: `linear-gradient(135deg, rgba(28, 36, 48, 0.5) 0%, rgba(10, 22, 51, 0.4) 100%)`,
+            backdropFilter: "blur(16px)",
+            boxShadow: `0 12px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)`,
+            padding: spacing.xl,
             textAlign: "center",
+            position: "relative",
+            overflow: "hidden",
           }}
         >
-          <div style={{ ...typography.caption, color: colors.text.muted, letterSpacing: "0.12em", marginBottom: spacing.md, opacity: 0.85 }}>
-            Powered by our partners
-          </div>
-          <SponsorLogoWall
-            sponsors={SPONSOR_BENEFITS.map((s) => ({
-              id: s.id,
-              name: s.name,
-              logoSrc: s.logoSrc,
-              accent: s.accent,
-              accent2: s.accent2,
-              glow: s.glow,
-              tagline: "",
-              websiteUrl: s.websiteUrl,
-            }))}
-            isMobile={isMobile}
+          {/* Background accent */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: `radial-gradient(circle at 50% 50%, ${colors.accent.main}08 0%, transparent 70%)`,
+              pointerEvents: "none",
+            }}
           />
+          
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <div style={{ 
+              ...typography.overline, 
+              color: colors.accent.main, 
+              letterSpacing: "0.16em", 
+              marginBottom: spacing.lg,
+              fontWeight: typography.fontWeight.bold,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: spacing.sm,
+            }}>
+              <StarIcon size={14} color={colors.accent.main} />
+              Powered by our partners
+            </div>
+            <SponsorLogoWall
+              sponsors={SPONSOR_BENEFITS.map((s) => ({
+                id: s.id,
+                name: s.name,
+                logoSrc: s.logoSrc,
+                accent: s.accent,
+                accent2: s.accent2,
+                glow: s.glow,
+                tagline: "",
+                websiteUrl: s.websiteUrl,
+              }))}
+              isMobile={isMobile}
+            />
+          </div>
         </div>
       </motion.div>
 
-      {/* Primary CTA - Matching Hero Style */}
-      <motion.div variants={itemVariants} style={{ textAlign: "center", maxWidth: "680px", margin: "0 auto", width: "100%" }}>
+      {/* Primary CTA - Enhanced */}
+      <motion.div variants={itemVariants} style={{ textAlign: "center", maxWidth: "720px", margin: "0 auto", width: "100%" }}>
         <Link to="/fan-club/benefits" style={{ textDecoration: "none", display: "block", width: "100%" }}>
           <motion.div
-            whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+            whileHover={!reduce ? { y: -4, scale: 1.01, boxShadow: shadows.buttonHover } : undefined}
             whileTap={{ scale: 0.98 }}
             style={{
               ...heroCTAStyles.darkWithBorder,
               display: "flex",
               alignItems: "center",
-              gap: spacing.md,
+              gap: spacing.lg,
+              padding: `${spacing.xl} ${spacing["40"]}`,
+              background: `linear-gradient(135deg, rgba(28, 36, 48, 0.9) 0%, rgba(10, 22, 51, 0.85) 100%)`,
+              border: `2px solid ${colors.accent.main}`,
+              boxShadow: `0 12px 40px rgba(0,0,0,0.4), 0 0 30px ${colors.accent.main}20`,
+              position: "relative",
+              overflow: "hidden",
             }}
           >
+            {/* Background glow effect */}
+            <motion.div
+              animate={{ opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: `radial-gradient(circle at 50% 50%, ${colors.accent.main}15 0%, transparent 70%)`,
+                pointerEvents: "none",
+              }}
+            />
+            
             <div
               style={{
-                width: 48,
-                height: 48,
+                width: 56,
+                height: 56,
                 borderRadius: "50%",
-                background: colors.accent.main,
+                background: `linear-gradient(135deg, ${colors.accent.main}, ${colors.accent.light})`,
                 border: `2px solid ${colors.accent.main}`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: shadows.sm,
+                boxShadow: `0 4px 20px ${colors.accent.main}40`,
                 flexShrink: 0,
+                position: "relative",
+                zIndex: 1,
               }}
             >
-              <StarIcon size={20} style={{ color: colors.text.onAccent }} />
+              <StarIcon size={24} style={{ color: colors.text.onAccent }} />
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={heroCTAStyles.darkWithBorder.textStyle}>
+            <div style={{ flex: 1, minWidth: 0, position: "relative", zIndex: 1 }}>
+              <div style={{
+                ...heroCTAStyles.darkWithBorder.textStyle,
+                fontSize: typography.fontSize.xl,
+                marginBottom: spacing.xs,
+              }}>
                 Explore all Fan Club benefits
               </div>
-              <div style={heroCTAStyles.darkWithBorder.subtitleStyle}>
-                Exclusive gifts, <span style={{ color: colors.accent.main, fontWeight: typography.fontWeight.semibold }}>VIP access</span>, member-only drops
+              <div style={{
+                ...heroCTAStyles.darkWithBorder.subtitleStyle,
+                fontSize: typography.fontSize.base,
+              }}>
+                Exclusive gifts, <span style={{ color: colors.accent.main, fontWeight: typography.fontWeight.bold }}>VIP access</span>, member-only drops
               </div>
             </div>
             <motion.div
-              animate={{ x: [0, 4, 0] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-              style={{ display: "flex", alignItems: "center", flexShrink: 0 }}
+              animate={{ x: [0, 6, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              style={{ display: "flex", alignItems: "center", flexShrink: 0, position: "relative", zIndex: 1 }}
             >
-              <ArrowRightIcon size={20} color={colors.accent.main} />
+              <ArrowRightIcon size={24} color={colors.accent.main} />
             </motion.div>
           </motion.div>
         </Link>

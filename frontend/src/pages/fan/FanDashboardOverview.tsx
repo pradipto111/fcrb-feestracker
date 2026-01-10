@@ -650,8 +650,8 @@ const FanDashboardOverview: React.FC = () => {
                       { id: "EPP" as const, label: "Elite Pathway Program (EPP)" },
                     ].map((p) => (
                       <Button key={p.id} variant="secondary" size="md" onClick={() => onInterest(p.id)} style={{ justifyContent: "space-between", borderRadius: borderRadius.button }}>
-                        <span>{p.label}</span>
-                        <ArrowRightIcon size={16} />
+                        <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>{p.label}</span>
+                        <ArrowRightIcon size={16} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                       </Button>
                     ))}
                   </div>

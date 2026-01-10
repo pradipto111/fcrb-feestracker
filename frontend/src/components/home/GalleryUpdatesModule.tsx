@@ -71,9 +71,9 @@ const PillButton: React.FC<{
             justifyContent: "center",
           }}
         >
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-            {children}
-            {iconRight ? <ArrowRightIcon size={16} style={{ color: colors.accent.main }} /> : null}
+          <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>{children}</span>
+            {iconRight ? <ArrowRightIcon size={16} style={{ color: colors.accent.main, display: "flex", alignItems: "center", flexShrink: 0 }} /> : null}
           </span>
         </motion.div>
       </Link>
@@ -91,9 +91,9 @@ const PillButton: React.FC<{
         width: fullWidth ? "100%" : "auto",
       }}
     >
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-        {children}
-        {iconRight ? <ArrowRightIcon size={16} style={{ color: colors.accent.main }} /> : null}
+      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+        <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>{children}</span>
+        {iconRight ? <ArrowRightIcon size={16} style={{ color: colors.accent.main, display: "flex", alignItems: "center", flexShrink: 0 }} /> : null}
       </span>
     </motion.button>
   );
@@ -189,22 +189,6 @@ export const GalleryUpdatesModule: React.FC = () => {
           {/* SectionHeaderRow */}
           <div style={{ display: "flex", alignItems: isMobile ? "stretch" : "flex-end", justifyContent: "space-between", gap: GAP_MD, flexWrap: "wrap", marginBottom: isMobile ? 10 : 14 }}>
             <div style={{ minWidth: 0 }}>
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  padding: "8px 12px",
-                  borderRadius: RADIUS_PILL,
-                  border: BORDER_1,
-                  background: "rgba(255,255,255,0.04)",
-                  color: colors.text.secondary,
-                  ...typography.overline,
-                  letterSpacing: "0.14em",
-                  marginBottom: 10,
-                }}
-              >
-                BELONGING &amp; EMOTION
-              </div>
               <div style={{ ...heroTypography.heading, fontSize: typography.fontSize["2xl"], color: colors.text.primary, margin: 0 }}>Gallery • Updates</div>
               <div
                 style={{
@@ -292,9 +276,6 @@ export const GalleryUpdatesModule: React.FC = () => {
                     {/* MediaHeader */}
                     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: GAP_MD }}>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.10em", fontSize: 12, marginBottom: 4 }}>
-                          LIVE CLUB ENERGY
-                        </div>
                         <div style={{ ...typography.h4, color: colors.text.primary, margin: 0 }}>Featured Moment</div>
                       </div>
                     </div>
@@ -395,8 +376,9 @@ export const GalleryUpdatesModule: React.FC = () => {
                           ...heroCTAPillStyles.gold,
                         }}
                       >
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                          View Gallery <ArrowRightIcon size={16} style={{ color: colors.accent.main }} />
+                        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Gallery</span>
+                          <ArrowRightIcon size={16} style={{ color: colors.accent.main, display: "flex", alignItems: "center", flexShrink: 0 }} />
                         </span>
                       </motion.button>
                       <div
@@ -432,9 +414,6 @@ export const GalleryUpdatesModule: React.FC = () => {
                   >
                     {/* UpdateHeader */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                      <div style={{ ...typography.overline, color: colors.text.muted, letterSpacing: "0.14em", fontSize: 12 }}>
-                        STAY CONNECTED
-                      </div>
                       <div style={{ ...typography.h4, color: colors.text.primary, margin: 0 }}>Latest News / Updates</div>
 
                       {/* Filter chips (lightweight) */}
@@ -541,8 +520,9 @@ export const GalleryUpdatesModule: React.FC = () => {
                                 {featuredUpdate.title}
                               </div>
 
-                              <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 8, color: colors.text.primary, ...typography.caption }}>
-                                Read <ArrowRightIcon size={16} />
+                              <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, color: colors.text.primary, ...typography.caption }}>
+                                <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Read</span>
+                                <ArrowRightIcon size={16} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                               </div>
                             </div>
                           </div>

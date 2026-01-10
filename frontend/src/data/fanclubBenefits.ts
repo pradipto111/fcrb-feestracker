@@ -149,7 +149,11 @@ export const FAN_CLUB_TIERS: FanClubTier[] = [
     priceLabel: "₹99 / Year",
     priceValue: 99,
     ctaLabel: "Join for ₹99/year",
-    benefits: ["Access to sponsor rewards (basic tier)", "Matchday special offers", "Fan Club digital badge", "Community access on RealVerse"],
+    benefits: [
+      "Access to sponsor rewards (basic tier)",
+      "Matchday special offers",
+      "Fan Club digital badge",
+    ],
   },
   {
     id: "regular",
@@ -159,11 +163,12 @@ export const FAN_CLUB_TIERS: FanClubTier[] = [
     highlight: true,
     ctaLabel: "Most Popular — ₹299/year",
     benefits: [
+      "Access to sponsor rewards (basic tier)",
+      "Matchday special offers",
+      "Fan Club digital badge",
       "All Rookie benefits",
-      "Higher discount tiers from sponsors",
-      "Win bonus rewards unlocked",
+      "Higher-value partner rewards",
       "Priority access to events & friendlies",
-      "Exclusive merch previews",
     ],
   },
   {
@@ -173,12 +178,15 @@ export const FAN_CLUB_TIERS: FanClubTier[] = [
     priceValue: 699,
     ctaLabel: "Elite Access — ₹699/year",
     benefits: [
+      "Access to sponsor rewards (basic tier)",
+      "Matchday special offers",
+      "Fan Club digital badge",
+      "All Rookie benefits",
+      "Higher-value partner rewards",
+      "Priority access to events & friendlies",
       "All benefits unlocked",
       "Maximum sponsor discounts",
-      "Inner Circle badge",
-      "Priority seating / invites (future)",
-      "Special recognition on RealVerse",
-      "Early access to trials & programs (future)",
+      "Priority seating & invites (future)",
     ],
   },
 ];

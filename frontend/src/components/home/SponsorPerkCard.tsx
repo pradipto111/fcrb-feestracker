@@ -164,7 +164,6 @@ export const SponsorPerkCard: React.FC<{
                 width: isMobile ? "100%" : "auto",
                 minWidth: isMobile ? "100%" : 320,
                 minHeight: 56,
-                padding: "12px 18px",
                 opacity: 0.55,
                 cursor: "not-allowed",
               }}
@@ -173,7 +172,7 @@ export const SponsorPerkCard: React.FC<{
                 <span style={heroCTAStyles.yellow.textStyle}>Unlock Your First Perk</span>
                 <span style={heroCTAStyles.yellow.subtitleStyle}>Join Fan Club (coming soon)</span>
               </div>
-              <span style={{ color: colors.text.onAccent, fontWeight: 800 }}>→</span>
+              <span style={{ color: colors.text.onAccent, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
             </div>
           </div>
         </motion.div>

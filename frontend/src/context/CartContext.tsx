@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 export interface CartItem {
-  productId: number;
+  productId: string | number; // Support both string (local products) and number (API products)
   productName: string;
   productSlug: string;
   productImage?: string;
@@ -15,8 +15,8 @@ export interface CartItem {
 interface CartContextType {
   items: CartItem[];
   addItem: (item: Omit<CartItem, "totalPrice">) => void;
-  removeItem: (productId: number, variant?: string, size?: string) => void;
-  updateQuantity: (productId: number, quantity: number, variant?: string, size?: string) => void;
+  removeItem: (productId: string | number, variant?: string, size?: string) => void;
+  updateQuantity: (productId: string | number, quantity: number, variant?: string, size?: string) => void;
   clearCart: () => void;
   getTotal: () => number;
   getItemCount: () => number;
@@ -60,7 +60,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const removeItem = (productId: number, variant?: string, size?: string) => {
+  const removeItem = (productId: string | number, variant?: string, size?: string) => {
     setItems((prev) =>
       prev.filter(
         (i) =>
@@ -73,7 +73,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
-  const updateQuantity = (productId: number, quantity: number, variant?: string, size?: string) => {
+  const updateQuantity = (productId: string | number, quantity: number, variant?: string, size?: string) => {
     if (quantity <= 0) {
       removeItem(productId, variant, size);
       return;

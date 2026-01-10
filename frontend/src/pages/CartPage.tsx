@@ -68,14 +68,13 @@ const CartPage: React.FC = () => {
                   width: "auto",
                   minWidth: 260,
                   minHeight: 56,
-                  padding: "12px 18px",
                 }}
               >
                 <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
                   <span style={heroCTAStyles.blue.textStyle}>Continue Shopping</span>
                   <span style={heroCTAStyles.blue.subtitleStyle}>Browse the official store</span>
                 </div>
-                <span style={{ color: colors.text.onPrimary, fontWeight: 800 }}>→</span>
+                <span style={{ color: colors.text.onPrimary, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
               </motion.div>
             </Link>
           </Card>
@@ -353,7 +352,7 @@ const CartPage: React.FC = () => {
                 <span style={heroCTAStyles.yellow.textStyle}>Proceed to Checkout</span>
                 <span style={heroCTAStyles.yellow.subtitleStyle}>Secure payment and delivery</span>
               </div>
-              <span style={{ color: colors.text.onAccent, fontWeight: 800 }}>→</span>
+              <span style={{ color: colors.text.onAccent, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
             </motion.button>
             <Link to="/shop" style={{ textDecoration: "none" }}>
               <motion.div
@@ -373,7 +372,7 @@ const CartPage: React.FC = () => {
                   <span style={heroCTAStyles.darkWithBorder.textStyle}>Continue Shopping</span>
                   <span style={heroCTAStyles.darkWithBorder.subtitleStyle}>Back to the store grid</span>
                 </div>
-                <span style={{ color: colors.accent.main, fontWeight: 800 }}>→</span>
+                <span style={{ color: colors.accent.main, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
               </motion.div>
             </Link>
           </Card>

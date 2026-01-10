@@ -44,6 +44,7 @@ import PostApprovalPage from "./pages/PostApprovalPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import VotingPage from "./pages/VotingPage";
 import WebsiteLeadsPage from "./pages/WebsiteLeadsPage";
+import LegacyLeadsPage from "./pages/LegacyLeadsPage";
 import MerchandiseListPage from "./pages/MerchandiseListPage";
 import MerchandiseFormPage from "./pages/MerchandiseFormPage";
 import CentresManagementPage from "./pages/CentresManagementPage";
@@ -60,6 +61,7 @@ import InteractiveBrochurePage from "./pages/InteractiveBrochurePage";
 import RealVerseExperiencePage from "./pages/RealVerseExperiencePage";
 import AboutPage from "./pages/AboutPage";
 import TeamsPage from "./pages/TeamsPage";
+import FindYourLegacyPage from "./pages/FindYourLegacyPage";
 import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 import AdminStaffPage from "./pages/AdminStaffPage";
 import AdminPaymentsPage from "./pages/AdminPaymentsPage";
@@ -106,6 +108,7 @@ import AdminFanAnalyticsPage from "./pages/admin/fans/AdminFanAnalyticsPage";
 import AdminFanSettingsPage from "./pages/admin/fans/AdminFanSettingsPage";
 import AdminFanMatchdayContentPage from "./pages/admin/fans/AdminFanMatchdayContentPage";
 import FanClubBenefitsPreviewPage from "./pages/FanClubBenefitsPreviewPage";
+import FanClubJoinPage from "./pages/FanClubJoinPage";
 import FanClubPartnerAnalyticsPage from "./pages/FanClubPartnerAnalyticsPage";
 import NotFound from "./pages/NotFound";
 
@@ -153,6 +156,7 @@ const App: React.FC = () => {
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/teams" element={<TeamsPage />} />
+        <Route path="/find-your-legacy" element={<FindYourLegacyPage />} />
         
         {/* Shop Pages */}
         <Route path="/shop" element={<ShopPage />} />
@@ -178,6 +182,7 @@ const App: React.FC = () => {
         <Route path="/programs/wpp" element={<WomenPerformancePathwayPage />} />
         <Route path="/programs/fydp" element={<FoundationYouthProgramPage />} />
         <Route path="/fan-club/benefits" element={<FanClubBenefitsPreviewPage />} />
+        <Route path="/fan-club/join" element={<FanClubJoinPage />} />
         
         {/* RealVerse Login */}
         <Route
@@ -382,6 +387,16 @@ const App: React.FC = () => {
           }
         >
           <Route index element={<WebsiteLeadsPage />} />
+        </Route>
+        <Route
+          path="/realverse/admin/legacy-leads"
+          element={
+            <PrivateRoute>
+              <AdminLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route index element={<LegacyLeadsPage />} />
         </Route>
         <Route
           path="/admin"

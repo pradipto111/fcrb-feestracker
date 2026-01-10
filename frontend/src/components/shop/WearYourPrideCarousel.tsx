@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { animate, motion, useInView, useMotionValue, useReducedMotion } from "framer-motion";
-import { colors, typography } from "../../theme/design-tokens";
+import { colors, typography, spacing, shadows } from "../../theme/design-tokens";
 import { heroCTAPillStyles } from "../../theme/hero-design-patterns";
+import { ArrowRightIcon } from "../icons/IconSet";
 import type { SupportCelebrateBelongProduct } from "../home/SupportCelebrateBelongSection";
 
 const GAP = 16;
@@ -503,13 +504,16 @@ const ProductCTACard: React.FC<{ product: SupportCelebrateBelongProduct; reduceM
             style={{
               ...heroCTAPillStyles.base,
               ...heroCTAPillStyles.gold,
-              padding: "10px 12px",
-              boxShadow: "none",
+              padding: `${spacing.sm} ${spacing.md}`, // 8px 16px - adequate padding
+              boxShadow: shadows.button,
               whiteSpace: "nowrap",
               outline: "none",
             }}
           >
-            View Product
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1, color: colors.text.primary }}>View Product</span>
+              <ArrowRightIcon size={16} style={{ color: colors.accent.main, display: "flex", alignItems: "center", flexShrink: 0 }} />
+            </span>
           </motion.button>
         </div>
       </div>
