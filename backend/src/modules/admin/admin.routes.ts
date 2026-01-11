@@ -273,5 +273,209 @@ router.get("/merch/categories", async (req, res) => {
   }
 });
 
+// Get shop analytics
+router.get("/shop/analytics", async (req, res) => {
+  try {
+    const { from, to } = req.query as { from?: string; to?: string };
+    
+    // Date range filter
+    const dateFilter: any = {};
+    if (from) dateFilter.gte = new Date(from);
+    if (to) dateFilter.lte = new Date(to);
+
+    // Get total orders count
+    const totalOrders = await (prisma as any).order?.count({
+      where: dateFilter.gte || dateFilter.lte ? { createdAt: dateFilter } : {},
+    }) || 0;
+
+    // Get orders by status
+    const ordersByStatus = await (prisma as any).order?.groupBy({
+      by: ['status'],
+      _count: { _all: true },
+      where: dateFilter.gte || dateFilter.lte ? { createdAt: dateFilter } : {},
+    }) || [];
+
+    const statusCounts: Record<string, number> = {};
+    ordersByStatus.forEach((group: any) => {
+      statusCounts[group.status] = group._count._all;
+    });
+
+    // Get revenue (only from PAID orders)
+    const paidOrders = await (prisma as any).order?.findMany({
+      where: {
+        status: 'PAID',
+        ...(dateFilter.gte || dateFilter.lte ? { createdAt: dateFilter } : {}),
+      },
+      select: { total: true },
+    }) || [];
+
+    const totalRevenue = paidOrders.reduce((sum: number, order: any) => sum + (order.total || 0), 0);
+
+    // Get average order value
+    const avgOrderValue = paidOrders.length > 0 ? Math.round(totalRevenue / paidOrders.length) : 0;
+
+    // Get pending revenue (PENDING_PAYMENT orders)
+    const pendingOrders = await (prisma as any).order?.findMany({
+      where: {
+        status: 'PENDING_PAYMENT',
+        ...(dateFilter.gte || dateFilter.lte ? { createdAt: dateFilter } : {}),
+      },
+      select: { total: true },
+    }) || [];
+
+    const pendingRevenue = pendingOrders.reduce((sum: number, order: any) => sum + (order.total || 0), 0);
+
+    // Get top selling products
+    const orderItems = await (prisma as any).orderItem?.findMany({
+      where: {
+        order: {
+          status: 'PAID',
+          ...(dateFilter.gte || dateFilter.lte ? { createdAt: dateFilter } : {}),
+        },
+      },
+      select: {
+        productId: true,
+        productName: true,
+        quantity: true,
+        totalPrice: true,
+      },
+    }) || [];
+
+    const productStats: Record<number, { name: string; quantity: number; revenue: number }> = {};
+    orderItems.forEach((item: any) => {
+      if (!productStats[item.productId]) {
+        productStats[item.productId] = {
+          name: item.productName,
+          quantity: 0,
+          revenue: 0,
+        };
+      }
+      productStats[item.productId].quantity += item.quantity;
+      productStats[item.productId].revenue += item.totalPrice;
+    });
+
+    const topProducts = Object.entries(productStats)
+      .map(([id, stats]) => ({ productId: Number(id), ...stats }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5);
+
+    // Get recent orders
+    const recentOrders = await (prisma as any).order?.findMany({
+      where: dateFilter.gte || dateFilter.lte ? { createdAt: dateFilter } : {},
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: {
+        orderNumber: true,
+        customerName: true,
+        email: true,
+        total: true,
+        status: true,
+        createdAt: true,
+      },
+    }) || [];
+
+    // Get orders over time (last 30 days, grouped by day)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const ordersOverTime = await (prisma as any).order?.findMany({
+      where: {
+        createdAt: { gte: thirtyDaysAgo },
+      },
+      select: {
+        createdAt: true,
+        total: true,
+        status: true,
+      },
+    }) || [];
+
+    // Group by day
+    const dailyStats: Record<string, { orders: number; revenue: number }> = {};
+    ordersOverTime.forEach((order: any) => {
+      const date = new Date(order.createdAt).toISOString().split('T')[0];
+      if (!dailyStats[date]) {
+        dailyStats[date] = { orders: 0, revenue: 0 };
+      }
+      dailyStats[date].orders += 1;
+      if (order.status === 'PAID') {
+        dailyStats[date].revenue += order.total;
+      }
+    });
+
+    const ordersTimeseries = Object.entries(dailyStats)
+      .map(([date, stats]) => ({ date, ...stats }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    res.json({
+      totalOrders,
+      totalRevenue,
+      pendingRevenue,
+      avgOrderValue,
+      ordersByStatus: statusCounts,
+      topProducts,
+      recentOrders,
+      ordersTimeseries,
+    });
+  } catch (error: any) {
+    console.error("Error fetching shop analytics:", error);
+    res.status(500).json({ message: error.message || "Failed to fetch shop analytics" });
+  }
+});
+
+// Get all orders (admin)
+router.get("/orders", async (req, res) => {
+  try {
+    const { status, limit } = req.query;
+    
+    const where: any = {};
+    if (status) where.status = status;
+
+    const orders = await (prisma as any).order?.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: limit ? parseInt(limit as string) : 100,
+      include: {
+        items: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    }) || [];
+
+    res.json(orders);
+  } catch (error: any) {
+    console.error("Error fetching orders:", error);
+    res.status(500).json({ message: error.message || "Failed to fetch orders" });
+  }
+});
+
+// Update order status
+router.patch("/orders/:orderNumber/status", async (req, res) => {
+  try {
+    const { orderNumber } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ message: "Status is required" });
+    }
+
+    const validStatuses = ['PENDING_PAYMENT', 'PAID', 'FAILED', 'CANCELLED', 'SHIPPED', 'DELIVERED'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+    }
+
+    const order = await (prisma as any).order?.update({
+      where: { orderNumber },
+      data: { status, updatedAt: new Date() },
+    });
+
+    res.json(order);
+  } catch (error: any) {
+    console.error("Error updating order status:", error);
+    res.status(500).json({ message: error.message || "Failed to update order status" });
+  }
+});
+
 export default router;
 

@@ -48,6 +48,16 @@ router.post("/", async (req, res) => {
       });
     }
 
+    // Handle archetype - convert array to string if needed
+    let archetypeString: string | null = null;
+    if (matchedPlayerArchetype) {
+      if (Array.isArray(matchedPlayerArchetype)) {
+        archetypeString = matchedPlayerArchetype.join(", ");
+      } else {
+        archetypeString = matchedPlayerArchetype;
+      }
+    }
+
     const lead = await (prisma as any).legacyLead.create({
       data: {
         source: "Find Your Legacy",
@@ -61,7 +71,7 @@ router.post("/", async (req, res) => {
         matchedPlayerId: matchedPlayerId || null,
         matchedPlayerName: matchedPlayerName || null,
         matchedPlayerPosition: matchedPlayerPosition || null,
-        matchedPlayerArchetype: matchedPlayerArchetype || null,
+        matchedPlayerArchetype: archetypeString,
         matchedPlayerLegacy: matchedPlayerLegacy ? JSON.parse(JSON.stringify(matchedPlayerLegacy)) : null,
         consent,
         status: "NEW",

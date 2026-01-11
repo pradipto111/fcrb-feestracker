@@ -733,7 +733,7 @@ const FanClubJoinPage: React.FC = () => {
                       }}
                     />
                     <div aria-hidden="true" style={glass.overlaySoft} />
-                    <div style={{ position: "relative", zIndex: 1, padding: spacing.lg, display: "flex", flexDirection: "column", gap: spacing.md }}>
+                    <div style={{ position: "relative", zIndex: 1, padding: spacing.lg, display: "flex", flexDirection: "column", gap: spacing.md, height: "100%" }}>
                       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md }}>
                         <div style={{ ...typography.h4, color: colors.text.primary, margin: 0 }}>{pkg.name}</div>
                         {pkg.highlight ? (
@@ -744,7 +744,7 @@ const FanClubJoinPage: React.FC = () => {
                       </div>
                       <div style={{ ...typography.h3, color: colors.text.primary, margin: 0 }}>{pkg.priceLabel}</div>
 
-                      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: spacing.sm }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: spacing.sm, flex: 1 }}>
                         {pkg.benefits.map((benefit) => (
                           <div
                             key={benefit}
@@ -770,7 +770,7 @@ const FanClubJoinPage: React.FC = () => {
                         whileHover={!reduceMotion ? { scale: 1.02 } : undefined}
                         whileTap={!reduceMotion ? { scale: 0.98 } : undefined}
                         style={{
-                          marginTop: "auto",
+                          marginTop: spacing.md,
                           padding: `${spacing.md} ${spacing.lg}`,
                           borderRadius: borderRadius.button,
                           background: pkg.highlight
@@ -789,8 +789,12 @@ const FanClubJoinPage: React.FC = () => {
                           boxShadow: pkg.highlight ? shadows.button : "none",
                         }}
                       >
-                        Select Package
-                        <ArrowRightIcon size={16} color={pkg.highlight ? colors.brand.charcoal : colors.text.primary} />
+                        <span style={{ display: "flex", alignItems: "center", gap: spacing.xs, lineHeight: 1 }}>
+                          <span>Select Package</span>
+                          <span style={{ display: "flex", alignItems: "center" }}>
+                            <ArrowRightIcon size={14} color={pkg.highlight ? colors.brand.charcoal : colors.text.primary} />
+                          </span>
+                        </span>
                       </motion.button>
                     </div>
                   </motion.div>

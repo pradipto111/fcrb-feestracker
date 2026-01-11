@@ -20,7 +20,7 @@ router.get("/dashboard", authRequired, requireRole("STUDENT"), async (req, res) 
 
   if (!student) return res.status(404).json({ message: "Student not found" });
 
-  // Get all payments for this student
+  // Wallet-based payment system
   const payments = await prisma.payment.findMany({
     where: { studentId: id },
     orderBy: { paymentDate: "desc" }
@@ -28,35 +28,33 @@ router.get("/dashboard", authRequired, requireRole("STUDENT"), async (req, res) 
 
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
   
-  // Calculate outstanding based on payment frequency and time elapsed
-  // Payment is made at the BEGINNING of the month for that month's service
-  let totalDue = 0;
-  let monthsSinceJoining = 0;
-  
+  // Calculate fees accrued so far
+  let feesAccrued = 0;
   if (student.joiningDate) {
-    const now = getSystemDate(); // Use system date for calculations
+    const now = getSystemDate();
     const joining = new Date(student.joiningDate);
+    const paymentFrequency = student.paymentFrequency || 1;
+    const feePerCycle = student.monthlyFeeAmount * paymentFrequency;
     
-    // Calculate months including the current month
-    // Payment is due at the beginning of each month
-    monthsSinceJoining = Math.max(
-      1, // At least 1 month (the joining month itself)
+    // Calculate months since joining (including current month)
+    // Fee is due at the START of each cycle, not at the end
+    const monthsElapsed = Math.max(
+      1, // At least 1 month (the joining month itself incurs fees)
       (now.getFullYear() - joining.getFullYear()) * 12 + 
       (now.getMonth() - joining.getMonth()) + 1 // +1 to include current month
     );
     
-    // Calculate how many COMPLETE payment cycles have passed
-    // Use Math.floor to only count complete cycles
-    const paymentFrequency = student.paymentFrequency || 1;
-    const cyclesCompleted = Math.floor(monthsSinceJoining / paymentFrequency);
-    totalDue = cyclesCompleted * (student.monthlyFeeAmount * paymentFrequency);
-  } else {
-    // Fallback if no joining date
-    totalDue = student.monthlyFeeAmount;
-    monthsSinceJoining = 1;
+    // Calculate payment cycles that have passed (including current cycle)
+    const cyclesAccrued = Math.ceil(monthsElapsed / paymentFrequency);
+    
+    // Fees accrued for all cycles up to now (including current cycle)
+    feesAccrued = cyclesAccrued * feePerCycle;
   }
   
-  const outstanding = Math.max(0, totalDue - totalPaid);
+  // Wallet balance = total paid - fees accrued
+  const walletBalance = totalPaid - feesAccrued;
+  const outstanding = walletBalance < 0 ? Math.abs(walletBalance) : 0;
+  const creditBalance = walletBalance > 0 ? walletBalance : 0;
 
   res.json({
     student: {
@@ -67,16 +65,19 @@ router.get("/dashboard", authRequired, requireRole("STUDENT"), async (req, res) 
       dateOfBirth: student.dateOfBirth,
       programType: student.programType,
       monthlyFeeAmount: student.monthlyFeeAmount,
+      paymentFrequency: student.paymentFrequency,
       status: student.status,
       joiningDate: student.joiningDate,
+      walletBalance,
       center: student.center
     },
     payments,
     summary: {
       totalPaid,
-      totalDue,
+      walletBalance,
+      creditBalance,
       outstanding,
-      monthsSinceJoining,
+      feesAccrued,
       paymentCount: payments.length,
       lastPaymentDate: payments[0]?.paymentDate || null
     }

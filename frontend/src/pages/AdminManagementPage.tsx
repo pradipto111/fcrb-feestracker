@@ -655,11 +655,10 @@ const AdminManagementPage: React.FC = () => {
                       }}
                     >
                       <option value="">Select Program</option>
-                      <option value="U10">U10 (Under 10)</option>
-                      <option value="U13">U13 (Under 13)</option>
-                      <option value="U15">U15 (Under 15)</option>
-                      <option value="U17">U17 (Under 17)</option>
-                      <option value="U19">U19 (Under 19)</option>
+                      <option value="EPP">Elite Pathway Program (EPP)</option>
+                      <option value="SCP">Senior Competitive Program (SCP)</option>
+                      <option value="WPP">Women's Performance Pathway (WPP)</option>
+                      <option value="FYDP">Foundation & Youth Development Program (FYDP)</option>
                     </select>
                   </div>
                   <div>

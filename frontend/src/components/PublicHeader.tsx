@@ -575,42 +575,6 @@ const PublicHeader: React.FC = () => {
             Login
           </Link>
 
-          {/* Find Your Legacy - Secondary CTA */}
-          <Link
-            to="/find-your-legacy"
-            style={{
-              ...typography.body,
-              fontSize: "13px",
-              fontWeight: typography.fontWeight.semibold,
-              padding: `8px 18px`,
-              borderRadius: borderRadius.md,
-              background: "transparent",
-              color: colors.text.primary,
-              textDecoration: "none",
-              border: `1px solid rgba(245, 179, 0, 0.4)`,
-              transition: "all 0.2s ease",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "36px",
-              minHeight: "36px",
-              boxSizing: "border-box",
-              position: "relative",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(245, 179, 0, 0.15)";
-              e.currentTarget.style.borderColor = "rgba(245, 179, 0, 0.6)";
-              e.currentTarget.style.boxShadow = `0 0 12px rgba(245, 179, 0, 0.3)`;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.borderColor = "rgba(245, 179, 0, 0.4)";
-              e.currentTarget.style.boxShadow = "none";
-            }}
-          >
-            Find Your Legacy
-          </Link>
-
           {/* Join RealVerse - Primary CTA with highest visibility */}
           <Link
             to="/brochure"
@@ -869,35 +833,6 @@ const PublicHeader: React.FC = () => {
             }}
           >
             Login
-          </Link>
-
-          {/* Find Your Legacy - Mobile */}
-          <Link
-            to="/find-your-legacy"
-            onClick={() => setIsMobileMenuOpen(false)}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.base,
-              fontWeight: typography.fontWeight.semibold,
-              color: colors.text.primary,
-              textDecoration: "none",
-              padding: spacing.md,
-              borderRadius: borderRadius.md,
-              background: "transparent",
-              border: `1px solid rgba(245, 179, 0, 0.4)`,
-              textAlign: "center",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(245, 179, 0, 0.15)";
-              e.currentTarget.style.borderColor = "rgba(245, 179, 0, 0.6)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.borderColor = "rgba(245, 179, 0, 0.4)";
-            }}
-          >
-            Find Your Legacy
           </Link>
 
           {/* Join RealVerse - Primary CTA with highest visibility */}

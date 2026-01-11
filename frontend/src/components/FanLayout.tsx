@@ -40,6 +40,7 @@ const FanLayout: React.FC = () => {
 
   const navItems = [
     { path: "/realverse/fan", label: "Fan Club HQ", icon: "dashboard", description: "Your Fan Club home" },
+    { path: "/realverse/fan/schedule", label: "Schedule", icon: "matchday", description: "Matches, training & events" },
     ...(flags.offers === false ? [] : [{ path: "/realverse/fan/benefits", label: "Sponsors", icon: "benefits", description: "Offers, rewards, perks" }]),
     ...(flags.games === false ? [] : [{ path: "/realverse/fan/games", label: "Games & Quests", icon: "games", description: "Play, earn points" }]),
     ...(flags.matchday === false ? [] : [{ path: "/realverse/fan/matchday", label: "Matchday", icon: "matchday", description: "Weekly unlocks & moments" }]),

@@ -48,7 +48,7 @@ const StudentDashboard: React.FC = () => {
     <motion.main
       className="rv-page rv-page--student-dashboard"
       variants={pageVariants}
-      initial="initial"
+      initial="animate"
       animate="animate"
       exit="exit"
     >

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { api } from "../api/client";
 import { Card } from "../components/ui/Card";
@@ -10,9 +10,17 @@ import CreateMetricSnapshotModal from "../components/CreateMetricSnapshotModal";
 import { useAuth } from "../context/AuthContext";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 import { pageVariants, cardVariants } from "../utils/motion";
+import { 
+  ArrowLeftIcon, 
+  MoneyIcon, 
+  BellIcon, 
+  CalendarIcon, 
+  ChartBarIcon 
+} from "../components/icons/IconSet";
 
 const StudentDetailPage: React.FC = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const studentId = Number(id);
   const [data, setData] = useState<any>(null);
@@ -85,7 +93,60 @@ const StudentDetailPage: React.FC = () => {
     );
   }
 
-  const { student, payments, totalPaid, outstanding } = data;
+  const { student, payments, totalPaid, outstanding, walletBalance, creditBalance } = data;
+
+  // Wallet-based calculations
+  const hasOutstanding = outstanding > 0;
+  const hasCredit = creditBalance > 0;
+  
+  // Calculate how many payment cycles are covered by current wallet balance
+  const feePerCycle = student.monthlyFeeAmount * (student.paymentFrequency || 1);
+  const cyclesCovered = walletBalance > 0 ? Math.floor(walletBalance / feePerCycle) : 0;
+
+  // Calculate next fee deduction date
+  const calculateNextFeeDeduction = () => {
+    if (!student.joiningDate) {
+      return { dueDate: null, daysUntil: null, isOverdue: false, cyclesCovered: 0 };
+    }
+
+    const now = new Date();
+    const joining = new Date(student.joiningDate);
+    const paymentFrequency = student.paymentFrequency || 1;
+
+    // Calculate months since joining (including current month)
+    const monthsElapsed = Math.max(
+      1,
+      (now.getFullYear() - joining.getFullYear()) * 12 + 
+      (now.getMonth() - joining.getMonth()) + 1
+    );
+    
+    // Calculate payment cycles that have accrued (including current cycle)
+    const cyclesAccrued = Math.ceil(monthsElapsed / paymentFrequency);
+    
+    // Calculate how many FUTURE cycles are covered by credit balance
+    const cyclesAheadCovered = walletBalance > 0 ? Math.floor(walletBalance / feePerCycle) : 0;
+    
+    // Next deduction will be for cycle: cyclesAccrued + cyclesAheadCovered
+    const nextCycleNumber = cyclesAccrued + cyclesAheadCovered;
+    const monthsUntilNextCycle = nextCycleNumber * paymentFrequency;
+    
+    // Calculate next deduction date
+    const nextDeductionDate = new Date(joining);
+    nextDeductionDate.setMonth(joining.getMonth() + monthsUntilNextCycle);
+    
+    // Calculate days until next deduction
+    const timeDiff = nextDeductionDate.getTime() - now.getTime();
+    const daysUntil = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    
+    return {
+      dueDate: nextDeductionDate,
+      daysUntil,
+      isOverdue: daysUntil < 0 && walletBalance < 0,  // Only overdue if negative balance
+      cyclesCovered: cyclesAheadCovered
+    };
+  };
+
+  const nextFeeDeduction = calculateNextFeeDeduction();
 
   return (
     <motion.div
@@ -94,6 +155,58 @@ const StudentDetailPage: React.FC = () => {
       animate="visible"
       style={{ padding: spacing.md }}
     >
+      {/* Back Button */}
+      <motion.div variants={cardVariants} style={{ marginBottom: spacing.lg }}>
+        <Button
+          variant="utility"
+          onClick={() => navigate("/realverse/admin/students")}
+          style={{ 
+            display: "inline-flex", 
+            alignItems: "center", 
+            gap: spacing.xs 
+          }}
+        >
+          <ArrowLeftIcon size={16} />
+          Back to Students
+        </Button>
+      </motion.div>
+
+      {/* Wallet System Info Banner */}
+      {hasOutstanding && (
+        <motion.div variants={cardVariants} style={{ marginBottom: spacing.lg }}>
+          <Card 
+            variant="default" 
+            padding="md" 
+            style={{ 
+              background: `linear-gradient(135deg, ${colors.danger.main}20 0%, ${colors.danger.dark}20 100%)`,
+              border: `1px solid ${colors.danger.main}40`
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: spacing.md }}>
+              <BellIcon size={24} color={colors.danger.main} />
+              <div>
+                <p style={{ 
+                  ...typography.body, 
+                  fontWeight: typography.fontWeight.semibold,
+                  color: colors.danger.main,
+                  margin: 0,
+                  marginBottom: spacing.xs 
+                }}>
+                  Outstanding Balance: ₹{outstanding.toLocaleString()}
+                </p>
+                <p style={{ 
+                  ...typography.caption, 
+                  color: colors.text.muted,
+                  margin: 0 
+                }}>
+                  The wallet balance is negative. Please add payment to cover outstanding fees.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
       {/* Student Info Card */}
       <motion.div variants={cardVariants} style={{ marginBottom: spacing.xl }}>
         <Card variant="default" padding="lg">
@@ -174,31 +287,115 @@ const StudentDetailPage: React.FC = () => {
                 {student.phoneNumber || "-"}
               </div>
             </div>
+            <div>
+              <div style={{ 
+                ...typography.caption, 
+                color: colors.text.muted, 
+                marginBottom: spacing.xs 
+              }}>
+                Date of Joining
+              </div>
+              <div style={{ 
+                ...typography.body, 
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.primary,
+              }}>
+                {student.joiningDate ? new Date(student.joiningDate).toLocaleDateString('en-IN', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric'
+                }) : "-"}
+              </div>
+            </div>
+            <div>
+              <div style={{ 
+                ...typography.caption, 
+                color: colors.text.muted, 
+                marginBottom: spacing.xs 
+              }}>
+                Payment Frequency
+              </div>
+              <div style={{ 
+                ...typography.body, 
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.text.primary,
+              }}>
+                {student.paymentFrequency === 1 ? "Monthly" : 
+                 student.paymentFrequency === 2 ? "Bi-Monthly" : 
+                 student.paymentFrequency === 3 ? "Quarterly" : 
+                 `Every ${student.paymentFrequency} months`}
+              </div>
+            </div>
           </div>
           
-          {/* Payment KPIs */}
+          {/* Wallet & Payment KPIs */}
           <div style={{ 
             display: "grid", 
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
+            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", 
             gap: spacing.md, 
             marginTop: spacing.lg 
           }}>
             <KPICard
-              label="Total Paid"
+              title="Fees Due"
+              value={hasOutstanding ? `₹${outstanding.toLocaleString()}` : "₹0"}
+              subtitle={
+                hasOutstanding
+                  ? "Payment required" 
+                  : "All fees paid"
+              }
+              icon={<MoneyIcon size={40} style={{ opacity: 0.3 }} />}
+              variant={
+                hasOutstanding 
+                  ? "danger" 
+                  : "success"
+              }
+            />
+            <KPICard
+              title="Credit Balance"
+              value={`₹${creditBalance.toLocaleString()}`}
+              subtitle={
+                cyclesCovered > 0 
+                  ? `${cyclesCovered} cycle${cyclesCovered !== 1 ? 's' : ''} covered`
+                  : "No credit"
+              }
+              icon={<MoneyIcon size={40} style={{ opacity: 0.3 }} />}
+              variant={hasCredit ? "success" : "info"}
+            />
+            <KPICard
+              title="Next Fee Deduction"
+              value={
+                nextFeeDeduction.daysUntil !== null 
+                  ? nextFeeDeduction.daysUntil > 0
+                    ? `In ${nextFeeDeduction.daysUntil} days`
+                    : nextFeeDeduction.isOverdue
+                      ? "Overdue"
+                      : "Today"
+                  : "N/A"
+              }
+              subtitle={
+                nextFeeDeduction.dueDate 
+                  ? `${new Date(nextFeeDeduction.dueDate).toLocaleDateString('en-IN', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric'
+                    })} - ₹${feePerCycle.toLocaleString()}`
+                  : "No joining date"
+              }
+              icon={<CalendarIcon size={40} style={{ opacity: 0.3 }} />}
+              variant={
+                nextFeeDeduction.isOverdue 
+                  ? "danger"
+                  : nextFeeDeduction.daysUntil !== null && nextFeeDeduction.daysUntil <= 7 
+                    ? "warning" 
+                    : "primary"
+              }
+            />
+            <KPICard
+              title="Total Paid"
               value={`₹${totalPaid.toLocaleString()}`}
-              trend="up"
-              icon="💰"
-            />
-            <KPICard
-              label="Outstanding"
-              value={`₹${outstanding.toLocaleString()}`}
-              trend={outstanding > 0 ? "down" : "neutral"}
-              icon="⏳"
-            />
-            <KPICard
-              label="Payments Made"
-              value={payments.length.toString()}
-              icon="📊"
+              subtitle={`${payments.length} transaction${payments.length !== 1 ? 's' : ''}`}
+              icon={<ChartBarIcon size={40} style={{ opacity: 0.3 }} />}
+              variant="info"
             />
           </div>
         </Card>
@@ -207,13 +404,27 @@ const StudentDetailPage: React.FC = () => {
       {/* Add Payment Form */}
       <motion.div variants={cardVariants} style={{ marginBottom: spacing.xl }}>
         <Card variant="default" padding="lg">
-          <h2 style={{ 
-            ...typography.h2, 
-            marginBottom: spacing.lg,
-            color: colors.text.primary,
-          }}>
-            Add Payment
-          </h2>
+          <div style={{ marginBottom: spacing.lg }}>
+            <h2 style={{ 
+              ...typography.h2, 
+              marginBottom: spacing.xs,
+              color: colors.text.primary,
+            }}>
+              Add Payment to Wallet
+            </h2>
+            <p style={{
+              ...typography.body,
+              color: colors.text.muted,
+              margin: 0
+            }}>
+              Payments are added to the student's wallet. Fees are automatically deducted every {
+                student.paymentFrequency === 1 ? "month" : 
+                student.paymentFrequency === 2 ? "2 months" : 
+                student.paymentFrequency === 3 ? "3 months" : 
+                `${student.paymentFrequency} months`
+              } (₹{(student.monthlyFeeAmount * (student.paymentFrequency || 1)).toLocaleString()} per cycle).
+            </p>
+          </div>
           <form onSubmit={handleSubmit} style={{ 
             display: "grid", 
             gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
@@ -329,12 +540,12 @@ const StudentDetailPage: React.FC = () => {
                 }}
               />
             </div>
-            <div style={{ display: "flex", alignItems: "flex-end" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gridColumn: "1 / -1" }}>
               <Button
                 type="submit"
                 variant="primary"
                 disabled={submitting}
-                style={{ width: "100%" }}
+                size="lg"
               >
                 {submitting ? "Saving..." : "Save Payment"}
               </Button>

@@ -2,7 +2,8 @@
 -- This migration is designed for fresh DBs created from prior migrations.
 
 -- AlterEnum
-ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'FAN';
+-- NOTE: The 'FAN' enum value must be added manually before running this migration:
+-- psql -U postgres -d fees_tracker -c "ALTER TYPE \"Role\" ADD VALUE IF NOT EXISTS 'FAN';"
 
 -- CreateEnum
 CREATE TYPE "FanAccountStatus" AS ENUM ('ACTIVE', 'SUSPENDED');

@@ -15,11 +15,18 @@ import { FootballIcon, ClipboardIcon, CalendarIcon, ChartBarIcon, ChartLineIcon,
 
 const EnhancedCoachDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [summary, setSummary] = useState<any>(null);
-  const [students, setStudents] = useState<any[]>([]);
+  const [summary, setSummary] = useState<any>(() => {
+    const cached = sessionStorage.getItem('coach-dashboard-summary');
+    return cached ? JSON.parse(cached) : null;
+  });
+  const [students, setStudents] = useState<any[]>(() => {
+    const cached = sessionStorage.getItem('coach-dashboard-students');
+    return cached ? JSON.parse(cached) : [];
+  });
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [error, setError] = useState("");
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // Revenue Chart filters
   const [revenueMonths, setRevenueMonths] = useState(12);
@@ -40,10 +47,17 @@ const EnhancedCoachDashboard: React.FC = () => {
       ]);
       setSummary(summaryData);
       setStudents(studentsData);
+      
+      // Cache data for instant display
+      sessionStorage.setItem('coach-dashboard-summary', JSON.stringify(summaryData));
+      sessionStorage.setItem('coach-dashboard-students', JSON.stringify(studentsData));
+      
       await loadRevenueData();
       await loadMonthlyData();
+      setIsInitialLoad(false);
     } catch (err: any) {
       setError(err.message);
+      setIsInitialLoad(false);
     }
   };
 
@@ -74,7 +88,7 @@ const EnhancedCoachDashboard: React.FC = () => {
     <motion.main
       className="rv-page rv-page--coach-dashboard"
       variants={pageVariants}
-      initial="initial"
+      initial="animate"
       animate="animate"
       exit="exit"
     >
@@ -215,8 +229,8 @@ const EnhancedCoachDashboard: React.FC = () => {
           </Card>
         )}
 
-        {/* Loading State */}
-        {!summary && !error && (
+        {/* Loading State - Only show if no cached data */}
+        {!summary && !error && isInitialLoad && (
           <div style={{ 
             padding: spacing['2xl'], 
             textAlign: "center", 

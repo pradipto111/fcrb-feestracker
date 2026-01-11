@@ -17,13 +17,24 @@ import { FootballIcon, ClipboardIcon, CalendarIcon, ChartBarIcon, BuildingIcon }
 
 const EnhancedAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [summary, setSummary] = useState<any>(null);
-  const [centers, setCenters] = useState<any[]>([]);
-  const [students, setStudents] = useState<any[]>([]);
+  const [summary, setSummary] = useState<any>(() => {
+    // Try to load from sessionStorage for instant display
+    const cached = sessionStorage.getItem('admin-dashboard-summary');
+    return cached ? JSON.parse(cached) : null;
+  });
+  const [centers, setCenters] = useState<any[]>(() => {
+    const cached = sessionStorage.getItem('admin-dashboard-centers');
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [students, setStudents] = useState<any[]>(() => {
+    const cached = sessionStorage.getItem('admin-dashboard-students');
+    return cached ? JSON.parse(cached) : [];
+  });
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [clubSnapshot, setClubSnapshot] = useState<any>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // Chart 1 filters (Revenue)
   const [revenueMonths, setRevenueMonths] = useState(12);
@@ -69,9 +80,17 @@ const EnhancedAdminDashboard: React.FC = () => {
       setSummary(summaryData);
       setCenters(centersData);
       setStudents(studentsData);
+      
+      // Cache data in sessionStorage for instant display on next visit
+      sessionStorage.setItem('admin-dashboard-summary', JSON.stringify(summaryData));
+      sessionStorage.setItem('admin-dashboard-centers', JSON.stringify(centersData));
+      sessionStorage.setItem('admin-dashboard-students', JSON.stringify(studentsData));
+      
+      setIsInitialLoad(false);
       // Revenue and monthly data will be loaded by their respective useEffect hooks
     } catch (err: any) {
       setError(err.message);
+      setIsInitialLoad(false);
     }
   };
 
@@ -104,7 +123,7 @@ const EnhancedAdminDashboard: React.FC = () => {
     <motion.main
       className="rv-page rv-page--dashboard"
       variants={pageVariants}
-      initial="initial"
+      initial="animate"
       animate="animate"
       exit="exit"
     >
@@ -251,8 +270,8 @@ const EnhancedAdminDashboard: React.FC = () => {
           </Card>
         )}
 
-        {/* Loading State */}
-        {!summary && !error && (
+        {/* Loading State - Only show if no cached data */}
+        {!summary && !error && isInitialLoad && (
           <div style={{ 
             padding: spacing['2xl'], 
             textAlign: "center", 

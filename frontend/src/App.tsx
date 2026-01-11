@@ -44,7 +44,6 @@ import PostApprovalPage from "./pages/PostApprovalPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import VotingPage from "./pages/VotingPage";
 import WebsiteLeadsPage from "./pages/WebsiteLeadsPage";
-import LegacyLeadsPage from "./pages/LegacyLeadsPage";
 import MerchandiseListPage from "./pages/MerchandiseListPage";
 import MerchandiseFormPage from "./pages/MerchandiseFormPage";
 import CentresManagementPage from "./pages/CentresManagementPage";
@@ -103,7 +102,7 @@ import FanProgramsPage from "./pages/fan/FanProgramsPage";
 import AdminFansPage from "./pages/admin/fans/AdminFansPage";
 import AdminFanTiersPage from "./pages/admin/fans/AdminFanTiersPage";
 import AdminFanRewardsPage from "./pages/admin/fans/AdminFanRewardsPage";
-import AdminFanGamesPage from "./pages/admin/fans/AdminFanGamesPage";
+// import AdminFanGamesPage from "./pages/admin/fans/AdminFanGamesPage";
 import AdminFanAnalyticsPage from "./pages/admin/fans/AdminFanAnalyticsPage";
 import AdminFanSettingsPage from "./pages/admin/fans/AdminFanSettingsPage";
 import AdminFanMatchdayContentPage from "./pages/admin/fans/AdminFanMatchdayContentPage";
@@ -156,7 +155,6 @@ const App: React.FC = () => {
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/teams" element={<TeamsPage />} />
-        <Route path="/find-your-legacy" element={<FindYourLegacyPage />} />
         
         {/* Shop Pages */}
         <Route path="/shop" element={<ShopPage />} />
@@ -224,6 +222,7 @@ const App: React.FC = () => {
           <Route path="matches" element={<StudentMatchesPage />} />
           <Route path="wellness" element={<StudentWellnessPage />} />
           <Route path="analytics" element={<PlayerAnalyticsPage />} />
+          <Route path="schedule" element={<ScheduleManagementPage />} />
         </Route>
 
         {/* Fan Club Section (RealVerse Fan) */}
@@ -238,6 +237,7 @@ const App: React.FC = () => {
           }
         >
           <Route index element={<FanDashboardOverview />} />
+          <Route path="schedule" element={<ScheduleManagementPage />} />
           <Route path="benefits" element={<FanBenefitsPage />} />
           <Route path="games" element={<FanGamesPage />} />
           <Route path="matchday" element={<FanMatchdayPage />} />
@@ -331,7 +331,6 @@ const App: React.FC = () => {
           <Route path="payments" element={<AdminPaymentsPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
           <Route path="attendance" element={<AttendanceManagementPage />} />
-          <Route path="fixtures" element={<FixturesManagementPage />} />
           <Route path="schedule" element={<ScheduleManagementPage />} />
           <Route path="students" element={<EnhancedStudentsPage />} />
           <Route path="batch-review" element={<BatchReviewPage />} />
@@ -348,7 +347,7 @@ const App: React.FC = () => {
           <Route path="fans" element={<AdminFansPage />} />
           <Route path="fans/tiers" element={<AdminFanTiersPage />} />
           <Route path="fans/rewards" element={<AdminFanRewardsPage />} />
-          <Route path="fans/games" element={<AdminFanGamesPage />} />
+          {/* <Route path="fans/games" element={<AdminFanGamesPage />} /> */}
           <Route path="fans/matchday" element={<AdminFanMatchdayContentPage />} />
           <Route path="fans/analytics" element={<AdminFanAnalyticsPage />} />
           <Route path="fans/settings" element={<AdminFanSettingsPage />} />
@@ -389,23 +388,13 @@ const App: React.FC = () => {
           <Route index element={<WebsiteLeadsPage />} />
         </Route>
         <Route
-          path="/realverse/admin/legacy-leads"
-          element={
-            <PrivateRoute>
-              <AdminLayout />
-            </PrivateRoute>
-          }
-        >
-          <Route index element={<LegacyLeadsPage />} />
-        </Route>
-        <Route
           path="/admin"
           element={<Navigate to="/realverse/admin" replace />}
         />
         <Route path="/admin/fans" element={<Navigate to="/realverse/admin/fans" replace />} />
         <Route path="/admin/fans/tiers" element={<Navigate to="/realverse/admin/fans/tiers" replace />} />
         <Route path="/admin/fans/rewards" element={<Navigate to="/realverse/admin/fans/rewards" replace />} />
-        <Route path="/admin/fans/games" element={<Navigate to="/realverse/admin/fans/games" replace />} />
+        {/* <Route path="/admin/fans/games" element={<Navigate to="/realverse/admin/fans/games" replace />} /> */}
         <Route path="/admin/fans/matchday" element={<Navigate to="/realverse/admin/fans/matchday" replace />} />
         <Route path="/admin/fans/analytics" element={<Navigate to="/realverse/admin/fans/analytics" replace />} />
         <Route path="/admin/fans/settings" element={<Navigate to="/realverse/admin/fans/settings" replace />} />

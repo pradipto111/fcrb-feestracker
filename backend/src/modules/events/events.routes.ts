@@ -6,6 +6,88 @@ import { seedDemoClubEvents } from "./seed-demo-events";
 const prisma = new PrismaClient();
 const router = Router();
 
+// PUBLIC: Get events for website (no auth required)
+router.get("/public", async (req, res) => {
+  try {
+    const now = new Date();
+    
+    // Get upcoming events (next 20)
+    const upcomingEvents = await prisma.clubEvent.findMany({
+      where: {
+        startAt: { gte: now },
+        status: { in: ["SCHEDULED", "CONFIRMED"] },
+      },
+      include: {
+        center: {
+          select: { name: true, shortName: true },
+        },
+        players: {
+          include: {
+            student: {
+              select: {
+                id: true,
+                fullName: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { startAt: "asc" },
+      take: 20,
+    });
+
+    // Get recent completed events (last 10)
+    const recentEvents = await prisma.clubEvent.findMany({
+      where: {
+        status: "COMPLETED",
+      },
+      include: {
+        center: {
+          select: { name: true, shortName: true },
+        },
+        players: {
+          include: {
+            student: {
+              select: {
+                id: true,
+                fullName: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { startAt: "desc" },
+      take: 10,
+    });
+
+    // Transform to simpler format for public display
+    const transformEvent = (e: any) => ({
+      id: e.id,
+      type: e.type,
+      title: e.title,
+      startAt: e.startAt,
+      endAt: e.endAt,
+      allDay: e.allDay,
+      venueName: e.venueName || "TBD",
+      opponent: e.opponent || null,
+      competition: e.competition || null,
+      homeAway: e.homeAway || null,
+      status: e.status,
+      center: e.center?.shortName || e.center?.name || "FCRB",
+      notes: e.notes,
+      playerCount: e.players?.length || 0,
+    });
+
+    res.json({
+      upcoming: upcomingEvents.map(transformEvent),
+      recent: recentEvents.map(transformEvent),
+    });
+  } catch (error: any) {
+    console.error("Error fetching public events:", error);
+    res.status(500).json({ message: "Failed to fetch events" });
+  }
+});
+
 async function getCoachCenterIds(coachId: number): Promise<number[]> {
   const coachCenters = await prisma.coachCenter.findMany({
     where: { coachId },
@@ -47,26 +129,25 @@ router.get("/", async (req, res) => {
     const events = await prisma.clubEvent.findMany({
       where,
       orderBy: { startAt: "asc" },
-      select: {
-        id: true,
-        type: true,
-        title: true,
-        startAt: true,
-        endAt: true,
-        allDay: true,
-        venueName: true,
-        venueAddress: true,
-        googleMapsUrl: true,
-        competition: true,
-        opponent: true,
-        homeAway: true,
-        teamId: true,
-        centerId: true,
-        status: true,
-        notes: true,
-        createdByUserId: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
+        center: {
+          select: {
+            id: true,
+            name: true,
+            shortName: true,
+          },
+        },
+        players: {
+          include: {
+            student: {
+              select: {
+                id: true,
+                fullName: true,
+                programType: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -97,6 +178,10 @@ router.post("/", authRequired, requireRole("ADMIN", "COACH"), async (req, res) =
       centerId,
       status,
       notes,
+      playerIds,
+      positions,
+      roles,
+      playerNotes,
     } = req.body ?? {};
 
     if (!type || !title || !startAt) {
@@ -108,6 +193,20 @@ router.post("/", authRequired, requireRole("ADMIN", "COACH"), async (req, res) =
       const coachCenterIds = await getCoachCenterIds(id);
       if (!coachCenterIds.includes(Number(centerId))) {
         return res.status(403).json({ message: "You don't have access to this center" });
+      }
+    }
+
+    // Verify all players belong to the center (if players are provided)
+    if (centerId && playerIds && Array.isArray(playerIds) && playerIds.length > 0) {
+      const players = await prisma.student.findMany({
+        where: {
+          id: { in: playerIds.map((pid: any) => Number(pid)) },
+          centerId: Number(centerId),
+        },
+      });
+
+      if (players.length !== playerIds.length) {
+        return res.status(400).json({ message: "Some players do not belong to this center" });
       }
     }
 
@@ -129,6 +228,31 @@ router.post("/", authRequired, requireRole("ADMIN", "COACH"), async (req, res) =
         status: status ?? ClubEventStatus.SCHEDULED,
         notes: notes ?? null,
         createdByUserId: id,
+        players:
+          playerIds && Array.isArray(playerIds) && playerIds.length > 0
+            ? {
+                create: playerIds.map((playerId: any, index: number) => ({
+                  studentId: Number(playerId),
+                  position: positions?.[index] || null,
+                  role: roles?.[index] || null,
+                  notes: playerNotes?.[index] || null,
+                })),
+              }
+            : undefined,
+      },
+      include: {
+        center: true,
+        players: {
+          include: {
+            student: {
+              select: {
+                id: true,
+                fullName: true,
+                programType: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -173,6 +297,20 @@ router.patch("/:id", authRequired, requireRole("ADMIN", "COACH"), async (req, re
       }
     }
 
+    // Verify all players belong to the center (if players are being updated)
+    if (existing.centerId && patch.playerIds && Array.isArray(patch.playerIds) && patch.playerIds.length > 0) {
+      const players = await prisma.student.findMany({
+        where: {
+          id: { in: patch.playerIds.map((pid: any) => Number(pid)) },
+          centerId: existing.centerId,
+        },
+      });
+
+      if (players.length !== patch.playerIds.length) {
+        return res.status(400).json({ message: "Some players do not belong to this center" });
+      }
+    }
+
     const updated = await prisma.clubEvent.update({
       where: { id: eventId },
       data: {
@@ -192,7 +330,63 @@ router.patch("/:id", authRequired, requireRole("ADMIN", "COACH"), async (req, re
         status: patch.status !== undefined ? patch.status : undefined,
         notes: patch.notes !== undefined ? patch.notes : undefined,
       },
+      include: {
+        center: true,
+        players: {
+          include: {
+            student: {
+              select: {
+                id: true,
+                fullName: true,
+                programType: true,
+              },
+            },
+          },
+        },
+      },
     });
+
+    // Update players if provided
+    if (patch.playerIds !== undefined && Array.isArray(patch.playerIds)) {
+      // Delete existing players
+      await prisma.clubEventPlayer.deleteMany({
+        where: { eventId },
+      });
+
+      // Create new players
+      if (patch.playerIds.length > 0) {
+        await prisma.clubEventPlayer.createMany({
+          data: patch.playerIds.map((playerId: any, index: number) => ({
+            eventId,
+            studentId: Number(playerId),
+            position: patch.positions?.[index] || null,
+            role: patch.roles?.[index] || null,
+            notes: patch.playerNotes?.[index] || null,
+          })),
+        });
+
+        // Fetch updated event with players
+        const finalEvent = await prisma.clubEvent.findUnique({
+          where: { id: eventId },
+          include: {
+            center: true,
+            players: {
+              include: {
+                student: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    programType: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        return res.json(finalEvent);
+      }
+    }
 
     res.json(updated);
   } catch (error: any) {

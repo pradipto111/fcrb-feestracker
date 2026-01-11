@@ -42,20 +42,14 @@ const CoachLayout: React.FC = () => {
     {
       path: "/realverse/coach/schedule",
       label: "Schedule",
-      icon: "sessions",
-      description: "Calendar & events",
+      icon: "matches",
+      description: "Matches, training & events",
     },
     {
       path: "/realverse/coach/feedback",
       label: "Feedback",
       icon: "feedback",
       description: "Player feedback & insights",
-    },
-    {
-      path: "/realverse/fixtures",
-      label: "Matches",
-      icon: "matches",
-      description: "Fixtures & team selection",
     },
     {
       path: "/realverse/coach/wellness",

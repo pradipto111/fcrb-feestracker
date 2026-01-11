@@ -126,48 +126,51 @@ router.get("/:id", authRequired, async (req, res) => {
     }
   }
 
-  // compute totals
+  // Wallet-based payment system
   const payments = await prisma.payment.findMany({
     where: { studentId: student.id },
     orderBy: { paymentDate: "desc" }
   });
 
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-
-  // Calculate outstanding based on payment frequency and time elapsed
-  // Payment is made at the BEGINNING of the month for that month's service
-  let outstanding = 0;
+  
+  // Calculate fees accrued so far
+  let feesAccrued = 0;
   if (student.joiningDate) {
-    const now = getSystemDate(); // Use system date for calculations
+    const now = getSystemDate();
     const joining = new Date(student.joiningDate);
+    const paymentFrequency = student.paymentFrequency || 1;
+    const feePerCycle = student.monthlyFeeAmount * paymentFrequency;
     
-    // Calculate months including the current month
-    // If joined Jan and now is Feb, that's 2 months (Jan + Feb)
+    // Calculate months since joining (including current month)
+    // Fee is due at the START of each cycle, not at the end
     const monthsElapsed = Math.max(
-      1, // At least 1 month (the joining month itself)
+      1, // At least 1 month (the joining month itself incurs fees)
       (now.getFullYear() - joining.getFullYear()) * 12 + 
       (now.getMonth() - joining.getMonth()) + 1 // +1 to include current month
     );
     
-    // Calculate how many COMPLETE payment cycles have passed
-    // Payment is made at beginning of cycle for that cycle
-    const paymentFrequency = student.paymentFrequency || 1;
-    const cyclesCompleted = Math.floor(monthsElapsed / paymentFrequency);
+    // Calculate payment cycles that have passed (including current cycle)
+    const cyclesAccrued = Math.ceil(monthsElapsed / paymentFrequency);
     
-    // Expected amount = completed cycles * (monthly fee * frequency)
-    // Example: Bi-monthly, joined Jan, now Mar (3 months)
-    //          Cycles = floor(3/2) = 1 cycle = payment for Jan-Feb due
-    // Example: Bi-monthly, joined Jan, now May (5 months)
-    //          Cycles = floor(5/2) = 2 cycles = payment for Jan-Feb and Mar-Apr due
-    const expectedAmount = cyclesCompleted * (student.monthlyFeeAmount * paymentFrequency);
-    
-    outstanding = Math.max(0, expectedAmount - totalPaid);
-  } else {
-    // Fallback if no joining date
-    outstanding = Math.max(0, student.monthlyFeeAmount - totalPaid);
+    // Fees accrued for all cycles up to now (including current cycle)
+    feesAccrued = cyclesAccrued * feePerCycle;
   }
+  
+  // Wallet balance = total paid - fees accrued
+  const walletBalance = totalPaid - feesAccrued;
+  const outstanding = walletBalance < 0 ? Math.abs(walletBalance) : 0;
+  const creditBalance = walletBalance > 0 ? walletBalance : 0;
 
-  res.json({ student, payments, totalPaid, outstanding });
+  res.json({ 
+    student, 
+    payments, 
+    totalPaid, 
+    outstanding,
+    walletBalance,
+    creditBalance,
+    feesAccrued
+  });
 });
 
 export default router;

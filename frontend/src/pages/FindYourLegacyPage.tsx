@@ -9,7 +9,7 @@ interface Player {
   id: string;
   name: string;
   position: string;
-  archetype: string;
+  archetype: string | string[]; // Can be string or array
   primeAge: number;
   heightCm: number;
   weightKg: number;
@@ -32,7 +32,7 @@ interface LegacyLeadData {
   matchedPlayerId: string;
   matchedPlayerName: string;
   matchedPlayerPosition: string;
-  matchedPlayerArchetype: string;
+  matchedPlayerArchetype: string | string[]; // Can be string or array
   matchedPlayerLegacy: Player["legacy"];
   consent: boolean;
 }
@@ -808,7 +808,7 @@ const ResultStep: React.FC<ResultStepProps> = ({ player, userData, onRequestCall
                   borderRadius: borderRadius.full,
                 }}
               >
-                {player.archetype}
+                {Array.isArray(player.archetype) ? player.archetype.join(", ") : player.archetype}
               </span>
             </div>
           </div>

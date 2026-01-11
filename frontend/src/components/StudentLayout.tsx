@@ -146,10 +146,10 @@ const StudentLayout: React.FC = () => {
       description: "Track your training sessions",
     },
     {
-      path: "/realverse/my-fixtures",
-      label: "My Fixtures",
+      path: "/realverse/student/schedule",
+      label: "Schedule",
       icon: "matches",
-      description: "Upcoming matches & selection",
+      description: "Matches, training & events",
     },
   ];
 

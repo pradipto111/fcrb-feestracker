@@ -60,13 +60,13 @@ const AdminLayout: React.FC = () => {
       description: "Moments + dynamic reward toggles",
       section: "Fan Club",
     },
-    {
-      path: "/realverse/admin/fans/games",
-      label: "Games",
-      icon: "sessions",
-      description: "Quests & unlock rules",
-      section: "Fan Club",
-    },
+    // {
+    //   path: "/realverse/admin/fans/games",
+    //   label: "Games",
+    //   icon: "sessions",
+    //   description: "Quests & unlock rules",
+    //   section: "Fan Club",
+    // },
     {
       path: "/realverse/admin/fans/analytics",
       label: "Fan Club Analytics",
@@ -104,17 +104,10 @@ const AdminLayout: React.FC = () => {
     },
     // Football Ops Section
     {
-      path: "/realverse/admin/fixtures",
-      label: "Matches",
-      icon: "matches",
-      description: "Fixtures & competitions",
-      section: "Football Ops",
-    },
-    {
       path: "/realverse/admin/schedule",
       label: "Schedule",
-      icon: "sessions",
-      description: "Calendar & events",
+      icon: "matches",
+      description: "Unified calendar: matches, training & events",
       section: "Football Ops",
     },
     {
@@ -144,13 +137,6 @@ const AdminLayout: React.FC = () => {
       label: "Website Leads",
       icon: "players",
       description: "General website leads",
-      section: "System",
-    },
-    {
-      path: "/realverse/admin/legacy-leads",
-      label: "Legacy Leads",
-      icon: "players",
-      description: "Find Your Legacy campaign leads",
       section: "System",
     },
     {

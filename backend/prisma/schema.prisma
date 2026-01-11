@@ -101,9 +101,11 @@ model Student {
   passwordHash      String?
   centerId          Int
   joiningDate       DateTime?
-  programType       String?    // "U13", "U15", etc.
+  programType       String?    // "EPP", "SCP", "WPP", "FYDP"
   monthlyFeeAmount  Int        @default(0)
   paymentFrequency  Int        @default(1)  // Payment frequency in months (1-12)
+  walletBalance     Int        @default(0)  // Credit balance in wallet (positive = credit, negative = outstanding)
+  lastFeeDeduction  DateTime?  // Last time fees were deducted from wallet
   status            StudentStatus @default(ACTIVE)
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
@@ -123,6 +125,7 @@ model Student {
   scoutingDecisions ScoutingDecisionLog[]
   parentReports ParentDevelopmentReport[]
   weeklyLoads PlayerWeeklyLoad[]
+  clubEventPlayers ClubEventPlayer[]
 }
 
 model Payment {
@@ -677,12 +680,31 @@ model ClubEvent {
 
   center          Center?         @relation(fields: [centerId], references: [id])
   createdBy       Coach           @relation(fields: [createdByUserId], references: [id])
+  players         ClubEventPlayer[]
 
   @@index([startAt])
   @@index([type])
   @@index([status])
   @@index([centerId])
   @@unique([title, startAt])
+}
+
+model ClubEventPlayer {
+  id        Int      @id @default(autoincrement())
+  eventId   String
+  studentId Int
+  position  String?  // e.g., "Forward", "Midfielder", "Defender"
+  role      String?  // e.g., "Starting XI", "Substitute", "Reserve"
+  notes     String?  // Additional notes about player's participation
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event   ClubEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  student Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, studentId])
+  @@index([eventId])
+  @@index([studentId])
 }
 
 model Video {

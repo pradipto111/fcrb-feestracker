@@ -117,6 +117,10 @@ export const api = {
     if (params?.paymentMode) query.set("paymentMode", params.paymentMode);
     return request(`/dashboard/revenue-collections?${query.toString()}`);
   },
+
+  getPaymentModeBreakdown() {
+    return request("/dashboard/payment-mode-breakdown");
+  },
   getMonthlyCollections(params?: { months?: number; centerId?: string; paymentMode?: string }) {
     const query = new URLSearchParams();
     if (params?.months) query.set("months", params.months.toString());
@@ -303,6 +307,13 @@ export const api = {
       body: JSON.stringify({ attendanceList })
     });
   },
+  getAttendanceAnalytics(params?: { centreId?: number; month?: number; year?: number }) {
+    const query = new URLSearchParams();
+    if (params?.centreId) query.set("centreId", params.centreId.toString());
+    if (params?.month) query.set("month", params.month.toString());
+    if (params?.year) query.set("year", params.year.toString());
+    return request(`/attendance/analytics?${query.toString()}`);
+  },
   getStudentAttendance(params?: { month?: number; year?: number }) {
     const query = new URLSearchParams();
     if (params?.month) query.set("month", params.month.toString());
@@ -350,7 +361,7 @@ export const api = {
     const qs = query.toString();
     return request(`/events${qs ? `?${qs}` : ""}`);
   },
-  createEvent(data: {
+createEvent(data: {
     type: string;
     title: string;
     startAt: string;
@@ -366,8 +377,12 @@ export const api = {
     centerId?: number | null;
     status?: string;
     notes?: string | null;
+    playerIds?: number[];
+    positions?: string[];
+    roles?: string[];
+    playerNotes?: string[];
   }) {
-    return request("/events", { method: "POST", body: JSON.stringify(data) });
+return request("/events", { method: "POST", body: JSON.stringify(data) });
   },
   updateEvent(id: string, data: Partial<{
     type: string;
@@ -385,6 +400,10 @@ export const api = {
     centerId: number | null;
     status: string;
     notes: string | null;
+    playerIds: number[];
+    positions: string[];
+    roles: string[];
+    playerNotes: string[];
   }>) {
     return request(`/events/${id}`, { method: "PATCH", body: JSON.stringify(data) });
   },
@@ -631,7 +650,7 @@ export const api = {
     matchedPlayerId: string;
     matchedPlayerName: string;
     matchedPlayerPosition: string;
-    matchedPlayerArchetype: string;
+    matchedPlayerArchetype: string | string[]; // Can be string or array
     matchedPlayerLegacy: any;
     consent: boolean;
   }) {
@@ -847,6 +866,17 @@ export const api = {
     if (params?.from) query.set("from", params.from);
     if (params?.to) query.set("to", params.to);
     return request(`/analytics/centres/${centreId}?${query.toString()}`);
+  },
+  // Fan Club Analytics
+  getFanClubAnalytics() {
+    return request("/fan-admin/analytics/summary");
+  },
+  // Shop Analytics
+  getShopAnalytics(params?: { from?: string; to?: string }) {
+    const query = new URLSearchParams();
+    if (params?.from) query.set("from", params.from);
+    if (params?.to) query.set("to", params.to);
+    return request(`/admin/shop/analytics?${query.toString()}`);
   },
   getCentreAttendanceBreakdown(centreId: number, params?: { from?: string; to?: string; groupBy?: string }) {
     const query = new URLSearchParams();

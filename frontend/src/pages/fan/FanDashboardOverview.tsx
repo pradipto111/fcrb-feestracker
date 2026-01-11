@@ -16,14 +16,29 @@ const SkeletonLine = ({ w = "100%", h = 12 }: { w?: string; h?: number }) => (
 const FanDashboardOverview: React.FC = () => {
   const { pageEnter, cardReveal, staggerGrid, hoverLift, viewportOnce } = useFanMotion();
   const reduce = useReducedMotion();
-  const [me, setMe] = useState<any>(null);
-  const [coupons, setCoupons] = useState<any[] | null>(null);
-  const [rewards, setRewards] = useState<any[] | null>(null);
-  const [quests, setQuests] = useState<any[] | null>(null);
-  const [fixtures, setFixtures] = useState<any[] | null>(null);
+  const [me, setMe] = useState<any>(() => {
+    const cached = sessionStorage.getItem('fan-dashboard-me');
+    return cached ? JSON.parse(cached) : null;
+  });
+  const [coupons, setCoupons] = useState<any[] | null>(() => {
+    const cached = sessionStorage.getItem('fan-dashboard-coupons');
+    return cached ? JSON.parse(cached) : null;
+  });
+  const [rewards, setRewards] = useState<any[] | null>(() => {
+    const cached = sessionStorage.getItem('fan-dashboard-rewards');
+    return cached ? JSON.parse(cached) : null;
+  });
+  const [quests, setQuests] = useState<any[] | null>(() => {
+    const cached = sessionStorage.getItem('fan-dashboard-quests');
+    return cached ? JSON.parse(cached) : null;
+  });
+  const [fixtures, setFixtures] = useState<any[] | null>(() => {
+    const cached = sessionStorage.getItem('fan-dashboard-fixtures');
+    return cached ? JSON.parse(cached) : null;
+  });
   const [moments, setMoments] = useState<any[] | null>(null);
   const [dynamicRewards, setDynamicRewards] = useState<any[] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!sessionStorage.getItem('fan-dashboard-me'));
   const [marqueePaused, setMarqueePaused] = useState(false);
 
   useEffect(() => {
@@ -50,6 +65,13 @@ const FanDashboardOverview: React.FC = () => {
         setFixtures(normalizedFixtures);
         setMoments(Array.isArray(mm) ? mm : []);
         setDynamicRewards(Array.isArray(dr) ? dr : []);
+        
+        // Cache data for instant display
+        sessionStorage.setItem('fan-dashboard-me', JSON.stringify(m));
+        sessionStorage.setItem('fan-dashboard-coupons', JSON.stringify(c));
+        sessionStorage.setItem('fan-dashboard-rewards', JSON.stringify(r));
+        sessionStorage.setItem('fan-dashboard-quests', JSON.stringify(q));
+        sessionStorage.setItem('fan-dashboard-fixtures', JSON.stringify(normalizedFixtures));
       } finally {
         if (mounted) setLoading(false);
       }

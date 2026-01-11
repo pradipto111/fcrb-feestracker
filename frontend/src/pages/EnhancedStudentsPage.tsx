@@ -350,7 +350,7 @@ const EnhancedStudentsPage: React.FC = () => {
     }
   };
 
-  const programs = ["U10", "U13", "U15", "U17", "U19"];
+  const programs = ["EPP", "SCP", "WPP", "FYDP"];
   const statuses = ["ACTIVE", "TRIAL", "INACTIVE"];
 
   const {

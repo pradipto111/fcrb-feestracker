@@ -523,5 +523,207 @@ router.get("/student/attendance", authRequired, requireRole("STUDENT"), async (r
   });
 });
 
+// Get attendance analytics for a centre
+router.get("/analytics", authRequired, async (req, res) => {
+  const { role, id } = req.user!;
+  const { centreId, month, year } = req.query;
+
+  // Build filters
+  let centerFilter: any = {};
+  
+  if (role === "COACH") {
+    const coachCenterIds = await getCoachCenterIds(id);
+    if (centreId) {
+      if (!coachCenterIds.includes(Number(centreId))) {
+        return res.status(403).json({ message: "You don't have access to this center" });
+      }
+      centerFilter = { id: Number(centreId) };
+    } else {
+      centerFilter = { id: { in: coachCenterIds } };
+    }
+  } else if (centreId) {
+    centerFilter = { id: Number(centreId) };
+  }
+
+  // Build date filter
+  const sessionWhere: any = centerFilter.id ? { centerId: centerFilter.id } : {};
+  
+  if (month && year) {
+    const startDate = new Date(Number(year), Number(month) - 1, 1);
+    const endDate = new Date(Number(year), Number(month), 0, 23, 59, 59, 999);
+    sessionWhere.sessionDate = {
+      gte: startDate,
+      lte: endDate
+    };
+  }
+
+  try {
+    // Get all sessions with attendance
+    const sessions = await prisma.session.findMany({
+      where: sessionWhere,
+      include: {
+        attendance: {
+          include: {
+            student: {
+              select: {
+                id: true,
+                fullName: true,
+                programType: true,
+                status: true
+              }
+            }
+          }
+        },
+        center: true
+      }
+    });
+
+    // Get all students for the center(s)
+    const students = await prisma.student.findMany({
+      where: centerFilter.id 
+        ? { centerId: centerFilter.id }
+        : centerFilter.id?.in 
+          ? { centerId: { in: centerFilter.id.in } }
+          : {}
+    });
+
+    // Calculate overall metrics
+    const totalSessions = sessions.length;
+    const totalStudents = students.length;
+    const activeStudents = students.filter(s => s.status === "ACTIVE").length;
+    
+    // Calculate attendance metrics
+    const allAttendanceRecords = sessions.flatMap(s => s.attendance);
+    const totalAttendanceRecords = allAttendanceRecords.length;
+    const presentRecords = allAttendanceRecords.filter(a => a.status === "PRESENT").length;
+    const absentRecords = allAttendanceRecords.filter(a => a.status === "ABSENT").length;
+    const excusedRecords = allAttendanceRecords.filter(a => a.status === "EXCUSED").length;
+    
+    const attendanceRate = totalAttendanceRecords > 0 
+      ? Math.round((presentRecords / totalAttendanceRecords) * 100) 
+      : 0;
+
+    // Calculate per-student attendance
+    const studentAttendance = students.map(student => {
+      const studentRecords = allAttendanceRecords.filter(a => a.studentId === student.id);
+      const studentPresent = studentRecords.filter(a => a.status === "PRESENT").length;
+      const studentAbsent = studentRecords.filter(a => a.status === "ABSENT").length;
+      const studentExcused = studentRecords.filter(a => a.status === "EXCUSED").length;
+      const studentTotal = studentRecords.length;
+      const studentRate = studentTotal > 0 
+        ? Math.round((studentPresent / studentTotal) * 100) 
+        : 0;
+
+      return {
+        studentId: student.id,
+        studentName: student.fullName,
+        programType: student.programType,
+        status: student.status,
+        totalSessions: studentTotal,
+        present: studentPresent,
+        absent: studentAbsent,
+        excused: studentExcused,
+        attendanceRate: studentRate
+      };
+    }).sort((a, b) => b.attendanceRate - a.attendanceRate);
+
+    // Calculate attendance trends (by week or month)
+    const attendanceByDate: Record<string, { date: string; present: number; absent: number; excused: number; total: number; rate: number }> = {};
+    
+    sessions.forEach(session => {
+      const dateKey = new Date(session.sessionDate).toISOString().split('T')[0];
+      if (!attendanceByDate[dateKey]) {
+        attendanceByDate[dateKey] = {
+          date: dateKey,
+          present: 0,
+          absent: 0,
+          excused: 0,
+          total: 0,
+          rate: 0
+        };
+      }
+      
+      session.attendance.forEach(att => {
+        attendanceByDate[dateKey].total += 1;
+        if (att.status === "PRESENT") attendanceByDate[dateKey].present += 1;
+        if (att.status === "ABSENT") attendanceByDate[dateKey].absent += 1;
+        if (att.status === "EXCUSED") attendanceByDate[dateKey].excused += 1;
+      });
+    });
+
+    // Calculate rate for each date
+    Object.values(attendanceByDate).forEach(day => {
+      day.rate = day.total > 0 ? Math.round((day.present / day.total) * 100) : 0;
+    });
+
+    const attendanceTrend = Object.values(attendanceByDate).sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    // Program-wise breakdown
+    const programBreakdown: Record<string, { 
+      program: string; 
+      students: number; 
+      totalRecords: number; 
+      present: number; 
+      absent: number; 
+      excused: number; 
+      rate: number;
+    }> = {};
+
+    students.forEach(student => {
+      const program = student.programType || "No Program";
+      if (!programBreakdown[program]) {
+        programBreakdown[program] = {
+          program,
+          students: 0,
+          totalRecords: 0,
+          present: 0,
+          absent: 0,
+          excused: 0,
+          rate: 0
+        };
+      }
+      programBreakdown[program].students += 1;
+    });
+
+    allAttendanceRecords.forEach(record => {
+      const program = record.student.programType || "No Program";
+      if (programBreakdown[program]) {
+        programBreakdown[program].totalRecords += 1;
+        if (record.status === "PRESENT") programBreakdown[program].present += 1;
+        if (record.status === "ABSENT") programBreakdown[program].absent += 1;
+        if (record.status === "EXCUSED") programBreakdown[program].excused += 1;
+      }
+    });
+
+    Object.values(programBreakdown).forEach(prog => {
+      prog.rate = prog.totalRecords > 0 
+        ? Math.round((prog.present / prog.totalRecords) * 100) 
+        : 0;
+    });
+
+    res.json({
+      summary: {
+        totalSessions,
+        totalStudents,
+        activeStudents,
+        totalAttendanceRecords,
+        presentRecords,
+        absentRecords,
+        excusedRecords,
+        attendanceRate
+      },
+      studentAttendance: studentAttendance.slice(0, 20), // Top 20 students
+      allStudentAttendance: studentAttendance, // All students for detailed view
+      attendanceTrend,
+      programBreakdown: Object.values(programBreakdown)
+    });
+  } catch (error: any) {
+    console.error("Error fetching attendance analytics:", error);
+    res.status(500).json({ message: error.message || "Failed to fetch attendance analytics" });
+  }
+});
+
 export default router;
 

@@ -15,6 +15,9 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { AnalyticsCard } from "../components/analytics/AnalyticsCard";
 import { ChartContainer } from "../components/analytics/ChartContainer";
@@ -38,33 +41,111 @@ interface GlobalAnalytics {
   }>;
 }
 
+interface FanClubAnalytics {
+  fanCount: number;
+  activeFans: number;
+  redemptionCount: number;
+  leadsCount: number;
+  tierDistribution: Record<string, number>;
+  programInterestCounts: Record<string, number>;
+  redemptionsBySponsor: Record<string, number>;
+}
+
+interface ShopAnalytics {
+  totalOrders: number;
+  totalRevenue: number;
+  pendingRevenue: number;
+  avgOrderValue: number;
+  ordersByStatus: Record<string, number>;
+  topProducts: Array<{
+    productId: number;
+    name: string;
+    quantity: number;
+    revenue: number;
+  }>;
+  recentOrders: Array<{
+    orderNumber: string;
+    customerName: string;
+    email: string;
+    total: number;
+    status: string;
+    createdAt: string;
+  }>;
+  ordersTimeseries: Array<{
+    date: string;
+    orders: number;
+    revenue: number;
+  }>;
+}
+
+const CHART_COLORS = {
+  primary: colors.primary.main,
+  success: colors.success.main,
+  warning: colors.warning.main,
+  danger: colors.danger.main,
+  info: "#3B82F6",
+  purple: "#A855F7",
+  pink: "#EC4899",
+  teal: "#14B8A6",
+};
+
+const PIE_COLORS = [
+  CHART_COLORS.primary,
+  CHART_COLORS.success,
+  CHART_COLORS.warning,
+  CHART_COLORS.info,
+  CHART_COLORS.purple,
+  CHART_COLORS.pink,
+  CHART_COLORS.teal,
+];
+
 const GlobalAnalyticsPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [analytics, setAnalytics] = useState<GlobalAnalytics | null>(null);
+  const [studentAnalytics, setStudentAnalytics] = useState<GlobalAnalytics | null>(null);
+  const [fanClubAnalytics, setFanClubAnalytics] = useState<FanClubAnalytics | null>(null);
+  const [shopAnalytics, setShopAnalytics] = useState<ShopAnalytics | null>(null);
   const [dateRange, setDateRange] = useState({
     from: new Date(new Date().setMonth(new Date().getMonth() - 6)),
     to: new Date(),
   });
 
   useEffect(() => {
-    loadAnalytics();
+    loadAllAnalytics();
   }, [dateRange]);
 
-  const loadAnalytics = async () => {
+  const loadAllAnalytics = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const data = await api.getAnalyticsOverview({
+      const dateParams = {
         from: dateRange.from.toISOString(),
         to: dateRange.to.toISOString(),
-      });
+      };
 
-      setAnalytics(data);
+      // Load all analytics in parallel
+      const [studentData, fanData, shopData] = await Promise.all([
+        api.getAnalyticsOverview(dateParams).catch((err) => {
+          console.error("Student analytics error:", err);
+          return null;
+        }),
+        api.getFanClubAnalytics().catch((err) => {
+          console.error("Fan club analytics error:", err);
+          return null;
+        }),
+        api.getShopAnalytics(dateParams).catch((err) => {
+          console.error("Shop analytics error:", err);
+          return null;
+        }),
+      ]);
+
+      setStudentAnalytics(studentData);
+      setFanClubAnalytics(fanData);
+      setShopAnalytics(shopData);
     } catch (err: any) {
-      setError(err.message || "Failed to load global analytics");
+      setError(err.message || "Failed to load analytics");
     } finally {
       setLoading(false);
     }
@@ -91,13 +172,13 @@ const GlobalAnalyticsPage: React.FC = () => {
           marginBottom: spacing.md
         }} />
         <p style={{ color: colors.text.primary, ...typography.body }}>
-          Loading global analytics...
+          Loading analytics...
         </p>
       </div>
     );
   }
 
-  if (error || !analytics) {
+  if (error) {
     return (
       <div style={{ padding: spacing.xl }}>
         <Card variant="default" padding="lg" style={{ background: colors.danger.soft, border: `1px solid ${colors.danger.main}` }}>
@@ -105,9 +186,9 @@ const GlobalAnalyticsPage: React.FC = () => {
             Error Loading Analytics
           </h2>
           <p style={{ color: colors.danger.main, marginBottom: spacing.lg, ...typography.body }}>
-            {error || "Failed to load analytics. Please try again."}
+            {error}
           </p>
-          <Button variant="primary" onClick={() => loadAnalytics()}>
+          <Button variant="primary" onClick={() => loadAllAnalytics()}>
             Retry
           </Button>
         </Card>
@@ -134,10 +215,10 @@ const GlobalAnalyticsPage: React.FC = () => {
               marginBottom: spacing.xs,
             }}
           >
-            Global Analytics
+            Global Analytics Dashboard
           </h1>
           <p style={{ ...typography.body, color: colors.text.muted, marginBottom: spacing.sm }}>
-            Club-wide overview across all centres
+            Comprehensive overview of Students, Fan Club, and Shop
           </p>
         </div>
         <div style={{ display: "flex", gap: spacing.sm }}>
@@ -189,7 +270,18 @@ const GlobalAnalyticsPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Summary KPIs */}
+      {/* ========================================
+          STUDENTS ANALYTICS SECTION
+          ======================================== */}
+      {studentAnalytics && (
+        <>
+          <div style={{ marginBottom: spacing.lg }}>
+            <h2 style={{ ...typography.h2, color: colors.text.primary, marginBottom: spacing.md }}>
+              📚 Student Academy Analytics
+            </h2>
+          </div>
+
+          {/* Student Summary KPIs */}
       <div
         style={{
           display: "grid",
@@ -200,56 +292,59 @@ const GlobalAnalyticsPage: React.FC = () => {
       >
         <AnalyticsCard
           title="Total Active Players"
-          value={analytics.totalActivePlayers}
+              value={studentAnalytics.totalActivePlayers}
           subtitle="Across all centres"
         />
         <AnalyticsCard
           title="Total Centres"
-          value={analytics.totalCentres}
+              value={studentAnalytics.totalCentres}
           subtitle="Active locations"
         />
         <AnalyticsCard
           title="Avg Club Attendance"
-          value={`${analytics.avgClubAttendance}%`}
+              value={`${studentAnalytics.avgClubAttendance}%`}
           subtitle="Overall average"
         />
         <AnalyticsCard
           title="Monthly Revenue"
-          value={`₹${(analytics.monthlyRevenue / 100).toLocaleString()}`}
-          subtitle="Total collected"
+              value={`₹${(studentAnalytics.monthlyRevenue / 100).toLocaleString()}`}
+              subtitle="From student fees"
         />
         <AnalyticsCard
           title="Total Trials"
-          value={analytics.totalTrials}
+              value={studentAnalytics.totalTrials}
           subtitle="This period"
         />
       </div>
 
-      {/* Centre Comparison */}
-      <Card variant="elevated" padding="lg" style={{ marginBottom: spacing.lg }}>
-        <h2
+          {/* Centre Comparison Charts */}
+          <Card variant="elevated" padding="lg" style={{ marginBottom: spacing.xl }}>
+            <h3
           style={{
-            ...typography.h2,
+                ...typography.h3,
             color: colors.text.primary,
             marginBottom: spacing.lg,
           }}
         >
-          Centre Comparison
-        </h2>
+              Centre Performance
+            </h3>
 
         {/* Attendance by Centre */}
         <ChartContainer title="Attendance % by Centre">
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={analytics.centreBreakdown.map((c) => ({
+                <BarChart data={studentAnalytics.centreBreakdown.map((c) => ({
               centre: c.centreShortName || c.centreName,
               attendance: c.attendanceRate,
             }))}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="centre" />
-              <YAxis domain={[0, 100]} />
-              <Tooltip formatter={(value: any) => `${value}%`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.border.subtle} />
+                  <XAxis dataKey="centre" stroke={colors.text.muted} />
+                  <YAxis domain={[0, 100]} stroke={colors.text.muted} />
+                  <Tooltip 
+                    formatter={(value: any) => `${value}%`}
+                    contentStyle={{ backgroundColor: colors.surface.card, border: `1px solid ${colors.border.main}` }}
+                  />
               <Legend />
-              <Bar dataKey="attendance" fill={colors.success.main} name="Attendance %" />
+                  <Bar dataKey="attendance" fill={CHART_COLORS.success} name="Attendance %" />
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>
@@ -257,22 +352,376 @@ const GlobalAnalyticsPage: React.FC = () => {
         {/* Revenue by Centre */}
         <ChartContainer title="Revenue by Centre" style={{ marginTop: spacing.xl }}>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={analytics.centreBreakdown.map((c) => ({
+                <BarChart data={studentAnalytics.centreBreakdown.map((c) => ({
               centre: c.centreShortName || c.centreName,
               revenue: c.revenue / 100,
             }))}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="centre" />
-              <YAxis />
-              <Tooltip formatter={(value: any) => `₹${value.toLocaleString()}`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.border.subtle} />
+                  <XAxis dataKey="centre" stroke={colors.text.muted} />
+                  <YAxis stroke={colors.text.muted} />
+                  <Tooltip 
+                    formatter={(value: any) => `₹${value.toLocaleString()}`}
+                    contentStyle={{ backgroundColor: colors.surface.card, border: `1px solid ${colors.border.main}` }}
+                  />
               <Legend />
-              <Bar dataKey="revenue" fill={colors.primary.main} name="Revenue (₹)" />
+                  <Bar dataKey="revenue" fill={CHART_COLORS.primary} name="Revenue (₹)" />
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>
+          </Card>
+        </>
+      )}
 
-        {/* Centre Details Table */}
-        <div style={{ marginTop: spacing.xl }}>
+      {/* ========================================
+          FAN CLUB ANALYTICS SECTION
+          ======================================== */}
+      {fanClubAnalytics && (
+        <>
+          <div style={{ marginBottom: spacing.lg }}>
+            <h2 style={{ ...typography.h2, color: colors.text.primary, marginBottom: spacing.md }}>
+              ⚽ Fan Club Analytics
+            </h2>
+          </div>
+
+          {/* Fan Club Summary KPIs */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: spacing.md,
+              marginBottom: spacing.xl,
+            }}
+          >
+            <AnalyticsCard
+              title="Total Fans"
+              value={fanClubAnalytics.fanCount}
+              subtitle="All registered fans"
+            />
+            <AnalyticsCard
+              title="Active Fans"
+              value={fanClubAnalytics.activeFans}
+              subtitle="Currently active"
+            />
+            <AnalyticsCard
+              title="Coupon Redemptions"
+              value={fanClubAnalytics.redemptionCount}
+              subtitle="Total redeemed"
+            />
+            <AnalyticsCard
+              title="Conversion Leads"
+              value={fanClubAnalytics.leadsCount}
+              subtitle="Fan to student leads"
+            />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: spacing.md, marginBottom: spacing.xl }}>
+            {/* Tier Distribution */}
+            <Card variant="elevated" padding="lg">
+              <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.lg }}>
+                Membership Tier Distribution
+              </h3>
+              {Object.keys(fanClubAnalytics.tierDistribution).length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={Object.entries(fanClubAnalytics.tierDistribution).map(([name, value]) => ({
+                        name,
+                        value,
+                      }))}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={100}
+                      fill={CHART_COLORS.primary}
+                      dataKey="value"
+                    >
+                      {Object.keys(fanClubAnalytics.tierDistribution).map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: colors.surface.card, border: `1px solid ${colors.border.main}` }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <p style={{ color: colors.text.muted, textAlign: "center", padding: spacing.xl }}>
+                  No tier data available
+                </p>
+              )}
+            </Card>
+
+            {/* Program Interest */}
+            <Card variant="elevated" padding="lg">
+              <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.lg }}>
+                Program Interest
+              </h3>
+              {Object.keys(fanClubAnalytics.programInterestCounts).length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={Object.entries(fanClubAnalytics.programInterestCounts).map(([name, value]) => ({
+                    program: name,
+                    count: value,
+                  }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={colors.border.subtle} />
+                    <XAxis dataKey="program" stroke={colors.text.muted} />
+                    <YAxis stroke={colors.text.muted} />
+                    <Tooltip contentStyle={{ backgroundColor: colors.surface.card, border: `1px solid ${colors.border.main}` }} />
+                    <Bar dataKey="count" fill={CHART_COLORS.info} name="Interested Fans" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <p style={{ color: colors.text.muted, textAlign: "center", padding: spacing.xl }}>
+                  No program interest data available
+                </p>
+              )}
+            </Card>
+          </div>
+
+          {/* Redemptions by Sponsor */}
+          {Object.keys(fanClubAnalytics.redemptionsBySponsor).length > 0 && (
+            <Card variant="elevated" padding="lg" style={{ marginBottom: spacing.xl }}>
+              <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.lg }}>
+                Sponsor Engagement
+              </h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={Object.entries(fanClubAnalytics.redemptionsBySponsor).map(([name, value]) => ({
+                  sponsor: name,
+                  redemptions: value,
+                }))}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.border.subtle} />
+                  <XAxis dataKey="sponsor" stroke={colors.text.muted} />
+                  <YAxis stroke={colors.text.muted} />
+                  <Tooltip contentStyle={{ backgroundColor: colors.surface.card, border: `1px solid ${colors.border.main}` }} />
+                  <Bar dataKey="redemptions" fill={CHART_COLORS.purple} name="Redemptions" />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+        </>
+      )}
+
+      {/* ========================================
+          SHOP ANALYTICS SECTION
+          ======================================== */}
+      {shopAnalytics && (
+        <>
+          <div style={{ marginBottom: spacing.lg }}>
+            <h2 style={{ ...typography.h2, color: colors.text.primary, marginBottom: spacing.md }}>
+              🛍️ Shop & Merchandise Analytics
+            </h2>
+          </div>
+
+          {/* Shop Summary KPIs */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: spacing.md,
+              marginBottom: spacing.xl,
+            }}
+          >
+            <AnalyticsCard
+              title="Total Orders"
+              value={shopAnalytics.totalOrders}
+              subtitle="All time orders"
+            />
+            <AnalyticsCard
+              title="Total Revenue"
+              value={`₹${(shopAnalytics.totalRevenue / 100).toLocaleString()}`}
+              subtitle="From paid orders"
+            />
+            <AnalyticsCard
+              title="Pending Revenue"
+              value={`₹${(shopAnalytics.pendingRevenue / 100).toLocaleString()}`}
+              subtitle="Awaiting payment"
+            />
+            <AnalyticsCard
+              title="Avg Order Value"
+              value={`₹${(shopAnalytics.avgOrderValue / 100).toLocaleString()}`}
+              subtitle="Per order"
+            />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: spacing.md, marginBottom: spacing.xl }}>
+            {/* Orders by Status */}
+            <Card variant="elevated" padding="lg">
+              <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.lg }}>
+                Orders by Status
+              </h3>
+              {Object.keys(shopAnalytics.ordersByStatus).length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={Object.entries(shopAnalytics.ordersByStatus).map(([name, value]) => ({
+                        name: name.replace(/_/g, ' '),
+                        value,
+                      }))}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={100}
+                      fill={CHART_COLORS.primary}
+                      dataKey="value"
+                    >
+                      {Object.keys(shopAnalytics.ordersByStatus).map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: colors.surface.card, border: `1px solid ${colors.border.main}` }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <p style={{ color: colors.text.muted, textAlign: "center", padding: spacing.xl }}>
+                  No orders yet
+                </p>
+              )}
+            </Card>
+
+            {/* Top Products */}
+            <Card variant="elevated" padding="lg">
+              <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.lg }}>
+                Top Selling Products
+              </h3>
+              {shopAnalytics.topProducts.length > 0 ? (
+                <div style={{ overflowY: "auto", maxHeight: "300px" }}>
+                  {shopAnalytics.topProducts.map((product, index) => (
+                    <div
+                      key={product.productId}
+                      style={{
+                        padding: spacing.md,
+                        marginBottom: spacing.sm,
+                        background: colors.surface.elevated,
+                        borderRadius: borderRadius.md,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div>
+                        <div style={{ ...typography.body, fontWeight: typography.fontWeight.semibold }}>
+                          #{index + 1} {product.name}
+                        </div>
+                        <div style={{ ...typography.caption, color: colors.text.muted }}>
+                          Qty: {product.quantity} | Revenue: ₹{(product.revenue / 100).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ color: colors.text.muted, textAlign: "center", padding: spacing.xl }}>
+                  No sales data available
+                </p>
+              )}
+            </Card>
+          </div>
+
+          {/* Orders Over Time */}
+          {shopAnalytics.ordersTimeseries.length > 0 && (
+            <Card variant="elevated" padding="lg" style={{ marginBottom: spacing.xl }}>
+              <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.lg }}>
+                Orders Trend (Last 30 Days)
+              </h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={shopAnalytics.ordersTimeseries}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.border.subtle} />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke={colors.text.muted}
+                    tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  />
+                  <YAxis stroke={colors.text.muted} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: colors.surface.card, border: `1px solid ${colors.border.main}` }}
+                    labelFormatter={(date) => new Date(date).toLocaleDateString()}
+                    formatter={(value: any, name: string) => {
+                      if (name === "revenue") return `₹${(value / 100).toLocaleString()}`;
+                      return value;
+                    }}
+                  />
+                  <Legend />
+                  <Line type="monotone" dataKey="orders" stroke={CHART_COLORS.info} name="Orders" strokeWidth={2} />
+                  <Line type="monotone" dataKey="revenue" stroke={CHART_COLORS.success} name="Revenue" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* Recent Orders */}
+          {shopAnalytics.recentOrders.length > 0 && (
+            <Card variant="elevated" padding="lg" style={{ marginBottom: spacing.xl }}>
+              <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.lg }}>
+                Recent Orders
+              </h3>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom: `2px solid ${colors.border.main}` }}>
+                      <th style={{ padding: spacing.md, textAlign: "left" }}>Order #</th>
+                      <th style={{ padding: spacing.md, textAlign: "left" }}>Customer</th>
+                      <th style={{ padding: spacing.md, textAlign: "left" }}>Email</th>
+                      <th style={{ padding: spacing.md, textAlign: "right" }}>Total</th>
+                      <th style={{ padding: spacing.md, textAlign: "center" }}>Status</th>
+                      <th style={{ padding: spacing.md, textAlign: "right" }}>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {shopAnalytics.recentOrders.map((order) => (
+                      <tr key={order.orderNumber} style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
+                        <td style={{ padding: spacing.md, fontFamily: "monospace", fontSize: "0.875rem" }}>
+                          {order.orderNumber}
+                        </td>
+                        <td style={{ padding: spacing.md }}>{order.customerName}</td>
+                        <td style={{ padding: spacing.md, color: colors.text.muted }}>{order.email}</td>
+                        <td style={{ padding: spacing.md, textAlign: "right", fontWeight: typography.fontWeight.semibold }}>
+                          ₹{(order.total / 100).toLocaleString()}
+                        </td>
+                        <td style={{ padding: spacing.md, textAlign: "center" }}>
+                          <span
+                            style={{
+                              padding: `${spacing.xs} ${spacing.sm}`,
+                              borderRadius: borderRadius.sm,
+                              fontSize: "0.75rem",
+                              fontWeight: typography.fontWeight.semibold,
+                              background:
+                                order.status === "PAID"
+                                  ? colors.success.soft
+                                  : order.status === "PENDING_PAYMENT"
+                                  ? colors.warning.soft
+                                  : order.status === "SHIPPED"
+                                  ? colors.info
+                                  : order.status === "DELIVERED"
+                                  ? colors.success.main
+                                  : colors.danger.soft,
+                              color:
+                                order.status === "PAID"
+                                  ? colors.success.main
+                                  : order.status === "PENDING_PAYMENT"
+                                  ? colors.warning.main
+                                  : order.status === "FAILED" || order.status === "CANCELLED"
+                                  ? colors.danger.main
+                                  : colors.text.primary,
+                            }}
+                          >
+                            {order.status.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td style={{ padding: spacing.md, textAlign: "right", color: colors.text.muted, fontSize: "0.875rem" }}>
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+        </>
+      )}
+
+      {/* Centre Details Table (Student Analytics) */}
+      {studentAnalytics && (
+        <Card variant="elevated" padding="lg" style={{ marginBottom: spacing.xl }}>
           <h3 style={{ ...typography.h3, marginBottom: spacing.md }}>Centre Details</h3>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -287,7 +736,7 @@ const GlobalAnalyticsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {analytics.centreBreakdown.map((centre) => (
+                {studentAnalytics.centreBreakdown.map((centre) => (
                   <tr key={centre.centreId} style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
                     <td style={{ padding: spacing.md }}>
                       <div>
@@ -318,12 +767,11 @@ const GlobalAnalyticsPage: React.FC = () => {
                 ))}
               </tbody>
             </table>
-          </div>
         </div>
       </Card>
+      )}
     </div>
   );
 };
 
 export default GlobalAnalyticsPage;
-

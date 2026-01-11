@@ -30,6 +30,8 @@ const AttendanceManagementPage: React.FC = () => {
   const [error, setError] = useState("");
   const [studentRemarks, setStudentRemarks] = useState<Record<number, string>>({});
   const [attendanceModalRemarks, setAttendanceModalRemarks] = useState<Record<number, string>>({});
+  const [attendanceAnalytics, setAttendanceAnalytics] = useState<any>(null);
+  const [showStudentBreakdown, setShowStudentBreakdown] = useState(false);
 
   // Form state for creating session
   const [sessionForm, setSessionForm] = useState({
@@ -58,6 +60,7 @@ const AttendanceManagementPage: React.FC = () => {
     if (selectedCenter) {
       loadSessions();
       loadStudents();
+      loadAttendanceAnalytics();
     }
   }, [selectedCenter, selectedMonth, selectedYear]);
 
@@ -113,6 +116,21 @@ const AttendanceManagementPage: React.FC = () => {
     }
   };
 
+  const loadAttendanceAnalytics = async () => {
+    if (!selectedCenter) return;
+    try {
+      const analytics = await api.getAttendanceAnalytics({
+        centreId: selectedCenter,
+        month: selectedMonth,
+        year: selectedYear
+      });
+      setAttendanceAnalytics(analytics);
+    } catch (err: any) {
+      console.error("Failed to load attendance analytics:", err);
+      // Don't show error as this is optional data
+    }
+  };
+
   const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sessionForm.centerId || !sessionForm.sessionDate || !sessionForm.startTime || !sessionForm.endTime) {
@@ -133,6 +151,7 @@ const AttendanceManagementPage: React.FC = () => {
       setShowCreateSession(false);
       setSessionForm({ centerId: "", sessionDate: "", startTime: "", endTime: "", notes: "" });
       await loadSessions();
+      await loadAttendanceAnalytics();
       setError("");
       
       // Open attendance modal for the newly created session
@@ -186,6 +205,7 @@ const AttendanceManagementPage: React.FC = () => {
       setLoading(true);
       await api.markAttendance(sessionId, { studentId, status, notes: notes || "" });
       await loadSessions();
+      await loadAttendanceAnalytics();
       setError("");
     } catch (err: any) {
       setError(err.message || "Failed to update attendance");
@@ -353,21 +373,15 @@ const AttendanceManagementPage: React.FC = () => {
     getStaggeredCard,
   } = useHomepageAnimation();
 
-  // Calculate KPIs - use arrays safely
-  const totalSessions = (sessions || []).length;
-  const sessionsThisMonth = (sessions || []).filter(s => {
-    if (!s.sessionDate) return false;
-    const sessionDate = new Date(s.sessionDate);
-    return sessionDate.getMonth() + 1 === selectedMonth && sessionDate.getFullYear() === selectedYear;
-  }).length;
-  const totalStudents = (students || []).length;
-  const attendanceRate = (sessions || []).length > 0 
-    ? (sessions || []).reduce((acc, s) => {
-        const present = s.attendance?.filter((a: any) => a.status === "PRESENT").length || 0;
-        const total = s.attendance?.length || 0;
-        return acc + (total > 0 ? (present / total) * 100 : 0);
-      }, 0) / (sessions || []).length
-    : 0;
+  // Calculate KPIs - use analytics data for accuracy
+  const totalSessions = attendanceAnalytics?.summary?.totalSessions || sessions.length;
+  const sessionsThisMonth = sessions.length;
+  const totalStudents = attendanceAnalytics?.summary?.totalStudents || students.length;
+  const activeStudents = attendanceAnalytics?.summary?.activeStudents || students.filter((s: any) => s.status === "ACTIVE").length;
+  const attendanceRate = attendanceAnalytics?.summary?.attendanceRate || 0;
+  const presentRecords = attendanceAnalytics?.summary?.presentRecords || 0;
+  const absentRecords = attendanceAnalytics?.summary?.absentRecords || 0;
+  const excusedRecords = attendanceAnalytics?.summary?.excusedRecords || 0;
 
   return (
     <motion.main
@@ -466,9 +480,9 @@ const AttendanceManagementPage: React.FC = () => {
           >
             {[
               { label: "Sessions This Month", value: sessionsThisMonth, subLabel: `${selectedMonth}/${selectedYear}` },
-              { label: "Total Sessions", value: totalSessions, subLabel: "All time" },
-              { label: "Active Students", value: totalStudents, subLabel: "Current centre" },
-              { label: "Avg Attendance", value: `${Math.round(attendanceRate)}%`, subLabel: "This month" },
+              { label: "Active Students", value: `${activeStudents}/${totalStudents}`, subLabel: "Enrolled" },
+              { label: "Attendance Rate", value: `${attendanceRate}%`, subLabel: "This period" },
+              { label: "Present/Absent", value: `${presentRecords}/${absentRecords}`, subLabel: `${excusedRecords} excused` },
             ].map((kpi, index) => (
               <motion.div
                 key={kpi.label}
@@ -1169,6 +1183,142 @@ const AttendanceManagementPage: React.FC = () => {
             </form>
           </Card>
         </div>
+      )}
+
+      {/* Student Attendance Breakdown */}
+      {attendanceAnalytics && (
+        <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md }}>
+            <h2 style={{ 
+              ...typography.h3,
+              margin: 0,
+              color: colors.text.primary,
+            }}>
+              Student Attendance Breakdown
+            </h2>
+            <Button
+              variant="utility"
+              size="sm"
+              onClick={() => setShowStudentBreakdown(!showStudentBreakdown)}
+            >
+              {showStudentBreakdown ? "Hide Details" : "Show Details"}
+            </Button>
+          </div>
+
+          {/* Program-wise breakdown */}
+          {attendanceAnalytics.programBreakdown && attendanceAnalytics.programBreakdown.length > 0 && (
+            <div style={{ 
+              display: "grid", 
+              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", 
+              gap: spacing.md,
+              marginBottom: spacing.lg
+            }}>
+              {attendanceAnalytics.programBreakdown.map((program: any) => (
+                <Card
+                  key={program.program}
+                  variant="default"
+                  padding="md"
+                  style={{
+                    background: colors.primary.soft,
+                    border: `1px solid ${colors.primary.outline}`,
+                  }}
+                >
+                  <div style={{ 
+                    fontSize: typography.fontSize.sm,
+                    fontWeight: typography.fontWeight.semibold,
+                    color: colors.text.primary,
+                    marginBottom: spacing.xs,
+                  }}>
+                    {program.program}
+                  </div>
+                  <div style={{ 
+                    fontSize: typography.fontSize['2xl'],
+                    fontWeight: typography.fontWeight.bold,
+                    color: colors.primary.main,
+                    marginBottom: spacing.xs,
+                  }}>
+                    {program.rate}%
+                  </div>
+                  <div style={{ 
+                    fontSize: typography.fontSize.xs,
+                    color: colors.text.muted,
+                  }}>
+                    {program.students} students • {program.present}/{program.totalRecords} present
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Detailed student list */}
+          {showStudentBreakdown && attendanceAnalytics.allStudentAttendance && (
+            <div style={{ 
+              maxHeight: "600px", 
+              overflowY: "auto",
+              border: `1px solid ${colors.border.light}`,
+              borderRadius: borderRadius.lg,
+              padding: spacing.md,
+            }}>
+              <div style={{ 
+                display: "grid", 
+                gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr 1fr",
+                gap: spacing.md,
+                padding: spacing.sm,
+                background: colors.surface.hover,
+                borderRadius: borderRadius.md,
+                marginBottom: spacing.sm,
+                fontSize: typography.fontSize.xs,
+                fontWeight: typography.fontWeight.bold,
+                color: colors.text.secondary,
+              }}>
+                <div>Student Name</div>
+                <div>Program</div>
+                <div>Status</div>
+                <div>Present</div>
+                <div>Absent</div>
+                <div>Excused</div>
+                <div>Rate</div>
+              </div>
+              {attendanceAnalytics.allStudentAttendance.map((student: any) => {
+                const rateColor = student.attendanceRate >= 85 ? colors.success.main :
+                                  student.attendanceRate >= 70 ? colors.warning.main :
+                                  colors.danger.main;
+                
+                return (
+                  <div
+                    key={student.studentId}
+                    style={{ 
+                      display: "grid", 
+                      gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr 1fr",
+                      gap: spacing.md,
+                      padding: spacing.sm,
+                      borderBottom: `1px solid ${colors.border.light}`,
+                      fontSize: typography.fontSize.sm,
+                      color: colors.text.primary,
+                      transition: "background 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = colors.surface.hover}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+                    <div style={{ fontWeight: typography.fontWeight.semibold }}>{student.studentName}</div>
+                    <div style={{ fontSize: typography.fontSize.xs, color: colors.text.muted }}>{student.programType || "N/A"}</div>
+                    <div style={{ fontSize: typography.fontSize.xs, color: colors.text.muted }}>{student.status}</div>
+                    <div style={{ color: colors.success.main, fontWeight: typography.fontWeight.semibold }}>{student.present}</div>
+                    <div style={{ color: colors.danger.main, fontWeight: typography.fontWeight.semibold }}>{student.absent}</div>
+                    <div style={{ color: colors.warning.main, fontWeight: typography.fontWeight.semibold }}>{student.excused}</div>
+                    <div style={{ 
+                      color: rateColor, 
+                      fontWeight: typography.fontWeight.bold,
+                      fontSize: typography.fontSize.base,
+                    }}>
+                      {student.attendanceRate}%
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
       )}
 
       {/* Sessions List */}

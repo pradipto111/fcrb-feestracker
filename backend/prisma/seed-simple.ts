@@ -74,7 +74,7 @@ async function main() {
       passwordHash: studentPassword,
       centerId: academy1.id,
       joiningDate: new Date("2024-01-15"),
-      programType: "U13",
+      programType: "FYDP",
       monthlyFeeAmount: 5000,
       paymentFrequency: 1, // Monthly
       status: "ACTIVE"
@@ -92,7 +92,7 @@ async function main() {
       passwordHash: studentPassword,
       centerId: academy1.id,
       joiningDate: new Date("2024-02-01"),
-      programType: "U13",
+      programType: "FYDP",
       monthlyFeeAmount: 5000,
       paymentFrequency: 3, // Quarterly
       status: "ACTIVE"
@@ -110,7 +110,7 @@ async function main() {
       passwordHash: studentPassword,
       centerId: academy1.id,
       joiningDate: new Date("2024-01-20"),
-      programType: "U15",
+      programType: "SCP",
       monthlyFeeAmount: 6000,
       paymentFrequency: 1, // Monthly
       status: "ACTIVE"
@@ -129,7 +129,7 @@ async function main() {
       passwordHash: studentPassword,
       centerId: academy2.id,
       joiningDate: new Date("2024-03-01"),
-      programType: "U13",
+      programType: "FYDP",
       monthlyFeeAmount: 4500,
       paymentFrequency: 6, // Half-yearly
       status: "ACTIVE"
@@ -147,7 +147,7 @@ async function main() {
       passwordHash: studentPassword,
       centerId: academy2.id,
       joiningDate: new Date("2024-02-20"),
-      programType: "U15",
+      programType: "SCP",
       monthlyFeeAmount: 5500,
       paymentFrequency: 12, // Yearly
       status: "ACTIVE"

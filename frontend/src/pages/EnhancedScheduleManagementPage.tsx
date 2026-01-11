@@ -531,12 +531,11 @@ const EnhancedScheduleManagementPage: React.FC = () => {
 
             <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
               {monthGrid.map((cell) => {
-                if (!cell.date) return <div key={cell.key} aria-hidden="true" style={{ height: 70 }} />;
+                if (!cell.date) return <div key={cell.key} aria-hidden="true" style={{ height: 52 }} />;
                 const key = isoDateOnly(cell.date);
                 const dayEvents = eventsByDay.get(key) || [];
                 const isSelected = key === selectedDateKey;
                 const isToday = key === todayKey;
-                const firstEventTime = dayEvents.length > 0 ? formatTimeInIST(new Date(dayEvents[0].startAt)) : null;
                 return (
                   <motion.button
                     key={cell.key}
@@ -545,7 +544,7 @@ const EnhancedScheduleManagementPage: React.FC = () => {
                     whileHover={!reduce ? { y: -2 } : undefined}
                     whileTap={!reduce ? { scale: 0.98 } : undefined}
                     style={{
-                      minHeight: 70,
+                      height: 56,
                       borderRadius: 14,
                       border: isSelected
                         ? "1px solid rgba(0,224,255,0.34)"
@@ -561,165 +560,66 @@ const EnhancedScheduleManagementPage: React.FC = () => {
                             : "rgba(255,255,255,0.02)",
                       color: colors.text.primary,
                       cursor: "pointer",
-                      padding: "8px 6px",
+                      padding: "10px 8px",
                       outline: "none",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
-                      justifyContent: "flex-start",
-                      gap: 4,
+                      justifyContent: "center",
+                      gap: 3,
                     }}
                   >
                     <div style={{ ...typography.body, fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold, lineHeight: 1 }}>
                       {cell.dayNum}
                     </div>
-                    {dayEvents.length > 0 && (
-                      <>
-                        <div style={{ display: "flex", gap: 3, height: 8 }}>
-                          {dayEvents.slice(0, 3).map((e) => (
-                            <span key={e.id} aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 999, background: typeDot(e.type) }} />
-                          ))}
-                        </div>
-                        {firstEventTime && (
-                          <div
-                            style={{
-                              ...typography.caption,
-                              fontSize: 9,
-                              color: colors.text.muted,
-                              lineHeight: 1,
-                              marginTop: 2,
-                            }}
-                          >
-                            {firstEventTime}
-                          </div>
-                        )}
-                        {dayEvents.length > 3 && (
-                          <div
-                            style={{
-                              ...typography.caption,
-                              fontSize: 9,
-                              color: colors.accent.main,
-                              lineHeight: 1,
-                            }}
-                          >
-                            +{dayEvents.length - 3}
-                          </div>
-                        )}
-                      </>
-                    )}
+                    <div style={{ display: "flex", gap: 4, height: 10 }}>
+                      {dayEvents.slice(0, 3).map((e) => (
+                        <span key={e.id} aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 999, background: typeDot(e.type) }} />
+                      ))}
+                    </div>
                   </motion.button>
                 );
               })}
             </div>
 
             <div style={{ marginTop: spacing.md }}>
-              <div
-                style={{
-                  ...typography.caption,
-                  color: colors.text.muted,
-                  marginBottom: 8,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <span>Events on {selectedDateKey}</span>
-                {selectedDayEvents.length > 0 && (
-                  <span
-                    style={{
-                      padding: "2px 8px",
-                      borderRadius: borderRadius.full,
-                      background: "rgba(0,224,255,0.10)",
-                      color: colors.accent.main,
-                      fontSize: typography.fontSize.xs,
-                      fontWeight: typography.fontWeight.semibold,
-                    }}
-                  >
-                    {selectedDayEvents.length}
-                  </span>
-                )}
-              </div>
+              <div style={{ ...typography.caption, color: colors.text.muted, marginBottom: 8 }}>Events on {selectedDateKey}</div>
               {loading ? (
                 <div style={{ ...typography.body, color: colors.text.muted }}>Loading…</div>
               ) : selectedDayEvents.length ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 400, overflowY: "auto" }}>
-                  {selectedDayEvents.map((ev) => {
-                    const startTime = formatTimeInIST(new Date(ev.startAt));
-                    const endTime = ev.endAt ? ` - ${formatTimeInIST(new Date(ev.endAt))}` : "";
-                    return (
-                      <button
-                        key={ev.id}
-                        type="button"
-                        onClick={() => openEdit(ev)}
-                        style={{
-                          textAlign: "left",
-                          width: "100%",
-                          borderRadius: borderRadius.lg,
-                          border: ev.id === selectedEventId ? "1px solid rgba(0,224,255,0.30)" : "1px solid rgba(255,255,255,0.10)",
-                          background: ev.id === selectedEventId ? "rgba(0,224,255,0.05)" : "rgba(255,255,255,0.03)",
-                          padding: "12px 14px",
-                          cursor: "pointer",
-                          outline: "none",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 6,
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span
-                              style={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: "50%",
-                                background: typeDot(ev.type),
-                                display: "inline-block",
-                              }}
-                            />
-                            <span style={{ ...typography.caption, color: colors.accent.main, fontWeight: typography.fontWeight.semibold }}>
-                              {ev.type}
-                            </span>
-                          </div>
-                          <div
-                            style={{
-                              ...typography.caption,
-                              color: colors.text.muted,
-                              whiteSpace: "nowrap",
-                              padding: "2px 8px",
-                              borderRadius: borderRadius.full,
-                              background: "rgba(255,255,255,0.05)",
-                            }}
-                          >
-                            {ev.status}
-                          </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {selectedDayEvents.map((ev) => (
+                    <button
+                      key={ev.id}
+                      type="button"
+                      onClick={() => openEdit(ev)}
+                      style={{
+                        textAlign: "left",
+                        width: "100%",
+                        borderRadius: borderRadius.lg,
+                        border: ev.id === selectedEventId ? "1px solid rgba(0,224,255,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                        background: "rgba(255,255,255,0.03)",
+                        padding: "10px 12px",
+                        cursor: "pointer",
+                        outline: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 10,
+                      }}
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ ...typography.caption, color: colors.accent.main }}>
+                          {ev.type} • {formatTimeInIST(new Date(ev.startAt))}
+                          {(ev as any).players?.length > 0 && ` • ${(ev as any).players.length} players`}
                         </div>
-                        <div style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.semibold }}>
+                        <div style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.semibold, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                           {ev.title}
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                          <div style={{ ...typography.caption, color: colors.text.secondary, display: "flex", alignItems: "center", gap: 4 }}>
-                            <span>🕐</span>
-                            <span style={{ fontWeight: typography.fontWeight.semibold }}>
-                              {startTime}
-                              {endTime}
-                            </span>
-                          </div>
-                          {(ev as any).players?.length > 0 && (
-                            <div style={{ ...typography.caption, color: colors.text.secondary, display: "flex", alignItems: "center", gap: 4 }}>
-                              <span>👥</span>
-                              <span>{(ev as any).players.length} players</span>
-                            </div>
-                          )}
-                          {ev.venueName && (
-                            <div style={{ ...typography.caption, color: colors.text.secondary, display: "flex", alignItems: "center", gap: 4 }}>
-                              <span>📍</span>
-                              <span>{ev.venueName}</span>
-                            </div>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
+                      </div>
+                      <div style={{ ...typography.caption, color: colors.text.muted, whiteSpace: "nowrap" }}>{ev.status}</div>
+                    </button>
+                  ))}
                 </div>
               ) : (
                 <div style={{ ...typography.body, color: colors.text.muted }}>No events on this day.</div>
@@ -748,36 +648,6 @@ const EnhancedScheduleManagementPage: React.FC = () => {
                 <div style={{ ...typography.h4, color: colors.text.primary, margin: 0 }}>
                   {selectedEventId ? "Update details" : "New event details"}
                 </div>
-                {draft.startAtLocal && (
-                  <div
-                    style={{
-                      ...typography.caption,
-                      color: colors.text.secondary,
-                      marginTop: 8,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <span>📅</span>
-                    <span>
-                      {new Date(draft.startAtLocal).toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
-                    <span>•</span>
-                    <span>🕐</span>
-                    <span style={{ fontWeight: typography.fontWeight.semibold }}>
-                      {new Date(draft.startAtLocal).toLocaleTimeString("en-US", {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                )}
               </div>
               {selectedEventId && canEdit ? (
                 <Button variant="secondary" onClick={remove} disabled={saving}>
@@ -848,116 +718,38 @@ const EnhancedScheduleManagementPage: React.FC = () => {
                 />
               </label>
 
-              <label style={{ display: "flex", flexDirection: "column", gap: 6, gridColumn: "1 / -1" }}>
-                <span style={{ ...typography.caption, color: colors.text.muted }}>
-                  Start Date & Time * {!canEdit && "(View Only)"}
-                </span>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={{ ...typography.caption, color: colors.text.muted }}>Start *</span>
                 <input
                   type="datetime-local"
                   value={draft.startAtLocal}
                   onChange={(e) => setDraft((p) => ({ ...p, startAtLocal: e.target.value }))}
                   disabled={!canEdit}
                   style={{
-                    padding: "12px 14px",
+                    padding: "10px 12px",
                     borderRadius: borderRadius.lg,
-                    border: "1px solid rgba(0,224,255,0.22)",
+                    border: "1px solid rgba(255,255,255,0.12)",
                     background: "rgba(10,16,32,0.35)",
                     color: colors.text.primary,
-                    fontSize: typography.fontSize.base,
-                    fontWeight: typography.fontWeight.medium,
                   }}
                 />
-                {canEdit && draft.startAtLocal && (
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    <span style={{ ...typography.caption, color: colors.text.muted, fontSize: typography.fontSize.xs }}>
-                      Quick duration:
-                    </span>
-                    {[
-                      { label: "1h", hours: 1 },
-                      { label: "1.5h", hours: 1.5 },
-                      { label: "2h", hours: 2 },
-                      { label: "3h", hours: 3 },
-                    ].map((preset) => (
-                      <button
-                        key={preset.label}
-                        type="button"
-                        onClick={() => {
-                          const start = new Date(draft.startAtLocal);
-                          const end = new Date(start.getTime() + preset.hours * 60 * 60 * 1000);
-                          setDraft((p) => ({ ...p, endAtLocal: toLocalInputValue(end.toISOString()) }));
-                        }}
-                        style={{
-                          padding: "4px 10px",
-                          borderRadius: borderRadius.md,
-                          border: "1px solid rgba(255,255,255,0.12)",
-                          background: "rgba(255,255,255,0.05)",
-                          color: colors.text.secondary,
-                          cursor: "pointer",
-                          ...typography.caption,
-                          fontSize: typography.fontSize.xs,
-                        }}
-                      >
-                        +{preset.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <span style={{ ...typography.caption, color: colors.text.muted, fontSize: typography.fontSize.xs }}>
-                  📅 Select both date and time for the event
-                </span>
               </label>
 
-              <label style={{ display: "flex", flexDirection: "column", gap: 6, gridColumn: "1 / -1" }}>
-                <span style={{ ...typography.caption, color: colors.text.muted }}>
-                  End Date & Time (Optional)
-                </span>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={{ ...typography.caption, color: colors.text.muted }}>End</span>
                 <input
                   type="datetime-local"
                   value={draft.endAtLocal}
                   onChange={(e) => setDraft((p) => ({ ...p, endAtLocal: e.target.value }))}
                   disabled={!canEdit}
                   style={{
-                    padding: "12px 14px",
+                    padding: "10px 12px",
                     borderRadius: borderRadius.lg,
                     border: "1px solid rgba(255,255,255,0.12)",
                     background: "rgba(10,16,32,0.35)",
                     color: colors.text.primary,
-                    fontSize: typography.fontSize.base,
                   }}
                 />
-                {draft.startAtLocal && draft.endAtLocal && (() => {
-                  const start = new Date(draft.startAtLocal);
-                  const end = new Date(draft.endAtLocal);
-                  const durationMs = end.getTime() - start.getTime();
-                  const hours = Math.floor(durationMs / (1000 * 60 * 60));
-                  const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
-                  return durationMs > 0 ? (
-                    <span
-                      style={{
-                        ...typography.caption,
-                        color: colors.accent.main,
-                        fontSize: typography.fontSize.xs,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
-                    >
-                      <span>⏱️</span>
-                      <span>
-                        Duration: {hours > 0 && `${hours}h`} {minutes > 0 && `${minutes}m`}
-                      </span>
-                    </span>
-                  ) : (
-                    <span style={{ ...typography.caption, color: colors.danger.main, fontSize: typography.fontSize.xs }}>
-                      ⚠️ End time must be after start time
-                    </span>
-                  );
-                })()}
-                {(!draft.endAtLocal || !draft.startAtLocal) && (
-                  <span style={{ ...typography.caption, color: colors.text.muted, fontSize: typography.fontSize.xs }}>
-                    ⏱️ Leave empty for single time slot events
-                  </span>
-                )}
               </label>
 
               {/* Center selection for player management */}

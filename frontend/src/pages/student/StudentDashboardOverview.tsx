@@ -19,9 +19,18 @@ import { ChartBarIcon, ChartLineIcon, ClipboardIcon, RefreshIcon, BoltIcon, Leaf
 
 const StudentDashboardOverview: React.FC = () => {
   const navigate = useNavigate();
-  const [data, setData] = useState<any>(null);
-  const [attendanceData, setAttendanceData] = useState<any>(null);
-  const [roadmapData, setRoadmapData] = useState<any>(null);
+  const [data, setData] = useState<any>(() => {
+    const cached = sessionStorage.getItem('student-dashboard-data');
+    return cached ? JSON.parse(cached) : null;
+  });
+  const [attendanceData, setAttendanceData] = useState<any>(() => {
+    const cached = sessionStorage.getItem('student-dashboard-attendance');
+    return cached ? JSON.parse(cached) : null;
+  });
+  const [roadmapData, setRoadmapData] = useState<any>(() => {
+    const cached = sessionStorage.getItem('student-dashboard-roadmap');
+    return cached ? JSON.parse(cached) : null;
+  });
   const [workloadMessage, setWorkloadMessage] = useState<any>(null);
   const [error, setError] = useState("");
   const [analyticsRefreshKey, setAnalyticsRefreshKey] = useState(0);
@@ -56,6 +65,11 @@ const StudentDashboardOverview: React.FC = () => {
         setData(dashboardData);
         setAttendanceData(attendance);
         setRoadmapData(roadmap);
+        
+        // Cache data for instant display
+        sessionStorage.setItem('student-dashboard-data', JSON.stringify(dashboardData));
+        sessionStorage.setItem('student-dashboard-attendance', JSON.stringify(attendance));
+        if (roadmap) sessionStorage.setItem('student-dashboard-roadmap', JSON.stringify(roadmap));
       } catch (err: any) {
         setError(err.message);
       }

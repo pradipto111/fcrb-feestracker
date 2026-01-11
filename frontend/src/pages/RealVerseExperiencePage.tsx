@@ -628,19 +628,24 @@ const RealVerseExperiencePage: React.FC = () => {
 
   const programs = [
     {
-      name: "Non-Residential Program",
-      description: "Flexible training schedules for local players",
-      features: ["Regular training sessions", "RealVerse access", "Performance tracking"],
+      name: "Elite Pathway Program (EPP)",
+      description: "For players targeting top-tier football in India and abroad",
+      features: ["Super Division focused", "Highest intensity training", "Individual development plans"],
     },
     {
-      name: "Residential Program",
-      description: "Intensive development with accommodation",
-      features: ["Full-time training", "Accommodation", "Complete RealVerse access"],
+      name: "Senior Competitive Program (SCP)",
+      description: "The competitive bridge between youth and elite football",
+      features: ["C & D Division exposure", "Regular competitive matches", "EPP feeder pathway"],
     },
     {
-      name: "High-Performance Streams",
-      description: "Elite training for competitive players",
-      features: ["Advanced coaching", "Competition focus", "Premium RealVerse features"],
+      name: "Women's Performance Pathway (WPP)",
+      description: "A unified pathway for women footballers aiming professional levels",
+      features: ["Women's B Division", "Year-round matches", "Career pathway"],
+    },
+    {
+      name: "Foundation & Youth Development Program (FYDP)",
+      description: "Building intelligent footballers before building competitors",
+      features: ["U9, U11, U13 development", "Tactical foundations", "Data-assisted development"],
     },
   ];
 

@@ -306,5 +306,62 @@ router.get("/monthly-collections", authRequired, async (req, res) => {
   res.json(monthsArray);
 });
 
+/**
+ * GET /dashboard/payment-mode-breakdown
+ * Get payment breakdown by payment mode
+ */
+router.get("/payment-mode-breakdown", authRequired, async (req, res) => {
+  const { role, id: userId } = req.user!;
+
+  try {
+    let whereClause: any = {};
+
+    // Coach can only see their centers
+    if (role === "COACH") {
+      const centerIds = await getCoachCenterIds(userId);
+      whereClause.centerId = { in: centerIds };
+    }
+
+    // Get all payments grouped by payment mode
+    const payments = await prisma.payment.findMany({
+      where: whereClause,
+      select: {
+        paymentMode: true,
+        amount: true
+      }
+    });
+
+    // Group by payment mode
+    const modeMap = new Map<string, { total: number; count: number }>();
+    let grandTotal = 0;
+
+    payments.forEach(payment => {
+      const mode = payment.paymentMode || "Unknown";
+      const existing = modeMap.get(mode) || { total: 0, count: 0 };
+      modeMap.set(mode, {
+        total: existing.total + payment.amount,
+        count: existing.count + 1
+      });
+      grandTotal += payment.amount;
+    });
+
+    // Convert to array with percentages
+    const breakdown = Array.from(modeMap.entries()).map(([mode, data]) => ({
+      mode,
+      total: data.total,
+      count: data.count,
+      percentage: grandTotal > 0 ? (data.total / grandTotal) * 100 : 0
+    }));
+
+    // Sort by total descending
+    breakdown.sort((a, b) => b.total - a.total);
+
+    res.json(breakdown);
+  } catch (error: any) {
+    console.error("Error fetching payment mode breakdown:", error);
+    res.status(500).json({ message: error.message || "Failed to fetch payment mode breakdown" });
+  }
+});
+
 export default router;
 

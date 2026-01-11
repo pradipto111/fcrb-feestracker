@@ -416,8 +416,17 @@ router.get("/analytics/summary", async (_req, res) => {
       (prisma as any).fanUser?.count({ where: { status: "ACTIVE" } }),
       (prisma as any).couponRedemption?.count(),
       (prisma as any).fanConversionLead?.count(),
-      (prisma as any).fanTier?.findMany({ select: { id: true, name: true }, orderBy: { sortOrder: "asc" } }),
-      (prisma as any).fanProfile?.findMany({ select: { tierId: true, city: true } }),
+      (prisma as any).fanTier?.findMany({ select: { id: true, name: true, monthlyPriceINR: true, yearlyPriceINR: true }, orderBy: { sortOrder: "asc" } }),
+      (prisma as any).fanProfile?.findMany({ 
+        select: { 
+          tierId: true, 
+          city: true, 
+          joinedAt: true,
+          user: { 
+            select: { status: true } 
+          } 
+        } 
+      }),
       (prisma as any).fanConversionLead?.findMany({ select: { programInterest: true, status: true } }),
       (prisma as any).couponRedemption?.findMany({ include: { pool: { include: { sponsor: true } } } }),
     ]);
@@ -441,6 +450,71 @@ router.get("/analytics/summary", async (_req, res) => {
       redemptionsBySponsor[sponsorName] = (redemptionsBySponsor[sponsorName] || 0) + 1;
     }
 
+    // Calculate revenue metrics
+    let projectedMonthlyRevenue = 0;
+    let projectedYearlyRevenue = 0;
+    const revenueByTier: Record<string, { 
+      tier: string; 
+      fanCount: number; 
+      monthlyPrice: number; 
+      yearlyPrice: number; 
+      projectedMonthly: number; 
+      projectedYearly: number;
+    }> = {};
+
+    // Initialize revenue by tier
+    for (const tier of tiers || []) {
+      revenueByTier[tier.name] = {
+        tier: tier.name,
+        fanCount: 0,
+        monthlyPrice: tier.monthlyPriceINR,
+        yearlyPrice: tier.yearlyPriceINR,
+        projectedMonthly: 0,
+        projectedYearly: 0
+      };
+    }
+
+    // Calculate projected revenue based on tier distribution
+    for (const profile of profiles || []) {
+      if (!profile.tierId || profile.user?.status !== "ACTIVE") continue;
+      
+      const tier = (tiers || []).find((t: any) => t.id === profile.tierId);
+      if (!tier) continue;
+
+      // Add to tier-wise revenue
+      if (revenueByTier[tier.name]) {
+        revenueByTier[tier.name].fanCount += 1;
+        revenueByTier[tier.name].projectedMonthly += tier.monthlyPriceINR;
+        revenueByTier[tier.name].projectedYearly += tier.yearlyPriceINR;
+      }
+
+      // Add to total projected revenue
+      projectedMonthlyRevenue += tier.monthlyPriceINR;
+      projectedYearlyRevenue += tier.yearlyPriceINR;
+    }
+
+    // Calculate growth metrics (fans joined in last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentFans = (profiles || []).filter((p: any) => 
+      p.joinedAt && new Date(p.joinedAt) >= thirtyDaysAgo
+    ).length;
+
+    // Calculate conversion rate (leads to actual fans)
+    const convertedLeads = (leads || []).filter((l: any) => l.status === "CONVERTED").length;
+    const conversionRate = leadsCount > 0 ? Math.round((convertedLeads / leadsCount) * 100) : 0;
+
+    // Average revenue per fan
+    const avgRevenuePerFanMonthly = activeFans > 0 ? Math.round(projectedMonthlyRevenue / activeFans) : 0;
+    const avgRevenuePerFanYearly = activeFans > 0 ? Math.round(projectedYearlyRevenue / activeFans) : 0;
+
+    // City-wise distribution
+    const cityDistribution: Record<string, number> = {};
+    for (const profile of profiles || []) {
+      const city = profile.city || "Unknown";
+      cityDistribution[city] = (cityDistribution[city] || 0) + 1;
+    }
+
     return res.json({
       fanCount: fanCount || 0,
       activeFans: activeFans || 0,
@@ -449,6 +523,20 @@ router.get("/analytics/summary", async (_req, res) => {
       tierDistribution,
       programInterestCounts,
       redemptionsBySponsor,
+      // New financial metrics
+      revenue: {
+        projectedMonthlyRevenue,
+        projectedYearlyRevenue,
+        avgRevenuePerFanMonthly,
+        avgRevenuePerFanYearly,
+        revenueByTier: Object.values(revenueByTier).filter(t => t.fanCount > 0)
+      },
+      growth: {
+        recentFans,
+        convertedLeads,
+        conversionRate
+      },
+      cityDistribution,
     });
   } catch (error: any) {
     return res.status(500).json({ message: error.message || "Failed to fetch analytics summary" });

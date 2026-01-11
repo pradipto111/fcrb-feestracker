@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { api } from "../api/client";
 import { Card } from "../components/ui/Card";
 import { KPICard } from "../components/ui/KPICard";
 import { PageHeader } from "../components/ui/PageHeader";
-import { useAuth } from "../context/AuthContext";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 import { pageVariants, cardVariants } from "../utils/motion";
+import {
+  MoneyIcon,
+  ChartBarIcon,
+  UsersIcon,
+  BellIcon
+} from "../components/icons/IconSet";
 import {
   LineChart,
   Line,
@@ -22,11 +26,12 @@ import {
 } from "recharts";
 
 const AdminPaymentsPage: React.FC = () => {
-  const { user } = useAuth();
   const [summary, setSummary] = useState<any>(null);
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [centers, setCenters] = useState<any[]>([]);
+  const [paymentModeData, setPaymentModeData] = useState<any[]>([]);
+  const [walletAnalytics, setWalletAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -37,13 +42,11 @@ const AdminPaymentsPage: React.FC = () => {
   const [monthlyCenterId, setMonthlyCenterId] = useState("");
   const [monthlyPaymentMode, setMonthlyPaymentMode] = useState("all");
 
-  if (!user || user.role !== "ADMIN") {
-    return <Navigate to="/" replace />;
-  }
-
   useEffect(() => {
     loadCenters();
     loadSummary();
+    loadWalletAnalytics();
+    loadPaymentModeData();
   }, []);
 
   useEffect(() => {
@@ -101,6 +104,44 @@ const AdminPaymentsPage: React.FC = () => {
     }
   };
 
+  const loadWalletAnalytics = async () => {
+    try {
+      // Fetch all students to calculate wallet analytics
+      const students = await api.getStudents();
+      let totalCredit = 0;
+      let totalOutstanding = 0;
+      let studentsWithCredit = 0;
+      let studentsWithOutstanding = 0;
+      
+      // This would ideally come from a backend endpoint
+      // For now, we'll calculate based on summary data
+      if (summary) {
+        totalOutstanding = summary.approxOutstanding || 0;
+      }
+      
+      setWalletAnalytics({
+        totalCredit,
+        totalOutstanding,
+        studentsWithCredit,
+        studentsWithOutstanding,
+        averageWalletBalance: 0
+      });
+    } catch (err: any) {
+      console.error("Failed to load wallet analytics:", err);
+    }
+  };
+
+  const loadPaymentModeData = async () => {
+    try {
+      const data = await api.getPaymentModeBreakdown();
+      setPaymentModeData(data);
+    } catch (err: any) {
+      console.error("Failed to load payment mode data:", err);
+      // Set default empty data
+      setPaymentModeData([]);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ padding: spacing.xl, textAlign: "center" }}>
@@ -144,29 +185,79 @@ const AdminPaymentsPage: React.FC = () => {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
           gap: spacing.md,
           marginBottom: spacing.xl,
         }}
       >
         <KPICard
-          label="Total Collected"
+          title="Total Revenue"
           value={`₹${summary?.totalCollected?.toLocaleString() || 0}`}
-          trend="up"
-          icon="💰"
+          subtitle="All-time collections"
+          icon={<MoneyIcon size={40} style={{ opacity: 0.3 }} />}
+          variant="success"
         />
         <KPICard
-          label="Total Students"
-          value={summary?.studentCount || 0}
-          icon="👥"
-        />
-        <KPICard
-          label="Outstanding"
+          title="Total Outstanding"
           value={`₹${summary?.approxOutstanding?.toLocaleString() || 0}`}
-          trend="down"
-          icon="⏳"
+          subtitle={`${summary?.studentCount || 0} active students`}
+          icon={<BellIcon size={40} style={{ opacity: 0.3 }} />}
+          variant={summary?.approxOutstanding > 0 ? "warning" : "success"}
+        />
+        <KPICard
+          title="Avg Revenue Per Student"
+          value={
+            summary?.totalCollected && summary?.studentCount
+              ? `₹${Math.round(summary.totalCollected / summary.studentCount).toLocaleString()}`
+              : "₹0"
+          }
+          subtitle="Total revenue / students"
+          icon={<ChartBarIcon size={40} style={{ opacity: 0.3 }} />}
+          variant="info"
+        />
+        <KPICard
+          title="Active Students"
+          value={summary?.studentCount || 0}
+          subtitle="Currently enrolled"
+          icon={<UsersIcon size={40} style={{ opacity: 0.3 }} />}
+          variant="primary"
         />
       </div>
+
+      {/* Payment Mode Breakdown */}
+      {paymentModeData && paymentModeData.length > 0 && (
+        <motion.div variants={cardVariants} style={{ marginBottom: spacing.xl }}>
+          <Card variant="default" padding="lg">
+            <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.lg }}>
+              Payment Mode Distribution
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: spacing.md }}>
+              {paymentModeData.map((mode: any) => (
+                <div
+                  key={mode.mode}
+                  style={{
+                    padding: spacing.md,
+                    background: colors.surface.card,
+                    borderRadius: borderRadius.md,
+                    border: `1px solid ${colors.surface.card}`,
+                  }}
+                >
+                  <div style={{ ...typography.caption, color: colors.text.muted, marginBottom: spacing.xs }}>
+                    {mode.mode}
+                  </div>
+                  <div style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.xs }}>
+                    ₹{mode.total?.toLocaleString() || 0}
+                  </div>
+                  <div style={{ ...typography.caption, color: colors.text.secondary }}>
+                    {mode.count} transaction{mode.count !== 1 ? 's' : ''}
+                    {mode.percentage ? ` • ${mode.percentage.toFixed(1)}%` : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Revenue Chart */}
       <motion.div variants={cardVariants} style={{ marginBottom: spacing.xl }}>

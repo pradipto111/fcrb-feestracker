@@ -107,7 +107,7 @@ async function main() {
         passwordHash: studentPassword,
         centerId: center1.id,
         joiningDate: new Date("2024-01-15"),
-        programType: "U13",
+        programType: "FYDP",
         monthlyFeeAmount: 3000,
         status: "ACTIVE"
       }
@@ -123,7 +123,7 @@ async function main() {
         passwordHash: studentPassword,
         centerId: center1.id,
         joiningDate: new Date("2024-02-01"),
-        programType: "U13",
+        programType: "FYDP",
         monthlyFeeAmount: 3000,
         status: "ACTIVE"
       }
@@ -139,7 +139,7 @@ async function main() {
         passwordHash: studentPassword,
         centerId: center1.id,
         joiningDate: new Date("2024-01-20"),
-        programType: "U15",
+        programType: "SCP",
         monthlyFeeAmount: 3500,
         status: "ACTIVE"
       }
@@ -159,7 +159,7 @@ async function main() {
         passwordHash: studentPassword,
         centerId: center2.id,
         joiningDate: new Date("2024-03-01"),
-        programType: "U13",
+        programType: "FYDP",
         monthlyFeeAmount: 3000,
         status: "ACTIVE"
       }
@@ -175,7 +175,7 @@ async function main() {
         passwordHash: studentPassword,
         centerId: center2.id,
         joiningDate: new Date("2024-02-15"),
-        programType: "U15",
+        programType: "SCP",
         monthlyFeeAmount: 3500,
         status: "ACTIVE"
       }
@@ -191,7 +191,7 @@ async function main() {
         passwordHash: studentPassword,
         centerId: center2.id,
         joiningDate: new Date("2024-11-01"),
-        programType: "U13",
+        programType: "FYDP",
         monthlyFeeAmount: 3000,
         status: "TRIAL"
       }
@@ -211,7 +211,7 @@ async function main() {
         passwordHash: studentPassword,
         centerId: center3.id,
         joiningDate: new Date("2024-01-10"),
-        programType: "U13",
+        programType: "FYDP",
         monthlyFeeAmount: 2800,
         status: "ACTIVE"
       }
@@ -227,7 +227,7 @@ async function main() {
         passwordHash: studentPassword,
         centerId: center3.id,
         joiningDate: new Date("2024-02-20"),
-        programType: "U15",
+        programType: "SCP",
         monthlyFeeAmount: 3200,
         status: "ACTIVE"
       }

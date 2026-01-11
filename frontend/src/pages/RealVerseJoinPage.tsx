@@ -33,11 +33,10 @@ const RealVerseJoinPage: React.FC = () => {
 
   const centers = ["Depot 18", "3LOKK", "Training Center 3"];
   const programmes = [
-    "Grassroots",
-    "Development",
-    "High Performance",
-    "Women's Programme",
-    "Goalkeeper Training",
+    "Elite Pathway Program (EPP)",
+    "Senior Competitive Program (SCP)",
+    "Women's Performance Pathway (WPP)",
+    "Foundation & Youth Development Program (FYDP)",
   ];
   const levels = [
     "Beginner",
