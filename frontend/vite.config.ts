@@ -14,7 +14,9 @@ export default defineConfig({
     allowedHosts: [
       ".onrender.com",
       "fcrb-frontend.onrender.com",
-      "localhost"
+      "localhost",
+      "realbengaluru.com",
+      "www.realbengaluru.com"
     ]
   }
 });
