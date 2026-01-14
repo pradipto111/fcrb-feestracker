@@ -1,9 +1,12 @@
 -- Fan Club (RealVerse Fan) schema
 -- This migration is designed for fresh DBs created from prior migrations.
 
--- AlterEnum
--- NOTE: The 'FAN' enum value must be added manually before running this migration:
--- psql -U postgres -d fees_tracker -c "ALTER TYPE \"Role\" ADD VALUE IF NOT EXISTS 'FAN';"
+-- AlterEnum - Add FAN to Role enum FIRST before using it
+DO $$ BEGIN
+    ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'FAN';
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- CreateEnum
 CREATE TYPE "FanAccountStatus" AS ENUM ('ACTIVE', 'SUSPENDED');

@@ -23,6 +23,31 @@ else
     EXIT_CODE=$?
     echo "⚠️  Migration deployment encountered issues (exit code: $EXIT_CODE)"
     
+    # Check for the specific FAN enum error
+    if grep -q "invalid input value for enum.*FAN" /tmp/migrate_output.log || grep -q "20251218193000_add_fan_club" /tmp/migrate_output.log; then
+        echo "⚠️  Found FAN enum migration error, resolving..."
+        
+        # First, manually add FAN to Role enum if it doesn't exist
+        echo "🔧 Adding FAN to Role enum..."
+        cat > /tmp/add_fan_role.sql << 'EOF'
+DO $$ BEGIN
+    ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'FAN';
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+EOF
+        
+        # Execute the SQL to add FAN
+        npx prisma db execute --file /tmp/add_fan_role.sql --schema prisma/schema.prisma 2>/dev/null || true
+        
+        # Mark the failed migration as rolled back
+        npx prisma migrate resolve --rolled-back "20251218193000_add_fan_club" 2>/dev/null || true
+        
+        # Try deploying again
+        echo "🔄 Retrying migration deployment..."
+        npx prisma migrate deploy 2>/dev/null || true
+    fi
+    
     # Check if error is about failed migrations
     if grep -q "P3009" /tmp/migrate_output.log || grep -q "failed migrations" /tmp/migrate_output.log; then
         echo "⚠️  Found failed migrations, attempting to resolve..."
@@ -55,4 +80,5 @@ echo "✅ Migration deployment completed (with potential warnings)"
 
 # Always exit successfully to allow the app to start
 exit 0
+
 
