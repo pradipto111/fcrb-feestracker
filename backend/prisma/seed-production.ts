@@ -19,7 +19,7 @@ async function main() {
         email: "admin@feestrack.com",
         passwordHash: adminPassword,
         role: "ADMIN",
-      },
+      } as any, // Type assertion to handle Prisma type changes
     });
     console.log("✅ Created admin user");
   } else {
@@ -39,7 +39,7 @@ async function main() {
         email: "coach@feestrack.com",
         passwordHash: coachPassword,
         role: "COACH",
-      },
+      } as any, // Type assertion to handle Prisma type changes
     });
     console.log("✅ Created coach user");
   } else {

@@ -48,9 +48,12 @@ EOF
         npx prisma migrate deploy 2>/dev/null || true
     fi
     
-    # Check if error is about failed migrations
-    if grep -q "P3009" /tmp/migrate_output.log || grep -q "failed migrations" /tmp/migrate_output.log; then
+    # Check if error is about failed migrations (including the specific fan_club one)
+    if grep -q "P3009" /tmp/migrate_output.log || grep -q "failed migrations" /tmp/migrate_output.log || grep -q "20251218193000_add_fan_club" /tmp/migrate_output.log; then
         echo "⚠️  Found failed migrations, attempting to resolve..."
+        
+        # Specifically resolve the fan_club migration that's known to fail
+        npx prisma migrate resolve --rolled-back "20251218193000_add_fan_club" 2>/dev/null || true
         
         # Mark old migrations as applied (baseline the existing schema)
         npx prisma migrate resolve --applied "20251125075812_init" 2>/dev/null || true
@@ -80,5 +83,6 @@ echo "✅ Migration deployment completed (with potential warnings)"
 
 # Always exit successfully to allow the app to start
 exit 0
+
 
 
