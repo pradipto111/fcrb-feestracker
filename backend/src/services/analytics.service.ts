@@ -112,6 +112,7 @@ export async function getDimPlayers(filters?: CentreAnalyticsFilters) {
       programType: true,
       joiningDate: true,
       status: true,
+      churnedDate: true,
     },
   });
 
@@ -124,6 +125,7 @@ export async function getDimPlayers(filters?: CentreAnalyticsFilters) {
     program_id: s.programType,
     join_date: s.joiningDate,
     status: s.status,
+    churned_date: s.churnedDate,
   }));
 }
 
@@ -498,9 +500,13 @@ export async function calculateCentreMetrics(centreId: number, dateRange: DateRa
   const newStudents = students.filter(
     (s) => s.join_date && s.join_date >= dateRange.from && s.join_date <= dateRange.to
   );
-  const droppedStudents = students.filter(
-    (s) => s.status === "INACTIVE" && s.join_date && s.join_date < dateRange.to
-  );
+      // Churned students: INACTIVE status with churnedDate in the date range
+      const droppedStudents = students.filter(
+        (s) => s.status === "INACTIVE" && 
+        s.churned_date && 
+        new Date(s.churned_date) >= dateRange.from && 
+        new Date(s.churned_date) <= dateRange.to
+      );
 
   // Calculate attendance
   const totalScheduled = attendance.length;

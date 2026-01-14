@@ -492,10 +492,7 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
         padding: spacing.xl, 
         overflowY: "auto", 
         overflowX: "hidden",
-        background:
-          role === "FAN"
-            ? "radial-gradient(circle at 0% 0%, rgba(7,17,44,1) 0%, rgba(4,8,26,1) 38%, rgba(2,3,19,1) 100%)"
-            : colors.surface.bg,
+        background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,
         minHeight: "100vh",
         width: "100%",
         boxSizing: "border-box",

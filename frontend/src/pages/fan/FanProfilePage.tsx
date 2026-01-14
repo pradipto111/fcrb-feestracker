@@ -4,11 +4,13 @@ import { api } from "../../api/client";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
+import { useHomepageAnimation } from "../../hooks/useHomepageAnimation";
 import { useFanMotion } from "../../hooks/useFanMotion";
 import { TrophyIcon, StarIcon } from "../../components/icons/IconSet";
 
 const FanProfilePage: React.FC = () => {
-  const { pageEnter, cardReveal, viewportOnce } = useFanMotion();
+  const { headingVariants, cardVariants, viewportOnce } = useHomepageAnimation();
+  const { cardReveal } = useFanMotion();
   const [me, setMe] = useState<any>(null);
   const [history, setHistory] = useState<any>(null);
 
@@ -31,8 +33,8 @@ const FanProfilePage: React.FC = () => {
       : "—";
 
   return (
-    <motion.main {...pageEnter} style={{ padding: `${spacing.xl} ${spacing.xl}` }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", flexDirection: "column", gap: spacing.xl }}>
+    <div style={{ width: "100%" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: spacing.xl }}>
         {/* Fan Card */}
         <Card
           variant="default"
@@ -99,7 +101,7 @@ const FanProfilePage: React.FC = () => {
         </Card>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: spacing.lg }}>
-          <motion.div variants={cardReveal} initial="hidden" whileInView="show" viewport={viewportOnce}>
+          <motion.div variants={cardVariants} initial="initial" animate="animate">
             <Card variant="default" padding="xl" style={{ borderRadius: 24, padding: 24, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}>
               <div style={{ ...typography.h3, color: colors.text.primary, margin: 0, marginBottom: spacing.md }}>Status</div>
               <div style={{ display: "grid", gap: spacing.sm }}>
@@ -130,7 +132,7 @@ const FanProfilePage: React.FC = () => {
             </Card>
           </motion.div>
 
-          <motion.div variants={cardReveal} initial="hidden" whileInView="show" viewport={viewportOnce}>
+          <motion.div variants={cardVariants} initial="initial" animate="animate">
             <Card variant="default" padding="xl" style={{ borderRadius: 24, padding: 24, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}>
               <div style={{ ...typography.h3, color: colors.text.primary, margin: 0, marginBottom: spacing.md }}>Badges</div>
               <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
@@ -170,7 +172,7 @@ const FanProfilePage: React.FC = () => {
           </Card>
         </motion.div>
       </div>
-    </motion.main>
+    </div>
   );
 };
 

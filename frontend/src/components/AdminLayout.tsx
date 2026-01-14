@@ -102,6 +102,13 @@ const AdminLayout: React.FC = () => {
       description: "All players & students",
       section: "Operations",
     },
+    {
+      path: "/realverse/admin/students/bulk-import",
+      label: "Bulk Import",
+      icon: "players",
+      description: "Import students from spreadsheet",
+      section: "Operations",
+    },
     // Football Ops Section
     {
       path: "/realverse/admin/schedule",
@@ -140,10 +147,24 @@ const AdminLayout: React.FC = () => {
       section: "System",
     },
     {
+      path: "/realverse/admin/checkout-leads",
+      label: "Checkout Leads",
+      icon: "shop",
+      description: "Failed checkout attempts & leads",
+      section: "System",
+    },
+    {
       path: "/realverse/admin/settings",
       label: "Settings",
       icon: "settings",
       description: "System configuration",
+      section: "System",
+    },
+    {
+      path: "/realverse/admin/footer",
+      label: "Footer Configuration",
+      icon: "settings",
+      description: "Manage website footer sections and links",
       section: "System",
     },
     {

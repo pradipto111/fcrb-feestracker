@@ -74,11 +74,12 @@ router.post("/deduct-fees", authRequired, async (req, res) => {
   try {
     const now = getSystemDate();
     
-    // Get all active students
+    // Get all active students (exclude churned students)
     const students = await prisma.student.findMany({
       where: {
         status: "ACTIVE",
-        joiningDate: { not: null }
+        joiningDate: { not: null },
+        churnedDate: null // Exclude churned students
       }
     });
 
@@ -88,7 +89,7 @@ router.post("/deduct-fees", authRequired, async (req, res) => {
       const joining = new Date(student.joiningDate!);
       const paymentFrequency = student.paymentFrequency || 1;
       
-      // Calculate months since joining
+      // Calculate months since joining (up to now, since student is not churned)
       const monthsElapsed = Math.max(
         0,
         (now.getFullYear() - joining.getFullYear()) * 12 + 

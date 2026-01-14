@@ -4,11 +4,13 @@ import { api } from "../../api/client";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
+import { useHomepageAnimation } from "../../hooks/useHomepageAnimation";
 import { useFanMotion } from "../../hooks/useFanMotion";
 import { TrophyIcon, CalendarIcon, ArrowRightIcon } from "../../components/icons/IconSet";
 
 const FanMatchdayPage: React.FC = () => {
-  const { pageEnter, cardReveal, viewportOnce } = useFanMotion();
+  const { headingVariants, cardVariants, viewportOnce } = useHomepageAnimation();
+  const { cardReveal } = useFanMotion();
   const [me, setMe] = useState<any>(null);
   const [fixtures, setFixtures] = useState<any[] | null>(null);
   const [rewards, setRewards] = useState<any[] | null>(null);
@@ -16,15 +18,40 @@ const FanMatchdayPage: React.FC = () => {
 
   useEffect(() => {
     api.getFanMe().then(setMe).catch(() => setMe(null));
-    api.getPublicFixtures().then(setFixtures).catch(() => setFixtures([]));
-    api.getFanRewards().then(setRewards).catch(() => setRewards([]));
-    api.getFanMatchdayMoments().then(setMoments).catch(() => setMoments([]));
+    api.getPublicFixtures()
+      .then((data: any) => {
+        // API returns { upcoming: [...], results: [...] }
+        const allFixtures = [...(data?.upcoming || []), ...(data?.results || [])];
+        setFixtures(allFixtures);
+      })
+      .catch(() => setFixtures([]));
+    api.getFanRewards()
+      .then((data: any) => {
+        // Ensure data is an array
+        setRewards(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setRewards([]));
+    api.getFanMatchdayMoments()
+      .then((data: any) => {
+        // Ensure data is an array
+        setMoments(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setMoments([]));
   }, []);
   const flags = (me?.tier?.featureFlags || me?.profile?.tier?.featureFlags || {}) as Record<string, any>;
 
-  const upcoming = useMemo(() => (fixtures || []).filter((f: any) => f.status !== "COMPLETED").slice(0, 6), [fixtures]);
-  const matchdayRewards = useMemo(() => (rewards || []).slice(0, 4), [rewards]);
-  const nextFixture = useMemo(() => (upcoming || [])[0] || null, [upcoming]);
+  const upcoming = useMemo(() => {
+    const fixturesArray = Array.isArray(fixtures) ? fixtures : [];
+    return fixturesArray.filter((f: any) => f.status !== "COMPLETED").slice(0, 6);
+  }, [fixtures]);
+  const matchdayRewards = useMemo(() => {
+    const rewardsArray = Array.isArray(rewards) ? rewards : [];
+    return rewardsArray.slice(0, 4);
+  }, [rewards]);
+  const nextFixture = useMemo(() => {
+    const upcomingArray = Array.isArray(upcoming) ? upcoming : [];
+    return upcomingArray[0] || null;
+  }, [upcoming]);
 
   const countdown = useMemo(() => {
     if (!nextFixture?.matchDate) return null;
@@ -38,8 +65,8 @@ const FanMatchdayPage: React.FC = () => {
   }, [nextFixture]);
 
   return (
-    <motion.main {...pageEnter} style={{ padding: `${spacing.xl} ${spacing.xl}` }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", flexDirection: "column", gap: spacing.xl }}>
+    <div style={{ width: "100%" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: spacing.xl }}>
         {/* Matchday Hero Panel */}
         <Card
           variant="default"
@@ -112,7 +139,7 @@ const FanMatchdayPage: React.FC = () => {
           </Card>
         ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: spacing.lg }}>
-          <motion.div variants={cardReveal} initial="hidden" whileInView="show" viewport={viewportOnce}>
+          <motion.div variants={cardVariants} initial="initial" animate="animate">
             <Card variant="default" padding="xl" style={{ borderRadius: 24, padding: 24, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.md }}>
                 <div>
@@ -122,7 +149,7 @@ const FanMatchdayPage: React.FC = () => {
                 <CalendarIcon size={16} color={colors.text.muted} />
               </div>
               <div style={{ display: "grid", gap: spacing.sm }}>
-                {(upcoming || []).map((f: any) => (
+                {Array.isArray(upcoming) && upcoming.map((f: any) => (
                   <div key={f.id} style={{ borderRadius: borderRadius.xl, border: "1px solid rgba(255,255,255,0.10)", background: "rgba(0,0,0,0.16)", padding: "12px 12px" }}>
                     <div style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.semibold }}>
                       vs {f.opponent}
@@ -132,19 +159,22 @@ const FanMatchdayPage: React.FC = () => {
                     </div>
                   </div>
                 ))}
-                {(upcoming || []).length === 0 && (
+                {(!Array.isArray(upcoming) || upcoming.length === 0) && (
                   <div style={{ ...typography.caption, color: colors.text.muted }}>No upcoming fixtures available.</div>
                 )}
               </div>
               <div style={{ marginTop: spacing.md }}>
                 <Button variant="secondary" size="md" style={{ width: "100%" }} disabled>
-                  Predicted XI (locked) →
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Predicted XI (locked)</span>
+                    <ArrowRightIcon size={16} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                  </span>
                 </Button>
               </div>
             </Card>
           </motion.div>
 
-          <motion.div variants={cardReveal} initial="hidden" whileInView="show" viewport={viewportOnce}>
+          <motion.div variants={cardVariants} initial="initial" animate="animate">
             <Card variant="default" padding="xl" style={{ borderRadius: 24, padding: 24, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.md }}>
                 <div>
@@ -154,14 +184,14 @@ const FanMatchdayPage: React.FC = () => {
                 <TrophyIcon size={16} color={colors.accent.main} />
               </div>
               <div style={{ display: "grid", gap: spacing.sm }}>
-                {(matchdayRewards || []).map((r: any) => (
+                {Array.isArray(matchdayRewards) && matchdayRewards.map((r: any) => (
                   <div key={r.id} style={{ borderRadius: borderRadius.xl, border: "1px solid rgba(255,255,255,0.10)", background: "rgba(0,0,0,0.16)", padding: "12px 12px" }}>
                     <div style={{ ...typography.caption, color: colors.text.muted, letterSpacing: "0.12em" }}>{r?.sponsor?.name || "Sponsor"}</div>
                     <div style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.semibold, marginTop: 6, lineHeight: 1.35 }}>{r.copy}</div>
                     <div style={{ ...typography.caption, color: colors.text.muted, marginTop: 8 }}>Dynamic rewards (rolling soon)</div>
                   </div>
                 ))}
-                {(matchdayRewards || []).length === 0 && <div style={{ ...typography.caption, color: colors.text.muted }}>No campaigns available.</div>}
+                {(!Array.isArray(matchdayRewards) || matchdayRewards.length === 0) && <div style={{ ...typography.caption, color: colors.text.muted }}>No campaigns available.</div>}
               </div>
             </Card>
           </motion.div>
@@ -180,7 +210,7 @@ const FanMatchdayPage: React.FC = () => {
             </div>
 
             <div style={{ display: "flex", gap: spacing.md, overflowX: "auto", paddingBottom: 6, scrollbarWidth: "none" as any }}>
-              {(moments || []).slice(0, 12).map((m: any) => {
+              {Array.isArray(moments) && moments.slice(0, 12).map((m: any) => {
                 const locked = !!m.isLocked;
                 return (
                   <div key={m.id} style={{ width: 240, flex: "0 0 auto", borderRadius: borderRadius.xl, border: "1px solid rgba(255,255,255,0.10)", background: "rgba(0,0,0,0.16)", overflow: "hidden", position: "relative" }}>
@@ -199,12 +229,12 @@ const FanMatchdayPage: React.FC = () => {
                   </div>
                 );
               })}
-              {(moments || []).length === 0 && <div style={{ ...typography.caption, color: colors.text.muted }}>No moments yet.</div>}
+              {(!Array.isArray(moments) || moments.length === 0) && <div style={{ ...typography.caption, color: colors.text.muted }}>No moments yet.</div>}
             </div>
           </Card>
         </motion.div>
       </div>
-    </motion.main>
+    </div>
   );
 };
 

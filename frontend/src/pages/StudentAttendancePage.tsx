@@ -12,7 +12,7 @@ import { colors, typography, spacing, borderRadius } from "../theme/design-token
 import { cardVariants } from "../utils/motion";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { academyAssets } from "../config/assets";
-import { ChartBarIcon } from "../components/icons/IconSet";
+import { ChartBarIcon, ArrowRightIcon } from "../components/icons/IconSet";
 
 const StudentAttendancePage: React.FC = () => {
   const navigate = useNavigate();
@@ -92,47 +92,52 @@ const StudentAttendancePage: React.FC = () => {
   } = useHomepageAnimation();
 
   return (
-    <div style={{ maxWidth: "1400px", margin: "0 auto", padding: spacing.md }}>
+    <div style={{ width: "100%" }}>
       {/* Page Header */}
-      <Section
-        title="My Attendance"
-        description="View your session attendance for the month"
-        variant="default"
-        style={{ marginBottom: spacing.xl }}
-      >
-        {/* CTA to Load Dashboard */}
-        {user?.id && (
-          <Card
-            variant="elevated"
-            padding="md"
-            style={{
-              marginBottom: spacing.lg,
-              background: `linear-gradient(135deg, ${colors.primary.main}15 0%, ${colors.accent.main}15 100%)`,
-              border: `2px solid ${colors.primary.main}40`,
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: spacing.md }}>
-              <div style={{ flex: 1, minWidth: "200px" }}>
-                <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
-                    <ChartBarIcon size={20} />
-                    Training Load Dashboard
+      <motion.div variants={headingVariants} initial="offscreen" whileInView="onscreen" viewport={viewportOnce}>
+        <Section
+          title="My Attendance"
+          description="View your session attendance for the month"
+          variant="default"
+          style={{ marginBottom: spacing.xl }}
+        >
+          {/* CTA to Load Dashboard */}
+          {user?.id && (
+            <Card
+              variant="elevated"
+              padding="md"
+              style={{
+                marginBottom: spacing.lg,
+                background: `linear-gradient(135deg, ${colors.accent.main}15 0%, ${colors.accent.main}08 100%)`,
+                border: `2px solid ${colors.accent.main}40`,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: spacing.md }}>
+                <div style={{ flex: 1, minWidth: "200px" }}>
+                  <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs, color: colors.accent.main }}>
+                      <ChartBarIcon size={20} />
+                      Training Load Dashboard
+                    </span>
+                  </h3>
+                  <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm }}>
+                    See how your attendance relates to training load and readiness
+                  </p>
+                </div>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => navigate(`/realverse/player/${user.id}/load-dashboard`)}
+                  style={{ background: colors.accent.main, color: colors.text.onAccent }}
+                >
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Load Dashboard</span>
+                    <ArrowRightIcon size={14} color={colors.text.onAccent} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                   </span>
-                </h3>
-                <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm }}>
-                  See how your attendance relates to training load and readiness
-                </p>
+                </Button>
               </div>
-              <Button
-                variant="primary"
-                size="md"
-                onClick={() => navigate(`/realverse/player/${user.id}/load-dashboard`)}
-              >
-                View Load Dashboard →
-              </Button>
-            </div>
-          </Card>
-        )}
+            </Card>
+          )}
 
         {/* Error State */}
         {error && (
@@ -428,6 +433,7 @@ const StudentAttendancePage: React.FC = () => {
         </Card>
       )}
       </Section>
+      </motion.div>
     </div>
   );
 };

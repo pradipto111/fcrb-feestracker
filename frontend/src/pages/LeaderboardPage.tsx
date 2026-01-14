@@ -122,13 +122,7 @@ const LeaderboardPage: React.FC = () => {
   };
 
   return (
-    <motion.main
-      className="rv-page rv-page--leaderboard"
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-    >
+    <div style={{ width: "100%" }}>
       {/* Floating Stars Background */}
       <div className="rv-page-stars" aria-hidden="true">
         <span className="rv-star" />
@@ -368,7 +362,7 @@ const LeaderboardPage: React.FC = () => {
         </Card>
       ) : null}
       </Section>
-    </motion.main>
+    </div>
   );
 };
 

@@ -6,6 +6,7 @@ import { Badge } from "../components/ui/Badge";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Section } from "../components/ui/Section";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { ArrowRightIcon } from "../components/icons/IconSet";
 import { pageVariants, cardVariants, primaryButtonWhileHover, primaryButtonWhileTap } from "../utils/motion";
 import { academyAssets, galleryAssets } from "../config/assets";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
@@ -77,13 +78,7 @@ const DrillsPage: React.FC = () => {
   const allCategories = [...new Set([...defaultCategories, ...categories])].sort();
 
   return (
-    <motion.main
-      className="rv-page rv-page--drills"
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-    >
+    <div style={{ width: "100%" }}>
       {/* Floating Stars Background */}
       <div className="rv-page-stars" aria-hidden="true">
         <span className="rv-star" />
@@ -569,6 +564,9 @@ const DrillsPage: React.FC = () => {
                         fontFamily: typography.fontFamily.primary,
                         transition: "all 0.2s ease",
                         boxShadow: shadows.md,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: spacing.xs,
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = "translateY(-2px)";
@@ -579,7 +577,8 @@ const DrillsPage: React.FC = () => {
                         e.currentTarget.style.boxShadow = shadows.md;
                       }}
                     >
-                      Open in Instagram
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Open in Instagram</span>
+                      <ArrowRightIcon size={14} color={colors.text.onAccent} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                     </a>
                   </div>
                 )}
@@ -602,7 +601,7 @@ const DrillsPage: React.FC = () => {
         </div>
       )}
       </Section>
-    </motion.main>
+    </div>
   );
 };
 

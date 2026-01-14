@@ -17,15 +17,30 @@ import { StatusChip } from "../components/ui/StatusChip";
 import { pageVariants, cardVariants, primaryButtonWhileHover, primaryButtonWhileTap } from "../utils/motion";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { adminAssets, academyAssets, galleryAssets } from "../config/assets";
-import { PlusIcon, CloseIcon, ErrorIcon, SuccessIcon, SearchIcon, BuildingIcon, ChartBarIcon, ChartLineIcon, EditIcon } from "../components/icons/IconSet";
+import { PlusIcon, CloseIcon, ErrorIcon, SuccessIcon, SearchIcon, BuildingIcon, ChartBarIcon, ChartLineIcon, EditIcon, TrashIcon, MoneyIcon } from "../components/icons/IconSet";
 
 const EnhancedStudentsPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [students, setStudents] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>(() => {
+    // Try to load from sessionStorage for instant display
+    try {
+      const cached = sessionStorage.getItem('students-page-data');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
   const [centers, setCenters] = useState<any[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<any[]>([]);
-  const [studentPayments, setStudentPayments] = useState<{ [key: number]: { totalPaid: number; outstanding: number } }>({});
+  const [studentPayments, setStudentPayments] = useState<{ [key: number]: { totalPaid: number; outstanding: number } }>(() => {
+    try {
+      const cached = sessionStorage.getItem('students-page-payments');
+      return cached ? JSON.parse(cached) : {};
+    } catch {
+      return {};
+    }
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [centerFilter, setCenterFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -35,6 +50,11 @@ const EnhancedStudentsPage: React.FC = () => {
   const [editingStudent, setEditingStudent] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [deletingStudent, setDeletingStudent] = useState<any>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [newStudent, setNewStudent] = useState({
     fullName: "",
     dateOfBirth: "",
@@ -52,11 +72,40 @@ const EnhancedStudentsPage: React.FC = () => {
   });
 
   useEffect(() => {
-    loadData();
+    let mounted = true;
+    
+    const load = async () => {
+      if (mounted) {
+        await loadData();
+      }
+    };
+    
+    load();
+    
+    // Refresh data when page becomes visible (with debounce)
+    let refreshTimeout: NodeJS.Timeout;
+    const handleVisibilityChange = () => {
+      if (!document.hidden && mounted) {
+        clearTimeout(refreshTimeout);
+        refreshTimeout = setTimeout(() => {
+          if (mounted) {
+            loadData();
+          }
+        }, 500); // Debounce to prevent multiple rapid calls
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      mounted = false;
+      clearTimeout(refreshTimeout);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   useEffect(() => {
     filterStudents();
+    setCurrentPage(1); // Reset to first page when filters change
   }, [students, searchTerm, centerFilter, statusFilter, programFilter]);
 
   // Calculate outstanding amount for a student
@@ -68,14 +117,17 @@ const EnhancedStudentsPage: React.FC = () => {
     const now = new Date();
     const joining = new Date(student.joiningDate);
     
-    // Calculate months including the current month
+    // If student is churned, only calculate fees up to churn date
+    const endDate = student.churnedDate ? new Date(student.churnedDate) : now;
+    
+    // Calculate months including the churn month (or current month if not churned)
     const monthsElapsed = Math.max(
       1,
-      (now.getFullYear() - joining.getFullYear()) * 12 + 
-      (now.getMonth() - joining.getMonth()) + 1
+      (endDate.getFullYear() - joining.getFullYear()) * 12 + 
+      (endDate.getMonth() - joining.getMonth()) + 1
     );
     
-    // Calculate how many COMPLETE payment cycles have passed
+    // Calculate how many COMPLETE payment cycles have passed up to churn date
     const paymentFrequency = student.paymentFrequency || 1;
     const cyclesCompleted = Math.floor(monthsElapsed / paymentFrequency);
     
@@ -87,10 +139,28 @@ const EnhancedStudentsPage: React.FC = () => {
 
   const loadData = async () => {
     try {
+      setError(""); // Clear previous errors
+      
       const [studentsData, centersData] = await Promise.all([
-        api.getStudents(),
-        api.getCenters()
+        api.getStudents(undefined, undefined, true).catch(err => {
+          console.error("Failed to load students:", err);
+          // Return empty array instead of throwing
+          return [];
+        }),
+        api.getCenters().catch(err => {
+          console.error("Failed to load centers:", err);
+          return [];
+        })
       ]);
+      
+      // Only update if we got valid data
+      if (!Array.isArray(studentsData) || studentsData.length === 0) {
+        // If we have existing students, keep them
+        if (students.length > 0) {
+          console.warn("Failed to load students, keeping existing data");
+          return;
+        }
+      }
       
       // Enrich students with center info
       const enrichedStudents = studentsData.map((s: any) => ({
@@ -99,30 +169,34 @@ const EnhancedStudentsPage: React.FC = () => {
       }));
       
       setStudents(enrichedStudents);
-      setCenters(centersData);
+      if (centersData && centersData.length > 0) {
+        setCenters(centersData);
+      }
 
-      // Fetch payment data for each student
+      // Payment data is already included in studentsData when includePayments=true
       const paymentsMap: { [key: number]: { totalPaid: number; outstanding: number } } = {};
-      
-      // Fetch student details which include payment summaries
-      await Promise.all(
-        enrichedStudents.map(async (student: any) => {
-          try {
-            const studentDetail = await api.getStudent(student.id);
-            const totalPaid = studentDetail.totalPaid || 0;
-            const outstanding = calculateOutstanding(student, totalPaid);
-            paymentsMap[student.id] = { totalPaid, outstanding };
-          } catch (err) {
-            // If fetching fails, calculate from student data only
-            const outstanding = calculateOutstanding(student, 0);
-            paymentsMap[student.id] = { totalPaid: 0, outstanding };
-          }
-        })
-      );
+      enrichedStudents.forEach((student: any) => {
+        paymentsMap[student.id] = {
+          totalPaid: student.totalPaid || 0,
+          outstanding: student.outstanding || 0
+        };
+      });
       
       setStudentPayments(paymentsMap);
+      
+      // Cache data for persistence
+      try {
+        sessionStorage.setItem('students-page-data', JSON.stringify(enrichedStudents));
+        sessionStorage.setItem('students-page-payments', JSON.stringify(paymentsMap));
+      } catch (e) {
+        console.warn("Failed to cache students data:", e);
+      }
     } catch (err: any) {
-      setError(err.message);
+      console.error("Error in loadData:", err);
+      // Don't clear existing data on error
+      if (students.length === 0) {
+        setError(err.message || "Failed to load students");
+      }
     }
   };
 
@@ -158,6 +232,42 @@ const EnhancedStudentsPage: React.FC = () => {
     setFilteredStudents(filtered);
   };
 
+  const handleDeleteClick = (student: any) => {
+    setDeletingStudent(student);
+    setShowDeleteConfirm(true);
+    // Scroll to top when modal opens
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCreateClick = () => {
+    setShowCreateModal(true);
+    setError("");
+    // Scroll to top when modal opens
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingStudent) return;
+    
+    setIsDeleting(true);
+    try {
+      await api.deleteStudent(deletingStudent.id);
+      setSuccess(`Student "${deletingStudent.fullName}" and all related data deleted successfully`);
+      setShowDeleteConfirm(false);
+      setDeletingStudent(null);
+      await loadData(); // Reload the list
+    } catch (err: any) {
+      setError(err.message || "Failed to delete student");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
+    setDeletingStudent(null);
+  };
+
   const handleEditClick = (student: any) => {
     setEditingStudent({
       ...student,
@@ -165,6 +275,8 @@ const EnhancedStudentsPage: React.FC = () => {
       joiningDate: student.joiningDate ? new Date(student.joiningDate).toISOString().split('T')[0] : ""
     });
     setShowEditModal(true);
+    // Scroll to top when modal opens
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCreateStudent = async (e: React.FormEvent) => {
@@ -358,6 +470,12 @@ const EnhancedStudentsPage: React.FC = () => {
     headingVariants,
     getStaggeredCard,
   } = useHomepageAnimation();
+
+  // Pagination calculations
+  const totalPages = Math.ceil((filteredStudents || []).length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedStudents = (filteredStudents || []).slice(startIndex, endIndex);
 
   // Calculate KPIs - use filteredStudents safely
   const activePlayers = (filteredStudents || []).filter(s => s.status === "ACTIVE").length;
@@ -681,61 +799,6 @@ const EnhancedStudentsPage: React.FC = () => {
           </Card>
         )}
 
-        {/* Player Profile & Batch Review CTA Banner */}
-        {(user?.role === "ADMIN" || user?.role === "COACH") && (
-          <Card
-            variant="elevated"
-            padding="lg"
-            style={{
-              background: `linear-gradient(135deg, ${colors.primary.main}15 0%, ${colors.accent.main}15 100%)`,
-              border: `2px solid ${colors.primary.main}40`,
-              marginBottom: spacing.xl,
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            <div style={{ position: "relative", zIndex: 1 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: spacing.lg }}>
-                <div style={{ flex: 1, minWidth: "300px" }}>
-                  <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.sm }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
-                      <ChartBarIcon size={24} />
-                      Player Profiles & Batch Review
-                    </span>
-                  </h3>
-                  <p style={{ ...typography.body, color: colors.text.secondary, marginBottom: spacing.md }}>
-                    Access detailed player profiles with metrics, readiness scores, and development timelines. Use batch review to efficiently assess multiple players.
-                  </p>
-                  <div style={{ display: "flex", gap: spacing.md, flexWrap: "wrap" }}>
-                    <Button
-                      variant="primary"
-                      size="md"
-                      onClick={() => navigate("/realverse/admin/batch-review")}
-                    >
-                      Start Batch Review →
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="md"
-                      onClick={() => {
-                        if (filteredStudents.length > 0) {
-                          navigate(`/realverse/admin/players/${filteredStudents[0].id}/profile`);
-                        }
-                      }}
-                      disabled={filteredStudents.length === 0}
-                    >
-                      View First Player Profile →
-                    </Button>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.2 }}>
-                  <ChartLineIcon size={64} color={colors.primary.main} />
-                </div>
-              </div>
-            </div>
-          </Card>
-        )}
-
         {/* Students Table - Wrapped in DataTableCard for consistent structure */}
         <DataTableCard
           title="All Players"
@@ -764,7 +827,7 @@ const EnhancedStudentsPage: React.FC = () => {
                 <Button
                   variant="primary"
                   size="md"
-                  onClick={() => setShowCreateModal(true)}
+                  onClick={handleCreateClick}
                 >
                   <PlusIcon size={14} style={{ marginRight: spacing.xs }} /> Add New Student
                 </Button>
@@ -792,7 +855,7 @@ const EnhancedStudentsPage: React.FC = () => {
                 <Button
                   variant="primary"
                   size="md"
-                  onClick={() => setShowCreateModal(true)}
+                  onClick={handleCreateClick}
                 >
                   Add First Player
                 </Button>
@@ -858,7 +921,7 @@ const EnhancedStudentsPage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredStudents.map((student) => (
+            {paginatedStudents.map((student) => (
               <tr 
                 key={student.id} 
                 style={{ 
@@ -958,22 +1021,27 @@ const EnhancedStudentsPage: React.FC = () => {
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => navigate(`/realverse/admin/season-planning/load-dashboard/${student.id}`)}
+                      onClick={() => navigate(`/realverse/students/${student.id}`)}
                       style={{ minWidth: "120px" }}
                     >
                       <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
-                        <ChartLineIcon size={16} />
-                        Load Dashboard
+                        <MoneyIcon size={16} />
+                        Update Payment
                       </span>
                     </Button>
                     <Button
                       variant="utility"
                       size="sm"
-                      onClick={() => handleEditClick(student)}
+                      onClick={() => handleDeleteClick(student)}
+                      style={{
+                        background: colors.danger.soft,
+                        color: colors.danger.main,
+                        border: `1px solid ${colors.danger.main}40`
+                      }}
                     >
                       <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
-                        <EditIcon size={16} />
-                        Edit
+                        <TrashIcon size={16} />
+                        Delete
                       </span>
                     </Button>
                   </div>
@@ -983,6 +1051,112 @@ const EnhancedStudentsPage: React.FC = () => {
           </tbody>
         </table>
         </DataTableCard>
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: spacing.lg,
+            padding: spacing.md,
+            background: colors.surface.soft,
+            borderRadius: borderRadius.md,
+            flexWrap: "wrap",
+            gap: spacing.md
+          }}>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: spacing.sm,
+              color: colors.text.muted,
+              ...typography.body,
+              fontSize: typography.fontSize.sm
+            }}>
+              <span>Showing {startIndex + 1} to {Math.min(endIndex, filteredStudents.length)} of {filteredStudents.length} students</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                style={{
+                  padding: `${spacing.xs} ${spacing.sm}`,
+                  border: `1px solid rgba(255, 255, 255, 0.2)`,
+                  borderRadius: borderRadius.sm,
+                  background: colors.surface.card,
+                  color: colors.text.primary,
+                  fontSize: typography.fontSize.sm,
+                  cursor: "pointer",
+                  outline: "none"
+                }}
+              >
+                <option value={10}>10 per page</option>
+                <option value={20}>20 per page</option>
+                <option value={50}>50 per page</option>
+                <option value={100}>100 per page</option>
+              </select>
+            </div>
+            
+            <div style={{
+              display: "flex",
+              gap: spacing.xs,
+              alignItems: "center"
+            }}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              
+              {/* Page Numbers */}
+              <div style={{
+                display: "flex",
+                gap: spacing.xs,
+                alignItems: "center"
+              }}>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "primary" : "secondary"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      style={{
+                        minWidth: "40px"
+                      }}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+              
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </Section>
 
       {/* Create Modal */}
@@ -994,14 +1168,15 @@ const EnhancedStudentsPage: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(0,0,0,0.7)",
+            background: "rgba(0, 0, 0, 0.8)",
             backdropFilter: "blur(4px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 1000,
-            padding: spacing.lg,
-            overflow: "auto",
+            zIndex: 99999,
+            padding: spacing.xl,
+            overflowY: "auto",
+            overscrollBehavior: "contain"
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -1010,14 +1185,26 @@ const EnhancedStudentsPage: React.FC = () => {
             }
           }}
         >
-          <div onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+          <div 
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            style={{
+              position: "relative",
+              width: "100%",
+              maxWidth: "900px",
+              margin: "auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: "min-content"
+            }}
+          >
             <Card variant="elevated" padding="lg" style={{
-              maxWidth: 900,
               width: "100%",
               maxHeight: "90vh",
-              overflow: "auto",
+              overflowY: "auto",
               background: colors.surface.card,
               border: `1px solid rgba(255, 255, 255, 0.1)`,
+              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)"
             }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
@@ -1438,23 +1625,155 @@ const EnhancedStudentsPage: React.FC = () => {
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && deletingStudent && (
+        <div 
+          style={{
+            position: "fixed",
+            inset: 0,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.8)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 99999,
+            padding: spacing.xl,
+            overflowY: "auto",
+            overscrollBehavior: "contain"
+          }}
+          onClick={handleDeleteCancel}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              maxWidth: "500px",
+              margin: "auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: "min-content"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Card 
+              variant="default" 
+              padding="xl"
+              style={{
+                width: "100%",
+                maxHeight: "90vh",
+                overflowY: "auto",
+                background: colors.surface.card,
+                border: `2px solid ${colors.danger.main}40`,
+                boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)"
+              }}
+            >
+            <div style={{ marginBottom: spacing.lg }}>
+              <h2 style={{ 
+                ...typography.h2, 
+                color: colors.danger.main,
+                marginBottom: spacing.md 
+              }}>
+                Delete Student
+              </h2>
+              <p style={{ 
+                ...typography.body, 
+                color: colors.text.primary,
+                marginBottom: spacing.sm 
+              }}>
+                Are you sure you want to delete <strong>{deletingStudent.fullName}</strong>?
+              </p>
+              <div style={{
+                padding: spacing.md,
+                background: colors.danger.soft,
+                borderRadius: borderRadius.md,
+                marginTop: spacing.md
+              }}>
+                <p style={{ 
+                  ...typography.body, 
+                  color: colors.danger.main,
+                  fontSize: typography.fontSize.sm,
+                  margin: 0,
+                  fontWeight: typography.fontWeight.semibold
+                }}>
+                  ⚠️ Warning: This action cannot be undone.
+                </p>
+                <p style={{ 
+                  ...typography.body, 
+                  color: colors.text.muted,
+                  fontSize: typography.fontSize.sm,
+                  marginTop: spacing.xs,
+                  marginBottom: 0
+                }}>
+                  This will permanently delete:
+                </p>
+                <ul style={{ 
+                  ...typography.body, 
+                  color: colors.text.muted,
+                  fontSize: typography.fontSize.sm,
+                  marginTop: spacing.xs,
+                  marginLeft: spacing.lg,
+                  paddingLeft: spacing.sm
+                }}>
+                  <li>Student profile and account</li>
+                  <li>All payment records</li>
+                  <li>All attendance records</li>
+                  <li>All analytics data (metrics, snapshots, etc.)</li>
+                  <li>All coach notes and feedback</li>
+                  <li>All related records</li>
+                </ul>
+              </div>
+            </div>
+            <div style={{ 
+              display: "flex", 
+              gap: spacing.md, 
+              justifyContent: "flex-end" 
+            }}>
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={handleDeleteCancel}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="md"
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete Student"}
+              </Button>
+            </div>
+          </Card>
+          </div>
+        </div>
+      )}
+
       {/* Edit Modal */}
       {showEditModal && editingStudent && (
         <div 
           style={{
             position: "fixed",
+            inset: 0,
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(0,0,0,0.7)",
+            background: "rgba(0, 0, 0, 0.8)",
             backdropFilter: "blur(4px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 1000,
-            padding: spacing.lg,
-            overflow: "auto",
+            zIndex: 99999,
+            padding: spacing.xl,
+            overflowY: "auto",
+            overscrollBehavior: "contain"
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -1464,16 +1783,28 @@ const EnhancedStudentsPage: React.FC = () => {
             }
           }}
         >
-          <div onClick={(e) => e.stopPropagation()}>
-          <Card variant="elevated" padding="lg" style={{
-            maxWidth: 900,
-            width: "100%",
-            maxHeight: "90vh",
-            overflow: "auto",
-            background: colors.surface.card,
-            border: `1px solid rgba(255, 255, 255, 0.1)`,
-          }}
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "relative",
+              width: "100%",
+              maxWidth: "900px",
+              margin: "auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: "min-content"
+            }}
           >
+            <Card variant="elevated" padding="lg" style={{
+              width: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              background: colors.surface.card,
+              border: `1px solid rgba(255, 255, 255, 0.1)`,
+              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)"
+            }}
+            >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
               <h2 style={{ 
                 ...typography.h2,

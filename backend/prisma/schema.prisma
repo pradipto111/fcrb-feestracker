@@ -107,6 +107,7 @@ model Student {
   walletBalance     Int        @default(0)  // Credit balance in wallet (positive = credit, negative = outstanding)
   lastFeeDeduction  DateTime?  // Last time fees were deducted from wallet
   status            StudentStatus @default(ACTIVE)
+  churnedDate       DateTime?  // Date when student was churned (null if not churned)
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   center   Center   @relation(fields: [centerId], references: [id])
@@ -865,6 +866,7 @@ model WebsiteLead {
   currentLevel      String    // e.g., "Beginner", "Academy", "School Team", "State Level", "District Level", "Other"
   heardFrom         String    // e.g., "Referral", "Instagram", "Facebook", "Tournament", "Friend/Family", "Website", "Other"
   notes             String?   // Free text from applicant
+  skillsShowcaseLink String?  // Google Drive or YouTube link showcasing player skills
   status            LeadStatus @default(NEW)
   assignedTo        Int?      // Coach/Admin ID who is handling this lead
   internalNotes     String?    // Internal notes for admin/coach
@@ -961,7 +963,7 @@ model Order {
 model OrderItem {
   id          Int       @id @default(autoincrement())
   orderId     Int
-  productId   Int
+  productId   Int?      // Nullable for local products (frontend-only products)
   productName String   // Snapshot of product name
   variant     String?   // Selected variant (e.g., "Blue - Home")
   size        String?   // Selected size
@@ -969,7 +971,7 @@ model OrderItem {
   unitPrice   Int       // Price per unit in paise (snapshot)
   totalPrice  Int       // Total for this line item in paise
   order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product     Product   @relation(fields: [productId], references: [id])
+  product     Product?   @relation(fields: [productId], references: [id])
   @@index([orderId])
   @@index([productId])
 }
@@ -981,6 +983,29 @@ enum OrderStatus {
   CANCELLED
   SHIPPED
   DELIVERED
+}
+
+model CheckoutLead {
+  id                Int       @id @default(autoincrement())
+  source            String    @default("checkout")
+  customerName      String
+  phone             String
+  email             String
+  shippingAddress   Json      // {addressLine1, addressLine2?, city, state, pincode, country}
+  items             Json      // Array of items from checkout
+  subtotal          Int       // Subtotal in paise
+  shippingFee       Int       @default(0) // Shipping fee in paise
+  total             Int       // Total in paise
+  errorMessage      String?   // Error message if order creation failed
+  status            LeadStatus @default(NEW)
+  assignedTo        Int?      // Coach/Admin ID who is handling this lead
+  internalNotes     String?   // Internal notes for admin/coach
+  convertedOrderId  Int?      // If converted to actual Order
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  @@index([status])
+  @@index([email])
+  @@index([createdAt])
 }
 
 model TimelineEvent {
@@ -1861,4 +1886,34 @@ model TrialDecisionLog {
   @@index([trialistId])
   @@index([decision])
   @@index([decidedAt])
+}
+
+// Footer Configuration - Configurable footer sections and links
+model FooterConfig {
+  id          Int       @id @default(autoincrement())
+  sectionTitle String   // e.g., "About Clubs", "Teams Info"
+  displayOrder Int      @default(0) // For sorting sections
+  isActive    Boolean   @default(true)
+  links       FooterLink[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  @@index([displayOrder])
+  @@index([isActive])
+}
+
+// Footer Links - Individual links within footer sections
+model FooterLink {
+  id            Int          @id @default(autoincrement())
+  footerConfigId Int
+  label         String       // Display text for the link
+  url           String       // URL or path (can be internal or external)
+  displayOrder  Int          @default(0) // For sorting links within a section
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  // Relations
+  footerConfig  FooterConfig @relation(fields: [footerConfigId], references: [id], onDelete: Cascade)
+  @@index([footerConfigId])
+  @@index([displayOrder])
+  @@index([isActive])
 }

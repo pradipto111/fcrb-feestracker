@@ -2,19 +2,26 @@ import React from "react";
 import { motion } from "framer-motion";
 import MatchSelectionPanel from "../../components/MatchSelectionPanel";
 import { PageHeader } from "../../components/ui/PageHeader";
-import { pageVariants } from "../../utils/motion";
+import { useHomepageAnimation } from "../../hooks/useHomepageAnimation";
 
 const StudentMatchesPage: React.FC = () => {
+  const {
+    headingVariants,
+    viewportOnce,
+  } = useHomepageAnimation();
+
   return (
-    <motion.div variants={pageVariants} initial="initial" animate="animate" exit="exit">
-      <PageHeader
-        tone="dark"
-        title="Matches & Selection"
-        subtitle="Your match exposure history and selection status—with transparency on decisions."
-      />
+    <div style={{ width: "100%" }}>
+      <motion.div variants={headingVariants} initial="offscreen" whileInView="onscreen" viewport={viewportOnce}>
+        <PageHeader
+          tone="dark"
+          title="Matches & Selection"
+          subtitle="Your match exposure history and selection status—with transparency on decisions."
+        />
+      </motion.div>
 
       <MatchSelectionPanel />
-    </motion.div>
+    </div>
   );
 };
 

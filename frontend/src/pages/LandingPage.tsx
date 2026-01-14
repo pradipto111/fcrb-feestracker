@@ -2609,6 +2609,7 @@ const LandingPage: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [centres, setCentres] = useState<Centre[]>([]);
   const [centresLoading, setCentresLoading] = useState(true);
+  const [footerSections, setFooterSections] = useState<any[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   // NOTE: Trophy Cabinet is intentionally NOT rendered in the Hero.
   const heroRef = useRef<HTMLDivElement>(null);
@@ -2739,6 +2740,20 @@ const LandingPage: React.FC = () => {
       }
     };
     loadCentres();
+  }, []);
+
+  // Fetch footer configuration
+  useEffect(() => {
+    const loadFooterConfig = async () => {
+      try {
+        const data = await api.getFooterConfig();
+        setFooterSections(data || []);
+      } catch (error) {
+        console.error("Error loading footer config:", error);
+        setFooterSections([]);
+      }
+    };
+    loadFooterConfig();
   }, []);
 
   const formatDate = (dateString: string) => {
@@ -4048,7 +4063,7 @@ const LandingPage: React.FC = () => {
                     fontWeight: typography.fontWeight.bold,
                   }}
                 >
-                  <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1, ...typography.body, fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.bold }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.bold, lineHeight: 1, color: typography.body.color }}>
                     To know more About Us
                   </span>
                   <ArrowRightIcon size={18} color={colors.text.onPrimary} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
@@ -5854,81 +5869,44 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
 
-            {/* About Clubs */}
-            <div>
-                    <div
-                style={{
-                        fontSize: 13,
-                        fontWeight: 700,
-                        letterSpacing: "0.06em",
-                  textTransform: "uppercase",
-                  color: colors.text.primary,
-                        opacity: 0.9,
-                        marginBottom: isMobile ? 8 : 10,
-                }}
-              >
-                About Clubs
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 6 : 8 }}>
-                {[
-                  { label: "Homepage", to: "#" },
-                  { label: "About Us", to: "#philosophy" },
-                        { label: "Latest News", to: "#content-stream" },
-                ].map((link) => (
-                  <a
-                    key={link.label}
-                    href={link.to}
-                    style={{
-                            color: colors.text.secondary,
-                      textDecoration: "none",
-                            fontSize: 13,
-                            lineHeight: 1.8,
-                            opacity: 0.85,
-                            transition: "all 0.2s ease",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.opacity = "1";
-                            e.currentTarget.style.textDecoration = "underline";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.opacity = "0.85";
-                            e.currentTarget.style.textDecoration = "none";
-                          }}
-                  >
-                    {link.label}
-                  </a>
-                ))}
-              </div>
-            </div>
+            {/* Configurable Footer Sections */}
+            {footerSections.map((section) => (
+              <div key={section.id || section.sectionTitle}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    color: colors.text.primary,
+                    opacity: 0.9,
+                    marginBottom: isMobile ? 8 : 10,
+                  }}
+                >
+                  {section.sectionTitle}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 6 : 8 }}>
+                  {section.links && section.links.length > 0 ? (
+                    section.links.map((link: any) => {
+                      // Determine if it's an internal or external link
+                      const isExternal = link.url.startsWith("http://") || link.url.startsWith("https://");
+                      const linkProps = isExternal
+                        ? {
+                            href: link.url,
+                            target: "_blank",
+                            rel: "noopener noreferrer",
+                          }
+                        : {
+                            href: link.url,
+                          };
 
-            {/* Teams Info */}
-            <div>
-                    <div
-                style={{
-                        fontSize: 13,
-                        fontWeight: 700,
-                        letterSpacing: "0.06em",
-                  textTransform: "uppercase",
-                  color: colors.text.primary,
-                        opacity: 0.9,
-                        marginBottom: isMobile ? 8 : 10,
-                }}
-              >
-                Teams Info
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 6 : 8 }}>
-                      {[
-                        { label: "Player & Coach", to: "/student" },
-                        { label: "Player Profile", to: "/players" },
-                        { label: "Fixtures", to: "#matches" },
-                        { label: "Tournament", to: "/tournaments" },
-                ].map((link) => (
-                  <a
-                    key={link.label}
-                    href={link.to}
-                    style={{
+                      return (
+                        <a
+                          key={link.id || link.label}
+                          {...linkProps}
+                          style={{
                             color: colors.text.secondary,
-                      textDecoration: "none",
+                            textDecoration: "none",
                             fontSize: 13,
                             lineHeight: 1.8,
                             opacity: 0.85,
@@ -5942,12 +5920,15 @@ const LandingPage: React.FC = () => {
                             e.currentTarget.style.opacity = "0.85";
                             e.currentTarget.style.textDecoration = "none";
                           }}
-                  >
-                    {link.label}
-                  </a>
-                ))}
+                        >
+                          {link.label}
+                        </a>
+                      );
+                    })
+                  ) : null}
+                </div>
               </div>
-            </div>
+            ))}
 
             {/* Contact Us */}
             <div>

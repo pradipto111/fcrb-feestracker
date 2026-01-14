@@ -33,6 +33,7 @@ import trialsRoutes from "./modules/trials/trials.routes";
 import fanRoutes from "./modules/fan/fan.routes";
 import fanAdminRoutes from "./modules/fan/fan-admin.routes";
 import legacyRoutes from "./modules/legacy/legacy.routes";
+import footerRoutes from "./modules/footer/footer.routes";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -87,6 +88,7 @@ app.use("/parent-reports", parentReportsRoutes);
 app.use("/trials", trialsRoutes);
 app.use("/season-planning", seasonPlanningRoutes);
 app.use("/legacy", legacyRoutes);
+app.use("/footer", footerRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

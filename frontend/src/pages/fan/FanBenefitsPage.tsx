@@ -1,17 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { api } from "../../api/client";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
-import { useFanMotion } from "../../hooks/useFanMotion";
+import { useHomepageAnimation } from "../../hooks/useHomepageAnimation";
 import { TrophyIcon, CheckIcon, LockIcon } from "../../components/icons/IconSet";
 import { SPONSORS } from "../../data/sponsors";
 import { useMarquee } from "../../hooks/useMarquee";
-import { useReducedMotion } from "framer-motion";
 
 const FanBenefitsPage: React.FC = () => {
-  const { pageEnter, cardReveal, hoverLift, viewportOnce } = useFanMotion();
+  const { headingVariants, cardVariants, viewportOnce } = useHomepageAnimation();
   const reduce = useReducedMotion();
   const [me, setMe] = useState<any>(null);
   const [rewards, setRewards] = useState<any[] | null>(null);
@@ -60,8 +59,8 @@ const FanBenefitsPage: React.FC = () => {
   };
 
   return (
-    <motion.main {...pageEnter} style={{ padding: `${spacing.xl} ${spacing.xl}` }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", flexDirection: "column", gap: spacing.xl }}>
+    <div style={{ width: "100%" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: spacing.xl }}>
         {/* Hero */}
         <Card
           variant="default"
@@ -152,7 +151,7 @@ const FanBenefitsPage: React.FC = () => {
         ) : (
         <>
         {/* Coupons */}
-        <motion.div variants={cardReveal} initial="hidden" whileInView="show" viewport={viewportOnce}>
+        <motion.div variants={cardVariants} initial="initial" animate="animate">
           <Card variant="default" padding="xl" style={{ borderRadius: 26, padding: 28, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.md }}>
               <div>
@@ -176,7 +175,7 @@ const FanBenefitsPage: React.FC = () => {
                           {redeemed ? <CheckIcon size={14} color="#22C55E" /> : <LockIcon size={14} color={colors.text.muted} />}
                           {redeemed ? "Redeemed" : c.hasAvailableCode ? "Available" : "Unavailable"}
                         </div>
-                        <Button variant="primary" size="sm" disabled={disabled} onClick={() => redeem(c.id)} style={{ borderRadius: 999 }}>
+                        <Button variant="primary" size="sm" disabled={disabled} onClick={() => redeem(c.id)} style={{ borderRadius: 999, background: disabled ? undefined : colors.accent.main, color: disabled ? undefined : colors.text.onAccent }}>
                           {redeemed ? "Redeemed" : busyPoolId === c.id ? "Redeeming..." : "Redeem"}
                         </Button>
                       </div>
@@ -189,7 +188,7 @@ const FanBenefitsPage: React.FC = () => {
         </motion.div>
 
         {/* Rewards */}
-        <motion.div variants={cardReveal} initial="hidden" whileInView="show" viewport={viewportOnce}>
+        <motion.div variants={cardVariants} initial="initial" animate="animate">
           <Card variant="default" padding="xl" style={{ borderRadius: 26, padding: 28, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.md }}>
               <div>
@@ -223,7 +222,7 @@ const FanBenefitsPage: React.FC = () => {
         </>
         )}
       </div>
-    </motion.main>
+    </div>
   );
 };
 

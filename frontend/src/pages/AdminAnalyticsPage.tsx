@@ -1,13 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
-import {
-  getAdminKPIs,
-  getAdminAttendanceByCentre,
-  getAdminAttendanceOverTime,
-  getAdminPlayersPerPathwayLevel,
-  getAdminSessionsAndLoad,
-  getAdminMatches,
-} from "../mocks/mockAnalyticsService";
+// Removed mock analytics imports - using real finance data only
 import { AnalyticsCard } from "../components/analytics/AnalyticsCard";
 import { ChartContainer } from "../components/analytics/ChartContainer";
 import { FilterBar } from "../components/analytics/FilterBar";
@@ -50,7 +43,7 @@ const ReportContent: React.FC<{ data: any }> = ({ data }) => (
         FC Real Bengaluru
       </h1>
       <h2 style={{ fontSize: "24px", fontWeight: "normal", marginBottom: "20px" }}>
-        Academy Performance Report
+        Finance Analytics Report
       </h2>
       <div style={{ fontSize: "14px", color: "#666", marginTop: "20px" }}>
         <div>Date Range: {data.dateRange}</div>
@@ -60,74 +53,52 @@ const ReportContent: React.FC<{ data: any }> = ({ data }) => (
       </div>
     </div>
 
-    {/* Overview KPIs */}
-    <div style={{ marginBottom: "40px" }}>
-      <h3 style={{ fontSize: "20px", fontWeight: "bold", marginBottom: "20px" }}>
-        Overview KPIs
-      </h3>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "15px",
-        }}
-      >
-        <div style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px" }}>
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px" }}>
-            Total Active Players
+    {/* Finance Overview KPIs */}
+    {data.studentFinanceData && (
+      <div style={{ marginBottom: "40px" }}>
+        <h3 style={{ fontSize: "20px", fontWeight: "bold", marginBottom: "20px" }}>
+          Finance Overview
+        </h3>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "15px",
+          }}
+        >
+          <div style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px" }}>
+            <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px" }}>
+              Total Collected
+            </div>
+            <div style={{ fontSize: "24px", fontWeight: "bold" }}>
+              ₹{data.studentFinanceData.totalCollected?.toLocaleString() || 0}
+            </div>
           </div>
-          <div style={{ fontSize: "24px", fontWeight: "bold" }}>
-            {data.summary?.totalActivePlayers || 0}
+          <div style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px" }}>
+            <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px" }}>
+              Total Students
+            </div>
+            <div style={{ fontSize: "24px", fontWeight: "bold" }}>
+              {data.studentFinanceData.studentCount || 0}
+            </div>
           </div>
-        </div>
-        <div style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px" }}>
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px" }}>
-            Avg Attendance %
-          </div>
-          <div style={{ fontSize: "24px", fontWeight: "bold" }}>
-            {data.summary?.avgAttendance || 0}%
-          </div>
-        </div>
-        <div style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px" }}>
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px" }}>
-            Sessions (30 Days)
-          </div>
-          <div style={{ fontSize: "24px", fontWeight: "bold" }}>
-            {data.summary?.sessionsLast30Days || 0}
-          </div>
-        </div>
-        <div style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px" }}>
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px" }}>
-            Matches (Season)
-          </div>
-          <div style={{ fontSize: "24px", fontWeight: "bold" }}>
-            {data.summary?.matchesSeason || 0}
-          </div>
-        </div>
-        <div style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px" }}>
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px" }}>
-            Fee Collection %
-          </div>
-          <div style={{ fontSize: "24px", fontWeight: "bold" }}>
-            {data.summary?.feeCollectionRate || 0}%
-          </div>
-        </div>
-        <div style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px" }}>
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px" }}>
-            Wellness Average
-          </div>
-          <div style={{ fontSize: "24px", fontWeight: "bold" }}>
-            {data.summary?.avgWellness || 0}/5
+          <div style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px" }}>
+            <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px" }}>
+              Outstanding Dues
+            </div>
+            <div style={{ fontSize: "24px", fontWeight: "bold" }}>
+              ₹{data.studentFinanceData.approxOutstanding?.toLocaleString() || 0}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    )}
 
-    {/* Player Pipeline */}
-    {data.pipeline && (
+    {/* Center Finance Summary */}
+    {data.centerFinanceData && data.centerFinanceData.length > 0 && (
       <div style={{ marginBottom: "40px" }}>
         <h3 style={{ fontSize: "20px", fontWeight: "bold", marginBottom: "20px" }}>
-          Player Pipeline
+          Center-Wise Finance Summary
         </h3>
         <table
           style={{
@@ -139,18 +110,38 @@ const ReportContent: React.FC<{ data: any }> = ({ data }) => (
           <thead>
             <tr style={{ background: "#f5f5f5" }}>
               <th style={{ padding: "10px", textAlign: "left", border: "1px solid #ddd" }}>
-                Level
+                Center
               </th>
-              <th style={{ padding: "10px", textAlign: "left", border: "1px solid #ddd" }}>
-                Players
+              <th style={{ padding: "10px", textAlign: "right", border: "1px solid #ddd" }}>
+                Students
+              </th>
+              <th style={{ padding: "10px", textAlign: "right", border: "1px solid #ddd" }}>
+                Total Collected
+              </th>
+              <th style={{ padding: "10px", textAlign: "right", border: "1px solid #ddd" }}>
+                Outstanding
+              </th>
+              <th style={{ padding: "10px", textAlign: "right", border: "1px solid #ddd" }}>
+                Collection Rate
               </th>
             </tr>
           </thead>
           <tbody>
-            {Object.entries(data.pipeline.pipeline || {}).map(([level, count]: [string, any]) => (
-              <tr key={level}>
-                <td style={{ padding: "10px", border: "1px solid #ddd" }}>{level}</td>
-                <td style={{ padding: "10px", border: "1px solid #ddd" }}>{count}</td>
+            {data.centerFinanceData.map((center: any) => (
+              <tr key={center.centerId}>
+                <td style={{ padding: "10px", border: "1px solid #ddd" }}>{center.centerName}</td>
+                <td style={{ padding: "10px", textAlign: "right", border: "1px solid #ddd" }}>
+                  {center.studentCount}
+                </td>
+                <td style={{ padding: "10px", textAlign: "right", border: "1px solid #ddd" }}>
+                  ₹{center.totalCollected.toLocaleString()}
+                </td>
+                <td style={{ padding: "10px", textAlign: "right", border: "1px solid #ddd" }}>
+                  ₹{center.approxOutstanding.toLocaleString()}
+                </td>
+                <td style={{ padding: "10px", textAlign: "right", border: "1px solid #ddd" }}>
+                  {center.collectionRate}%
+                </td>
               </tr>
             ))}
           </tbody>
@@ -158,58 +149,94 @@ const ReportContent: React.FC<{ data: any }> = ({ data }) => (
       </div>
     )}
 
-    {/* Training & Attendance Summary */}
-    <div style={{ marginBottom: "40px" }}>
-      <h3 style={{ fontSize: "20px", fontWeight: "bold", marginBottom: "20px" }}>
-        Training & Attendance Summary
-      </h3>
-      <p style={{ fontSize: "14px", lineHeight: "1.6", color: "#333" }}>
-        Attendance data shows {data.attendanceData.length} periods tracked. Average attendance
-        rate is {data.summary?.avgAttendance || 0}%.
-      </p>
-    </div>
-
-    {/* Matches & Selection */}
-    {data.matchesData && (
+    {/* Program Finance Summary */}
+    {data.programFinanceData && data.programFinanceData.length > 0 && (
       <div style={{ marginBottom: "40px" }}>
         <h3 style={{ fontSize: "20px", fontWeight: "bold", marginBottom: "20px" }}>
-          Matches & Selection
+          Program-Wise Finance Summary
         </h3>
-        {data.matchesData.byCompetition && (
-          <div style={{ marginBottom: "20px" }}>
-            <h4 style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "10px" }}>
-              Matches by Competition
-            </h4>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: "14px",
-              }}
-            >
-              <thead>
-                <tr style={{ background: "#f5f5f5" }}>
-                  <th style={{ padding: "10px", textAlign: "left", border: "1px solid #ddd" }}>
-                    Competition
-                  </th>
-                  <th style={{ padding: "10px", textAlign: "left", border: "1px solid #ddd" }}>
-                    Matches
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.matchesData.byCompetition.map((comp: any, idx: number) => (
-                  <tr key={idx}>
-                    <td style={{ padding: "10px", border: "1px solid #ddd" }}>
-                      {comp.competition}
-                    </td>
-                    <td style={{ padding: "10px", border: "1px solid #ddd" }}>{comp.matches}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontSize: "14px",
+          }}
+        >
+          <thead>
+            <tr style={{ background: "#f5f5f5" }}>
+              <th style={{ padding: "10px", textAlign: "left", border: "1px solid #ddd" }}>
+                Program
+              </th>
+              <th style={{ padding: "10px", textAlign: "right", border: "1px solid #ddd" }}>
+                Students
+              </th>
+              <th style={{ padding: "10px", textAlign: "right", border: "1px solid #ddd" }}>
+                Total Collected
+              </th>
+              <th style={{ padding: "10px", textAlign: "right", border: "1px solid #ddd" }}>
+                Outstanding
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.programFinanceData.map((program: any) => (
+              <tr key={program.program}>
+                <td style={{ padding: "10px", border: "1px solid #ddd" }}>{program.program}</td>
+                <td style={{ padding: "10px", textAlign: "right", border: "1px solid #ddd" }}>
+                  {program.students}
+                </td>
+                <td style={{ padding: "10px", textAlign: "right", border: "1px solid #ddd" }}>
+                  ₹{program.totalCollected.toLocaleString()}
+                </td>
+                <td style={{ padding: "10px", textAlign: "right", border: "1px solid #ddd" }}>
+                  ₹{program.outstanding.toLocaleString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+
+    {/* Churned Students Impact */}
+    {data.churnedStudentsData && data.churnedStudentsData.totalChurned > 0 && (
+      <div style={{ marginBottom: "40px" }}>
+        <h3 style={{ fontSize: "20px", fontWeight: "bold", marginBottom: "20px" }}>
+          Churned Students Financial Impact
+        </h3>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "15px",
+            marginBottom: "20px",
+          }}
+        >
+          <div style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px" }}>
+            <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px" }}>
+              Total Churned
+            </div>
+            <div style={{ fontSize: "24px", fontWeight: "bold" }}>
+              {data.churnedStudentsData.totalChurned}
+            </div>
           </div>
-        )}
+          <div style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px" }}>
+            <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px" }}>
+              Total Revenue Lost
+            </div>
+            <div style={{ fontSize: "24px", fontWeight: "bold" }}>
+              ₹{data.churnedStudentsData.totalChurnedRevenue?.toLocaleString() || 0}
+            </div>
+          </div>
+          <div style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px" }}>
+            <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px" }}>
+              Avg Revenue per Churned
+            </div>
+            <div style={{ fontSize: "24px", fontWeight: "bold" }}>
+              ₹{data.churnedStudentsData.avgChurnedRevenue?.toFixed(0) || 0}
+            </div>
+          </div>
+        </div>
       </div>
     )}
 
@@ -243,7 +270,7 @@ const ReportContent: React.FC<{ data: any }> = ({ data }) => (
         color: "#999",
       }}
     >
-      <div>FC Real Bengaluru Academy Performance Report</div>
+      <div>FC Real Bengaluru Finance Analytics Report</div>
       <div style={{ marginTop: "5px" }}>
         Generated on {new Date(data.generatedAt).toLocaleString()}
       </div>
@@ -252,20 +279,24 @@ const ReportContent: React.FC<{ data: any }> = ({ data }) => (
 );
 
 const AdminAnalyticsPage: React.FC = () => {
-  const [summary, setSummary] = useState<any>(null);
-  const [attendanceData, setAttendanceData] = useState<any[]>([]);
-  const [attendanceByCentre, setAttendanceByCentre] = useState<any[]>([]);
-  const [pipeline, setPipeline] = useState<any>(null);
-  const [financeData, setFinanceData] = useState<any>(null);
-  const [sessionsData, setSessionsData] = useState<any[]>([]);
-  const [matchesData, setMatchesData] = useState<any>(null);
+  const [studentFinanceData, setStudentFinanceData] = useState<any>(null);
+  const [centerFinanceData, setCenterFinanceData] = useState<any[]>([]);
+  const [revenueCollections, setRevenueCollections] = useState<any[]>([]);
+  const [monthlyCollections, setMonthlyCollections] = useState<any[]>([]);
+  const [paymentModeBreakdown, setPaymentModeBreakdown] = useState<any[]>([]);
+  const [programFinanceData, setProgramFinanceData] = useState<any[]>([]);
+  const [churnedStudentsData, setChurnedStudentsData] = useState<any>(null);
+  const [fanClubRevenue, setFanClubRevenue] = useState<any>(null);
+  const [shopRevenue, setShopRevenue] = useState<any>(null);
+  const [comprehensiveFinance, setComprehensiveFinance] = useState<any>(null);
+  const [detailedStudentFinance, setDetailedStudentFinance] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   // Filters
   const [selectedCentre, setSelectedCentre] = useState("");
-  const [dateRange, setDateRange] = useState("30");
-  const [groupBy, setGroupBy] = useState<"week" | "month">("week");
+  const [revenueMonths, setRevenueMonths] = useState(12);
+  const [paymentModeFilter, setPaymentModeFilter] = useState("all");
   const [centres, setCentres] = useState<any[]>([]);
 
   useEffect(() => {
@@ -273,8 +304,56 @@ const AdminAnalyticsPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    loadAllData();
-  }, [selectedCentre, dateRange, groupBy]);
+    let mounted = true;
+    let refreshTimeout: NodeJS.Timeout;
+    
+    const load = async () => {
+      if (mounted) {
+        await loadAllData();
+      }
+    };
+    
+    // Initial load
+    load();
+    
+    // Refresh data when page becomes visible (with debounce)
+    const handleVisibilityChange = () => {
+      if (!document.hidden && mounted) {
+        clearTimeout(refreshTimeout);
+        refreshTimeout = setTimeout(() => {
+          if (mounted) {
+            loadAllData();
+          }
+        }, 500);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      mounted = false;
+      clearTimeout(refreshTimeout);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCentre]); // Only reload when center changes
+
+  useEffect(() => {
+    // Load revenue and monthly data when filters change (only after initial load)
+    if (studentFinanceData) {
+      loadRevenueData();
+      loadMonthlyData();
+      loadDetailedStudentFinance();
+      // Reload shop revenue with new months filter
+      api.getShopRevenue({ months: revenueMonths })
+        .then(data => {
+          if (data) setShopRevenue(data);
+        })
+        .catch(err => {
+          console.error("Failed to load shop revenue:", err);
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCentre, revenueMonths, paymentModeFilter]);
 
   const loadCentres = async () => {
     try {
@@ -285,105 +364,334 @@ const AdminAnalyticsPage: React.FC = () => {
     }
   };
 
-  // Enable mock data - check env variable or default to true for localhost
-  const USE_MOCK_DATA = 
-    import.meta.env.VITE_USE_MOCK_ANALYTICS === "true" || 
-    import.meta.env.VITE_USE_MOCK_ANALYTICS === true ||
-    (import.meta.env.DEV && window.location.hostname === "localhost");
-  console.log("[AdminAnalytics] USE_MOCK_DATA:", USE_MOCK_DATA, "env value:", import.meta.env.VITE_USE_MOCK_ANALYTICS, "hostname:", window.location.hostname);
+  const loadCenterFinanceData = async () => {
+    try {
+      const centersData = await api.getCenters();
+      if (!Array.isArray(centersData) || centersData.length === 0) {
+        setCenterFinanceData([]);
+        return;
+      }
+      
+      // Load center data in parallel but with error handling
+      const centerFinancePromises = centersData.map(async (center: any) => {
+        try {
+          const [centerSummary, revenueData] = await Promise.all([
+            api.getDashboardSummary({ centerId: String(center.id) }).catch(() => ({
+              totalCollected: 0,
+              studentCount: 0,
+              approxOutstanding: 0
+            })),
+            api.getRevenueCollections({ 
+              months: 12, 
+              centerId: String(center.id) 
+            }).catch(() => [])
+          ]);
+          
+          const totalRevenue = Array.isArray(revenueData) 
+            ? revenueData.reduce((sum: number, r: any) => sum + (r.amount || 0), 0)
+            : 0;
+          
+          const totalCollected = centerSummary?.totalCollected || 0;
+          const approxOutstanding = centerSummary?.approxOutstanding || 0;
+          
+          return {
+            centerId: center.id,
+            centerName: center.name,
+            totalCollected,
+            studentCount: centerSummary?.studentCount || 0,
+            approxOutstanding,
+            totalRevenue,
+            collectionRate: totalCollected > 0 
+              ? ((totalCollected / (totalCollected + approxOutstanding)) * 100).toFixed(1)
+              : "0"
+          };
+        } catch (err) {
+          console.error(`Failed to load finance data for center ${center.id}:`, err);
+          return {
+            centerId: center.id,
+            centerName: center.name,
+            totalCollected: 0,
+            studentCount: 0,
+            approxOutstanding: 0,
+            totalRevenue: 0,
+            collectionRate: "0"
+          };
+        }
+      });
+      const centerFinanceResults = await Promise.all(centerFinancePromises);
+      setCenterFinanceData(centerFinanceResults);
+    } catch (err) {
+      console.error("Failed to load center finance data:", err);
+      setCenterFinanceData([]);
+    }
+  };
+
+  const loadProgramFinanceData = async () => {
+    try {
+      const students = await api.getStudents(undefined, undefined, true);
+      if (!Array.isArray(students)) return;
+
+      // Group by program type
+      const programMap: { [key: string]: { students: number; totalCollected: number; outstanding: number; active: number; churned: number } } = {};
+      
+      students.forEach((student: any) => {
+        const program = student.programType || "Unknown";
+        if (!programMap[program]) {
+          programMap[program] = {
+            students: 0,
+            totalCollected: 0,
+            outstanding: 0,
+            active: 0,
+            churned: 0
+          };
+        }
+        programMap[program].students++;
+        programMap[program].totalCollected += student.totalPaid || 0;
+        programMap[program].outstanding += student.outstanding || 0;
+        if (student.status === "ACTIVE") {
+          programMap[program].active++;
+        } else if (student.status === "INACTIVE" && student.churnedDate) {
+          programMap[program].churned++;
+        }
+      });
+
+      const programData = Object.entries(programMap).map(([program, data]) => ({
+        program,
+        ...data,
+        collectionRate: data.totalCollected > 0
+          ? ((data.totalCollected / (data.totalCollected + data.outstanding)) * 100).toFixed(1)
+          : "0"
+      }));
+
+      setProgramFinanceData(programData);
+    } catch (err) {
+      console.error("Failed to load program finance data:", err);
+      setProgramFinanceData([]);
+    }
+  };
+
+  const loadChurnedStudentsData = async () => {
+    try {
+      const students = await api.getStudents(undefined, undefined, true);
+      if (!Array.isArray(students)) return;
+
+      const churnedStudents = students.filter((s: any) => s.status === "INACTIVE" && s.churnedDate);
+      const totalChurnedRevenue = churnedStudents.reduce((sum: number, s: any) => sum + (s.totalPaid || 0), 0);
+      const avgChurnedRevenue = churnedStudents.length > 0 ? totalChurnedRevenue / churnedStudents.length : 0;
+      
+      // Group by month of churn
+      const churnByMonth: { [key: string]: number } = {};
+      churnedStudents.forEach((s: any) => {
+        if (s.churnedDate) {
+          const date = new Date(s.churnedDate);
+          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          churnByMonth[monthKey] = (churnByMonth[monthKey] || 0) + 1;
+        }
+      });
+
+      setChurnedStudentsData({
+        totalChurned: churnedStudents.length,
+        totalChurnedRevenue,
+        avgChurnedRevenue,
+        churnByMonth: Object.entries(churnByMonth).map(([month, count]) => ({
+          month,
+          count,
+          revenue: churnedStudents
+            .filter((s: any) => {
+              if (!s.churnedDate) return false;
+              const date = new Date(s.churnedDate);
+              const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+              return monthKey === month;
+            })
+            .reduce((sum: number, s: any) => sum + (s.totalPaid || 0), 0)
+        }))
+      });
+    } catch (err) {
+      console.error("Failed to load churned students data:", err);
+      setChurnedStudentsData(null);
+    }
+  };
+
+  const loadDetailedStudentFinance = async () => {
+    try {
+      const students = await api.getStudents(undefined, selectedCentre || undefined, true);
+      if (!Array.isArray(students)) return;
+
+      // Create detailed breakdown with micro-level details
+      const detailed = students.map((student: any) => {
+        const totalPaid = student.totalPaid || 0;
+        const outstanding = student.outstanding || 0;
+        const expectedTotal = totalPaid + outstanding;
+        const collectionRate = expectedTotal > 0 ? (totalPaid / expectedTotal) * 100 : 100;
+        
+        return {
+          id: student.id,
+          name: student.fullName,
+          center: student.center?.name || "Unknown",
+          program: student.programType || "Unknown",
+          status: student.status,
+          joiningDate: student.joiningDate,
+          churnedDate: student.churnedDate,
+          monthlyFee: student.monthlyFeeAmount || 0,
+          paymentFrequency: student.paymentFrequency || 1,
+          totalPaid,
+          outstanding,
+          expectedTotal,
+          collectionRate: collectionRate.toFixed(1),
+          isChurned: student.status === "INACTIVE" && student.churnedDate
+        };
+      });
+
+      // Sort by outstanding (highest first) for attention
+      detailed.sort((a, b) => b.outstanding - a.outstanding);
+      setDetailedStudentFinance(detailed);
+    } catch (err) {
+      console.error("Failed to load detailed student finance:", err);
+      setDetailedStudentFinance([]);
+    }
+  };
 
   const loadAllData = async () => {
     setLoading(true);
     setError("");
     try {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - Number(dateRange));
-      const dateRangeObj = { from: startDate, to: endDate };
+      // Load dashboard summary (main finance overview) - this is critical, load first
+      const dashboardSummary = await api.getDashboardSummary({
+        centerId: selectedCentre || undefined,
+      }).catch(err => {
+        console.error("Failed to load dashboard summary:", err);
+        return null;
+      });
 
-      if (USE_MOCK_DATA) {
-        // Use mock data
-        const filters = {
-          dateRange: dateRangeObj,
-          centreId: selectedCentre || undefined,
-        };
-
-        const summaryData = getAdminKPIs(filters);
-        const attendanceDataRes = getAdminAttendanceOverTime(filters, groupBy);
-        const attendanceByCentreRes = getAdminAttendanceByCentre(filters);
-        const pipelineData = getAdminPlayersPerPathwayLevel();
-        const sessionsDataRes = getAdminSessionsAndLoad(filters);
-        const matchesDataRes = getAdminMatches();
-
-        setSummary(summaryData);
-        setAttendanceData(attendanceDataRes);
-        setAttendanceByCentre(attendanceByCentreRes);
-        setPipeline(pipelineData);
-        setFinanceData({ monthlyTrend: [], expectedMonthly: 0, collectedThisMonth: 0, outstanding: 0 });
-        setSessionsData(sessionsDataRes);
-        setMatchesData(matchesDataRes);
+      if (dashboardSummary) {
+        setStudentFinanceData(dashboardSummary);
       } else {
-        // Use real API
-        const endDateStr = endDate.toISOString().split("T")[0];
-        const startDateStr = startDate.toISOString().split("T")[0];
+        // Set default values if summary fails
+        setStudentFinanceData({ totalCollected: 0, studentCount: 0, approxOutstanding: 0 });
+      }
 
-        const [
-          summaryData,
-          attendanceDataRes,
-          attendanceByCentreRes,
-          pipelineData,
-          financeDataRes,
-          sessionsDataRes,
-          matchesDataRes,
-        ] = await Promise.all([
-          api.getAdminAnalyticsSummary({
-            centerId: selectedCentre || undefined,
-            startDate: startDateStr,
-            endDate: endDateStr,
-          }),
-          api.getAdminAttendanceAnalytics({
-            centerId: selectedCentre || undefined,
-            groupBy,
-          }),
-          api.getAdminAttendanceByCentre(),
-          api.getAdminPipeline(),
-          api.getAdminFinance({ months: "12" }),
-          api.getAdminSessions({
-            centerId: selectedCentre || undefined,
-          }),
-          api.getAdminMatches(),
-        ]);
+      // Clear loading state immediately after getting main data so UI can render
+      setLoading(false);
+      setError("");
 
-        setSummary(summaryData);
-        setAttendanceData(attendanceDataRes);
-        setAttendanceByCentre(attendanceByCentreRes);
-        setPipeline(pipelineData);
-        setFinanceData(financeDataRes);
-        setSessionsData(sessionsDataRes);
-        setMatchesData(matchesDataRes);
+      // Load comprehensive finance data (includes all revenue streams)
+      const comprehensiveData = await api.getComprehensiveFinance({
+        centerId: selectedCentre || undefined
+      }).catch(err => {
+        console.error("Failed to load comprehensive finance:", err);
+        return null;
+      });
+      if (comprehensiveData) {
+        setComprehensiveFinance(comprehensiveData);
+      }
+
+      // Load payment mode breakdown (non-blocking, don't wait)
+      api.getPaymentModeBreakdown()
+        .then(paymentModes => {
+          if (paymentModes && Array.isArray(paymentModes)) {
+            setPaymentModeBreakdown(paymentModes);
+          } else {
+            setPaymentModeBreakdown([]);
+          }
+        })
+        .catch(err => {
+          console.error("Failed to load payment mode breakdown:", err);
+          setPaymentModeBreakdown([]);
+        });
+
+      // Load fan club revenue (non-blocking)
+      api.getFanClubRevenue()
+        .then(data => {
+          if (data) setFanClubRevenue(data);
+        })
+        .catch(err => {
+          console.error("Failed to load fan club revenue:", err);
+          setFanClubRevenue(null);
+        });
+
+      // Load shop revenue (non-blocking)
+      api.getShopRevenue({ months: revenueMonths })
+        .then(data => {
+          if (data) setShopRevenue(data);
+        })
+        .catch(err => {
+          console.error("Failed to load shop revenue:", err);
+          setShopRevenue(null);
+        });
+
+      // Load detailed student finance (non-blocking)
+      loadDetailedStudentFinance();
+
+      // Load other data asynchronously (non-blocking, don't wait)
+      loadCenterFinanceData().catch(err => {
+        console.error("Error loading center finance data:", err);
+        setCenterFinanceData([]);
+      });
+      
+      loadProgramFinanceData().catch(err => {
+        console.error("Error loading program finance data:", err);
+        setProgramFinanceData([]);
+      });
+      
+      loadChurnedStudentsData().catch(err => {
+        console.error("Error loading churned students data:", err);
+        setChurnedStudentsData(null);
+      });
+    } catch (err: any) {
+      console.error("Error loading analytics:", err);
+      setError(err.message || "Failed to load analytics");
+      // Ensure we have at least default data so page can render
+      setStudentFinanceData({ totalCollected: 0, studentCount: 0, approxOutstanding: 0 });
+      setLoading(false);
+    }
+  };
+
+  const loadRevenueData = async () => {
+    try {
+      const data = await api.getRevenueCollections({
+        months: revenueMonths,
+        centerId: selectedCentre || undefined,
+        paymentMode: paymentModeFilter === "all" ? undefined : paymentModeFilter
+      });
+      if (data && Array.isArray(data)) {
+        setRevenueCollections(data);
+      } else {
+        setRevenueCollections([]);
       }
     } catch (err: any) {
-      setError(err.message || "Failed to load analytics");
-      console.error("Error loading analytics:", err);
-    } finally {
-      setLoading(false);
+      console.error("Failed to load revenue collections:", err);
+      setRevenueCollections([]);
+    }
+  };
+
+  const loadMonthlyData = async () => {
+    try {
+      const data = await api.getMonthlyCollections({
+        centerId: selectedCentre || undefined,
+        paymentMode: paymentModeFilter === "all" ? undefined : paymentModeFilter
+      });
+      if (data && Array.isArray(data)) {
+        setMonthlyCollections(data);
+      } else {
+        setMonthlyCollections([]);
+      }
+    } catch (err: any) {
+      console.error("Failed to load monthly collections:", err);
+      setMonthlyCollections([]);
     }
   };
 
   const handleDownloadPDF = async () => {
     try {
-      const endDate = new Date().toISOString().split("T")[0];
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - Number(dateRange));
-      const startDateStr = startDate.toISOString().split("T")[0];
-
       const reportData = {
-        dateRange: `${startDateStr} to ${endDate}`,
-        summary,
-        attendanceData,
-        pipeline,
-        financeData,
-        matchesData,
+        dateRange: `Last ${revenueMonths} months`,
+        studentFinanceData,
+        centerFinanceData,
+        revenueCollections,
+        monthlyCollections,
+        paymentModeBreakdown,
+        programFinanceData,
+        churnedStudentsData,
         generatedAt: new Date().toISOString(),
       };
 
@@ -442,7 +750,7 @@ const AdminAnalyticsPage: React.FC = () => {
         heightLeft -= pdfHeight;
       }
 
-      pdf.save(`FC-Real-Bengaluru-Academy-Report-${new Date().toISOString().split("T")[0]}.pdf`);
+      pdf.save(`FC-Real-Bengaluru-Finance-Report-${new Date().toISOString().split("T")[0]}.pdf`);
 
       // Cleanup
       root.unmount();
@@ -453,20 +761,32 @@ const AdminAnalyticsPage: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading && !studentFinanceData) {
     return (
-      <div style={{ padding: spacing.xl }}>
-        <div style={{ ...typography.h3, color: colors.text.primary }}>
+      <div style={{ padding: spacing.xl, textAlign: "center" }}>
+        <div style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.md }}>
           Loading analytics...
+        </div>
+        <div style={{ ...typography.body, color: colors.text.muted }}>
+          Please wait while we fetch your finance data
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error && !studentFinanceData) {
     return (
       <div style={{ padding: spacing.xl }}>
-        <div style={{ color: colors.warning.main }}>{error}</div>
+        <div style={{ color: colors.warning.main, marginBottom: spacing.md }}>{error}</div>
+        <Button 
+          variant="primary" 
+          onClick={() => {
+            setError("");
+            loadAllData();
+          }}
+        >
+          Retry Loading
+        </Button>
       </div>
     );
   }
@@ -476,12 +796,6 @@ const AdminAnalyticsPage: React.FC = () => {
     ...centres.map((c) => ({ value: String(c.id), label: c.name })),
   ];
 
-  const dateRangeOptions = [
-    { value: "7", label: "Last 7 Days" },
-    { value: "30", label: "Last 30 Days" },
-    { value: "90", label: "Last 90 Days" },
-    { value: "180", label: "Last 6 Months" },
-  ];
 
   const COLORS = [
     colors.primary.main,
@@ -504,10 +818,10 @@ const AdminAnalyticsPage: React.FC = () => {
       >
         <div>
           <h1 style={{ ...typography.h2, color: colors.text.primary, margin: 0 }}>
-            Analytics Dashboard
+            Finance Analytics Dashboard
           </h1>
           <p style={{ ...typography.body, color: colors.text.muted, marginTop: spacing.xs }}>
-            System-wide performance metrics and insights
+            Comprehensive financial metrics and insights for students and centers
           </p>
         </div>
         <Button 
@@ -517,7 +831,7 @@ const AdminAnalyticsPage: React.FC = () => {
             width: "100%",
           }}
         >
-          📄 Download Academy Report (PDF)
+          📄 Download Finance Report (PDF)
         </Button>
       </div>
 
@@ -530,168 +844,376 @@ const AdminAnalyticsPage: React.FC = () => {
             onChange: setSelectedCentre,
           },
           {
-            label: "Date Range",
-            value: dateRange,
-            options: dateRangeOptions,
-            onChange: setDateRange,
+            label: "Revenue Period",
+            value: String(revenueMonths),
+            options: [
+              { value: "3", label: "Last 3 Months" },
+              { value: "6", label: "Last 6 Months" },
+              { value: "12", label: "Last 12 Months" },
+              { value: "24", label: "Last 24 Months" },
+            ],
+            onChange: (val) => setRevenueMonths(Number(val)),
           },
           {
-            label: "Group By",
-            value: groupBy,
+            label: "Payment Mode",
+            value: paymentModeFilter,
             options: [
-              { value: "week", label: "Week" },
-              { value: "month", label: "Month" },
+              { value: "all", label: "All Modes" },
+              { value: "CASH", label: "Cash" },
+              { value: "UPI", label: "UPI" },
+              { value: "BANK_TRANSFER", label: "Bank Transfer" },
+              { value: "CHEQUE", label: "Cheque" },
             ],
-            onChange: (val) => setGroupBy(val as "week" | "month"),
+            onChange: setPaymentModeFilter,
           },
         ]}
       />
 
-      {/* KPI Summary */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-          gap: spacing.md,
-          marginBottom: spacing.xl,
-        }}
-      >
-        <KPIChip
-          label="Total Active Players"
-          value={summary?.totalActivePlayers || 0}
-        />
-        <KPIChip
-          label="Avg Attendance %"
-          value={`${summary?.avgAttendance || 0}%`}
-          trend={summary?.avgAttendance >= 85 ? "up" : summary?.avgAttendance >= 70 ? "neutral" : "down"}
-        />
-        <KPIChip
-          label="Sessions (30 Days)"
-          value={summary?.sessionsLast30Days || 0}
-        />
-        <KPIChip
-          label="Matches (Season)"
-          value={summary?.matchesSeason || 0}
-        />
-        <KPIChip
-          label="Fee Collection %"
-          value={`${summary?.feeCollectionRate || 0}%`}
-        />
-        <KPIChip
-          label="Wellness Average"
-          value={`${summary?.avgWellness || 0}/5`}
-        />
-      </div>
-
-      {/* Attendance Analytics */}
-      <AnalyticsCard
-        title="Attendance Over Time"
-        subtitle={`Grouped by ${groupBy}`}
-        fullWidth
-      >
-        <ChartContainer height={300} isEmpty={attendanceData.length === 0}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={attendanceData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={colors.surface.card} />
-              <XAxis dataKey="period" stroke={colors.text.secondary} />
-              <YAxis stroke={colors.text.secondary} />
-              <Tooltip
-                contentStyle={{
-                  background: colors.surface.main,
-                  border: `1px solid ${colors.surface.card}`,
-                  borderRadius: borderRadius.md,
-                }}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="rate"
-                stroke={colors.primary.main}
-                strokeWidth={2}
-                name="Attendance %"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-      </AnalyticsCard>
-
-      {/* Attendance by Centre */}
-      <AnalyticsCard title="Attendance by Centre" fullWidth>
-        <ChartContainer height={300} isEmpty={attendanceByCentre.length === 0}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={attendanceByCentre}>
-              <CartesianGrid strokeDasharray="3 3" stroke={colors.surface.card} />
-              <XAxis dataKey="centreName" stroke={colors.text.secondary} />
-              <YAxis stroke={colors.text.secondary} />
-              <Tooltip
-                contentStyle={{
-                  background: colors.surface.main,
-                  border: `1px solid ${colors.surface.card}`,
-                  borderRadius: borderRadius.md,
-                }}
-              />
-              <Bar dataKey="rate" fill={colors.primary.main} name="Attendance %" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-      </AnalyticsCard>
-
-      {/* Pipeline */}
-      {pipeline && (
-        <AnalyticsCard title="Player Pipeline" fullWidth>
-          <ChartContainer height={300} isEmpty={!pipeline.pipeline}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={Object.entries(pipeline.pipeline || {}).map(([level, count]) => ({ level, count }))}>
-                <CartesianGrid strokeDasharray="3 3" stroke={colors.surface.card} />
-                <XAxis dataKey="level" stroke={colors.text.secondary} />
-                <YAxis stroke={colors.text.secondary} />
-                <Tooltip
-                  contentStyle={{
-                    background: colors.surface.main,
-                    border: `1px solid ${colors.surface.card}`,
-                    borderRadius: borderRadius.md,
-                  }}
-                />
-                <Bar dataKey="count" fill={colors.accent.main} name="Players" />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
+      {/* Comprehensive Finance KPI Summary */}
+      {comprehensiveFinance && (
+        <AnalyticsCard title="Complete Financial Overview" fullWidth>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: spacing.md,
+              marginBottom: spacing.lg,
+            }}
+          >
+            <KPIChip
+              label="Total Revenue (All Streams)"
+              value={`₹${comprehensiveFinance.totalRevenue?.toLocaleString() || 0}`}
+              trend="up"
+            />
+            <KPIChip
+              label="Student Revenue"
+              value={`₹${comprehensiveFinance.revenueBreakdown?.student?.toLocaleString() || 0}`}
+            />
+            <KPIChip
+              label="Fan Club Revenue (Monthly)"
+              value={`₹${comprehensiveFinance.revenueBreakdown?.fanClub?.toLocaleString() || 0}`}
+            />
+            <KPIChip
+              label="Shop Revenue"
+              value={`₹${comprehensiveFinance.revenueBreakdown?.shop?.toLocaleString() || 0}`}
+            />
+          </div>
         </AnalyticsCard>
       )}
 
-      {/* Finance */}
-      {financeData && (
-        <AnalyticsCard title="Finance Analytics" fullWidth>
+      {/* Student Finance KPI Summary */}
+      {studentFinanceData && (
+        <AnalyticsCard title="Student Finance Summary" fullWidth>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: spacing.md,
+            }}
+          >
+            <KPIChip
+              label="Total Collected"
+              value={`₹${studentFinanceData.totalCollected?.toLocaleString() || 0}`}
+              trend="up"
+            />
+            <KPIChip
+              label="Total Students"
+              value={studentFinanceData.studentCount || 0}
+            />
+            <KPIChip
+              label="Outstanding Dues"
+              value={`₹${studentFinanceData.approxOutstanding?.toLocaleString() || 0}`}
+              trend={studentFinanceData.approxOutstanding > 0 ? "down" : "neutral"}
+            />
+            <KPIChip
+              label="Collection Rate"
+              value={`${studentFinanceData.totalCollected && studentFinanceData.approxOutstanding 
+                ? ((studentFinanceData.totalCollected / (studentFinanceData.totalCollected + studentFinanceData.approxOutstanding)) * 100).toFixed(1)
+                : 100}%`}
+              trend={studentFinanceData.totalCollected && studentFinanceData.approxOutstanding 
+                ? ((studentFinanceData.totalCollected / (studentFinanceData.totalCollected + studentFinanceData.approxOutstanding)) * 100) >= 80 ? "up" : "neutral"
+                : "neutral"}
+            />
+            {churnedStudentsData && (
+              <>
+                <KPIChip
+                  label="Churned Students"
+                  value={churnedStudentsData.totalChurned || 0}
+                  trend="down"
+                />
+                <KPIChip
+                  label="Churned Revenue Lost"
+                  value={`₹${churnedStudentsData.totalChurnedRevenue?.toLocaleString() || 0}`}
+                />
+              </>
+            )}
+          </div>
+        </AnalyticsCard>
+      )}
+
+      {/* Fan Club Finance */}
+      {fanClubRevenue && (
+        <AnalyticsCard title="Fan Club Revenue Analytics" fullWidth>
           <div style={{ marginBottom: spacing.md }}>
             <div className="responsive-flex-row" style={{ 
-              display: "flex", 
-              flexDirection: "column",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
               gap: spacing.md,
             }}>
-              <KPIChip label="Expected Monthly" value={`₹${financeData.expectedMonthly?.toLocaleString() || 0}`} />
-              <KPIChip label="Collected This Month" value={`₹${financeData.collectedThisMonth?.toLocaleString() || 0}`} />
-              <KPIChip label="Outstanding" value={`₹${financeData.outstanding?.toLocaleString() || 0}`} />
+              <KPIChip 
+                label="Total Active Fans" 
+                value={fanClubRevenue.totalFans || 0}
+              />
+              <KPIChip 
+                label="Projected Monthly Revenue" 
+                value={`₹${fanClubRevenue.totalProjectedMonthlyRevenue?.toLocaleString() || 0}`}
+                trend="up"
+              />
+              <KPIChip 
+                label="Projected Yearly Revenue" 
+                value={`₹${fanClubRevenue.totalProjectedYearlyRevenue?.toLocaleString() || 0}`}
+                trend="up"
+              />
             </div>
           </div>
-          <ChartContainer height={300} isEmpty={financeData.monthlyTrend?.length === 0}>
+          {fanClubRevenue.revenueByTier && fanClubRevenue.revenueByTier.length > 0 && (
+            <div style={{ marginTop: spacing.lg }}>
+              <h4 style={{ ...typography.h4, marginBottom: spacing.md, color: colors.text.primary }}>
+                Revenue by Tier
+              </h4>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom: `2px solid ${colors.surface.card}` }}>
+                      <th style={{ padding: spacing.sm, textAlign: "left", ...typography.label }}>Tier</th>
+                      <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Fans</th>
+                      <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Monthly Price</th>
+                      <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Yearly Price</th>
+                      <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Monthly Revenue</th>
+                      <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Yearly Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fanClubRevenue.revenueByTier.map((tier: any) => (
+                      <tr key={tier.tierId} style={{ borderBottom: `1px solid ${colors.surface.card}` }}>
+                        <td style={{ padding: spacing.sm, color: colors.text.primary, fontWeight: 600 }}>
+                          {tier.tierName}
+                        </td>
+                        <td style={{ padding: spacing.sm, textAlign: "right", color: colors.text.primary }}>
+                          {tier.fanCount}
+                        </td>
+                        <td style={{ padding: spacing.sm, textAlign: "right", color: colors.text.primary }}>
+                          ₹{tier.monthlyPrice.toLocaleString()}
+                        </td>
+                        <td style={{ padding: spacing.sm, textAlign: "right", color: colors.text.primary }}>
+                          ₹{tier.yearlyPrice.toLocaleString()}
+                        </td>
+                        <td style={{ padding: spacing.sm, textAlign: "right", color: colors.success.main }}>
+                          ₹{tier.projectedMonthlyRevenue.toLocaleString()}
+                        </td>
+                        <td style={{ padding: spacing.sm, textAlign: "right", color: colors.success.main }}>
+                          ₹{tier.projectedYearlyRevenue.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </AnalyticsCard>
+      )}
+
+      {/* Shop Finance */}
+      {shopRevenue && (
+        <AnalyticsCard title="Shop Revenue Analytics" fullWidth>
+          <div style={{ marginBottom: spacing.md }}>
+            <div className="responsive-flex-row" style={{ 
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: spacing.md,
+            }}>
+              <KPIChip 
+                label="Total Revenue" 
+                value={`₹${shopRevenue.totalRevenue?.toLocaleString() || 0}`}
+                trend="up"
+              />
+              <KPIChip 
+                label="Total Orders" 
+                value={shopRevenue.totalOrders || 0}
+              />
+              <KPIChip 
+                label="Paid Orders" 
+                value={shopRevenue.paidOrdersCount || 0}
+              />
+              <KPIChip 
+                label="Avg Order Value" 
+                value={`₹${shopRevenue.avgOrderValue?.toLocaleString() || 0}`}
+              />
+              <KPIChip 
+                label="Conversion Rate" 
+                value={`${shopRevenue.conversionRate?.toFixed(1) || 0}%`}
+                trend={shopRevenue.conversionRate >= 80 ? "up" : "neutral"}
+              />
+              <KPIChip 
+                label="Pending Revenue" 
+                value={`₹${shopRevenue.pendingRevenue?.toLocaleString() || 0}`}
+                trend="down"
+              />
+            </div>
+          </div>
+          {shopRevenue.monthlyTrend && shopRevenue.monthlyTrend.length > 0 && (
+            <ChartContainer height={300} isEmpty={shopRevenue.monthlyTrend.length === 0}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={shopRevenue.monthlyTrend}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.surface.card} />
+                  <XAxis 
+                    dataKey="month" 
+                    stroke={colors.text.secondary}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis 
+                    yAxisId="left"
+                    stroke={colors.text.secondary}
+                    tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                  />
+                  <YAxis 
+                    yAxisId="right"
+                    orientation="right"
+                    stroke={colors.text.secondary}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: colors.surface.main,
+                      border: `1px solid ${colors.surface.card}`,
+                      borderRadius: borderRadius.md,
+                    }}
+                    formatter={(value: any, name: string) => {
+                      if (name === "orders") return value;
+                      return `₹${value.toLocaleString()}`;
+                    }}
+                  />
+                  <Legend />
+                  <Bar yAxisId="left" dataKey="revenue" fill={colors.success.main} name="Revenue (₹)" />
+                  <Bar yAxisId="right" dataKey="orders" fill={colors.primary.main} name="Orders" />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          )}
+          {shopRevenue.categoryBreakdown && shopRevenue.categoryBreakdown.length > 0 && (
+            <div style={{ marginTop: spacing.lg }}>
+              <h4 style={{ ...typography.h4, marginBottom: spacing.md, color: colors.text.primary }}>
+                Revenue by Product Category
+              </h4>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom: `2px solid ${colors.surface.card}` }}>
+                      <th style={{ padding: spacing.sm, textAlign: "left", ...typography.label }}>Category</th>
+                      <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Revenue</th>
+                      <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Percentage</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {shopRevenue.categoryBreakdown.map((cat: any, idx: number) => (
+                      <tr key={idx} style={{ borderBottom: `1px solid ${colors.surface.card}` }}>
+                        <td style={{ padding: spacing.sm, color: colors.text.primary, fontWeight: 600 }}>
+                          {cat.category}
+                        </td>
+                        <td style={{ padding: spacing.sm, textAlign: "right", color: colors.success.main }}>
+                          ₹{cat.revenue.toLocaleString()}
+                        </td>
+                        <td style={{ padding: spacing.sm, textAlign: "right", color: colors.text.primary }}>
+                          {cat.percentage.toFixed(1)}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </AnalyticsCard>
+      )}
+
+      {/* Student Finance Overview */}
+      {studentFinanceData && (
+        <AnalyticsCard title="Overall Finance Summary" fullWidth>
+          <div style={{ marginBottom: spacing.md }}>
+            <div className="responsive-flex-row" style={{ 
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: spacing.md,
+            }}>
+              <KPIChip 
+                label="Total Collected" 
+                value={`₹${studentFinanceData.totalCollected?.toLocaleString() || 0}`}
+                trend="up"
+              />
+              <KPIChip 
+                label="Total Students" 
+                value={studentFinanceData.studentCount || 0}
+              />
+              <KPIChip 
+                label="Outstanding Dues" 
+                value={`₹${studentFinanceData.approxOutstanding?.toLocaleString() || 0}`}
+                trend={studentFinanceData.approxOutstanding > 0 ? "down" : "neutral"}
+              />
+              <KPIChip 
+                label="Collection Rate" 
+                value={`${studentFinanceData.totalCollected && studentFinanceData.approxOutstanding 
+                  ? ((studentFinanceData.totalCollected / (studentFinanceData.totalCollected + studentFinanceData.approxOutstanding)) * 100).toFixed(1)
+                  : 100}%`}
+                trend={studentFinanceData.totalCollected && studentFinanceData.approxOutstanding 
+                  ? ((studentFinanceData.totalCollected / (studentFinanceData.totalCollected + studentFinanceData.approxOutstanding)) * 100) >= 80 ? "up" : "neutral"
+                  : "neutral"}
+              />
+            </div>
+          </div>
+        </AnalyticsCard>
+      )}
+
+      {/* Revenue Collections Over Time */}
+      {revenueCollections.length > 0 && (
+        <AnalyticsCard
+          title="Revenue Collections Over Time"
+          subtitle={`Last ${revenueMonths} months`}
+          fullWidth
+        >
+          <ChartContainer height={350} isEmpty={revenueCollections.length === 0}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={financeData.monthlyTrend}>
+              <LineChart data={revenueCollections}>
                 <CartesianGrid strokeDasharray="3 3" stroke={colors.surface.card} />
-                <XAxis dataKey="month" stroke={colors.text.secondary} />
-                <YAxis stroke={colors.text.secondary} />
+                <XAxis 
+                  dataKey="month" 
+                  stroke={colors.text.secondary}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis 
+                  stroke={colors.text.secondary}
+                  tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                />
                 <Tooltip
                   contentStyle={{
                     background: colors.surface.main,
                     border: `1px solid ${colors.surface.card}`,
                     borderRadius: borderRadius.md,
                   }}
+                  formatter={(value: any) => `₹${value.toLocaleString()}`}
                 />
+                <Legend />
                 <Line
                   type="monotone"
                   dataKey="amount"
                   stroke={colors.success.main}
-                  strokeWidth={2}
-                  name="Amount (₹)"
+                  strokeWidth={3}
+                  name="Revenue (₹)"
+                  dot={{ fill: colors.success.main, r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -699,88 +1221,367 @@ const AdminAnalyticsPage: React.FC = () => {
         </AnalyticsCard>
       )}
 
-      {/* Sessions & Load */}
-      <AnalyticsCard title="Sessions & Training Load" fullWidth>
-        <ChartContainer height={300} isEmpty={sessionsData.length === 0}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={sessionsData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={colors.surface.card} />
-              <XAxis dataKey="week" stroke={colors.text.secondary} />
-              <YAxis yAxisId="left" stroke={colors.text.secondary} />
-              <YAxis yAxisId="right" orientation="right" stroke={colors.text.secondary} />
-              <Tooltip
-                contentStyle={{
-                  background: colors.surface.main,
-                  border: `1px solid ${colors.surface.card}`,
-                  borderRadius: borderRadius.md,
-                }}
-              />
-              <Legend />
-              <Bar yAxisId="left" dataKey="sessions" fill={colors.primary.main} name="Sessions" />
-              <Bar yAxisId="right" dataKey="avgExertion" fill={colors.accent.main} name="Avg Exertion" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-      </AnalyticsCard>
+      {/* Monthly Collections Allocation */}
+      {monthlyCollections.length > 0 && (
+        <AnalyticsCard
+          title="Monthly Collections Allocation"
+          subtitle="Payments allocated to specific months"
+          fullWidth
+        >
+          <ChartContainer height={350} isEmpty={monthlyCollections.length === 0}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyCollections}>
+                <CartesianGrid strokeDasharray="3 3" stroke={colors.surface.card} />
+                <XAxis 
+                  dataKey="month" 
+                  stroke={colors.text.secondary}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis 
+                  stroke={colors.text.secondary}
+                  tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: colors.surface.main,
+                    border: `1px solid ${colors.surface.card}`,
+                    borderRadius: borderRadius.md,
+                  }}
+                  formatter={(value: any) => `₹${value.toLocaleString()}`}
+                />
+                <Bar dataKey="amount" fill={colors.primary.main} name="Amount (₹)" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        </AnalyticsCard>
+      )}
 
-      {/* Matches */}
-      {matchesData && (
-        <AnalyticsCard title="Match & Selection Analytics" fullWidth>
-          <div className="responsive-grid-2" style={{ 
-            display: "grid", 
-            gridTemplateColumns: "1fr",
-            gap: spacing.xl,
-          }}>
-            <div>
-              <h4 style={{ ...typography.h4, marginBottom: spacing.md }}>Matches by Competition</h4>
-              <ChartContainer height={250} isEmpty={matchesData.byCompetition?.length === 0}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={matchesData.byCompetition}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={colors.surface.card} />
-                    <XAxis dataKey="competition" stroke={colors.text.secondary} />
-                    <YAxis stroke={colors.text.secondary} />
-                    <Tooltip
-                      contentStyle={{
-                        background: colors.surface.main,
-                        border: `1px solid ${colors.surface.card}`,
-                        borderRadius: borderRadius.md,
-                      }}
-                    />
-                    <Bar dataKey="matches" fill={colors.primary.main} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </div>
-            <div>
-              <h4 style={{ ...typography.h4, marginBottom: spacing.md }}>Participation Distribution</h4>
-              <ChartContainer height={250} isEmpty={!matchesData.participationDistribution}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={Object.entries(matchesData.participationDistribution || {}).map(([name, value]) => ({
-                        name,
-                        value,
-                      }))}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {Object.entries(matchesData.participationDistribution || {}).map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+      {/* Payment Mode Breakdown */}
+      {paymentModeBreakdown.length > 0 && (
+        <AnalyticsCard title="Payment Mode Breakdown" fullWidth>
+          <ChartContainer height={300} isEmpty={paymentModeBreakdown.length === 0}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={paymentModeBreakdown}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent, value }) => `${name}: ₹${value.toLocaleString()} (${(percent * 100).toFixed(1)}%)`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="amount"
+                >
+                  {paymentModeBreakdown.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    background: colors.surface.main,
+                    border: `1px solid ${colors.surface.card}`,
+                    borderRadius: borderRadius.md,
+                  }}
+                  formatter={(value: any) => `₹${value.toLocaleString()}`}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        </AnalyticsCard>
+      )}
+
+      {/* Program-Wise Finance Analytics */}
+      {programFinanceData.length > 0 && (
+        <AnalyticsCard title="Program-Wise Finance Analytics" fullWidth>
+          <ChartContainer height={350} isEmpty={programFinanceData.length === 0}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={programFinanceData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={colors.surface.card} />
+                <XAxis dataKey="program" stroke={colors.text.secondary} />
+                <YAxis 
+                  yAxisId="left"
+                  stroke={colors.text.secondary}
+                  tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                />
+                <YAxis 
+                  yAxisId="right"
+                  orientation="right"
+                  stroke={colors.text.secondary}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: colors.surface.main,
+                    border: `1px solid ${colors.surface.card}`,
+                    borderRadius: borderRadius.md,
+                  }}
+                  formatter={(value: any, name: string) => {
+                    if (name === "students" || name === "active" || name === "churned") {
+                      return value;
+                    }
+                    return `₹${value.toLocaleString()}`;
+                  }}
+                />
+                <Legend />
+                <Bar yAxisId="left" dataKey="totalCollected" fill={colors.success.main} name="Total Collected" />
+                <Bar yAxisId="left" dataKey="outstanding" fill={colors.danger.main} name="Outstanding" />
+                <Bar yAxisId="right" dataKey="students" fill={colors.primary.main} name="Total Students" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+          
+          <div style={{ marginTop: spacing.lg }}>
+            <h4 style={{ ...typography.h4, marginBottom: spacing.md, color: colors.text.primary }}>
+              Program Finance Details
+            </h4>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: `2px solid ${colors.surface.card}` }}>
+                    <th style={{ padding: spacing.sm, textAlign: "left", ...typography.label }}>Program</th>
+                    <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Students</th>
+                    <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Active</th>
+                    <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Churned</th>
+                    <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Total Collected</th>
+                    <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Outstanding</th>
+                    <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Collection Rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {programFinanceData.map((program: any, idx: number) => (
+                    <tr key={program.program} style={{ borderBottom: `1px solid ${colors.surface.card}` }}>
+                      <td style={{ padding: spacing.sm, color: colors.text.primary, fontWeight: 600 }}>
+                        {program.program}
+                      </td>
+                      <td style={{ padding: spacing.sm, textAlign: "right", color: colors.text.primary }}>
+                        {program.students}
+                      </td>
+                      <td style={{ padding: spacing.sm, textAlign: "right", color: colors.success.main }}>
+                        {program.active}
+                      </td>
+                      <td style={{ padding: spacing.sm, textAlign: "right", color: colors.danger.main }}>
+                        {program.churned}
+                      </td>
+                      <td style={{ padding: spacing.sm, textAlign: "right", color: colors.success.main }}>
+                        ₹{program.totalCollected.toLocaleString()}
+                      </td>
+                      <td style={{ padding: spacing.sm, textAlign: "right", color: colors.danger.main }}>
+                        ₹{program.outstanding.toLocaleString()}
+                      </td>
+                      <td style={{ padding: spacing.sm, textAlign: "right", color: colors.text.primary }}>
+                        {program.collectionRate}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </AnalyticsCard>
       )}
+
+      {/* Churned Students Impact */}
+      {churnedStudentsData && churnedStudentsData.totalChurned > 0 && (
+        <AnalyticsCard title="Churned Students Financial Impact" fullWidth>
+          <div style={{ marginBottom: spacing.md }}>
+            <div className="responsive-flex-row" style={{ 
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: spacing.md,
+            }}>
+              <KPIChip 
+                label="Total Churned" 
+                value={churnedStudentsData.totalChurned}
+                trend="down"
+              />
+              <KPIChip 
+                label="Total Revenue Lost" 
+                value={`₹${churnedStudentsData.totalChurnedRevenue?.toLocaleString() || 0}`}
+              />
+              <KPIChip 
+                label="Avg Revenue per Churned" 
+                value={`₹${churnedStudentsData.avgChurnedRevenue?.toFixed(0) || 0}`}
+              />
+            </div>
+          </div>
+          {churnedStudentsData.churnByMonth && churnedStudentsData.churnByMonth.length > 0 && (
+            <ChartContainer height={300} isEmpty={churnedStudentsData.churnByMonth.length === 0}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={churnedStudentsData.churnByMonth}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.surface.card} />
+                  <XAxis 
+                    dataKey="month" 
+                    stroke={colors.text.secondary}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis yAxisId="left" stroke={colors.text.secondary} />
+                  <YAxis 
+                    yAxisId="right" 
+                    orientation="right"
+                    stroke={colors.text.secondary}
+                    tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: colors.surface.main,
+                      border: `1px solid ${colors.surface.card}`,
+                      borderRadius: borderRadius.md,
+                    }}
+                    formatter={(value: any, name: string) => {
+                      if (name === "count") return value;
+                      return `₹${value.toLocaleString()}`;
+                    }}
+                  />
+                  <Legend />
+                  <Bar yAxisId="left" dataKey="count" fill={colors.danger.main} name="Churned Count" />
+                  <Bar yAxisId="right" dataKey="revenue" fill={colors.warning.main} name="Revenue Lost (₹)" />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          )}
+        </AnalyticsCard>
+      )}
+
+
+      {/* Detailed Student Finance (Micro-level) */}
+      {detailedStudentFinance.length > 0 && (
+        <AnalyticsCard title="Detailed Student Finance (Micro-level Analysis)" fullWidth>
+          <div style={{ marginBottom: spacing.md }}>
+            <p style={{ ...typography.body, color: colors.text.muted, marginBottom: spacing.md }}>
+              Individual student payment status, outstanding amounts, and collection rates. Sorted by highest outstanding first.
+            </p>
+          </div>
+          <div style={{ overflowX: "auto", maxHeight: "600px", overflowY: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead style={{ position: "sticky", top: 0, background: colors.surface.main }}>
+                <tr style={{ borderBottom: `2px solid ${colors.surface.card}` }}>
+                  <th style={{ padding: spacing.sm, textAlign: "left", ...typography.label }}>Student</th>
+                  <th style={{ padding: spacing.sm, textAlign: "left", ...typography.label }}>Center</th>
+                  <th style={{ padding: spacing.sm, textAlign: "left", ...typography.label }}>Program</th>
+                  <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Monthly Fee</th>
+                  <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Total Paid</th>
+                  <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Outstanding</th>
+                  <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Collection Rate</th>
+                  <th style={{ padding: spacing.sm, textAlign: "center", ...typography.label }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detailedStudentFinance.map((student: any) => (
+                  <tr 
+                    key={student.id} 
+                    style={{ 
+                      borderBottom: `1px solid ${colors.surface.card}`,
+                      backgroundColor: student.outstanding > 0 ? (colors.warning.main + "10") : "transparent"
+                    }}
+                  >
+                    <td style={{ padding: spacing.sm, color: colors.text.primary, fontWeight: 600 }}>
+                      {student.name}
+                    </td>
+                    <td style={{ padding: spacing.sm, color: colors.text.secondary }}>
+                      {student.center}
+                    </td>
+                    <td style={{ padding: spacing.sm, color: colors.text.secondary }}>
+                      {student.program}
+                    </td>
+                    <td style={{ padding: spacing.sm, textAlign: "right", color: colors.text.primary }}>
+                      ₹{student.monthlyFee.toLocaleString()}
+                    </td>
+                    <td style={{ padding: spacing.sm, textAlign: "right", color: colors.success.main }}>
+                      ₹{student.totalPaid.toLocaleString()}
+                    </td>
+                    <td style={{ padding: spacing.sm, textAlign: "right", color: student.outstanding > 0 ? colors.danger.main : colors.text.primary, fontWeight: student.outstanding > 0 ? 600 : 400 }}>
+                      ₹{student.outstanding.toLocaleString()}
+                    </td>
+                    <td style={{ padding: spacing.sm, textAlign: "right", color: colors.text.primary }}>
+                      {student.collectionRate}%
+                    </td>
+                    <td style={{ padding: spacing.sm, textAlign: "center" }}>
+                      <span style={{
+                        padding: "4px 8px",
+                        borderRadius: borderRadius.sm,
+                        fontSize: typography.caption.fontSize,
+                        backgroundColor: student.isChurned ? colors.danger.main + "20" : colors.success.main + "20",
+                        color: student.isChurned ? colors.danger.main : colors.success.main,
+                        fontWeight: 600
+                      }}>
+                        {student.isChurned ? "Churned" : student.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </AnalyticsCard>
+      )}
+
+      {/* Center-Wise Finance Analytics */}
+      {centerFinanceData.length > 0 && (
+        <AnalyticsCard title="Center-Wise Finance Analytics" fullWidth>
+          <ChartContainer height={400} isEmpty={centerFinanceData.length === 0}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={centerFinanceData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke={colors.surface.card} />
+                <XAxis type="number" stroke={colors.text.secondary} />
+                <YAxis dataKey="centerName" type="category" width={150} stroke={colors.text.secondary} />
+                <Tooltip
+                  contentStyle={{
+                    background: colors.surface.main,
+                    border: `1px solid ${colors.surface.card}`,
+                    borderRadius: borderRadius.md,
+                  }}
+                  formatter={(value: any) => `₹${value.toLocaleString()}`}
+                />
+                <Legend />
+                <Bar dataKey="totalCollected" fill={colors.success.main} name="Total Collected" />
+                <Bar dataKey="approxOutstanding" fill={colors.danger.main} name="Outstanding" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+          
+          <div style={{ marginTop: spacing.lg }}>
+            <h4 style={{ ...typography.h4, marginBottom: spacing.md, color: colors.text.primary }}>
+              Center Finance Details
+            </h4>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: `2px solid ${colors.surface.card}` }}>
+                    <th style={{ padding: spacing.sm, textAlign: "left", ...typography.label }}>Center</th>
+                    <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Students</th>
+                    <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Total Collected</th>
+                    <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Outstanding</th>
+                    <th style={{ padding: spacing.sm, textAlign: "right", ...typography.label }}>Collection Rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {centerFinanceData.map((center: any) => (
+                    <tr key={center.centerId} style={{ borderBottom: `1px solid ${colors.surface.card}` }}>
+                      <td style={{ padding: spacing.sm, color: colors.text.primary }}>{center.centerName}</td>
+                      <td style={{ padding: spacing.sm, textAlign: "right", color: colors.text.primary }}>
+                        {center.studentCount}
+                      </td>
+                      <td style={{ padding: spacing.sm, textAlign: "right", color: colors.success.main }}>
+                        ₹{center.totalCollected.toLocaleString()}
+                      </td>
+                      <td style={{ padding: spacing.sm, textAlign: "right", color: colors.danger.main }}>
+                        ₹{center.approxOutstanding.toLocaleString()}
+                      </td>
+                      <td style={{ padding: spacing.sm, textAlign: "right", color: colors.text.primary }}>
+                        {center.collectionRate}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </AnalyticsCard>
+      )}
+
     </div>
   );
 };

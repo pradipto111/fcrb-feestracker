@@ -21,6 +21,7 @@ interface WebsiteLead {
   currentLevel: string;
   heardFrom: string;
   notes?: string;
+  skillsShowcaseLink?: string;
   status: "NEW" | "CONTACTED" | "CONVERTED" | "LOST";
   assignedTo?: number;
   internalNotes?: string;
@@ -509,6 +510,34 @@ const WebsiteLeadsPage: React.FC = () => {
                   <div style={{ ...typography.body, color: colors.text.primary }}>
                     {selectedLead.notes}
                   </div>
+                </div>
+              )}
+
+              {selectedLead.skillsShowcaseLink && (
+                <div>
+                  <div
+                    style={{
+                      ...typography.caption,
+                      color: colors.text.muted,
+                      marginBottom: spacing.xs,
+                    }}
+                  >
+                    Skills Showcase Link
+                  </div>
+                  <a
+                    href={selectedLead.skillsShowcaseLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      ...typography.body,
+                      color: colors.accent.main,
+                      textDecoration: "underline",
+                      wordBreak: "break-all",
+                      display: "block",
+                    }}
+                  >
+                    {selectedLead.skillsShowcaseLink}
+                  </a>
                 </div>
               )}
 

@@ -4,7 +4,7 @@ import { api } from "../../api/client";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { colors, typography, spacing, borderRadius, shadows } from "../../theme/design-tokens";
-import { useFanMotion } from "../../hooks/useFanMotion";
+import { useHomepageAnimation } from "../../hooks/useHomepageAnimation";
 import { TrophyIcon, StarIcon, CalendarIcon, ArrowRightIcon } from "../../components/icons/IconSet";
 import { useMarquee } from "../../hooks/useMarquee";
 import { SPONSORS, DUMMY_OFFERS } from "../../data/sponsors";
@@ -14,7 +14,7 @@ const SkeletonLine = ({ w = "100%", h = 12 }: { w?: string; h?: number }) => (
 );
 
 const FanDashboardOverview: React.FC = () => {
-  const { pageEnter, cardReveal, staggerGrid, hoverLift, viewportOnce } = useFanMotion();
+  const { headingVariants, cardVariants, viewportOnce } = useHomepageAnimation();
   const reduce = useReducedMotion();
   const [me, setMe] = useState<any>(() => {
     const cached = sessionStorage.getItem('fan-dashboard-me');
@@ -130,10 +130,10 @@ const FanDashboardOverview: React.FC = () => {
   };
 
   return (
-    <motion.main {...pageEnter} style={{ padding: `${spacing.xl} ${spacing.xl}` }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", flexDirection: "column", gap: spacing.xl }}>
+    <div style={{ width: "100%" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: spacing.xl }}>
         {/* Stadium Hero Welcome Block */}
-        <motion.div variants={cardReveal} initial="hidden" animate="show">
+        <motion.div variants={cardVariants} initial="initial" animate="animate">
           <Card
             variant="default"
             padding="xl"
@@ -250,8 +250,8 @@ const FanDashboardOverview: React.FC = () => {
                             transition: "all 0.2s ease",
                           }}
                         >
-                          <span style={{ ...typography.body, fontWeight: typography.fontWeight.semibold }}>{a.label}</span>
-                          <ArrowRightIcon size={16} color={colors.text.secondary} />
+                          <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1, ...typography.body, fontWeight: typography.fontWeight.semibold }}>{a.label}</span>
+                          <ArrowRightIcon size={16} color={colors.text.secondary} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                         </div>
                       </motion.div>
                     </a>
@@ -325,7 +325,7 @@ const FanDashboardOverview: React.FC = () => {
 
         {/* Sponsor strip + offers */}
         {flags.offers === false ? null : (
-          <motion.div variants={cardReveal} initial="hidden" whileInView="show" viewport={viewportOnce}>
+          <motion.div variants={cardVariants} initial="initial" animate="animate">
             <Card
               variant="default"
               padding="xl"
@@ -344,8 +344,9 @@ const FanDashboardOverview: React.FC = () => {
                   <div style={{ ...typography.overline, color: colors.text.muted, letterSpacing: "0.16em", marginBottom: 6 }}>SPONSORS</div>
                   <div style={{ ...typography.h3, color: colors.text.primary, margin: 0 }}>Benefits that feel matchday‑earned</div>
                 </div>
-                <a href="/realverse/fan/benefits" style={{ ...typography.caption, color: colors.primary.light, textDecoration: "none" }}>
-                  View all →
+                <a href="/realverse/fan/benefits" style={{ ...typography.caption, color: colors.primary.light, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View all</span>
+                  <ArrowRightIcon size={14} color={colors.primary.light} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                 </a>
               </div>
 
@@ -415,7 +416,7 @@ const FanDashboardOverview: React.FC = () => {
                   const headline = offers[0]?.title || "Members-only offer";
                   const condition = offers[0]?.condition || "Rolling soon";
                   return (
-                    <motion.div key={s.id} whileHover={reduce ? undefined : hoverLift} style={{ height: "100%" }}>
+                    <motion.div key={s.id} whileHover={reduce ? undefined : { y: -2 }} style={{ height: "100%" }}>
                       <div
                         style={{
                           height: "100%",
@@ -472,15 +473,16 @@ const FanDashboardOverview: React.FC = () => {
 
         {/* Matchday module */}
         {flags.matchday === false ? null : (
-          <motion.div variants={cardReveal} initial="hidden" whileInView="show" viewport={viewportOnce}>
+          <motion.div variants={cardVariants} initial="initial" animate="animate">
             <Card variant="default" padding="xl" style={{ borderRadius: borderRadius.card, padding: spacing.cardPadding, background: colors.surface.card, border: "1px solid rgba(255,255,255,0.10)", overflow: "hidden", boxShadow: shadows.card }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.md }}>
                 <div>
                   <div style={{ ...typography.overline, color: colors.text.muted, letterSpacing: "0.16em", marginBottom: 6 }}>MATCHDAY</div>
                   <div style={{ ...typography.h3, color: colors.text.primary, margin: 0 }}>Countdown, unlocks, moments</div>
                 </div>
-                <a href="/realverse/fan/matchday" style={{ ...typography.caption, color: colors.primary.light, textDecoration: "none" }}>
-                  Open hub →
+                <a href="/realverse/fan/matchday" style={{ ...typography.caption, color: colors.primary.light, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Open hub</span>
+                  <ArrowRightIcon size={14} color={colors.primary.light} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                 </a>
               </div>
 
@@ -577,15 +579,16 @@ const FanDashboardOverview: React.FC = () => {
 
         {/* Games & Quests teaser */}
         {flags.games === false ? null : (
-          <motion.div variants={cardReveal} initial="hidden" whileInView="show" viewport={viewportOnce}>
+          <motion.div variants={cardVariants} initial="initial" animate="animate">
             <Card variant="default" padding="xl" style={{ borderRadius: 26, padding: 28, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.md }}>
                 <div>
                   <div style={{ ...typography.overline, color: colors.text.muted, letterSpacing: "0.16em", marginBottom: 6 }}>GAMES & QUESTS</div>
                   <div style={{ ...typography.h3, color: colors.text.primary, margin: 0 }}>Quest tracks</div>
                 </div>
-                <a href="/realverse/fan/games" style={{ ...typography.caption, color: colors.primary.light, textDecoration: "none" }}>
-                  Play →
+                <a href="/realverse/fan/games" style={{ ...typography.caption, color: colors.primary.light, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Play</span>
+                  <ArrowRightIcon size={14} color={colors.primary.light} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                 </a>
               </div>
 
@@ -617,8 +620,11 @@ const FanDashboardOverview: React.FC = () => {
 
               <div style={{ marginTop: spacing.lg }}>
                 <a href="/realverse/fan/games" style={{ textDecoration: "none" }}>
-                  <Button variant="primary" size="md" style={{ width: "100%" }}>
-                    Open Games & Quests →
+                  <Button variant="primary" size="md" style={{ width: "100%", background: colors.accent.main, color: colors.text.onAccent }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Open Games & Quests</span>
+                      <ArrowRightIcon size={16} color={colors.text.onAccent} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                    </span>
                   </Button>
                 </a>
               </div>
@@ -628,15 +634,16 @@ const FanDashboardOverview: React.FC = () => {
 
         {/* Programs conversion */}
         {flags.programs === false ? null : (
-          <motion.div variants={cardReveal} initial="hidden" whileInView="show" viewport={viewportOnce}>
+          <motion.div variants={cardVariants} initial="initial" animate="animate">
             <Card variant="default" padding="xl" style={{ borderRadius: 26, padding: 28, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.md }}>
                 <div>
                   <div style={{ ...typography.overline, color: colors.text.muted, letterSpacing: "0.16em", marginBottom: 6 }}>TRAIN WITH US</div>
                   <div style={{ ...typography.h3, color: colors.text.primary, margin: 0 }}>From supporter to squad</div>
                 </div>
-                <a href="/realverse/fan/programs" style={{ ...typography.caption, color: colors.primary.light, textDecoration: "none" }}>
-                  Explore →
+                <a href="/realverse/fan/programs" style={{ ...typography.caption, color: colors.primary.light, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Explore</span>
+                  <ArrowRightIcon size={14} color={colors.primary.light} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                 </a>
               </div>
 
@@ -673,14 +680,17 @@ const FanDashboardOverview: React.FC = () => {
                     ].map((p) => (
                       <Button key={p.id} variant="secondary" size="md" onClick={() => onInterest(p.id)} style={{ justifyContent: "space-between", borderRadius: borderRadius.button }}>
                         <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>{p.label}</span>
-                        <ArrowRightIcon size={16} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                        <ArrowRightIcon size={16} color={colors.text.secondary} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                       </Button>
                     ))}
                   </div>
                   <div style={{ marginTop: spacing.md }}>
                     <a href="/realverse/fan/programs" style={{ textDecoration: "none" }}>
-                      <Button variant="primary" size="md" style={{ width: "100%", borderRadius: borderRadius.button }}>
-                        Explore Programs →
+                      <Button variant="primary" size="md" style={{ width: "100%", borderRadius: borderRadius.button, background: colors.accent.main, color: colors.text.onAccent }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Explore Programs</span>
+                          <ArrowRightIcon size={16} color={colors.text.onAccent} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                        </span>
                       </Button>
                     </a>
                   </div>
@@ -690,7 +700,7 @@ const FanDashboardOverview: React.FC = () => {
           </motion.div>
         )}
       </div>
-    </motion.main>
+    </div>
   );
 };
 

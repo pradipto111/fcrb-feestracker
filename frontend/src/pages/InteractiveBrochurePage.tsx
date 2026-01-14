@@ -38,6 +38,7 @@ interface LeadData {
   currentLevel?: string;
   heardFrom?: string;
   notes?: string;
+  skillsShowcaseLink?: string;
 }
 
 type ProgramType = "youth" | "elite" | null;
@@ -154,6 +155,7 @@ const InteractiveBrochurePage: React.FC = () => {
         currentLevel: leadData.currentLevel || "Beginner",
         heardFrom: leadData.heardFrom || "Website",
         notes: leadData.notes || null,
+        skillsShowcaseLink: leadData.skillsShowcaseLink || null,
       });
 
       setCurrentStep("success");
@@ -977,6 +979,45 @@ const InteractiveBrochurePage: React.FC = () => {
                       <option value="Other">Other</option>
                     </select>
                   </div>
+
+                  <div>
+                    <label
+                      style={{
+                        ...typography.body,
+                        color: colors.text.primary,
+                        display: "block",
+                        marginBottom: spacing.sm,
+                        fontWeight: typography.fontWeight.semibold,
+                      }}
+                    >
+                      Skills Showcase Link (Optional)
+                    </label>
+                    <input
+                      type="url"
+                      value={leadData.skillsShowcaseLink || ""}
+                      onChange={(e) => updateLeadData("skillsShowcaseLink", e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: spacing.md,
+                        background: colors.surface.card,
+                        border: "2px solid rgba(255, 255, 255, 0.1)",
+                        borderRadius: borderRadius.lg,
+                        color: colors.text.primary,
+                        fontSize: typography.fontSize.base,
+                      }}
+                      placeholder="Google Drive or YouTube link showcasing your skills"
+                    />
+                    <p
+                      style={{
+                        ...typography.caption,
+                        color: colors.text.muted,
+                        marginTop: spacing.xs,
+                        fontSize: typography.fontSize.sm,
+                      }}
+                    >
+                      Share a link to videos or files that showcase your football skills
+                    </p>
+                  </div>
                 </div>
 
                 <div style={{ display: "flex", gap: spacing.md, justifyContent: "center", marginTop: spacing.xl }}>
@@ -1077,6 +1118,23 @@ const InteractiveBrochurePage: React.FC = () => {
                       <div>
                         <strong style={{ color: colors.text.muted }}>Preferred Centre:</strong>{" "}
                         <span style={{ color: colors.text.primary }}>{leadData.preferredCentre}</span>
+                      </div>
+                    )}
+                    {leadData.skillsShowcaseLink && (
+                      <div>
+                        <strong style={{ color: colors.text.muted }}>Skills Showcase Link:</strong>{" "}
+                        <a
+                          href={leadData.skillsShowcaseLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            color: colors.accent.main,
+                            textDecoration: "underline",
+                            wordBreak: "break-all",
+                          }}
+                        >
+                          {leadData.skillsShowcaseLink}
+                        </a>
                       </div>
                     )}
                   </div>

@@ -18,7 +18,7 @@ const PlayerAnalyticsPage: React.FC = () => {
   } = useHomepageAnimation();
 
   return (
-    <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+    <div style={{ width: "100%" }}>
       <motion.div variants={headingVariants} initial="offscreen" whileInView="onscreen" viewport={viewportOnce}>
         <PageHeader
           tone="dark"
@@ -61,7 +61,7 @@ const PlayerAnalyticsPage: React.FC = () => {
                 padding: `${spacing.md} ${spacing.lg}`,
                 background: "transparent",
                 border: "none",
-                borderBottom: isActive ? `3px solid ${colors.primary.main}` : "3px solid transparent",
+                borderBottom: isActive ? `3px solid ${colors.accent.main}` : "3px solid transparent",
                 color: isActive ? colors.text.primary : colors.text.muted,
                 cursor: "pointer",
                 fontSize: typography.fontSize.sm,
@@ -70,7 +70,7 @@ const PlayerAnalyticsPage: React.FC = () => {
                 transition: "all 0.2s ease",
               }}
             >
-              <Icon size={16} color={isActive ? colors.primary.light : colors.text.muted} />
+              <Icon size={16} color={isActive ? colors.accent.main : colors.text.muted} />
               {t.label}
             </button>
           );

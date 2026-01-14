@@ -178,7 +178,7 @@ const FeedPage: React.FC = () => {
   } = useHomepageAnimation();
 
   return (
-    <div style={{ maxWidth: "1400px", margin: "0 auto", padding: spacing.md }}>
+    <div style={{ width: "100%" }}>
       {/* Banner Section */}
       <motion.section
         style={{
@@ -272,10 +272,10 @@ const FeedPage: React.FC = () => {
             </motion.p>
           </div>
           <motion.div variants={headingVariants}>
-            <Button variant="primary" onClick={() => navigate("/feed/create")}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
-                <PlusIcon size={16} />
-                Create Post
+            <Button variant="primary" onClick={() => navigate("/feed/create")} style={{ background: colors.accent.main, color: colors.text.onAccent }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+                <PlusIcon size={16} color={colors.text.onAccent} />
+                <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Create Post</span>
               </span>
             </Button>
           </motion.div>
@@ -292,9 +292,9 @@ const FeedPage: React.FC = () => {
         subtitle="View posts, photos, and videos from sessions"
         actions={
           <Button variant="primary" onClick={() => navigate("/feed/create")} style={{ display: "none" }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
-              <PlusIcon size={16} />
-              Create Post
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+              <PlusIcon size={16} color={colors.text.onAccent} />
+              <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Create Post</span>
             </span>
           </Button>
         }

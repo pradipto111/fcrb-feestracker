@@ -4,11 +4,11 @@ import { api } from "../../api/client";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
-import { useFanMotion } from "../../hooks/useFanMotion";
+import { useHomepageAnimation } from "../../hooks/useHomepageAnimation";
 import { ArrowRightIcon, StarIcon } from "../../components/icons/IconSet";
 
 const FanProgramsPage: React.FC = () => {
-  const { pageEnter, cardReveal, hoverLift, viewportOnce } = useFanMotion();
+  const { headingVariants, cardVariants, viewportOnce } = useHomepageAnimation();
   const [me, setMe] = useState<any>(null);
   const [toast, setToast] = useState("");
 
@@ -32,8 +32,8 @@ const FanProgramsPage: React.FC = () => {
   };
 
   return (
-    <motion.main {...pageEnter} style={{ padding: `${spacing.xl} ${spacing.xl}` }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", flexDirection: "column", gap: spacing.xl }}>
+    <div style={{ width: "100%" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: spacing.xl }}>
         {/* Hero */}
         <Card
           variant="default"
@@ -107,7 +107,7 @@ const FanProgramsPage: React.FC = () => {
             </div>
           </Card>
         ) : (
-        <motion.div variants={cardReveal} initial="hidden" whileInView="show" viewport={viewportOnce}>
+        <motion.div variants={cardVariants} initial="initial" animate="animate">
           <Card variant="default" padding="xl" style={{ borderRadius: 26, padding: 28, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.md, flexWrap: "wrap" }}>
               <div>
@@ -149,10 +149,10 @@ const FanProgramsPage: React.FC = () => {
                     <div style={{ ...typography.h4, color: colors.text.primary, marginTop: 6 }}>{p.name}</div>
                     <div style={{ ...typography.caption, color: colors.text.secondary, marginTop: 10, lineHeight: 1.6 }}>{p.one}</div>
                     <div style={{ marginTop: "auto" }}>
-                      <Button variant="primary" size="md" style={{ width: "100%" }} onClick={() => createLead(p.id)}>
+                      <Button variant="primary" size="md" style={{ width: "100%", background: colors.accent.main, color: colors.text.onAccent }} onClick={() => createLead(p.id)}>
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                           <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Train with us</span>
-                          <ArrowRightIcon size={16} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                          <ArrowRightIcon size={16} color={colors.text.onAccent} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                         </span>
                       </Button>
                     </div>
@@ -164,7 +164,7 @@ const FanProgramsPage: React.FC = () => {
         </motion.div>
         )}
       </div>
-    </motion.main>
+    </div>
   );
 };
 

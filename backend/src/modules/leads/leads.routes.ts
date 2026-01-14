@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { authRequired, requireRole } from "../../auth/auth.middleware";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -21,6 +22,7 @@ router.post("/", async (req, res) => {
       currentLevel,
       heardFrom,
       notes,
+      skillsShowcaseLink,
     } = req.body;
 
     // Validate required fields
@@ -44,6 +46,7 @@ router.post("/", async (req, res) => {
         currentLevel,
         heardFrom,
         notes: notes || null,
+        skillsShowcaseLink: skillsShowcaseLink || null,
         status: "NEW",
       },
     });
@@ -181,6 +184,10 @@ router.post("/:id/convert", authRequired, requireRole("ADMIN"), async (req, res)
       });
     }
 
+    // Generate default password: "Name"123
+    const defaultPassword = `${lead.playerName}123`;
+    const passwordHash = await bcrypt.hash(defaultPassword, 10);
+
     // Create student from lead
     const student = await prisma.student.create({
       data: {
@@ -193,6 +200,7 @@ router.post("/:id/convert", authRequired, requireRole("ADMIN"), async (req, res)
         programType: lead.ageBracket || lead.programmeInterest,
         joiningDate: new Date(),
         status: "TRIAL",
+        passwordHash: passwordHash,
       },
     });
 

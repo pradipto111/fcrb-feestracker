@@ -2,6 +2,7 @@ import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { authRequired, requireRole } from "../../auth/auth.middleware";
 import { getSystemDate } from "../../utils/system-date";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -36,18 +37,21 @@ router.get("/dashboard", authRequired, requireRole("STUDENT"), async (req, res) 
     const paymentFrequency = student.paymentFrequency || 1;
     const feePerCycle = student.monthlyFeeAmount * paymentFrequency;
     
-    // Calculate months since joining (including current month)
+    // If student is churned, only calculate fees up to churn date
+    const endDate = student.churnedDate ? new Date(student.churnedDate) : now;
+    
+    // Calculate months since joining up to churn date (or current date)
     // Fee is due at the START of each cycle, not at the end
     const monthsElapsed = Math.max(
       1, // At least 1 month (the joining month itself incurs fees)
-      (now.getFullYear() - joining.getFullYear()) * 12 + 
-      (now.getMonth() - joining.getMonth()) + 1 // +1 to include current month
+      (endDate.getFullYear() - joining.getFullYear()) * 12 + 
+      (endDate.getMonth() - joining.getMonth()) + 1 // +1 to include the churn month
     );
     
-    // Calculate payment cycles that have passed (including current cycle)
+    // Calculate payment cycles that have passed up to churn date
     const cyclesAccrued = Math.ceil(monthsElapsed / paymentFrequency);
     
-    // Fees accrued for all cycles up to now (including current cycle)
+    // Fees accrued for all cycles up to churn date (or current date)
     feesAccrued = cyclesAccrued * feePerCycle;
   }
   
@@ -397,6 +401,57 @@ router.get("/timeline", authRequired, requireRole("STUDENT"), async (req, res) =
   } catch (error: any) {
     console.error("Error fetching timeline:", error);
     res.status(500).json({ message: error.message || "Failed to fetch timeline" });
+  }
+});
+
+/**
+ * PUT /student/change-password
+ * Allow student to change their own password
+ */
+router.put("/change-password", authRequired, requireRole("STUDENT"), async (req, res) => {
+  try {
+    const { id } = req.user!;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current password and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters long" });
+    }
+
+    // Get student with password hash
+    const student = await prisma.student.findUnique({
+      where: { id },
+      select: { id: true, passwordHash: true }
+    });
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    // Verify current password
+    if (!student.passwordHash) {
+      return res.status(400).json({ message: "No password set. Please contact admin to set your password." });
+    }
+
+    const isPasswordValid = await bcrypt.compare(currentPassword, student.passwordHash);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Current password is incorrect" });
+    }
+
+    // Hash and update new password
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    await prisma.student.update({
+      where: { id },
+      data: { passwordHash: newPasswordHash }
+    });
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error: any) {
+    console.error("Error changing password:", error);
+    res.status(500).json({ message: error.message || "Failed to change password" });
   }
 });
 

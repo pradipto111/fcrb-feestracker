@@ -53,7 +53,14 @@ router.get("/summary", authRequired, async (req, res) => {
   if (centerId && role === "ADMIN") studentWhere.centerId = Number(centerId);
 
   const students = await prisma.student.findMany({
-    where: studentWhere
+    where: studentWhere,
+    select: {
+      id: true,
+      joiningDate: true,
+      monthlyFeeAmount: true,
+      paymentFrequency: true,
+      churnedDate: true
+    }
   });
 
   const studentCount = students.length;
@@ -63,29 +70,44 @@ router.get("/summary", authRequired, async (req, res) => {
   let totalOutstanding = 0;
   const now = getSystemDate(); // Use system date for calculations
   
+  // Fetch all payments for all students in one query (much faster)
+  const studentIds = students.map(s => s.id);
+  const allStudentPayments = await prisma.payment.findMany({
+    where: { 
+      studentId: { in: studentIds }
+    }
+  });
+  
+  // Group payments by student ID for quick lookup
+  const paymentsByStudent: { [key: number]: number } = {};
+  allStudentPayments.forEach(p => {
+    paymentsByStudent[p.studentId] = (paymentsByStudent[p.studentId] || 0) + p.amount;
+  });
+  
+  // Calculate outstanding for each student
   for (const student of students) {
     if (student.joiningDate) {
       const joining = new Date(student.joiningDate);
       
-      // Calculate months including the current month
+      // If student is churned, only calculate fees up to churn date
+      const endDate = (student as any).churnedDate ? new Date((student as any).churnedDate) : now;
+      
+      // Calculate months including the churn month (or current month if not churned)
       // Payment is due at the beginning of each month
       const monthsElapsed = Math.max(
         1, // At least 1 month (the joining month itself)
-        (now.getFullYear() - joining.getFullYear()) * 12 + 
-        (now.getMonth() - joining.getMonth()) + 1 // +1 to include current month
+        (endDate.getFullYear() - joining.getFullYear()) * 12 + 
+        (endDate.getMonth() - joining.getMonth()) + 1 // +1 to include churn month or current month
       );
       
-      // Calculate how many COMPLETE payment cycles have passed
+      // Calculate how many COMPLETE payment cycles have passed up to churn date
       // Use Math.floor to only count complete cycles
       const paymentFrequency = student.paymentFrequency || 1;
       const cyclesCompleted = Math.floor(monthsElapsed / paymentFrequency);
       const expectedAmount = cyclesCompleted * (student.monthlyFeeAmount * paymentFrequency);
       
-      // Get student's total paid
-      const studentPayments = await prisma.payment.findMany({
-        where: { studentId: student.id }
-      });
-      const studentTotalPaid = studentPayments.reduce((sum, p) => sum + p.amount, 0);
+      // Get student's total paid from the pre-fetched data
+      const studentTotalPaid = paymentsByStudent[student.id] || 0;
       
       const studentOutstanding = Math.max(0, expectedAmount - studentTotalPaid);
       totalOutstanding += studentOutstanding;
@@ -228,6 +250,7 @@ router.get("/monthly-collections", authRequired, async (req, res) => {
     
     const monthlyFee = student.monthlyFeeAmount;
     const joiningDate = student.joiningDate ? new Date(student.joiningDate) : new Date(student.payments[0].paymentDate);
+    const churnedDate = (student as any).churnedDate ? new Date((student as any).churnedDate) : null;
     
     // Start allocation from the payment month (not joining month)
     // This is because payment for a month is done at the beginning of that month
@@ -239,13 +262,22 @@ router.get("/monthly-collections", authRequired, async (req, res) => {
       const paymentMonth = new Date(paymentDate.getFullYear(), paymentDate.getMonth(), 1);
       let remainingAmount = payment.amount;
       
+      // If churned, don't allocate beyond churn date
+      if (churnedDate && paymentMonth > churnedDate) {
+        continue; // Skip payments after churn date
+      }
+      
       // Calculate how many months are outstanding between nextMonthToAllocate and paymentMonth
       const monthsGap = (paymentMonth.getFullYear() - nextMonthToAllocate.getFullYear()) * 12 +
                         (paymentMonth.getMonth() - nextMonthToAllocate.getMonth());
       
-      // Fill outstanding months first (if payment is late)
+      // Fill outstanding months first (if payment is late), but not beyond churn date
       if (monthsGap > 0) {
         for (let i = 0; i < monthsGap && remainingAmount >= monthlyFee; i++) {
+          // Stop if we've reached churn date
+          if (churnedDate && nextMonthToAllocate > churnedDate) {
+            break;
+          }
           const monthKey = `${nextMonthToAllocate.getFullYear()}-${String(nextMonthToAllocate.getMonth() + 1).padStart(2, '0')}`;
           monthlyAllocated[monthKey] = (monthlyAllocated[monthKey] || 0) + monthlyFee;
           remainingAmount -= monthlyFee;
@@ -254,17 +286,24 @@ router.get("/monthly-collections", authRequired, async (req, res) => {
       }
       
       // Allocate remaining amount starting from payment month (or next unpaid month)
+      // Stop if we've reached churn date
       while (remainingAmount >= monthlyFee) {
+        // Stop if we've reached churn date
+        if (churnedDate && nextMonthToAllocate > churnedDate) {
+          break;
+        }
         const monthKey = `${nextMonthToAllocate.getFullYear()}-${String(nextMonthToAllocate.getMonth() + 1).padStart(2, '0')}`;
         monthlyAllocated[monthKey] = (monthlyAllocated[monthKey] || 0) + monthlyFee;
         remainingAmount -= monthlyFee;
         nextMonthToAllocate.setMonth(nextMonthToAllocate.getMonth() + 1);
       }
       
-      // Allocate any remainder
+      // Allocate any remainder (only if before churn date)
       if (remainingAmount > 0) {
-        const monthKey = `${nextMonthToAllocate.getFullYear()}-${String(nextMonthToAllocate.getMonth() + 1).padStart(2, '0')}`;
-        monthlyAllocated[monthKey] = (monthlyAllocated[monthKey] || 0) + remainingAmount;
+        if (!churnedDate || nextMonthToAllocate <= churnedDate) {
+          const monthKey = `${nextMonthToAllocate.getFullYear()}-${String(nextMonthToAllocate.getMonth() + 1).padStart(2, '0')}`;
+          monthlyAllocated[monthKey] = (monthlyAllocated[monthKey] || 0) + remainingAmount;
+        }
       }
     }
   }
@@ -360,6 +399,288 @@ router.get("/payment-mode-breakdown", authRequired, async (req, res) => {
   } catch (error: any) {
     console.error("Error fetching payment mode breakdown:", error);
     res.status(500).json({ message: error.message || "Failed to fetch payment mode breakdown" });
+  }
+});
+
+/**
+ * GET /dashboard/fan-club-revenue
+ * Get fan club revenue analytics (tier subscriptions)
+ */
+router.get("/fan-club-revenue", authRequired, async (req, res) => {
+  try {
+    const tiers = await (prisma as any).fanTier?.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, monthlyPriceINR: true, yearlyPriceINR: true, sortOrder: true },
+      orderBy: { sortOrder: "asc" }
+    }) || [];
+
+    const profiles = await (prisma as any).fanProfile?.findMany({
+      where: {
+        tierId: { not: null },
+        user: { status: "ACTIVE" }
+      },
+      select: {
+        id: true,
+        tierId: true,
+        joinedAt: true,
+        user: { select: { status: true } }
+      }
+    }) || [];
+
+    // Calculate revenue by tier
+    interface RevenueByTier {
+      tierId: number;
+      tierName: string;
+      fanCount: number;
+      monthlyPrice: number;
+      yearlyPrice: number;
+      projectedMonthlyRevenue: number;
+      projectedYearlyRevenue: number;
+    }
+
+    const revenueByTier: RevenueByTier[] = tiers.map((tier: any) => {
+      const fansInTier = profiles.filter((p: any) => p.tierId === tier.id);
+      const monthlyRevenue = fansInTier.length * tier.monthlyPriceINR;
+      const yearlyRevenue = fansInTier.length * tier.yearlyPriceINR;
+      
+      return {
+        tierId: tier.id,
+        tierName: tier.name,
+        fanCount: fansInTier.length,
+        monthlyPrice: tier.monthlyPriceINR,
+        yearlyPrice: tier.yearlyPriceINR,
+        projectedMonthlyRevenue: monthlyRevenue,
+        projectedYearlyRevenue: yearlyRevenue
+      };
+    });
+
+    const totalFans = profiles.length;
+    const totalProjectedMonthly = revenueByTier.reduce((sum: number, t: RevenueByTier) => sum + t.projectedMonthlyRevenue, 0);
+    const totalProjectedYearly = revenueByTier.reduce((sum: number, t: RevenueByTier) => sum + t.projectedYearlyRevenue, 0);
+
+    res.json({
+      totalFans,
+      totalProjectedMonthlyRevenue: totalProjectedMonthly,
+      totalProjectedYearlyRevenue: totalProjectedYearly,
+      revenueByTier,
+      tierDistribution: revenueByTier.map((t: RevenueByTier) => ({
+        tierName: t.tierName,
+        fanCount: t.fanCount,
+        percentage: totalFans > 0 ? (t.fanCount / totalFans) * 100 : 0
+      }))
+    });
+  } catch (error: any) {
+    console.error("Error fetching fan club revenue:", error);
+    res.status(500).json({ message: error.message || "Failed to fetch fan club revenue" });
+  }
+});
+
+/**
+ * GET /dashboard/shop-revenue
+ * Get shop/order revenue analytics
+ */
+router.get("/shop-revenue", authRequired, async (req, res) => {
+  try {
+    const { months } = req.query as { months?: string };
+    const numMonths = Math.min(Math.max(parseInt(months || "12"), 1), 24);
+
+    // Get date range
+    const now = getSystemDate();
+    const startDate = new Date(now.getFullYear(), now.getMonth() - numMonths, 1);
+
+    // Get all orders
+    const orders = await prisma.order.findMany({
+      where: {
+        createdAt: { gte: startDate }
+      },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: { name: true, category: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: "asc" }
+    });
+
+    // Calculate totals
+    const paidOrders = orders.filter(o => o.status === "PAID");
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + o.total, 0);
+    const totalOrders = orders.length;
+    const paidOrdersCount = paidOrders.length;
+    const pendingOrders = orders.filter(o => o.status === "PENDING_PAYMENT");
+    const pendingRevenue = pendingOrders.reduce((sum, o) => sum + o.total, 0);
+
+    // Group by month
+    const monthlyRevenue: { [key: string]: number } = {};
+    const monthlyOrders: { [key: string]: number } = {};
+    
+    paidOrders.forEach(order => {
+      const date = new Date(order.createdAt);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthlyRevenue[monthKey] = (monthlyRevenue[monthKey] || 0) + order.total;
+      monthlyOrders[monthKey] = (monthlyOrders[monthKey] || 0) + 1;
+    });
+
+    // Generate month array
+    const monthsArray = [];
+    for (let i = numMonths - 1; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      
+      monthsArray.push({
+        month: monthName,
+        monthKey: monthKey,
+        revenue: monthlyRevenue[monthKey] || 0,
+        orders: monthlyOrders[monthKey] || 0
+      });
+    }
+
+    // Product category breakdown
+    const categoryRevenue: { [key: string]: number } = {};
+    paidOrders.forEach(order => {
+      order.items.forEach(item => {
+        const category = item.product?.category || "Uncategorized";
+        categoryRevenue[category] = (categoryRevenue[category] || 0) + item.totalPrice;
+      });
+    });
+
+    const categoryBreakdown = Object.entries(categoryRevenue).map(([category, revenue]) => ({
+      category,
+      revenue,
+      percentage: totalRevenue > 0 ? (revenue / totalRevenue) * 100 : 0
+    })).sort((a, b) => b.revenue - a.revenue);
+
+    // Average order value
+    const avgOrderValue = paidOrdersCount > 0 ? Math.round(totalRevenue / paidOrdersCount) : 0;
+
+    res.json({
+      totalRevenue,
+      totalOrders,
+      paidOrdersCount,
+      pendingOrdersCount: pendingOrders.length,
+      pendingRevenue,
+      avgOrderValue,
+      monthlyTrend: monthsArray,
+      categoryBreakdown,
+      conversionRate: totalOrders > 0 ? (paidOrdersCount / totalOrders) * 100 : 0
+    });
+  } catch (error: any) {
+    console.error("Error fetching shop revenue:", error);
+    res.status(500).json({ message: error.message || "Failed to fetch shop revenue" });
+  }
+});
+
+/**
+ * GET /dashboard/comprehensive-finance
+ * Get comprehensive financial overview including all revenue streams
+ */
+router.get("/comprehensive-finance", authRequired, async (req, res) => {
+  try {
+    const { centerId } = req.query as { centerId?: string };
+
+    // Get student finance summary
+    const studentSummary = await prisma.payment.aggregate({
+      where: centerId ? { centerId: Number(centerId) } : {},
+      _sum: { amount: true },
+      _count: { id: true }
+    });
+
+    const students = await prisma.student.findMany({
+      where: centerId ? { centerId: Number(centerId) } : {},
+      select: {
+        id: true,
+        joiningDate: true,
+        monthlyFeeAmount: true,
+        paymentFrequency: true,
+        churnedDate: true,
+        centerId: true
+      }
+    });
+
+    // Calculate outstanding (same logic as summary endpoint)
+    const allPayments = await prisma.payment.findMany({
+      where: centerId ? { centerId: Number(centerId) } : {}
+    });
+    const paymentsByStudent: { [key: number]: number } = {};
+    allPayments.forEach(p => {
+      paymentsByStudent[p.studentId] = (paymentsByStudent[p.studentId] || 0) + p.amount;
+    });
+
+    const now = getSystemDate();
+    let totalOutstanding = 0;
+    for (const student of students) {
+      if (!student.joiningDate) continue;
+      const joining = new Date(student.joiningDate);
+      const endDate = student.churnedDate ? new Date(student.churnedDate) : now;
+      const monthsElapsed = Math.max(1, (endDate.getFullYear() - joining.getFullYear()) * 12 + (endDate.getMonth() - joining.getMonth()) + 1);
+      const paymentFrequency = student.paymentFrequency || 1;
+      const cyclesCompleted = Math.floor(monthsElapsed / paymentFrequency);
+      const expectedAmount = cyclesCompleted * (student.monthlyFeeAmount * paymentFrequency);
+      const studentTotalPaid = paymentsByStudent[student.id] || 0;
+      const studentOutstanding = Math.max(0, expectedAmount - studentTotalPaid);
+      totalOutstanding += studentOutstanding;
+    }
+
+    // Get fan club revenue
+    const fanProfiles = await (prisma as any).fanProfile?.findMany({
+      where: {
+        tierId: { not: null },
+        user: { status: "ACTIVE" }
+      },
+      include: {
+        tier: {
+          select: { monthlyPriceINR: true, yearlyPriceINR: true }
+        }
+      }
+    }) || [];
+
+    const fanMonthlyRevenue = fanProfiles.reduce((sum: number, p: any) => 
+      sum + (p.tier?.monthlyPriceINR || 0), 0);
+    const fanYearlyRevenue = fanProfiles.reduce((sum: number, p: any) => 
+      sum + (p.tier?.yearlyPriceINR || 0), 0);
+
+    // Get shop revenue
+    const paidOrders = await prisma.order.findMany({
+      where: { status: "PAID" }
+    });
+    const shopRevenue = paidOrders.reduce((sum, o) => sum + o.total, 0);
+
+    // Total revenue
+    const totalRevenue = (studentSummary._sum.amount || 0) + fanMonthlyRevenue + shopRevenue;
+
+    res.json({
+      studentFinance: {
+        totalCollected: studentSummary._sum.amount || 0,
+        studentCount: students.length,
+        outstanding: totalOutstanding,
+        collectionRate: (studentSummary._sum.amount || 0) > 0 
+          ? ((studentSummary._sum.amount || 0) / ((studentSummary._sum.amount || 0) + totalOutstanding)) * 100 
+          : 0
+      },
+      fanClubFinance: {
+        totalFans: fanProfiles.length,
+        projectedMonthlyRevenue: fanMonthlyRevenue,
+        projectedYearlyRevenue: fanYearlyRevenue
+      },
+      shopFinance: {
+        totalRevenue: shopRevenue,
+        totalOrders: paidOrders.length,
+        avgOrderValue: paidOrders.length > 0 ? Math.round(shopRevenue / paidOrders.length) : 0
+      },
+      totalRevenue,
+      revenueBreakdown: {
+        student: studentSummary._sum.amount || 0,
+        fanClub: fanMonthlyRevenue,
+        shop: shopRevenue
+      }
+    });
+  } catch (error: any) {
+    console.error("Error fetching comprehensive finance:", error);
+    res.status(500).json({ message: error.message || "Failed to fetch comprehensive finance" });
   }
 });
 

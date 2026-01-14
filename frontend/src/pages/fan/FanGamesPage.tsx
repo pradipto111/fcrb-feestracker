@@ -5,11 +5,11 @@ import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
-import { useFanMotion } from "../../hooks/useFanMotion";
+import { useHomepageAnimation } from "../../hooks/useHomepageAnimation";
 import { ArrowRightIcon, StarIcon, TrophyIcon } from "../../components/icons/IconSet";
 
 const FanGamesPage: React.FC = () => {
-  const { pageEnter, cardReveal, viewportOnce } = useFanMotion();
+  const { headingVariants, cardVariants, viewportOnce } = useHomepageAnimation();
   const [me, setMe] = useState<any>(null);
   const [quests, setQuests] = useState<any[] | null>(null);
   const [quizAnswer, setQuizAnswer] = useState("");
@@ -55,8 +55,8 @@ const FanGamesPage: React.FC = () => {
   };
 
   return (
-    <motion.main {...pageEnter} style={{ padding: `${spacing.xl} ${spacing.xl}` }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", flexDirection: "column", gap: spacing.xl }}>
+    <div style={{ width: "100%" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: spacing.xl }}>
         {/* Hero */}
         <Card
           variant="default"
@@ -133,7 +133,7 @@ const FanGamesPage: React.FC = () => {
           </Card>
         ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: spacing.lg }}>
-          <motion.div variants={cardReveal} initial="hidden" whileInView="show" viewport={viewportOnce}>
+          <motion.div variants={cardVariants} initial="initial" animate="animate">
             <Card variant="default" padding="xl" style={{ borderRadius: 24, padding: 24, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.md }}>
                 <div>
@@ -169,7 +169,7 @@ const FanGamesPage: React.FC = () => {
             </Card>
           </motion.div>
 
-          <motion.div variants={cardReveal} initial="hidden" whileInView="show" viewport={viewportOnce}>
+          <motion.div variants={cardVariants} initial="initial" animate="animate">
             <Card variant="default" padding="xl" style={{ borderRadius: 24, padding: 24, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}>
               <div style={{ ...typography.overline, color: colors.text.muted, letterSpacing: "0.14em", marginBottom: spacing.sm }}>QUICK GAMES</div>
               <div style={{ ...typography.h3, color: colors.text.primary, margin: 0, marginBottom: spacing.md }}>Daily boosts</div>
@@ -181,8 +181,11 @@ const FanGamesPage: React.FC = () => {
                   <div style={{ marginTop: spacing.md }}>
                     <Input label="Your answer" placeholder="Type a quick answer" value={quizAnswer} onChange={(e) => setQuizAnswer(e.target.value)} fullWidth />
                   </div>
-                  <Button variant="primary" size="md" onClick={submitQuiz} style={{ marginTop: spacing.md, width: "100%" }}>
-                    Submit Quiz →
+                  <Button variant="primary" size="md" onClick={submitQuiz} style={{ marginTop: spacing.md, width: "100%", background: colors.accent.main, color: colors.text.onAccent }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Submit Quiz</span>
+                      <ArrowRightIcon size={16} color={colors.text.onAccent} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                    </span>
                   </Button>
                 </div>
 
@@ -192,16 +195,22 @@ const FanGamesPage: React.FC = () => {
                   <div style={{ marginTop: spacing.md }}>
                     <Input label="Predicted score" placeholder="e.g. 2-1" value={prediction} onChange={(e) => setPrediction(e.target.value)} fullWidth />
                   </div>
-                  <Button variant="secondary" size="md" onClick={submitPrediction} style={{ marginTop: spacing.md, width: "100%" }}>
-                    Submit Prediction →
+                  <Button variant="primary" size="md" onClick={submitPrediction} style={{ marginTop: spacing.md, width: "100%", background: colors.accent.main, color: colors.text.onAccent }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Submit Prediction</span>
+                      <ArrowRightIcon size={16} color={colors.text.onAccent} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                    </span>
                   </Button>
                 </div>
 
                 <div style={{ borderRadius: borderRadius.xl, border: "1px solid rgba(255,255,255,0.10)", background: "rgba(0,0,0,0.16)", padding: spacing.lg }}>
                   <div style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.semibold }}>Spin the wheel (SPIN)</div>
                   <div style={{ ...typography.caption, color: colors.text.muted, marginTop: 6, lineHeight: 1.5 }}>Limited spins (tier gating coming).</div>
-                  <Button variant="secondary" size="md" onClick={spin} style={{ marginTop: spacing.md, width: "100%" }}>
-                    Spin →
+                  <Button variant="primary" size="md" onClick={spin} style={{ marginTop: spacing.md, width: "100%", background: colors.accent.main, color: colors.text.onAccent }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Spin</span>
+                      <ArrowRightIcon size={16} color={colors.text.onAccent} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                    </span>
                   </Button>
                 </div>
 
@@ -211,7 +220,10 @@ const FanGamesPage: React.FC = () => {
                     A matchday mini‑game. Faster than a form. More fun than a dashboard.
                   </div>
                   <Button variant="secondary" size="md" disabled style={{ marginTop: spacing.md, width: "100%" }}>
-                    Play →
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Play</span>
+                      <ArrowRightIcon size={16} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                    </span>
                   </Button>
                 </div>
               </div>
@@ -219,7 +231,10 @@ const FanGamesPage: React.FC = () => {
               <div style={{ marginTop: spacing.md }}>
                 <a href="/realverse/fan" style={{ textDecoration: "none" }}>
                   <Button variant="secondary" size="md" style={{ width: "100%" }}>
-                    Back to Fan Club HQ <ArrowRightIcon size={16} style={{ transform: "rotate(180deg)" }} />
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                      <ArrowRightIcon size={16} style={{ display: "flex", alignItems: "center", flexShrink: 0, transform: "rotate(180deg)" }} />
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Back to Fan Club HQ</span>
+                    </span>
                   </Button>
                 </a>
               </div>
@@ -228,7 +243,7 @@ const FanGamesPage: React.FC = () => {
         </div>
         )}
       </div>
-    </motion.main>
+    </div>
   );
 };
 

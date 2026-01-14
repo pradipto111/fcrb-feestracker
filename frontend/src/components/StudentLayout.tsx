@@ -155,22 +155,10 @@ const StudentLayout: React.FC = () => {
 
   const developmentNavItems: NavItem[] = [
     {
-      path: "/realverse/student/pathway",
-      label: "My Pathway",
+      path: "/realverse/student/development",
+      label: "My Development",
       icon: "pathway",
-      description: "Progress roadmap & levels",
-    },
-    {
-      path: "/realverse/student/feedback",
-      label: "Feedback",
-      icon: "feedback",
-      description: "Coach feedback & insights",
-    },
-    {
-      path: "/realverse/student/journey",
-      label: "My Journey",
-      icon: "journey",
-      description: "Development timeline",
+      description: "Pathway, feedback & journey",
     },
     {
       path: "/realverse/student/matches",
@@ -179,16 +167,10 @@ const StudentLayout: React.FC = () => {
       description: "Match exposure & status",
     },
     {
-      path: "/realverse/student/wellness",
-      label: "Wellness",
+      path: "/realverse/student/wellness-reports",
+      label: "Wellness & Reports",
       icon: "wellness",
-      description: "Training load & recovery",
-    },
-    {
-      path: "/realverse/my-reports",
-      label: "Development Reports",
-      icon: "feedback",
-      description: "View your progress reports",
+      description: "Training load, recovery & reports",
     },
   ];
 
@@ -960,7 +942,7 @@ const StudentLayout: React.FC = () => {
           padding: spacing.xl,
           overflowY: "auto",
           overflowX: "hidden",
-          background: colors.surface.bg,
+          background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,
           minHeight: "100vh",
           width: "100%",
           boxSizing: "border-box",

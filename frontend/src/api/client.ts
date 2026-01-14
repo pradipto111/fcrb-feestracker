@@ -36,7 +36,7 @@ async function request(
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for complex queries
 
     const res = await fetch(url, {
       ...options,
@@ -128,13 +128,34 @@ export const api = {
     if (params?.paymentMode) query.set("paymentMode", params.paymentMode);
     return request(`/dashboard/monthly-collections?${query.toString()}`);
   },
-  getStudents(q?: string) {
+  getFanClubRevenue() {
+    return request("/dashboard/fan-club-revenue");
+  },
+  getShopRevenue(params?: { months?: number }) {
     const query = new URLSearchParams();
-    if (q) query.set("q", q);
-    return request(`/students?${query.toString()}`);
+    if (params?.months) query.set("months", params.months.toString());
+    return request(`/dashboard/shop-revenue?${query.toString()}`);
+  },
+  getComprehensiveFinance(params?: { centerId?: string }) {
+    const query = new URLSearchParams();
+    if (params?.centerId) query.set("centerId", params.centerId);
+    return request(`/dashboard/comprehensive-finance?${query.toString()}`);
+  },
+  getStudents(q?: string, centerId?: string, includePayments?: boolean) {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (centerId) params.set("centerId", centerId);
+    if (includePayments) params.set("includePayments", "true");
+    const query = params.toString();
+    return request(`/students${query ? `?${query}` : ""}`);
   },
   getStudent(id: number) {
     return request(`/students/${id}`);
+  },
+  deleteStudent(id: number) {
+    return request(`/students/${id}`, {
+      method: "DELETE"
+    });
   },
   createPayment(data: any) {
     return request("/payments", {
@@ -145,6 +166,12 @@ export const api = {
   // Student-specific endpoints
   getStudentDashboard() {
     return request("/student/dashboard");
+  },
+  changePassword(currentPassword: string, newPassword: string) {
+    return request("/student/change-password", {
+      method: "PUT",
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
   },
   getStudentProfile() {
     return request("/student/profile");
@@ -236,6 +263,18 @@ export const api = {
       body: JSON.stringify(data)
     });
   },
+  bulkImportStudents(data: { students: any[] }) {
+    return request("/students/bulk-import", {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+  },
+  bulkUpdatePayments(data: { students: any[] }) {
+    return request("/students/bulk-update-payments", {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+  },
   // Coach management
   getCoaches() {
     return request("/coaches");
@@ -259,6 +298,19 @@ export const api = {
   resetSystemDate() {
     return request("/system/date", {
       method: "DELETE"
+    });
+  },
+  // Footer endpoints
+  getFooterConfig() {
+    return request("/footer");
+  },
+  getFooterConfigAdmin() {
+    return request("/footer/admin");
+  },
+  saveFooterConfig(sections: any[]) {
+    return request("/footer/admin", {
+      method: "POST",
+      body: JSON.stringify({ sections })
     });
   },
   // Attendance endpoints
@@ -605,6 +657,7 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
     currentLevel: string;
     heardFrom: string;
     notes?: string | null;
+    skillsShowcaseLink?: string | null;
   }) {
     return request("/leads", {
       method: "POST",
@@ -666,6 +719,27 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
     if (params?.toDate) query.set("toDate", params.toDate);
     if (params?.search) query.set("search", params.search);
     return request(`/legacy?${query.toString()}`);
+  },
+  // Checkout Leads endpoints
+  getCheckoutLeads(params?: { status?: string; fromDate?: string; toDate?: string }) {
+    const query = new URLSearchParams();
+    if (params?.status) query.set("status", params.status);
+    if (params?.fromDate) query.set("fromDate", params.fromDate);
+    if (params?.toDate) query.set("toDate", params.toDate);
+    return request(`/shop/checkout-leads?${query.toString()}`);
+  },
+  getCheckoutLead(id: number) {
+    return request(`/shop/checkout-leads/${id}`);
+  },
+  updateCheckoutLead(id: number, data: {
+    status?: string;
+    assignedTo?: number | null;
+    internalNotes?: string | null;
+  }) {
+    return request(`/shop/checkout-leads/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data)
+    });
   },
   getLegacyLead(id: number) {
     return request(`/legacy/${id}`);

@@ -36,27 +36,73 @@ const EnhancedCoachDashboard: React.FC = () => {
   const [monthlyPaymentMode, setMonthlyPaymentMode] = useState("all");
 
   useEffect(() => {
-    loadData();
+    let mounted = true;
+    
+    const load = async () => {
+      if (mounted) {
+        await loadData();
+      }
+    };
+    
+    load();
+    
+    // Refresh data when page becomes visible (with debounce)
+    let refreshTimeout: NodeJS.Timeout;
+    const handleVisibilityChange = () => {
+      if (!document.hidden && mounted) {
+        clearTimeout(refreshTimeout);
+        refreshTimeout = setTimeout(() => {
+          if (mounted) {
+            loadData();
+          }
+        }, 500);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      mounted = false;
+      clearTimeout(refreshTimeout);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const loadData = async () => {
     try {
-      const [summaryData, studentsData] = await Promise.all([
-        api.getDashboardSummary(),
-        api.getStudents()
-      ]);
-      setSummary(summaryData);
-      setStudents(studentsData);
+      setError(""); // Clear previous errors
       
-      // Cache data for instant display
-      sessionStorage.setItem('coach-dashboard-summary', JSON.stringify(summaryData));
-      sessionStorage.setItem('coach-dashboard-students', JSON.stringify(studentsData));
+      const [summaryData, studentsData] = await Promise.all([
+        api.getDashboardSummary().catch(err => {
+          console.error("Failed to load dashboard summary:", err);
+          const cached = sessionStorage.getItem('coach-dashboard-summary');
+          return cached ? JSON.parse(cached) : { totalCollected: 0, studentCount: 0, approxOutstanding: 0 };
+        }),
+        api.getStudents().catch(err => {
+          console.error("Failed to load students:", err);
+          const cached = sessionStorage.getItem('coach-dashboard-students');
+          return cached ? JSON.parse(cached) : [];
+        })
+      ]);
+      
+      // Only update if we got valid data
+      if (summaryData) {
+        setSummary(summaryData);
+        sessionStorage.setItem('coach-dashboard-summary', JSON.stringify(summaryData));
+      }
+      if (studentsData && Array.isArray(studentsData)) {
+        setStudents(studentsData);
+        sessionStorage.setItem('coach-dashboard-students', JSON.stringify(studentsData));
+      }
       
       await loadRevenueData();
       await loadMonthlyData();
       setIsInitialLoad(false);
     } catch (err: any) {
-      setError(err.message);
+      console.error("Error in loadData:", err);
+      // Don't clear existing data on error
+      if (!summary) {
+        setError(err.message || "Failed to load dashboard data");
+      }
       setIsInitialLoad(false);
     }
   };
@@ -67,9 +113,12 @@ const EnhancedCoachDashboard: React.FC = () => {
         months: revenueMonths,
         paymentMode: revenuePaymentMode === "all" ? undefined : revenuePaymentMode
       });
-      setRevenueData(revenueCollections);
+      if (revenueCollections && Array.isArray(revenueCollections)) {
+        setRevenueData(revenueCollections);
+      }
     } catch (err: any) {
       console.error("Failed to load revenue data:", err);
+      // Keep existing data on error
     }
   };
 
@@ -78,9 +127,12 @@ const EnhancedCoachDashboard: React.FC = () => {
       const monthlyCollections = await api.getMonthlyCollections({
         paymentMode: monthlyPaymentMode === "all" ? undefined : monthlyPaymentMode
       });
-      setMonthlyData(monthlyCollections);
+      if (monthlyCollections && Array.isArray(monthlyCollections)) {
+        setMonthlyData(monthlyCollections);
+      }
     } catch (err: any) {
       console.error("Failed to load monthly data:", err);
+      // Keep existing data on error
     }
   };
 

@@ -80,6 +80,8 @@ const EnhancedScheduleManagementPage: React.FC = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
   const isCoach = user?.role === "COACH";
+  const isStudent = user?.role === "STUDENT";
+  const isFan = user?.role === "FAN";
   const canEdit = isAdmin || isCoach;
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
 
@@ -95,6 +97,8 @@ const EnhancedScheduleManagementPage: React.FC = () => {
   const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [hasAutoSeeded, setHasAutoSeeded] = useState(false);
+  const [loadSuccess, setLoadSuccess] = useState(false);
 
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [draft, setDraft] = useState({
@@ -176,8 +180,13 @@ const EnhancedScheduleManagementPage: React.FC = () => {
       const types = filter === "ALL" ? undefined : filter;
       const data = (await api.getEvents({ from, to, type: types })) as ClubEventDTO[];
       setEvents(Array.isArray(data) ? data : []);
+      setLoadSuccess(true); // Mark as successful load
     } catch (e: any) {
-      setError(e?.message || "Failed to load events");
+      console.error("Error loading events:", e);
+      const errorMsg = e?.message || "Failed to fetch events";
+      setError(errorMsg);
+      setEvents([]);
+      setLoadSuccess(false); // Mark as failed
     } finally {
       setLoading(false);
     }
@@ -187,6 +196,39 @@ const EnhancedScheduleManagementPage: React.FC = () => {
     loadMonth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monthCursor, filter]);
+
+  // Auto-seed demo events on first successful load if admin and no events exist
+  useEffect(() => {
+    const autoSeedDemoEvents = async () => {
+      if (!isAdmin) return; // Only for admins
+      if (hasAutoSeeded) return; // Only seed once
+      if (loading) return; // Wait for initial load
+      if (!loadSuccess) return; // Only seed if API call succeeded
+      if (events.length > 0) return; // Already have events
+      
+      try {
+        setHasAutoSeeded(true);
+        // Try to seed demo events
+        setSeeding(true);
+        await api.seedDemoEvents();
+        setNotice("Demo events created successfully");
+        // Reload events after seeding
+        await loadMonth();
+      } catch (err: any) {
+        console.error("Error seeding demo events:", err);
+        setError(err?.message || "Failed to seed demo events");
+        setHasAutoSeeded(true); // Mark as attempted even on error
+      } finally {
+        setSeeding(false);
+      }
+    };
+
+    // Only auto-seed on successful load when events is empty
+    if (!loading && loadSuccess && events.length === 0 && isAdmin && !hasAutoSeeded) {
+      autoSeedDemoEvents();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, loadSuccess, events.length, isAdmin, hasAutoSeeded]);
 
   const eventsByDay = useMemo(() => {
     const map = new Map<string, ClubEventDTO[]>();
@@ -396,7 +438,7 @@ const EnhancedScheduleManagementPage: React.FC = () => {
   const showPlayerSelection = (draft.type === "MATCH" || draft.type === "TRAINING") && draft.centerId && canEdit;
 
   return (
-    <div style={{ maxWidth: "1400px", margin: "0 auto", padding: spacing.md }}>
+    <div style={{ width: "100%" }}>
       <motion.div initial={moduleIn.initial} animate={moduleIn.animate}>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: spacing.md, flexWrap: "wrap", marginBottom: spacing.lg }}>
           <div>
@@ -414,7 +456,7 @@ const EnhancedScheduleManagementPage: React.FC = () => {
               </Button>
             ) : null}
             {canEdit && (
-              <Button variant="primary" onClick={openCreate}>
+              <Button variant="primary" onClick={openCreate} style={{ background: colors.accent.main, color: colors.text.onAccent }}>
                 Create new event
               </Button>
             )}
@@ -432,7 +474,7 @@ const EnhancedScheduleManagementPage: React.FC = () => {
           </div>
         ) : null}
 
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.05fr 0.95fr", gap: spacing.lg, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile || isStudent || isFan ? "1fr" : "1.05fr 0.95fr", gap: spacing.lg, alignItems: "start" }}>
           {/* Left: Month calendar */}
           <Card
             variant="glass"
@@ -646,25 +688,21 @@ const EnhancedScheduleManagementPage: React.FC = () => {
                   {selectedDayEvents.map((ev) => {
                     const startTime = formatTimeInIST(new Date(ev.startAt));
                     const endTime = ev.endAt ? ` - ${formatTimeInIST(new Date(ev.endAt))}` : "";
-                    return (
-                      <button
-                        key={ev.id}
-                        type="button"
-                        onClick={() => openEdit(ev)}
-                        style={{
-                          textAlign: "left",
-                          width: "100%",
-                          borderRadius: borderRadius.lg,
-                          border: ev.id === selectedEventId ? "1px solid rgba(0,224,255,0.30)" : "1px solid rgba(255,255,255,0.10)",
-                          background: ev.id === selectedEventId ? "rgba(0,224,255,0.05)" : "rgba(255,255,255,0.03)",
-                          padding: "12px 14px",
-                          cursor: "pointer",
-                          outline: "none",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 6,
-                        }}
-                      >
+                    const eventStyle = {
+                      textAlign: "left" as const,
+                      width: "100%",
+                      borderRadius: borderRadius.lg,
+                      border: ev.id === selectedEventId ? "1px solid rgba(0,224,255,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                      background: ev.id === selectedEventId ? "rgba(0,224,255,0.05)" : "rgba(255,255,255,0.03)",
+                      padding: "12px 14px",
+                      cursor: isStudent || isFan ? "default" as const : "pointer" as const,
+                      outline: "none" as const,
+                      display: "flex" as const,
+                      flexDirection: "column" as const,
+                      gap: 6,
+                    };
+                    const eventContent = (
+                      <>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                             <span
@@ -717,6 +755,15 @@ const EnhancedScheduleManagementPage: React.FC = () => {
                             </div>
                           )}
                         </div>
+                      </>
+                    );
+                    return isStudent || isFan ? (
+                      <div key={ev.id} style={eventStyle}>
+                        {eventContent}
+                      </div>
+                    ) : (
+                      <button key={ev.id} type="button" onClick={() => openEdit(ev)} style={eventStyle}>
+                        {eventContent}
                       </button>
                     );
                   })}
@@ -727,7 +774,8 @@ const EnhancedScheduleManagementPage: React.FC = () => {
             </div>
           </Card>
 
-          {/* Right: Event editor */}
+          {/* Right: Event editor - Hidden for students and fans */}
+          {!isStudent && !isFan && (
           <Card
             variant="glass"
             padding="lg"
@@ -1209,6 +1257,7 @@ const EnhancedScheduleManagementPage: React.FC = () => {
               Times are saved in your local timezone; the public site displays in {IST}.
             </div>
           </Card>
+          )}
         </div>
       </motion.div>
     </div>

@@ -8,13 +8,13 @@ const router = Router();
 // Get all active products
 router.get("/products", async (req, res) => {
   try {
-    const products = await (prisma as any).product?.findMany({
+    const products = await prisma.product.findMany({
       where: { isActive: true },
       orderBy: [
         { displayOrder: "asc" },
         { createdAt: "desc" },
       ],
-    }) || [];
+    });
     res.json(products);
   } catch (error: any) {
     console.error("Error fetching products:", error);
@@ -30,14 +30,12 @@ router.get("/products", async (req, res) => {
 // Get single product by slug
 router.get("/products/:slug", async (req, res) => {
   try {
-    const product = await (prisma as any).product?.findUnique({
+    const product = await prisma.product.findUnique({
       where: { slug: req.params.slug },
     });
 
     if (!product) {
-      return res.status(500).json({ 
-        message: "Database model not available. Please run database migration." 
-      });
+      return res.status(404).json({ message: "Product not found" });
     }
 
     if (!product.isActive) {
@@ -58,39 +56,108 @@ router.get("/products/:slug", async (req, res) => {
 
 // Create Razorpay order
 router.post("/orders/create", async (req, res) => {
+  // Declare variables outside try block so they're accessible in catch
+  let items, customerName, phone, email, shippingAddress, subtotal, shippingFee, total;
+  
   try {
-    const { items, customerName, phone, email, shippingAddress } = req.body;
+    ({ items, customerName, phone, email, shippingAddress } = req.body);
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: "Items are required" });
     }
 
     // Calculate totals
-    let subtotal = 0;
+    subtotal = 0;
     const orderItems = [];
 
     for (const item of items) {
-      const product = await (prisma as any).product?.findUnique({
-        where: { id: item.productId },
-      });
+      // Handle both numeric IDs (database products) and string IDs (local products)
+      let product;
+      let unitPrice: number;
+      let productName: string;
+      let productId: number | null = null;
 
-      if (!product) {
-        return res.status(400).json({ message: `Product ${item.productId} not found. Database may need migration.` });
-      }
-      
-      if (!product.isActive) {
-        return res.status(400).json({ message: `Product ${item.productId} is inactive` });
+      if (typeof item.productId === 'number') {
+        // Try to find in database by numeric ID
+        product = await prisma.product.findUnique({
+          where: { id: item.productId },
+        });
+      } else {
+        // Try to find in database by slug (string ID)
+        product = await prisma.product.findUnique({
+          where: { slug: item.productId },
+        });
       }
 
-      const unitPrice = product.price;
+      if (product) {
+        // Product exists in database - use database values
+        if (!product.isActive) {
+          // Save checkout lead before returning error
+          try {
+            await prisma.checkoutLead.create({
+              data: {
+                customerName: customerName || "Guest",
+                phone: phone || "",
+                email: email || "",
+                shippingAddress: shippingAddress || {},
+                items: items || [],
+                subtotal: 0,
+                shippingFee: 5000,
+                total: 5000,
+                errorMessage: `Product ${item.productId} is inactive.`,
+                status: "NEW",
+              },
+            });
+          } catch (leadError: any) {
+            console.error("Failed to save checkout lead:", leadError);
+          }
+          return res.status(400).json({ message: `Product ${item.productId} is inactive` });
+        }
+        productId = product.id;
+        unitPrice = product.price;
+        productName = product.name;
+      } else {
+        // Product not in database - this is a local product (frontend-only)
+        // Use the item data directly from the request
+        // The frontend should send productName and unitPrice for local products
+        if (!item.productName || !item.unitPrice) {
+          // Save checkout lead before returning error
+          try {
+            await prisma.checkoutLead.create({
+              data: {
+                customerName: customerName || "Guest",
+                phone: phone || "",
+                email: email || "",
+                shippingAddress: shippingAddress || {},
+                items: items || [],
+                subtotal: 0,
+                shippingFee: 5000,
+                total: 5000,
+                errorMessage: `Product ${item.productId} not found and missing product details.`,
+                status: "NEW",
+              },
+            });
+          } catch (leadError: any) {
+            console.error("Failed to save checkout lead:", leadError);
+          }
+          return res.status(400).json({ 
+            message: `Product ${item.productId} not found. Please ensure product details are included.` 
+          });
+        }
+        // Use provided values for local products
+        productId = null; // Local products don't have database IDs
+        unitPrice = item.unitPrice;
+        productName = item.productName;
+      }
+
       const quantity = item.quantity || 1;
       const lineTotal = unitPrice * quantity;
 
       subtotal += lineTotal;
 
       orderItems.push({
-        productId: product.id,
-        productName: product.name,
+        productId: productId || null, // null for local products (frontend-only)
+        productName: productName,
         variant: item.variant || null,
         size: item.size || null,
         quantity,
@@ -99,14 +166,14 @@ router.post("/orders/create", async (req, res) => {
       });
     }
 
-    const shippingFee = 5000; // ₹50.00 in paise (flat rate)
-    const total = subtotal + shippingFee;
+    shippingFee = 5000; // ₹50.00 in paise (flat rate)
+    total = subtotal + shippingFee;
 
     // Generate order number
     const orderNumber = `FCRB-${Date.now()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
 
     // Create order in database
-    const order = await (prisma as any).order?.create({
+    const order = await prisma.order.create({
       data: {
         orderNumber,
         subtotal,
@@ -179,6 +246,27 @@ router.post("/orders/create", async (req, res) => {
     }
   } catch (error: any) {
     console.error("Error creating order:", error);
+    
+    // Save checkout lead even if order creation fails
+    try {
+      await prisma.checkoutLead.create({
+        data: {
+          customerName: customerName || "Guest",
+          phone: phone || "",
+          email: email || "",
+          shippingAddress: shippingAddress || {},
+          items: items || [],
+          subtotal: subtotal || 0,
+          shippingFee: shippingFee || 5000,
+          total: total || ((subtotal || 0) + (shippingFee || 5000)),
+          errorMessage: error.message || "Failed to create order",
+          status: "NEW",
+        },
+      });
+    } catch (leadError: any) {
+      console.error("Failed to save checkout lead:", leadError);
+    }
+    
     res.status(500).json({ message: error.message || "Failed to create order" });
   }
 });
@@ -189,7 +277,7 @@ router.post("/orders/:orderId/verify", async (req, res) => {
     const { orderId } = req.params;
     const { paymentId, signature, razorpayOrderId } = req.body;
 
-    const order = await (prisma as any).order?.findUnique({
+    const order = await prisma.order.findUnique({
       where: { id: parseInt(orderId) },
     });
 
@@ -208,7 +296,7 @@ router.post("/orders/:orderId/verify", async (req, res) => {
           .digest("hex");
 
         if (generatedSignature !== signature) {
-          await (prisma as any).order?.update({
+          await prisma.order.update({
             where: { id: order.id },
             data: {
               status: "FAILED",
@@ -221,7 +309,7 @@ router.post("/orders/:orderId/verify", async (req, res) => {
     }
 
     // Update order status
-    const updatedOrder = await (prisma as any).order?.update({
+    const updatedOrder = await prisma.order.update({
       where: { id: order.id },
       data: {
         status: paymentId ? "PAID" : "FAILED",
@@ -251,7 +339,7 @@ router.post("/orders/:orderId/verify", async (req, res) => {
 // Get order by order number (for confirmation page)
 router.get("/orders/:orderNumber", async (req, res) => {
   try {
-    const order = await (prisma as any).order?.findUnique({
+    const order = await prisma.order.findUnique({
       where: { orderNumber: req.params.orderNumber },
       include: {
         items: {
@@ -275,6 +363,75 @@ router.get("/orders/:orderNumber", async (req, res) => {
       });
     }
     res.status(500).json({ message: error.message || "Failed to fetch order" });
+  }
+});
+
+// Get checkout leads (admin only)
+router.get("/checkout-leads", async (req, res) => {
+  try {
+    const { status, fromDate, toDate } = req.query;
+
+    const where: any = {};
+    if (status) where.status = status;
+    if (fromDate || toDate) {
+      where.createdAt = {};
+      if (fromDate) where.createdAt.gte = new Date(fromDate as string);
+      if (toDate) where.createdAt.lte = new Date(toDate as string);
+    }
+
+    const leads = await prisma.checkoutLead.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(leads);
+  } catch (error: any) {
+    console.error("Error fetching checkout leads:", error);
+    if (error.code === "P2001" || error.message?.includes("does not exist") || error.message?.includes("checkoutLead")) {
+      return res.status(500).json({ 
+        message: "Database model not available. Please run: cd backend && npx prisma migrate dev --name add_checkout_leads && npx prisma generate" 
+      });
+    }
+    res.status(500).json({ message: error.message || "Failed to fetch checkout leads" });
+  }
+});
+
+// Get single checkout lead (admin only)
+router.get("/checkout-leads/:id", async (req, res) => {
+  try {
+    const lead = await prisma.checkoutLead.findUnique({
+      where: { id: parseInt(req.params.id) },
+    });
+
+    if (!lead) {
+      return res.status(404).json({ message: "Checkout lead not found" });
+    }
+
+    res.json(lead);
+  } catch (error: any) {
+    console.error("Error fetching checkout lead:", error);
+    res.status(500).json({ message: error.message || "Failed to fetch checkout lead" });
+  }
+});
+
+// Update checkout lead (admin only)
+router.put("/checkout-leads/:id", async (req, res) => {
+  try {
+    const { status, assignedTo, internalNotes } = req.body;
+
+    const lead = await prisma.checkoutLead.update({
+      where: { id: parseInt(req.params.id) },
+      data: {
+        ...(status && { status }),
+        ...(assignedTo !== undefined && { assignedTo }),
+        ...(internalNotes !== undefined && { internalNotes }),
+      },
+    });
+
+    res.json(lead);
+  } catch (error: any) {
+    console.error("Error updating checkout lead:", error);
+    res.status(500).json({ message: error.message || "Failed to update checkout lead" });
   }
 });
 

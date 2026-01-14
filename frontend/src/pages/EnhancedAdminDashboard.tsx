@@ -19,16 +19,28 @@ const EnhancedAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [summary, setSummary] = useState<any>(() => {
     // Try to load from sessionStorage for instant display
-    const cached = sessionStorage.getItem('admin-dashboard-summary');
-    return cached ? JSON.parse(cached) : null;
+    try {
+      const cached = sessionStorage.getItem('admin-dashboard-summary');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
   });
   const [centers, setCenters] = useState<any[]>(() => {
-    const cached = sessionStorage.getItem('admin-dashboard-centers');
-    return cached ? JSON.parse(cached) : [];
+    try {
+      const cached = sessionStorage.getItem('admin-dashboard-centers');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
   });
   const [students, setStudents] = useState<any[]>(() => {
-    const cached = sessionStorage.getItem('admin-dashboard-students');
-    return cached ? JSON.parse(cached) : [];
+    try {
+      const cached = sessionStorage.getItem('admin-dashboard-students');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
   });
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
@@ -46,8 +58,36 @@ const EnhancedAdminDashboard: React.FC = () => {
   const [monthlyPaymentMode, setMonthlyPaymentMode] = useState("all");
 
   useEffect(() => {
-    loadData();
-    loadClubSnapshot();
+    let mounted = true;
+    
+    const load = async () => {
+      await loadData();
+      await loadClubSnapshot();
+    };
+    
+    load();
+    
+    // Refresh data when page becomes visible (with debounce)
+    let refreshTimeout: NodeJS.Timeout;
+    const handleVisibilityChange = () => {
+      if (!document.hidden && mounted) {
+        clearTimeout(refreshTimeout);
+        refreshTimeout = setTimeout(() => {
+          if (mounted) {
+            loadData();
+            loadRevenueData();
+            loadMonthlyData();
+          }
+        }, 500); // Debounce to prevent multiple rapid calls
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      mounted = false;
+      clearTimeout(refreshTimeout);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const loadClubSnapshot = async () => {
@@ -72,24 +112,60 @@ const EnhancedAdminDashboard: React.FC = () => {
 
   const loadData = async () => {
     try {
-      const [summaryData, centersData, studentsData] = await Promise.all([
-        api.getDashboardSummary(),
-        api.getCenters(),
-        api.getStudents()
-      ]);
-      setSummary(summaryData);
-      setCenters(centersData);
-      setStudents(studentsData);
+      setError(""); // Clear previous errors
       
-      // Cache data in sessionStorage for instant display on next visit
-      sessionStorage.setItem('admin-dashboard-summary', JSON.stringify(summaryData));
-      sessionStorage.setItem('admin-dashboard-centers', JSON.stringify(centersData));
-      sessionStorage.setItem('admin-dashboard-students', JSON.stringify(studentsData));
+      // Load critical data first
+      const [summaryData, centersData] = await Promise.all([
+        api.getDashboardSummary().catch(err => {
+          console.error("Failed to load dashboard summary:", err);
+          // Return cached or default, don't clear existing
+          const cached = sessionStorage.getItem('admin-dashboard-summary');
+          return cached ? JSON.parse(cached) : { totalCollected: 0, studentCount: 0, approxOutstanding: 0 };
+        }),
+        api.getCenters().catch(err => {
+          console.error("Failed to load centers:", err);
+          const cached = sessionStorage.getItem('admin-dashboard-centers');
+          return cached ? JSON.parse(cached) : [];
+        })
+      ]);
+      
+      // Only update state if we got valid data
+      if (summaryData) {
+        setSummary(summaryData);
+        sessionStorage.setItem('admin-dashboard-summary', JSON.stringify(summaryData));
+      }
+      if (centersData) {
+        setCenters(centersData);
+        sessionStorage.setItem('admin-dashboard-centers', JSON.stringify(centersData));
+      }
+      
+      // Load students separately (can be slower, don't block)
+      api.getStudents().then(studentsData => {
+        if (studentsData && Array.isArray(studentsData)) {
+          setStudents(studentsData);
+          sessionStorage.setItem('admin-dashboard-students', JSON.stringify(studentsData));
+        }
+      }).catch(err => {
+        console.error("Failed to load students:", err);
+        // Don't clear existing students, keep cached data
+        const cached = sessionStorage.getItem('admin-dashboard-students');
+        if (cached) {
+          try {
+            setStudents(JSON.parse(cached));
+          } catch (e) {
+            // Keep existing state
+          }
+        }
+      });
       
       setIsInitialLoad(false);
       // Revenue and monthly data will be loaded by their respective useEffect hooks
     } catch (err: any) {
-      setError(err.message);
+      console.error("Error in loadData:", err);
+      // Don't clear existing data on error, just show error message
+      if (!summary) {
+        setError(err.message || "Failed to load dashboard data");
+      }
       setIsInitialLoad(false);
     }
   };
@@ -101,9 +177,12 @@ const EnhancedAdminDashboard: React.FC = () => {
         centerId: revenueCenterId || undefined,
         paymentMode: revenuePaymentMode === "all" ? undefined : revenuePaymentMode
       });
-      setRevenueData(data);
+      if (data && Array.isArray(data)) {
+        setRevenueData(data);
+      }
     } catch (err: any) {
       console.error("Failed to load revenue data:", err);
+      // Keep existing data on error
     }
   };
 
@@ -113,9 +192,12 @@ const EnhancedAdminDashboard: React.FC = () => {
         centerId: monthlyCenterId || undefined,
         paymentMode: monthlyPaymentMode === "all" ? undefined : monthlyPaymentMode
       });
-      setMonthlyData(data);
+      if (data && Array.isArray(data)) {
+        setMonthlyData(data);
+      }
     } catch (err: any) {
       console.error("Failed to load monthly data:", err);
+      // Keep existing data on error
     }
   };
 

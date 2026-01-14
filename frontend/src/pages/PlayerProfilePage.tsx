@@ -35,9 +35,9 @@ interface MetricSnapshot {
   createdAt: string;
   sourceContext: string;
   notes?: string;
-  values: Array<{
+  values?: Array<{
     id: string;
-    metricDefinition: {
+    metricDefinition?: {
       key: string;
       displayName: string;
       category: string;
@@ -49,9 +49,9 @@ interface MetricSnapshot {
     comment?: string;
     delta?: number;
   }>;
-  positional: PositionSuitability[];
+  positional?: PositionSuitability[];
   readiness?: ReadinessData;
-  createdBy: {
+  createdBy?: {
     fullName: string;
   };
 }
@@ -141,23 +141,44 @@ const PlayerProfilePage: React.FC = () => {
         console.log('Snapshot data loaded:', snapshotData);
         
         if (snapshotData?.snapshot) {
-          setLatestSnapshot(snapshotData.snapshot);
-        } else if (snapshotData && !snapshotData.snapshot) {
+          // Ensure snapshot has required structure
+          const snapshot = snapshotData.snapshot;
+          if (snapshot && typeof snapshot === 'object') {
+            // Ensure values is an array
+            if (!Array.isArray(snapshot.values)) {
+              snapshot.values = [];
+            }
+            setLatestSnapshot(snapshot);
+          }
+        } else if (snapshotData && typeof snapshotData === 'object' && !snapshotData.snapshot) {
           // API might return the snapshot directly
-          setLatestSnapshot(snapshotData as any);
+          const snapshot = snapshotData as any;
+          if (!Array.isArray(snapshot.values)) {
+            snapshot.values = [];
+          }
+          setLatestSnapshot(snapshot);
         }
       } catch (err: any) {
         // No snapshot yet is not an error
         console.log('No snapshot found:', err.message);
+        setLatestSnapshot(null);
       }
 
       // Load snapshot history for development tab
       try {
-        const historyData = await api.getStudentSnapshots(studentId) || { snapshots: [] };
+        const historyData = await api.getStudentSnapshots(studentId);
         console.log('Snapshot history loaded:', historyData);
-        setSnapshots(historyData.snapshots || []);
+        if (historyData && Array.isArray(historyData.snapshots)) {
+          setSnapshots(historyData.snapshots);
+        } else if (Array.isArray(historyData)) {
+          // API might return array directly
+          setSnapshots(historyData);
+        } else {
+          setSnapshots([]);
+        }
       } catch (err: any) {
         console.log('No snapshot history:', err.message);
+        setSnapshots([]);
       }
     } catch (err: any) {
       console.error('Error loading player data:', err);
@@ -177,10 +198,13 @@ const PlayerProfilePage: React.FC = () => {
     return 'Senior';
   };
 
-  const groupMetricsByCategory = (metrics: MetricSnapshot['values']) => {
+  const groupMetricsByCategory = (metrics: MetricSnapshot['values'] | undefined) => {
     const groups: Record<string, typeof metrics> = {};
+    if (!metrics || !Array.isArray(metrics)) {
+      return groups;
+    }
     metrics.forEach((metric) => {
-      const category = metric.metricDefinition.category;
+      const category = metric.metricDefinition?.category || 'Other';
       if (!groups[category]) groups[category] = [];
       groups[category].push(metric);
     });
@@ -251,7 +275,7 @@ const PlayerProfilePage: React.FC = () => {
     );
   }
 
-  const metricGroups = latestSnapshot ? groupMetricsByCategory(latestSnapshot.values) : {};
+  const metricGroups = latestSnapshot?.values ? groupMetricsByCategory(latestSnapshot.values) : {};
 
   return (
     <motion.main
@@ -444,7 +468,7 @@ const PlayerProfilePage: React.FC = () => {
               </div>
 
               {/* Position Suitability */}
-              {latestSnapshot?.positional && latestSnapshot.positional.length > 0 && (
+              {latestSnapshot?.positional && Array.isArray(latestSnapshot.positional) && latestSnapshot.positional.length > 0 && (
                 <PositionSuitabilityGrid positions={latestSnapshot.positional} />
               )}
 
@@ -474,15 +498,15 @@ const PlayerProfilePage: React.FC = () => {
                 <MetricPanel
                   key={category}
                   title={category}
-                  metrics={metrics.map((m) => ({
+                  metrics={(metrics || []).map((m) => ({
                     id: m.id,
-                    name: m.metricDefinition.displayName,
+                    name: m.metricDefinition?.displayName || 'Unknown',
                     value: m.valueNumber,
                     delta: m.delta,
-                    definition: m.metricDefinition.definition,
+                    definition: m.metricDefinition?.definition,
                     confidence: m.confidence,
                     comment: m.comment,
-                    category: m.metricDefinition.category,
+                    category: m.metricDefinition?.category || category,
                     showDelta: true,
                     editable: false,
                   }))}
@@ -510,10 +534,10 @@ const PlayerProfilePage: React.FC = () => {
             transition={{ duration: 0.3 }}
           >
             <SnapshotTimeline
-              snapshots={snapshots.map(s => ({
+              snapshots={(snapshots || []).map(s => ({
                 id: s.id,
                 createdAt: s.createdAt,
-                createdBy: s.createdBy,
+                createdBy: s.createdBy || { fullName: 'Unknown' },
                 sourceContext: s.sourceContext,
                 notes: s.notes,
                 readiness: s.readiness,

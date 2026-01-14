@@ -154,7 +154,14 @@ router.get("/", async (req, res) => {
     res.json(events);
   } catch (error: any) {
     console.error("Error fetching events:", error);
-    res.status(500).json({ message: "Failed to fetch events" });
+    const errorMessage = error?.message || "Failed to fetch events";
+    const errorCode = error?.code || "UNKNOWN";
+    console.error("Error details:", { message: errorMessage, code: errorCode, stack: error?.stack });
+    res.status(500).json({ 
+      message: "Failed to fetch events",
+      error: errorMessage,
+      code: errorCode
+    });
   }
 });
 

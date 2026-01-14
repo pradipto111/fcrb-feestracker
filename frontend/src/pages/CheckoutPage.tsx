@@ -101,6 +101,8 @@ const CheckoutPage: React.FC = () => {
       const orderResponse = await api.createOrder({
         items: items.map((item) => ({
           productId: item.productId,
+          productName: item.productName, // Include for local products
+          unitPrice: item.unitPrice, // Include for local products
           quantity: item.quantity,
           variant: item.variant,
           size: item.size,
