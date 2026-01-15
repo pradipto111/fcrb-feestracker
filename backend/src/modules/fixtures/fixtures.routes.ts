@@ -38,7 +38,7 @@ router.get("/public", async (req, res) => {
         matchDate: { gte: now }
       },
       include: {
-        Center: {
+        center: {
           select: { name: true, shortName: true }
         }
       },
@@ -52,7 +52,7 @@ router.get("/public", async (req, res) => {
         status: "COMPLETED"
       },
       include: {
-        Center: {
+        center: {
           select: { name: true, shortName: true }
         }
       },
@@ -69,7 +69,7 @@ router.get("/public", async (req, res) => {
       venue: f.venue || "TBD",
       matchType: f.matchType,
       status: f.status,
-      center: f.Center?.shortName || f.Center?.name || "FCRB",
+      center: f.center?.shortName || f.center?.name || "FCRB",
       score: extractScore(f.notes)
     });
 
@@ -134,7 +134,7 @@ router.post("/", authRequired, async (req, res) => {
       venue: venue || null,
       notes: mergeScoreIntoNotes(score, notes),
       status: status || undefined,
-      FixturePlayer: playerIds && Array.isArray(playerIds) ? {
+      players: playerIds && Array.isArray(playerIds) ? {
         create: playerIds.map((playerId: any, index: number) => ({
           studentId: Number(playerId),
           position: req.body.positions?.[index] || null,
@@ -144,11 +144,11 @@ router.post("/", authRequired, async (req, res) => {
       } : undefined
     },
     include: {
-      Center: true,
-      Coach: true,
-      FixturePlayer: {
+      center: true,
+      coach: true,
+      players: {
         include: {
-          Student: true
+          student: true
         }
       }
     }
@@ -218,11 +218,11 @@ router.get("/", authRequired, async (req, res) => {
   const fixtures = await prisma.fixture.findMany({
     where,
     include: {
-      Center: true,
-      Coach: true,
-      FixturePlayer: {
+      center: true,
+      coach: true,
+      players: {
         include: {
-          Student: true
+          student: true
         }
       }
     },
@@ -242,11 +242,11 @@ router.get("/:id", authRequired, async (req, res) => {
   const fixture = await prisma.fixture.findUnique({
     where: { id: fixtureId },
     include: {
-      Center: true,
-      Coach: true,
-      FixturePlayer: {
+      center: true,
+      coach: true,
+      players: {
         include: {
-          Student: true
+          student: true
         }
       }
     }
@@ -320,11 +320,11 @@ router.put("/:id", authRequired, async (req, res) => {
       status
     },
     include: {
-      Center: true,
-      Coach: true,
-      FixturePlayer: {
+      center: true,
+      coach: true,
+      players: {
         include: {
-          Student: true
+          student: true
         }
       }
     }
@@ -354,11 +354,11 @@ router.put("/:id", authRequired, async (req, res) => {
     const updatedFixture = await prisma.fixture.findUnique({
       where: { id: fixtureId },
       include: {
-        Center: true,
-        Coach: true,
-        FixturePlayer: {
+        center: true,
+        coach: true,
+        players: {
           include: {
-            Student: true
+            student: true
           }
         }
       }
@@ -411,18 +411,18 @@ router.get("/student/my-fixtures", authRequired, requireRole("STUDENT"), async (
   const fixtures = await prisma.fixture.findMany({
     where: {
       centerId: student.centerId,
-      FixturePlayer: {
+      players: {
         some: {
           studentId: id
         }
       }
     },
     include: {
-      Center: true,
-      Coach: true,
-      FixturePlayer: {
+      center: true,
+      coach: true,
+      players: {
         include: {
-          Student: true
+          student: true
         }
       }
     },
