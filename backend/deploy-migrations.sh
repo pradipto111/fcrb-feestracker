@@ -71,18 +71,18 @@ EOF
     fi
 fi
 
-# Use prisma db push as fallback to ensure schema is up-to-date
-echo "🔄 Ensuring schema is synchronized..."
-if npx prisma db push --accept-data-loss 2>/dev/null; then
-    echo "✅ Schema synchronized"
+# IMPORTANT: Do NOT use --accept-data-loss as it will wipe existing data!
+# Only use db push if migrations completely failed and we need to sync schema
+if grep -q "P3009\|failed migrations" /tmp/migrate_output.log 2>/dev/null; then
+    echo "⚠️  Migrations have persistent failures. Syncing schema without data loss..."
+    # This will only add missing tables/columns, not delete existing data
+    npx prisma db push --skip-generate 2>/dev/null && echo "✅ Schema synchronized" || echo "⚠️  Schema sync skipped"
 else
-    echo "⚠️  Could not synchronize schema (database might not be accessible)"
+    echo "✅ Migration deployment completed successfully"
 fi
 
-echo "✅ Migration deployment completed (with potential warnings)"
+echo "✅ Migration deployment process finished"
 
 # Always exit successfully to allow the app to start
 exit 0
-
-
 
