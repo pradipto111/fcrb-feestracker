@@ -476,41 +476,6 @@ const PublicHeader: React.FC = () => {
             Login
           </Link>
 
-          {/* Join Fan Club - Secondary CTA */}
-          <Link
-            to="/fan-club/join"
-            style={{
-              ...typography.body,
-              fontSize: "13px",
-              fontWeight: typography.fontWeight.medium,
-              padding: `8px 16px`,
-              borderRadius: borderRadius.md,
-              background: "transparent",
-              color: colors.text.secondary,
-              textDecoration: "none",
-              border: `1px solid rgba(255, 255, 255, 0.25)`,
-              transition: "all 0.2s ease",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "36px",
-              minHeight: "36px",
-              boxSizing: "border-box",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
-              e.currentTarget.style.color = colors.text.primary;
-              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.4)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = colors.text.secondary;
-              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
-            }}
-          >
-            Join Fan Club
-          </Link>
-
           {/* Join our Academy - Primary CTA with highest visibility */}
           <Link
             to="/brochure"
@@ -732,30 +697,6 @@ const PublicHeader: React.FC = () => {
             }}
           >
             Explore RealVerse
-          </Link>
-
-          {/* Join Fan Club - Secondary CTA */}
-          <Link
-            to="/fan-club/join"
-            onClick={() => setIsMobileMenuOpen(false)}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.base,
-              fontWeight: typography.fontWeight.medium,
-              padding: spacing.md,
-              borderRadius: borderRadius.md,
-              background: "transparent",
-              color: colors.text.secondary,
-              textDecoration: "none",
-              textAlign: "center",
-              border: `1px solid rgba(255, 255, 255, 0.25)`,
-              minHeight: 44,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            Join Fan Club
           </Link>
 
           {/* Shop - Disabled in UI, backend code preserved */}
