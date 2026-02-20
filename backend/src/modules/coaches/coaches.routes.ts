@@ -6,33 +6,41 @@ import { authRequired, requireRole } from "../../auth/auth.middleware";
 
 const router = Router();
 
-// Admin: create coach + assign to ALL centers automatically
+// Admin: create coach + assign to selected centers (or all if centerIds not provided)
 router.post("/", authRequired, requireRole("ADMIN"), async (req, res) => {
   const {
     fullName,
     email,
     password,
-    role
+    role,
+    centerIds
   }: {
     fullName: string;
     email: string;
     password: string;
-    role: Role;
+    role?: Role;
+    centerIds?: number[];
   } = req.body;
 
   const passwordHash = await bcrypt.hash(password, 10);
-  
-  // Get all centers
-  const allCenters = await prisma.center.findMany();
-  
+
+  let centerIdsToAssign: number[];
+  if (Array.isArray(centerIds) && centerIds.length > 0) {
+    const existing = await prisma.center.findMany({ where: { id: { in: centerIds } }, select: { id: true } });
+    centerIdsToAssign = existing.map((c) => c.id);
+  } else {
+    const allCenters = await prisma.center.findMany({ select: { id: true } });
+    centerIdsToAssign = allCenters.map((c) => c.id);
+  }
+
   const coach = await prisma.coach.create({
     data: {
       fullName,
       email,
       passwordHash,
-      role,
+      role: role ?? "COACH",
       centers: {
-        create: allCenters.map((center) => ({ centerId: center.id }))
+        create: centerIdsToAssign.map((centerId) => ({ centerId }))
       }
     },
     include: {

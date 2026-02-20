@@ -108,6 +108,10 @@ const AdminStaffPage: React.FC = () => {
       setError("Please fill in all required fields");
       return;
     }
+    if (centers.length > 0 && formData.centerIds.length === 0) {
+      setError("Please select at least one centre for this coach");
+      return;
+    }
 
     try {
       await api.createCoach(formData);
@@ -355,8 +359,68 @@ const AdminStaffPage: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                     />
                   </div>
+                  {centers.length > 0 && (
+                    <div style={{ marginTop: spacing.md }}>
+                      <label
+                        style={{
+                          ...typography.caption,
+                          color: colors.text.secondary,
+                          display: "block",
+                          marginBottom: spacing.sm,
+                          fontWeight: 600,
+                        }}
+                      >
+                        Centre(s) *
+                      </label>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: spacing.sm,
+                          alignItems: "center",
+                        }}
+                      >
+                        {centers.map((c) => (
+                          <label
+                            key={c.id}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: spacing.xs,
+                              cursor: "pointer",
+                              ...typography.body,
+                              color: colors.text.primary,
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formData.centerIds.includes(c.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFormData({ ...formData, centerIds: [...formData.centerIds, c.id] });
+                                } else {
+                                  setFormData({ ...formData, centerIds: formData.centerIds.filter((id) => id !== c.id) });
+                                }
+                              }}
+                              style={{ accentColor: colors.accent.main }}
+                            />
+                            {c.name}
+                          </label>
+                        ))}
+                      </div>
+                      {formData.centerIds.length === 0 && (
+                        <div style={{ ...typography.caption, color: colors.text.muted, marginTop: spacing.xs }}>
+                          Select at least one centre for this coach.
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div style={{ marginTop: spacing.md }}>
-                    <Button type="submit" variant="primary">
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      disabled={centers.length > 0 && formData.centerIds.length === 0}
+                    >
                       Create Coach
                     </Button>
                   </div>

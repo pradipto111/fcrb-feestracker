@@ -10,6 +10,7 @@
     "deploy:with-migrations": "bash deploy-migrations.sh && (npm run prisma:seed:production || echo 'Seeding skipped') && npm start",
     "postinstall": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "migrate:production": "node scripts/migrate-production.js",
     "prisma:generate": "prisma generate",
     "prisma:seed": "ts-node prisma/seed-clean.ts",
     "prisma:seed:full": "ts-node prisma/seed.ts",
