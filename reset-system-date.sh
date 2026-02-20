@@ -5,11 +5,11 @@ echo ""
 
 # Get the admin token (you'll need to login first)
 echo "Please provide admin credentials:"
-read -p "Email (default: admin@feestrack.com): " EMAIL
-EMAIL=${EMAIL:-admin@feestrack.com}
-read -sp "Password (default: admin123): " PASSWORD
+read -p "Email (default: admin@fcrb.com): " EMAIL
+EMAIL=${EMAIL:-admin@fcrb.com}
+read -sp "Password (default: 20fc24rb!): " PASSWORD
 echo ""
-PASSWORD=${PASSWORD:-admin123}
+PASSWORD=${PASSWORD:-20fc24rb!}
 
 echo ""
 echo "Logging in..."

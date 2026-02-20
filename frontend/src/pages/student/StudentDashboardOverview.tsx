@@ -6,16 +6,12 @@ import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Section } from "../../components/ui/Section";
 import { PageHeader } from "../../components/ui/PageHeader";
-import { CardHeader } from "../../components/ui/CardHeader";
-import { CardBody } from "../../components/ui/CardBody";
-import { SectionNav } from "../../components/ui/SectionNav";
 import PlayerIdentityHeader from "../../components/PlayerIdentityHeader";
 import NextStepSnapshot from "../../components/NextStepSnapshot";
-import YourAnalytics from "../../components/YourAnalytics";
 import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
 import { useHomepageAnimation } from "../../hooks/useHomepageAnimation";
 import { heroAssets, clubAssets, academyAssets } from "../../config/assets";
-import { ChartBarIcon, ChartLineIcon, ClipboardIcon, RefreshIcon, BoltIcon, LeafIcon, CalendarIcon, ArrowRightIcon, PlusIcon, MinusIcon, LockIcon } from "../../components/icons/IconSet";
+import { ChartBarIcon, ChartLineIcon, ClipboardIcon, CalendarIcon, ArrowRightIcon, PlusIcon, MinusIcon, LockIcon, LeafIcon, VideoCameraIcon, BookIcon } from "../../components/icons/IconSet";
 
 const StudentDashboardOverview: React.FC = () => {
   const navigate = useNavigate();
@@ -31,9 +27,7 @@ const StudentDashboardOverview: React.FC = () => {
     const cached = sessionStorage.getItem('student-dashboard-roadmap');
     return cached ? JSON.parse(cached) : null;
   });
-  const [workloadMessage, setWorkloadMessage] = useState<any>(null);
   const [error, setError] = useState("");
-  const [analyticsRefreshKey, setAnalyticsRefreshKey] = useState(0);
   const [showPayments, setShowPayments] = useState(false);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -84,14 +78,6 @@ const StudentDashboardOverview: React.FC = () => {
     loadData();
   }, []);
 
-  // Load workload message after student data is available
-  useEffect(() => {
-    if (data?.student?.id) {
-      api.getPlayerWorkloadMessage(data.student.id)
-        .then(setWorkloadMessage)
-        .catch(() => setWorkloadMessage(null));
-    }
-  }, [data?.student?.id]);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,28 +148,8 @@ const StudentDashboardOverview: React.FC = () => {
           tone="dark"
           title="Dashboard"
           subtitle="A clear overview of your academy journey and what to do next."
-          actions={
-            <Link to="/realverse/student/analytics" style={{ textDecoration: "none" }}>
-              <Button variant="primary" size="md" style={{ background: colors.accent.main, color: colors.text.onAccent }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Analytics</span>
-                  <ArrowRightIcon size={14} color={colors.text.onAccent} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
-                </span>
-              </Button>
-            </Link>
-          }
         />
       </motion.div>
-
-      <SectionNav
-        items={[
-          { id: "identity", label: "Status" },
-          { id: "next", label: "What’s next" },
-          { id: "quick-actions", label: "Quick actions" },
-          { id: "analytics", label: "Analytics" },
-          { id: "payments", label: "Payments" },
-        ]}
-      />
       
       {/* Player Identity & Status Header */}
       <div id="identity" style={{ scrollMarginTop: 90 }}>
@@ -205,23 +171,64 @@ const StudentDashboardOverview: React.FC = () => {
           gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", 
           gap: spacing.md 
         }}>
-          {/* Analytics & Profile */}
-          <Card variant="elevated" padding="lg" style={{ cursor: "pointer" }} onClick={() => navigate("/realverse/student/analytics")}>
+          {/* Training Calendar */}
+          <Card variant="elevated" padding="lg" style={{ cursor: "pointer" }} onClick={() => navigate("/realverse/student/training-calendar")}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md }}>
-              <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: borderRadius.md, background: `rgba(245, 179, 0, 0.15)`, color: colors.accent.main }}>
-                <ChartBarIcon size={24} />
+              <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: borderRadius.md, background: `rgba(0, 224, 255, 0.15)`, color: "#00E0FF" }}>
+                <CalendarIcon size={24} />
               </div>
               <div style={{ flex: 1 }}>
                 <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
-                  Analytics & Profile
+                  Training Calendar
                 </h3>
+                <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm, marginBottom: spacing.sm }}>
+                  View your training sessions and track attendance
+                </p>
+                {attendanceRate !== undefined && (
+                  <p style={{ ...typography.body, color: colors.text.primary, fontSize: typography.fontSize.md, fontWeight: 600, marginBottom: spacing.xs }}>
+                    {attendanceRate}% Attendance
+                  </p>
+                )}
+                <div style={{ ...typography.caption, color: "#00E0FF", fontWeight: typography.fontWeight.medium }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Calendar</span>
+                    <ArrowRightIcon size={12} color="#00E0FF" style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Analytics & Profile */}
+          <Card variant="elevated" padding="lg" style={{ cursor: "not-allowed", opacity: 0.6, position: "relative" }} onClick={(e) => e.preventDefault()}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md }}>
+              <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: borderRadius.md, background: `rgba(245, 179, 0, 0.15)`, color: colors.text.muted }}>
+                <ChartBarIcon size={24} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, marginBottom: spacing.xs }}>
+                  <h3 style={{ ...typography.h4, color: colors.text.primary, margin: 0 }}>
+                    Analytics & Profile
+                  </h3>
+                  <span style={{ 
+                    ...typography.caption, 
+                    padding: `${spacing.xs} ${spacing.sm}`, 
+                    borderRadius: borderRadius.sm, 
+                    background: colors.warning.soft, 
+                    color: colors.warning.main,
+                    fontWeight: typography.fontWeight.semibold,
+                    fontSize: typography.fontSize.xs
+                  }}>
+                    Coming soon
+                  </span>
+                </div>
                 <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm, marginBottom: spacing.sm }}>
                   View your performance metrics, readiness, and positional suitability
                 </p>
-                <div style={{ ...typography.caption, color: colors.accent.main, fontWeight: typography.fontWeight.medium }}>
+                <div style={{ ...typography.caption, color: colors.text.muted, fontWeight: typography.fontWeight.medium }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
                     <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Profile</span>
-                    <ArrowRightIcon size={12} color={colors.accent.main} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                    <ArrowRightIcon size={12} color={colors.text.muted} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                   </span>
                 </div>
               </div>
@@ -233,24 +240,37 @@ const StudentDashboardOverview: React.FC = () => {
             <Card 
               variant="elevated" 
               padding="lg" 
-              style={{ cursor: "pointer" }} 
-              onClick={() => navigate(`/realverse/player/${data.student.id}/load-dashboard`)}
+              style={{ cursor: "not-allowed", opacity: 0.6, position: "relative" }} 
+              onClick={(e) => e.preventDefault()}
             >
               <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md }}>
-                <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: borderRadius.md, background: `rgba(245, 179, 0, 0.15)`, color: colors.accent.main }}>
+                <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: borderRadius.md, background: `rgba(245, 179, 0, 0.15)`, color: colors.text.muted }}>
                   <ChartLineIcon size={24} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
-                    Training Load
-                  </h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, marginBottom: spacing.xs }}>
+                    <h3 style={{ ...typography.h4, color: colors.text.primary, margin: 0 }}>
+                      Training Load
+                    </h3>
+                    <span style={{ 
+                      ...typography.caption, 
+                      padding: `${spacing.xs} ${spacing.sm}`, 
+                      borderRadius: borderRadius.sm, 
+                      background: colors.warning.soft, 
+                      color: colors.warning.main,
+                      fontWeight: typography.fontWeight.semibold,
+                      fontSize: typography.fontSize.xs
+                    }}>
+                      Coming soon
+                    </span>
+                  </div>
                   <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm, marginBottom: spacing.sm }}>
                     Monitor your training load trends and readiness correlation
                   </p>
-                  <div style={{ ...typography.caption, color: colors.accent.main, fontWeight: typography.fontWeight.medium }}>
+                  <div style={{ ...typography.caption, color: colors.text.muted, fontWeight: typography.fontWeight.medium }}>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
                       <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Dashboard</span>
-                      <ArrowRightIcon size={12} color={colors.accent.main} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                      <ArrowRightIcon size={12} color={colors.text.muted} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                     </span>
                   </div>
                 </div>
@@ -259,22 +279,35 @@ const StudentDashboardOverview: React.FC = () => {
           )}
 
           {/* Development Reports */}
-          <Card variant="elevated" padding="lg" style={{ cursor: "pointer" }} onClick={() => navigate("/realverse/student/wellness-reports")}>
+          <Card variant="elevated" padding="lg" style={{ cursor: "not-allowed", opacity: 0.6, position: "relative" }} onClick={(e) => e.preventDefault()}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md }}>
-              <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: borderRadius.md, background: `rgba(245, 179, 0, 0.15)`, color: colors.accent.main }}>
+              <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: borderRadius.md, background: `rgba(245, 179, 0, 0.15)`, color: colors.text.muted }}>
                 <ClipboardIcon size={24} />
               </div>
               <div style={{ flex: 1 }}>
-                <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
-                  Development Reports
-                </h3>
+                <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, marginBottom: spacing.xs }}>
+                  <h3 style={{ ...typography.h4, color: colors.text.primary, margin: 0 }}>
+                    Development Reports
+                  </h3>
+                  <span style={{ 
+                    ...typography.caption, 
+                    padding: `${spacing.xs} ${spacing.sm}`, 
+                    borderRadius: borderRadius.sm, 
+                    background: colors.warning.soft, 
+                    color: colors.warning.main,
+                    fontWeight: typography.fontWeight.semibold,
+                    fontSize: typography.fontSize.xs
+                  }}>
+                    Coming soon
+                  </span>
+                </div>
                 <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm, marginBottom: spacing.sm }}>
                   View your progress reports and development insights
                 </p>
-                <div style={{ ...typography.caption, color: colors.accent.main, fontWeight: typography.fontWeight.medium }}>
+                <div style={{ ...typography.caption, color: colors.text.muted, fontWeight: typography.fontWeight.medium }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
                     <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Reports</span>
-                    <ArrowRightIcon size={12} color={colors.accent.main} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                    <ArrowRightIcon size={12} color={colors.text.muted} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                   </span>
                 </div>
               </div>
@@ -298,6 +331,88 @@ const StudentDashboardOverview: React.FC = () => {
                   <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
                     <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Change Password</span>
                     <ArrowRightIcon size={12} color="#8b5cf6" style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Wellness & Reports */}
+          <Card variant="elevated" padding="lg" style={{ cursor: "not-allowed", opacity: 0.6, position: "relative" }} onClick={(e) => e.preventDefault()}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md }}>
+              <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: borderRadius.md, background: `rgba(245, 179, 0, 0.15)`, color: colors.text.muted }}>
+                <LeafIcon size={24} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, marginBottom: spacing.xs }}>
+                  <h3 style={{ ...typography.h4, color: colors.text.primary, margin: 0 }}>
+                    Wellness & Reports
+                  </h3>
+                  <span style={{ 
+                    ...typography.caption, 
+                    padding: `${spacing.xs} ${spacing.sm}`, 
+                    borderRadius: borderRadius.sm, 
+                    background: colors.warning.soft, 
+                    color: colors.warning.main,
+                    fontWeight: typography.fontWeight.semibold,
+                    fontSize: typography.fontSize.xs
+                  }}>
+                    Coming soon
+                  </span>
+                </div>
+                <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm, marginBottom: spacing.sm }}>
+                  Track your training load, recovery, and wellness metrics
+                </p>
+                <div style={{ ...typography.caption, color: colors.text.muted, fontWeight: typography.fontWeight.medium }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Reports</span>
+                    <ArrowRightIcon size={12} color={colors.text.muted} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Drills & Tutorials */}
+          <Card variant="elevated" padding="lg" style={{ cursor: "pointer" }} onClick={() => navigate("/realverse/drills")}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md }}>
+              <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: borderRadius.md, background: `rgba(34, 197, 94, 0.15)`, color: "#22c55e" }}>
+                <VideoCameraIcon size={24} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
+                  Drills & Tutorials
+                </h3>
+                <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm, marginBottom: spacing.sm }}>
+                  Access training videos and skill development guides
+                </p>
+                <div style={{ ...typography.caption, color: "#22c55e", fontWeight: typography.fontWeight.medium }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Drills</span>
+                    <ArrowRightIcon size={12} color="#22c55e" style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Feed & Updates */}
+          <Card variant="elevated" padding="lg" style={{ cursor: "pointer" }} onClick={() => navigate("/realverse/feed")}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: spacing.md }}>
+              <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: borderRadius.md, background: `rgba(59, 130, 246, 0.15)`, color: "#3b82f6" }}>
+                <BookIcon size={24} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ ...typography.h4, color: colors.text.primary, marginBottom: spacing.xs }}>
+                  Feed & Updates
+                </h3>
+                <p style={{ ...typography.body, color: colors.text.secondary, fontSize: typography.fontSize.sm, marginBottom: spacing.sm }}>
+                  Stay updated with club news, announcements, and posts
+                </p>
+                <div style={{ ...typography.caption, color: "#3b82f6", fontWeight: typography.fontWeight.medium }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Feed</span>
+                    <ArrowRightIcon size={12} color="#3b82f6" style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                   </span>
                 </div>
               </div>
@@ -522,88 +637,6 @@ const StudentDashboardOverview: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Workload Message - Compact */}
-      {workloadMessage && (
-        <Section variant="elevated" style={{ marginBottom: spacing.xl }}>
-          <Card
-            variant="elevated"
-            padding="md"
-            style={{
-              background: workloadMessage.status === 'HIGH' 
-                ? colors.warning?.soft || colors.accent.soft
-                : workloadMessage.status === 'LOW'
-                ? colors.info?.soft || colors.primary.soft
-                : colors.surface.elevated,
-              border: `2px solid ${
-                workloadMessage.status === 'HIGH'
-                  ? colors.warning?.main || colors.accent.main
-                  : workloadMessage.status === 'LOW'
-                  ? colors.info?.main || colors.primary.main
-                  : colors.border.medium
-              }40`,
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md, flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: borderRadius.md, background: colors.primary.soft, color: colors.primary.main }}>
-                  {workloadMessage.status === 'HIGH' ? <BoltIcon size={18} /> : workloadMessage.status === 'LOW' ? <LeafIcon size={18} /> : <CalendarIcon size={18} />}
-                </div>
-                <div>
-                  <h3 style={{ ...typography.body, fontWeight: typography.fontWeight.semibold, color: colors.text.primary, marginBottom: spacing.xs }}>
-                    This Week's Training
-                  </h3>
-                  <p style={{ ...typography.caption, color: colors.text.secondary }}>
-                    {workloadMessage.message}
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate(`/realverse/player/${data?.student?.id}/load-dashboard`)}
-              >
-                <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Details</span>
-                  <ArrowRightIcon size={12} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
-                </span>
-              </Button>
-            </div>
-          </Card>
-        </Section>
-      )}
-
-      {/* Your Analytics Section */}
-      <Section id="analytics" variant="elevated" style={{ marginBottom: spacing.xl }}>
-        <Card variant="elevated" padding="none" style={{ background: colors.surface.card }}>
-          <CardHeader
-            title="Your Analytics"
-            description="Latest performance metrics and assessments"
-            actions={
-              <div style={{ display: "flex", gap: spacing.sm }}>
-                <Button
-                  variant="utility"
-                  size="sm"
-                  onClick={() => setAnalyticsRefreshKey(prev => prev + 1)}
-                >
-                  <RefreshIcon size={14} style={{ marginRight: spacing.xs }} /> Refresh
-                </Button>
-                <Link to="/realverse/student/analytics" style={{ textDecoration: "none" }}>
-                  <Button variant="primary" size="sm" style={{ background: colors.accent.main, color: colors.text.onAccent }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Full</span>
-                      <ArrowRightIcon size={12} color={colors.text.onAccent} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
-                    </span>
-                  </Button>
-                </Link>
-              </div>
-            }
-          />
-          <CardBody padding="lg">
-            <YourAnalytics refreshKey={analyticsRefreshKey} />
-          </CardBody>
-        </Card>
-      </Section>
 
       {/* Payments (collapsible) */}
       <Section id="payments" variant="elevated">

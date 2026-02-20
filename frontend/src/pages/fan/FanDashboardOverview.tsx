@@ -229,7 +229,7 @@ const FanDashboardOverview: React.FC = () => {
                     { label: "Daily Boost", href: "/realverse/fan/games" },
                     { label: "Sponsor Offers", href: "/realverse/fan/benefits" },
                     { label: "Games & Quizzes", href: "/realverse/fan/games" },
-                    { label: "Explore Programs", href: "/realverse/fan/programs" },
+                    { label: "Explore Programmes", href: "/realverse/fan/programs" },
                   ].map((a) => (
                     <a key={a.label} href={a.href} style={{ textDecoration: "none" }}>
                       <motion.div whileHover={reduce ? undefined : { y: -2 }} whileTap={{ scale: 0.99 }} style={{ height: "100%" }}>
@@ -632,7 +632,7 @@ const FanDashboardOverview: React.FC = () => {
           </motion.div>
         )}
 
-        {/* Programs conversion */}
+        {/* Programmes conversion */}
         {flags.programs === false ? null : (
           <motion.div variants={cardVariants} initial="initial" animate="animate">
             <Card variant="default" padding="xl" style={{ borderRadius: 26, padding: 28, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}>
@@ -674,9 +674,9 @@ const FanDashboardOverview: React.FC = () => {
                   <div style={{ display: "grid", gap: spacing.sm, marginTop: spacing.md }}>
                     {[
                       { id: "FYDP" as const, label: "Foundation & Youth Development (FYDP)" },
-                      { id: "SCP" as const, label: "Senior Competitive Program (SCP)" },
+                      { id: "SCP" as const, label: "Senior Competitive Programme (SCP)" },
                       { id: "WPP" as const, label: "Women's Performance Pathway (WPP)" },
-                      { id: "EPP" as const, label: "Elite Pathway Program (EPP)" },
+                      { id: "EPP" as const, label: "Elite Pathway Programme (EPP)" },
                     ].map((p) => (
                       <Button key={p.id} variant="secondary" size="md" onClick={() => onInterest(p.id)} style={{ justifyContent: "space-between", borderRadius: borderRadius.button }}>
                         <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>{p.label}</span>
@@ -688,7 +688,7 @@ const FanDashboardOverview: React.FC = () => {
                     <a href="/realverse/fan/programs" style={{ textDecoration: "none" }}>
                       <Button variant="primary" size="md" style={{ width: "100%", borderRadius: borderRadius.button, background: colors.accent.main, color: colors.text.onAccent }}>
                         <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
-                          <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Explore Programs</span>
+                          <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Explore Programmes</span>
                           <ArrowRightIcon size={16} color={colors.text.onAccent} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                         </span>
                       </Button>

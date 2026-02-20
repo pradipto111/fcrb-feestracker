@@ -36,15 +36,37 @@ async function request(
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for complex queries
+    // Use shorter timeout for dashboard/analytics queries to prevent infinite loading
+    // Default: 30 seconds, but can be overridden via options
+    const timeoutMs = (options as any).timeout || 30000;
+    const requestStartTime = Date.now();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      if (shouldLog) {
+        console.warn(`[${requestId}] Request timeout after ${timeoutMs}ms: ${path}`);
+      }
+    }, timeoutMs);
 
-    const res = await fetch(url, {
-      ...options,
-      headers,
-      mode: 'cors',
-      credentials: 'omit',
-      signal: controller.signal
-    });
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        ...options,
+        headers,
+        mode: 'cors',
+        credentials: 'omit',
+        signal: controller.signal
+      });
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      // If it's a timeout/abort, provide clearer error message
+      if (fetchError.name === "AbortError") {
+        const timeoutError = new Error(`Request timed out after ${timeoutMs}ms. The server may be slow or unresponsive.`);
+        (timeoutError as any).name = "TimeoutError";
+        (timeoutError as any).isTimeout = true;
+        throw timeoutError;
+      }
+      throw fetchError;
+    }
 
     clearTimeout(timeoutId);
 
@@ -68,6 +90,13 @@ async function request(
       } catch {
         // If we can't read the error, use status text
       }
+      if (res.status === 401) {
+        // Clear local auth state so the UI can prompt for re-login.
+        setToken(null);
+        localStorage.removeItem("user");
+        // Dispatch custom event to notify AuthContext
+        window.dispatchEvent(new CustomEvent("auth:cleared"));
+      }
       // Don't log 404s as errors - they're expected for missing resources
       if (res.status !== 404) {
         console.error(`[${requestId}] API Error: ${res.status} ${path} - ${errorMessage}`);
@@ -80,34 +109,54 @@ async function request(
 
     const contentType = res.headers.get("Content-Type") || "";
     if (contentType.includes("application/json")) {
-      return res.json();
+      const jsonData = await res.json();
+      return jsonData;
     }
     return null;
   } catch (error: any) {
     // Don't log 404 errors - they're expected for missing resources
     if (error.status !== 404) {
-      console.error(`API Request Failed:`, error);
+      // Don't log AbortErrors - they're expected when requests are cancelled (component unmount, etc.)
+      if (error.name !== "AbortError") {
+        console.error(`API Request Failed:`, error);
+      }
     }
     // Handle network errors
-    if (error.name === "AbortError") {
-      throw new Error("Request timeout. The server is taking too long to respond. Please check if the backend is running.");
+    if (error.name === "AbortError" || error.name === "TimeoutError") {
+      // Check if this was a timeout vs intentional cancellation
+      if (error.isTimeout || error.name === "TimeoutError") {
+        throw new Error(`Request timed out. The backend at ${API_BASE} may not be running. Start it with: cd backend && npm run dev`);
+      }
+      // Otherwise, it's likely an intentional cancellation (component unmount, etc.)
+      throw new Error("Request was cancelled. Please try again.");
     }
     if (error.name === "TypeError" && (error.message.includes("fetch") || error.message.includes("Failed to fetch"))) {
-      throw new Error(`Unable to connect to server at ${API_BASE}. Please ensure:\n1. The backend server is running on port 4000\n2. Your firewall is not blocking the connection\n3. The backend URL is correct in your environment variables`);
+      throw new Error(`Cannot reach the backend at ${API_BASE}. Start the server with: cd backend && npm run dev`);
     }
     throw error;
   }
 }
 
+/** No-auth health check; use short timeout to detect unreachable backend. */
+export function healthCheck(timeoutMs = 5000): Promise<{ status: string }> {
+  return request("/", { timeout: timeoutMs });
+}
+
 export const api = {
-  login(email: string, password: string, role?: "ADMIN" | "COACH" | "STUDENT" | "FAN") {
-    return request("/auth/login", {
+  healthCheck,
+  login(email: string, password: string, role?: "ADMIN" | "COACH" | "STUDENT" | "FAN" | "CRM") {
+    const path = role === "CRM" ? "/crm/auth/login" : "/auth/login";
+    return request(path, {
       method: "POST",
       body: JSON.stringify({ email, password, role })
     });
   },
-  getDashboardSummary(params?: { from?: string; to?: string; centerId?: string }) {
-    const query = new URLSearchParams(params || {});
+  getDashboardSummary(params?: { from?: string; to?: string; centerId?: string; includeInactive?: boolean }) {
+    const query = new URLSearchParams();
+    if (params?.from) query.set("from", params.from);
+    if (params?.to) query.set("to", params.to);
+    if (params?.centerId) query.set("centerId", params.centerId);
+    if (params?.includeInactive !== undefined) query.set("includeInactive", String(params.includeInactive));
     return request(`/dashboard/summary?${query.toString()}`);
   },
   getRevenueCollections(params?: { months?: number; centerId?: string; paymentMode?: string }) {
@@ -162,6 +211,15 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data)
     });
+  },
+  getPaymentLogs(params?: { page?: number; limit?: number; actorType?: string; dateFrom?: string; dateTo?: string }) {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.actorType) query.append('actorType', params.actorType);
+    if (params?.dateFrom) query.append('dateFrom', params.dateFrom);
+    if (params?.dateTo) query.append('dateTo', params.dateTo);
+    return request(`/payments/logs?${query.toString()}`);
   },
   // Student-specific endpoints
   getStudentDashboard() {
@@ -314,13 +372,33 @@ export const api = {
     });
   },
   // Attendance endpoints
-  createSession(data: { centerId: number; sessionDate: string; startTime: string; endTime: string; notes?: string }) {
+  createSession(data: { 
+    centerId: number; 
+    title: string;
+    description?: string;
+    programmeId?: string;
+    sessionDate: string; 
+    startTime: string; 
+    endTime: string; 
+    notes?: string 
+  }) {
     return request("/attendance/sessions", {
       method: "POST",
       body: JSON.stringify(data)
     });
   },
-  createBulkSessions(data: { centerId: number; sessions: Array<{ sessionDate: string; startTime: string; endTime: string; notes?: string }> }) {
+  createBulkSessions(data: { 
+    centerId: number; 
+    sessions: Array<{ 
+      title: string;
+      description?: string;
+      programmeId?: string;
+      sessionDate: string; 
+      startTime: string; 
+      endTime: string; 
+      notes?: string 
+    }> 
+  }) {
     return request("/attendance/sessions/bulk", {
       method: "POST",
       body: JSON.stringify(data)
@@ -336,7 +414,15 @@ export const api = {
   getSession(id: number) {
     return request(`/attendance/sessions/${id}`);
   },
-  updateSession(id: number, data: { sessionDate?: string; startTime?: string; endTime?: string; notes?: string }) {
+  updateSession(id: number, data: { 
+    title?: string;
+    description?: string;
+    programmeId?: string;
+    sessionDate?: string; 
+    startTime?: string; 
+    endTime?: string; 
+    notes?: string 
+  }) {
     return request(`/attendance/sessions/${id}`, {
       method: "PUT",
       body: JSON.stringify(data)
@@ -344,6 +430,20 @@ export const api = {
   },
   deleteSession(id: number) {
     return request(`/attendance/sessions/${id}`, {
+      method: "DELETE"
+    });
+  },
+  getSessionParticipants(sessionId: number) {
+    return request(`/attendance/sessions/${sessionId}/participants`);
+  },
+  addSessionParticipant(sessionId: number, studentId: number) {
+    return request(`/attendance/sessions/${sessionId}/participants`, {
+      method: "POST",
+      body: JSON.stringify({ studentId })
+    });
+  },
+  removeSessionParticipant(sessionId: number, studentId: number) {
+    return request(`/attendance/sessions/${sessionId}/participants/${studentId}`, {
       method: "DELETE"
     });
   },
@@ -371,6 +471,15 @@ export const api = {
     if (params?.month) query.set("month", params.month.toString());
     if (params?.year) query.set("year", params.year.toString());
     return request(`/attendance/student/attendance?${query.toString()}`);
+  },
+  getStudentTrainingCalendar(params?: { month?: number; year?: number }) {
+    const query = new URLSearchParams();
+    if (params?.month) query.set("month", params.month.toString());
+    if (params?.year) query.set("year", params.year.toString());
+    return request(`/student/training-calendar?${query.toString()}`);
+  },
+  getStudentAttendanceMetrics() {
+    return request("/student/attendance-metrics");
   },
   // Fixtures endpoints
   createFixture(data: {
@@ -462,9 +571,6 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
   deleteEvent(id: string) {
     return request(`/events/${id}`, { method: "DELETE" });
   },
-  seedDemoEvents() {
-    return request("/events/seed", { method: "POST" });
-  },
   getFixtures(params?: { centerId?: number; fromDate?: string; toDate?: string; status?: string; upcoming?: boolean }) {
     const query = new URLSearchParams();
     if (params?.centerId) query.set("centerId", params.centerId.toString());
@@ -505,10 +611,11 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
     return request("/fixtures/student/my-fixtures");
   },
   // Videos/Drills endpoints
-  getVideos(params?: { category?: string; platform?: string }) {
+  getVideos(params?: { category?: string; platform?: string; mediaType?: string }) {
     const query = new URLSearchParams();
     if (params?.category) query.set("category", params.category);
     if (params?.platform) query.set("platform", params.platform);
+    if (params?.mediaType) query.set("mediaType", params.mediaType);
     return request(`/videos?${query.toString()}`);
   },
   getVideo(id: number) {
@@ -517,8 +624,13 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
   createVideo(data: {
     title: string;
     description?: string;
-    videoUrl: string;
-    platform?: "YOUTUBE" | "INSTAGRAM";
+    mediaType?: "LINK" | "IMAGE" | "PDF" | "DOCUMENT";
+    videoUrl?: string;  // For links
+    fileData?: string;  // Base64 encoded file
+    fileName?: string;
+    mimeType?: string;
+    fileSize?: number;
+    platform?: "YOUTUBE" | "INSTAGRAM" | "UPLOADED";
     category?: string;
     thumbnailUrl?: string;
   }) {
@@ -530,8 +642,13 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
   updateVideo(id: number, data: {
     title?: string;
     description?: string;
-    videoUrl?: string;
-    platform?: "YOUTUBE" | "INSTAGRAM";
+    mediaType?: "LINK" | "IMAGE" | "PDF" | "DOCUMENT";
+    videoUrl?: string;  // For links
+    fileData?: string;  // Base64 encoded file
+    fileName?: string;
+    mimeType?: string;
+    fileSize?: number;
+    platform?: "YOUTUBE" | "INSTAGRAM" | "UPLOADED";
     category?: string;
     thumbnailUrl?: string;
   }) {
@@ -690,6 +807,147 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
     return request(`/leads/${leadId}/convert`, {
       method: "POST"
     });
+  },
+
+  // CRM (Sales/BD)
+  crmGetLeads(params?: {
+    search?: string;
+    stage?: string;
+    status?: string;
+    sourceType?: string;
+    ownerId?: number;
+    limit?: number;
+    offset?: number;
+  }) {
+    const query = new URLSearchParams();
+    if (params?.search) query.set("search", params.search);
+    if (params?.stage) query.set("stage", params.stage);
+    if (params?.status) query.set("status", params.status);
+    if (params?.sourceType) query.set("sourceType", params.sourceType);
+    if (params?.ownerId !== undefined) query.set("ownerId", String(params.ownerId));
+    if (params?.limit !== undefined) query.set("limit", String(params.limit));
+    if (params?.offset !== undefined) query.set("offset", String(params.offset));
+    return request(`/crm/leads?${query.toString()}`);
+  },
+  crmGetLead(id: string) {
+    return request(`/crm/leads/${encodeURIComponent(id)}`);
+  },
+  crmCreateLead(payload: {
+    primaryName: string;
+    sourceType?: string;
+    sourceId?: number | string;
+    phone?: string | null;
+    email?: string | null;
+    city?: string | null;
+    preferredCentre?: string | null;
+    programmeInterest?: string | null;
+    stage?: string;
+    status?: string;
+    priority?: number;
+    score?: number | null;
+    ownerId?: number | null;
+    tags?: string[];
+    customFields?: { age?: number; leadSource?: string; [key: string]: unknown };
+    convertedStudentId?: number | null;
+    convertedFanId?: number | null;
+    convertedOrderId?: number | null;
+  }) {
+    return request("/crm/leads", { method: "POST", body: JSON.stringify(payload) });
+  },
+  crmUpdateLead(
+    id: string,
+    data: {
+      stage?: string;
+      status?: string;
+      ownerId?: number | null;
+      tags?: string[];
+      priority?: number;
+      score?: number | null;
+      customFields?: any;
+      nextAction?: {
+        type: string;
+        scheduledAt?: string;
+        notes?: string;
+      };
+    }
+  ) {
+    return request(`/crm/leads/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+  crmUpdateLeadWithAction(
+    id: string,
+    stage: string,
+    nextAction: {
+      type: string;
+      scheduledAt?: string;
+      notes?: string;
+    }
+  ) {
+    return request(`/crm/leads/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      body: JSON.stringify({ stage, nextAction }),
+    });
+  },
+  crmListUsers() {
+    return request("/crm/users");
+  },
+  crmGetLeadActivities(leadId: string) {
+    return request(`/crm/leads/${encodeURIComponent(leadId)}/activities`);
+  },
+  crmCreateLeadActivity(
+    leadId: string,
+    payload: { type: string; title?: string; body?: string; occurredAt?: string; metadata?: any }
+  ) {
+    return request(`/crm/leads/${encodeURIComponent(leadId)}/activities`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  crmGetTasks(params?: { leadId?: string }) {
+    const query = new URLSearchParams();
+    if (params?.leadId) query.set("leadId", params.leadId);
+    return request(`/crm/tasks?${query.toString()}`);
+  },
+  crmCreateTask(payload: { leadId: string; title: string; description?: string; dueAt?: string; assignedToCrmUserId?: number | null }) {
+    return request("/crm/tasks", { method: "POST", body: JSON.stringify(payload) });
+  },
+  crmUpdateTask(taskId: string, payload: { status?: string; dueAt?: string | null; title?: string; description?: string | null; assignedToCrmUserId?: number | null }) {
+    return request(`/crm/tasks/${encodeURIComponent(taskId)}`, { method: "PATCH", body: JSON.stringify(payload) });
+  },
+  crmImportPreview(payload: { source: string; filename?: string; rows: any[]; mapping: any }) {
+    return request("/crm/import/preview", { method: "POST", body: JSON.stringify(payload) });
+  },
+  crmImportValidate(jobId: string, payload: { mapping: any }) {
+    return request(`/crm/import/${encodeURIComponent(jobId)}/validate`, { method: "POST", body: JSON.stringify(payload) });
+  },
+  crmImportCommit(jobId: string) {
+    return request(`/crm/import/${encodeURIComponent(jobId)}/commit`, { method: "POST" });
+  },
+  crmImportJobs() {
+    return request("/crm/import/jobs");
+  },
+  crmGetSettings() {
+    return request("/crm/settings");
+  },
+  crmUpdateSettings(payload: { stages: string[]; tags: string[]; slaHoursByStage: Record<string, number>; assignmentRules: any }) {
+    return request("/crm/settings", { method: "PUT", body: JSON.stringify(payload) });
+  },
+  crmAnalyticsSummary() {
+    return request("/crm/analytics/summary");
+  },
+  crmAnalyticsAgents() {
+    return request("/crm/analytics/agents");
+  },
+  adminCreateCrmUser(payload: { fullName: string; email: string; password: string; role?: "AGENT" }) {
+    return request("/crm/users", { method: "POST", body: JSON.stringify(payload) });
+  },
+  adminSetCrmUserStatus(userId: number, status: "ACTIVE" | "DISABLED") {
+    return request(`/crm/users/${userId}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
+  },
+  adminResetCrmUserPassword(userId: number, password: string) {
+    return request(`/crm/users/${userId}/reset-password`, { method: "POST", body: JSON.stringify({ password }) });
   },
   // Legacy Leads endpoints
   createLegacyLead(data: {
@@ -1430,6 +1688,13 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
   },
   adminGetFanAuditLogs() {
     return request("/api/admin/fans/audit");
+  },
+  adminGetActivityFeed(params?: { limit?: number; actorType?: string; entityType?: string }) {
+    const query = new URLSearchParams();
+    if (params?.limit) query.set("limit", String(params.limit));
+    if (params?.actorType) query.set("actorType", params.actorType);
+    if (params?.entityType) query.set("entityType", params.entityType);
+    return request(`/activity?${query.toString()}`);
   },
   adminGetFanMatchdayMoments() {
     return request("/api/admin/fans/moments");

@@ -8,7 +8,6 @@ import RoleLayout, {
   IconMatches,
   IconSessions,
   IconShop,
-  IconPayments,
   IconSettings,
 } from "./shared/RoleLayout";
 
@@ -17,68 +16,33 @@ const AdminLayout: React.FC = () => {
 
   const navItems = [
     // Operations Section
-    {
-      path: "/realverse/admin",
-      label: "Dashboard",
-      icon: "dashboard",
-      description: "System overview",
-      section: "Operations",
-    },
-    {
-      path: "/realverse/admin/analytics",
-      label: "Analytics",
-      icon: "dashboard",
-      description: "Performance metrics & insights",
-      section: "Operations",
-    },
-    // Fan Club Section (new)
+    // {
+    //   path: "/realverse/admin/activity",
+    //   label: "Activity",
+    //   icon: "sessions",
+    //   description: "System-wide audit feed",
+    //   section: "Operations",
+    // },
+    // Fan Club Section (Coming Soon)
     {
       path: "/realverse/admin/fans",
       label: "Fan Club",
       icon: "dashboard",
-      description: "Accounts & operations",
+      description: "Accounts, tiers & rewards · Coming Soon",
       section: "Fan Club",
     },
     {
-      path: "/realverse/admin/fans/tiers",
-      label: "Tiers",
-      icon: "settings",
-      description: "Pricing, benefits & flags",
-      section: "Fan Club",
-    },
-    {
-      path: "/realverse/admin/fans/rewards",
-      label: "Rewards",
+      path: "/realverse/admin/fans/content",
+      label: "Content & Analytics",
       icon: "matches",
-      description: "Sponsors, campaigns, coupons",
-      section: "Fan Club",
-    },
-    {
-      path: "/realverse/admin/fans/matchday",
-      label: "Matchday Content",
-      icon: "matches",
-      description: "Moments + dynamic reward toggles",
-      section: "Fan Club",
-    },
-    // {
-    //   path: "/realverse/admin/fans/games",
-    //   label: "Games",
-    //   icon: "sessions",
-    //   description: "Quests & unlock rules",
-    //   section: "Fan Club",
-    // },
-    {
-      path: "/realverse/admin/fans/analytics",
-      label: "Fan Club Analytics",
-      icon: "dashboard",
-      description: "KPIs, exports, audit",
+      description: "Matchday content & analytics · Coming Soon",
       section: "Fan Club",
     },
     {
       path: "/realverse/admin/fans/settings",
       label: "Fan Club Settings",
       icon: "settings",
-      description: "Feature toggles",
+      description: "Feature toggles · Coming Soon",
       section: "Fan Club",
     },
     {
@@ -103,12 +67,19 @@ const AdminLayout: React.FC = () => {
       section: "Operations",
     },
     {
-      path: "/realverse/admin/students/bulk-import",
-      label: "Bulk Import",
-      icon: "players",
-      description: "Import students from spreadsheet",
+      path: "/realverse/admin/payment-logs",
+      label: "Payment Logs",
+      icon: "settings",
+      description: "Track all payment & revenue updates",
       section: "Operations",
     },
+    // {
+    //   path: "/realverse/admin/students/bulk-import",
+    //   label: "Bulk Import",
+    //   icon: "players",
+    //   description: "Import students from spreadsheet",
+    //   section: "Operations",
+    // },
     // Football Ops Section
     {
       path: "/realverse/admin/schedule",
@@ -133,82 +104,61 @@ const AdminLayout: React.FC = () => {
       section: "System",
     },
     {
-      path: "/realverse/admin/payments",
-      label: "Payments",
-      icon: "payments",
-      description: "Payment tracking & reports",
-      section: "System",
-    },
-    {
       path: "/realverse/admin/leads",
-      label: "Website Leads",
+      label: "Leads",
       icon: "players",
-      description: "General website leads",
-      section: "System",
-    },
-    {
-      path: "/realverse/admin/checkout-leads",
-      label: "Checkout Leads",
-      icon: "shop",
-      description: "Failed checkout attempts & leads",
+      description: "Website leads & checkout attempts",
       section: "System",
     },
     {
       path: "/realverse/admin/settings",
       label: "Settings",
       icon: "settings",
-      description: "System configuration",
+      description: "System configuration & footer management",
       section: "System",
     },
-    {
-      path: "/realverse/admin/footer",
-      label: "Footer Configuration",
-      icon: "settings",
-      description: "Manage website footer sections and links",
-      section: "System",
-    },
-    {
-      path: "/realverse/admin/batch-review",
-      label: "Batch Review",
-      icon: "sessions",
-      description: "Review multiple players",
-      section: "Football Ops",
-    },
-    {
-      path: "/realverse/scouting/board",
-      label: "Scouting Board",
-      icon: "players",
-      description: "Player comparison & shortlists",
-      section: "Football Ops",
-    },
-    {
-      path: "/realverse/trials/events",
-      label: "Trial Events",
-      icon: "matches",
-      description: "External scouting & trial management",
-      section: "Football Ops",
-    },
-    {
-      path: "/realverse/trials/templates",
-      label: "Trial Templates",
-      icon: "settings",
-      description: "Manage evaluation metric templates",
-      section: "Football Ops",
-    },
-    {
-      path: "/realverse/admin/calibration",
-      label: "Calibration",
-      icon: "analytics",
-      description: "Coach scoring consistency & calibration",
-      section: "Football Ops",
-    },
-    {
-      path: "/realverse/admin/season-planning",
-      label: "Season Planning",
-      icon: "sessions",
-      description: "Training load planning & prediction",
-      section: "Football Ops",
-    },
+    // {
+    //   path: "/realverse/admin/batch-review",
+    //   label: "Batch Review",
+    //   icon: "sessions",
+    //   description: "Review multiple players",
+    //   section: "Football Ops",
+    // },
+    // {
+    //   path: "/realverse/scouting/board",
+    //   label: "Scouting Board",
+    //   icon: "players",
+    //   description: "Player comparison & shortlists",
+    //   section: "Football Ops",
+    // },
+    // {
+    //   path: "/realverse/trials/events",
+    //   label: "Trial Events",
+    //   icon: "matches",
+    //   description: "External scouting & trial management",
+    //   section: "Football Ops",
+    // },
+    // {
+    //   path: "/realverse/trials/templates",
+    //   label: "Trial Templates",
+    //   icon: "settings",
+    //   description: "Manage evaluation metric templates",
+    //   section: "Football Ops",
+    // },
+    // {
+    //   path: "/realverse/admin/calibration",
+    //   label: "Calibration",
+    //   icon: "analytics",
+    //   description: "Coach scoring consistency & calibration",
+    //   section: "Football Ops",
+    // },
+    // {
+    //   path: "/realverse/admin/season-planning",
+    //   label: "Season Planning",
+    //   icon: "sessions",
+    //   description: "Training load planning & prediction",
+    //   section: "Football Ops",
+    // },
   ];
 
   const getIcon = (iconName: string) => {
@@ -227,8 +177,6 @@ const AdminLayout: React.FC = () => {
         return <IconSessions />;
       case "shop":
         return <IconShop />;
-      case "payments":
-        return <IconPayments />;
       case "settings":
         return <IconSettings />;
       default:

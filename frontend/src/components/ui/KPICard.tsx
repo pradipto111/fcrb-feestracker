@@ -118,7 +118,10 @@ export const KPICard: React.FC<KPICardProps> = ({
             <div
               style={{
                 fontSize: '2.5rem',
-                opacity: 0.3,
+                opacity: 0.8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
               {icon}

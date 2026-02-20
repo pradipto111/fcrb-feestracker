@@ -1,10 +1,17 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { Role } from "@prisma/client";
 import { JWT_SECRET } from "../config";
 
 export interface JwtPayload {
   id: number;
-  role: "ADMIN" | "COACH" | "STUDENT" | "FAN";
+  role: "ADMIN" | "COACH" | "STUDENT" | "FAN" | "CRM";
+  crmRole?: "AGENT";
+}
+
+/** Maps app role to Prisma Role (CRM is not in DB enum; map to COACH for writes/reads). */
+export function toPrismaRole(role: JwtPayload["role"]): Role {
+  return role === "CRM" ? "COACH" : role;
 }
 
 export function authRequired(
@@ -19,7 +26,7 @@ export function authRequired(
   const token = header.substring(7);
   try {
     const payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
-    req.user = { id: payload.id, role: payload.role };
+    req.user = { id: payload.id, role: payload.role, crmRole: payload.crmRole };
     next();
   } catch {
     return res.status(401).json({ message: "Invalid token" });

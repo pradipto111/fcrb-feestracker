@@ -11,7 +11,7 @@ const flagKeys: Array<{ key: keyof Flags; label: string; note: string }> = [
   { key: "games", label: "Games & Quests", note: "Mini-games + quests in Fan UI" },
   { key: "matchday", label: "Matchday", note: "Weekly moments + fixture-linked messaging" },
   { key: "content", label: "Fan-only content", note: "Behind-the-scenes / gallery placeholders" },
-  { key: "programs", label: "Programs conversion", note: "Fan → coaching program interest nudges" },
+  { key: "programs", label: "Programmes conversion", note: "Fan → coaching programme interest nudges" },
 ];
 
 const AdminFanSettingsPage: React.FC = () => {

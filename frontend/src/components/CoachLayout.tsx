@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api/client";
-import RoleLayout, { IconDashboard, IconPlayers, IconSessions, IconFeedback, IconMatches, IconWellness } from "./shared/RoleLayout";
+import RoleLayout, { IconDashboard, IconMatches, IconPlayers, IconSessions, IconFeed } from "./shared/RoleLayout";
 
 const CoachLayout: React.FC = () => {
   const { user } = useAuth();
@@ -11,7 +11,13 @@ const CoachLayout: React.FC = () => {
     const loadCoachData = async () => {
       try {
         // Try to get coach profile - adjust API call as needed
-        const data = await api.getDashboardSummary().catch(() => null);
+        const data = await api.getDashboardSummary().catch((err: any) => {
+          // Silently handle backend unavailability
+          if (err?.message && !err.message.includes("Cannot reach the backend")) {
+            console.error("Failed to load coach data:", err);
+          }
+          return null;
+        });
         setCoachData(data);
       } catch (err) {
         // Silently fail
@@ -28,16 +34,10 @@ const CoachLayout: React.FC = () => {
       description: "Overview & quick stats",
     },
     {
-      path: "/realverse/students",
-      label: "Players",
-      icon: "players",
-      description: "Manage your players",
-    },
-    {
-      path: "/realverse/attendance",
-      label: "Sessions",
-      icon: "sessions",
-      description: "Training sessions & attendance",
+      path: "/realverse/coach/training-calendar",
+      label: "Training Calendar",
+      icon: "matches",
+      description: "Manage training sessions & attendance",
     },
     {
       path: "/realverse/coach/schedule",
@@ -46,51 +46,49 @@ const CoachLayout: React.FC = () => {
       description: "Matches, training & events",
     },
     {
-      path: "/realverse/coach/feedback",
-      label: "Feedback",
-      icon: "feedback",
-      description: "Player feedback & insights",
-    },
-    {
-      path: "/realverse/coach/wellness",
-      label: "Wellness Overview",
-      icon: "wellness",
-      description: "Player training load & recovery",
-    },
-    {
-      path: "/realverse/coach/analytics",
-      label: "Analytics",
-      icon: "dashboard",
-      description: "Squad performance metrics",
-    },
-    {
-      path: "/realverse/coach/fan-club-analytics",
-      label: "Fan Club Analytics",
-      icon: "dashboard",
-      description: "Fan Club & partner KPIs",
-    },
-    {
-      path: "/realverse/scouting/board",
-      label: "Scouting Board",
+      path: "/realverse/coach/students",
+      label: "Players",
       icon: "players",
-      description: "Player comparison & shortlists",
+      description: "View players & update payment status",
     },
+    {
+      path: "/realverse/coach/drill-content",
+      label: "Drill Content",
+      icon: "sessions",
+      description: "Add links & media for students",
+    },
+    {
+      path: "/realverse/coach/feed/approve",
+      label: "Post Approval",
+      icon: "feed",
+      description: "Approve/decline student posts",
+    },
+    {
+      path: "/realverse/coach/feed/create",
+      label: "Create Post",
+      icon: "feed",
+      description: "Create posts (master access)",
+    },
+    // {
+    //   path: "/realverse/scouting/board",
+    //   label: "Scouting Board",
+    //   icon: "players",
+    //   description: "Player comparison & shortlists",
+    // },
   ];
 
   const getIcon = (iconName: string) => {
     switch (iconName) {
       case "dashboard":
         return <IconDashboard />;
+      case "matches":
+        return <IconMatches />;
       case "players":
         return <IconPlayers />;
       case "sessions":
         return <IconSessions />;
-      case "feedback":
-        return <IconFeedback />;
-      case "matches":
-        return <IconMatches />;
-      case "wellness":
-        return <IconWellness />;
+      case "feed":
+        return <IconFeed />;
       default:
         return null;
     }

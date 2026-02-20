@@ -198,8 +198,7 @@ router.get("/positional/my", authRequired, requireRole("STUDENT"), async (req, r
  */
 router.get("/definitions", authRequired, async (req, res) => {
   try {
-    const { PrismaClient } = await import("@prisma/client");
-    const prisma = new PrismaClient();
+    const prisma = (await import("../../db/prisma")).default;
 
     const definitions = await prisma.playerMetricDefinition.findMany({
       where: { isActive: true },

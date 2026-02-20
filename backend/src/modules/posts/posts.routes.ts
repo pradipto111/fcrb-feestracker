@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
-import { authRequired, requireRole } from "../../auth/auth.middleware";
+import prisma from "../../db/prisma";
+import { authRequired, requireRole, toPrismaRole } from "../../auth/auth.middleware";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Helper function to detect platform from URL
@@ -260,7 +259,7 @@ router.post("/", authRequired, async (req, res) => {
       mediaUrl,
       platform: platform || null,
       centerId: centerId ? Number(centerId) : null,
-      createdByRole: role,
+      createdByRole: toPrismaRole(role),
       createdById: id,
       approvalStatus
     },

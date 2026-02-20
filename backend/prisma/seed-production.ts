@@ -8,15 +8,15 @@ async function main() {
 
   // Check if admin exists, create if not
   const existingAdmin = await prisma.coach.findUnique({
-    where: { email: "admin@feestrack.com" },
+    where: { email: "admin@fcrb.com" },
   });
 
   if (!existingAdmin) {
-    const adminPassword = await bcrypt.hash("admin123", 10);
+    const adminPassword = await bcrypt.hash("20fc24rb!", 10);
     await prisma.coach.create({
       data: {
         fullName: "Admin User",
-        email: "admin@feestrack.com",
+        email: "admin@fcrb.com",
         passwordHash: adminPassword,
         role: "ADMIN",
       } as any, // Type assertion to handle Prisma type changes
@@ -48,7 +48,7 @@ async function main() {
 
   console.log("\n🎉 Seeding completed successfully!");
   console.log("\n📝 Login credentials:");
-  console.log("   👨‍💼 Admin: admin@feestrack.com / admin123");
+  console.log("   👨‍💼 Admin: admin@fcrb.com / 20fc24rb!");
   console.log("   👨‍🏫 Coach: coach@feestrack.com / coach123");
 }
 

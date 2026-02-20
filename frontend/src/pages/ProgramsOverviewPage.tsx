@@ -1,12 +1,12 @@
 /**
- * Programs / Academy Page
+ * Programmes / Academy Page
  * Complete rebuild using RealVerse data + old-site content + football-first design system
  * 
  * Sections:
  * (A) Hero Section
  * (B) Pathway & Development Section (Merged)
- * (C) Program Cards (RealVerse data)
- * (D) Specialized Programs
+ * (C) Programme Cards (RealVerse data)
+ * (D) Specialized Programmes
  * (E) Training Experience
  * (G) FAQ (with Ready to Begin Your Journey? CTA merged)
  * (H) Sponsors Strip
@@ -61,10 +61,12 @@ interface Centre {
   displayOrder: number;
 }
 
+const MOBILE_BREAKPOINT = 768;
+
 const ProgramsOverviewPage: React.FC = () => {
   const reduceMotion = useReducedMotion();
-  const [isMobile, setIsMobile] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
+  const [isTablet, setIsTablet] = useState(typeof window !== "undefined" && window.innerWidth <= 1024);
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const [centres, setCentres] = useState<Centre[]>([]);
   const { 
@@ -83,7 +85,7 @@ const ProgramsOverviewPage: React.FC = () => {
   useEffect(() => {
     const handleResize = () => {
       const w = window.innerWidth;
-      setIsMobile(w <= 768);
+      setIsMobile(w < MOBILE_BREAKPOINT);
       setIsTablet(w <= 1024);
     };
     handleResize();
@@ -227,12 +229,12 @@ const ProgramsOverviewPage: React.FC = () => {
     );
   };
 
-  // RealVerse Programs Data (Primary Source)
+  // RealVerse Programmes Data (Primary Source)
   // Note: Grassroots & dedicated GK cards removed from the grid as requested.
   const realversePrograms = [
     {
       id: "epp",
-      name: "Elite Pathway Program",
+      name: "Elite Pathway Programme",
       acronym: "EPP",
       positioning: "For players targeting top-tier football in India and abroad.",
       ageGroup: "U17+",
@@ -251,7 +253,7 @@ const ProgramsOverviewPage: React.FC = () => {
     },
     {
       id: "scp",
-      name: "Senior Competitive Program",
+      name: "Senior Competitive Programme",
       acronym: "SCP",
       positioning: "The competitive bridge between youth and elite football.",
       ageGroup: "U15+",
@@ -289,7 +291,7 @@ const ProgramsOverviewPage: React.FC = () => {
     },
     {
       id: "fydp",
-      name: "Foundation & Youth Development Program",
+      name: "Foundation & Youth Development Programme",
       acronym: "FYDP",
       positioning: "Building intelligent footballers before building competitors.",
       ageGroup: "U9, U11, U13",
@@ -367,13 +369,13 @@ const ProgramsOverviewPage: React.FC = () => {
       id: "age-range",
       question: "What is the age range for academy programs?",
       answer:
-        "Our programs welcome players from U9 through senior levels. Foundation & Youth Development Program (FYDP) focuses on U9, U11, and U13. Senior Competitive Program (SCP) is for U15+, and Elite Pathway Program (EPP) is for U17+ players. Women's Performance Pathway welcomes all age groups.",
+        "Our programmes welcome players from U9 through senior levels. Foundation & Youth Development Programme (FYDP) focuses on U9, U11, and U13. Senior Competitive Programme (SCP) is for U15+, and Elite Pathway Programme (EPP) is for U17+ players. Women's Performance Pathway welcomes all age groups.",
     },
     {
       id: "fees",
       question: "What are the program fees?",
       answer:
-        "Program fees vary by program tier and commitment level. Please contact us at +91 8660843598 or contact@realbengaluru.com for detailed fee structures and payment plans. We offer flexible payment options and scholarship opportunities for deserving players.",
+        "Programme fees vary by programme tier and commitment level. Please contact us at +91 8660843598 or contact@realbengaluru.com for detailed fee structures and payment plans. We offer flexible payment options and scholarship opportunities for deserving players.",
     },
     {
       id: "schedules",
@@ -407,6 +409,7 @@ const ProgramsOverviewPage: React.FC = () => {
 
   return (
     <div
+      data-program-page
       style={{
         position: "relative",
         background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,
@@ -602,14 +605,15 @@ const ProgramsOverviewPage: React.FC = () => {
           />
         </motion.div>
 
-        {/* Stadium Light Effect */}
+        {/* Stadium Light Effect - constrained to viewport to avoid horizontal scroll */}
         <motion.div
           style={{
             position: "absolute",
             top: "15%",
             left: "50%",
-            width: "800px",
-            height: "600px",
+            width: "min(800px, 100vw)",
+            maxWidth: "100vw",
+            height: "min(600px, 80vh)",
             background: "radial-gradient(ellipse, rgba(245,179,0,0.08) 0%, transparent 70%)",
             borderRadius: "50%",
             filter: "blur(80px)",
@@ -633,7 +637,7 @@ const ProgramsOverviewPage: React.FC = () => {
             maxWidth: "1400px",
             width: "100%",
             margin: "0 auto",
-            padding: `0 ${spacing.xl}`,
+            padding: isMobile ? `0 ${spacing.md}` : `0 ${spacing.xl}`,
             position: "relative",
             zIndex: 10,
             display: "grid",
@@ -641,7 +645,8 @@ const ProgramsOverviewPage: React.FC = () => {
             gap: isMobile ? spacing["2xl"] : spacing["3xl"],
             alignItems: "center",
             minHeight: "calc(100vh - 96px)",
-            paddingBottom: spacing["3xl"],
+            paddingBottom: isMobile ? spacing["2xl"] : spacing["3xl"],
+            boxSizing: "border-box",
           }}
         >
           {/* LEFT: Message + Primary actions */}
@@ -649,7 +654,7 @@ const ProgramsOverviewPage: React.FC = () => {
             initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ delay: 0.15, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            style={{ maxWidth: "860px" }}
+            style={{ maxWidth: "860px", width: "100%" }}
           >
             {/* Club identity lockup (logo + full name) */}
             <motion.div
@@ -840,7 +845,7 @@ const ProgramsOverviewPage: React.FC = () => {
                 >
                   <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
                     <span style={{ ...typography.body, color: colors.text.onPrimary, fontWeight: typography.fontWeight.bold, fontSize: typography.fontSize.lg }}>
-                      Explore Programs
+                      Explore Programmes
                     </span>
                     <span style={{ ...typography.caption, color: "rgba(255,255,255,0.85)", fontSize: typography.fontSize.sm }}>
                       Discover our training pathways
@@ -1267,7 +1272,7 @@ const ProgramsOverviewPage: React.FC = () => {
             </p>
           </motion.div>
 
-          {/* Program Cards Grid */}
+          {/* Programme Cards Grid */}
           <div
             style={{
               display: "grid",
@@ -1480,7 +1485,7 @@ const ProgramsOverviewPage: React.FC = () => {
               >
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                   <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1, color: colors.text.primary }}>
-                    Click here to find Your Program
+                    Click here to find Your Programme
                   </span>
                   <ArrowRightIcon size={18} style={{ color: colors.accent.main, display: "flex", alignItems: "center", flexShrink: 0 }} />
                 </span>

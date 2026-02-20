@@ -211,9 +211,9 @@ export const GalleryUpdatesModule: React.FC = () => {
                 View Gallery
               </PillButton>
 
-              {/* Programs button (route unchanged) */}
+              {/* Programmes button (route unchanged) */}
               <PillButton asLinkTo="/programs" iconRight fullWidth={isMobile}>
-                Programs
+                Programmes
               </PillButton>
             </div>
           </div>
@@ -330,7 +330,7 @@ export const GalleryUpdatesModule: React.FC = () => {
                             textTransform: "uppercase",
                           }}
                         >
-                          TRAINING • THIS WEEK
+                          Featured
                         </div>
 
                         {/* overlay gradient for readability - matching hero */}
@@ -359,7 +359,7 @@ export const GalleryUpdatesModule: React.FC = () => {
                             WebkitBoxOrient: "vertical",
                           }}
                         >
-                          Intensity session at 3Lok — speed + decision making
+                          Club highlights
                         </div>
                       </div>
                     </motion.button>

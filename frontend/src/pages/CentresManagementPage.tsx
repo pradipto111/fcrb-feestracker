@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { api } from "../api/client";
+import { useNavigate } from "react-router-dom";
+import { api, healthCheck } from "../api/client";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
@@ -27,13 +27,33 @@ const CentresManagementPage: React.FC = () => {
   }, []);
 
   const loadCentres = async () => {
+    setLoading(true);
+    setError("");
+    setCentres([]);
     try {
-      setLoading(true);
-      setError("");
+      // Quick health check first (5s) to distinguish "backend down" from "DB/request slow"
+      await healthCheck(5000);
+    } catch (healthErr: any) {
+      setLoading(false);
+      const msg = healthErr?.message || "";
+      setError(
+        msg.includes("timed out") || msg.includes("fetch")
+          ? "Cannot reach the backend. Ensure it is running (cd backend && npm run dev) and nothing is blocking port 4000."
+          : "Cannot reach the backend. Check that it is running and VITE_API_URL points to it."
+      );
+      return;
+    }
+    try {
       const data = await api.getCenters();
-      setCentres(data.sort((a: Centre, b: Centre) => a.displayOrder - b.displayOrder));
+      setCentres(Array.isArray(data) ? data.sort((a: Centre, b: Centre) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)) : []);
     } catch (err: any) {
-      setError(err.message || "Failed to load centres");
+      const msg = err?.message || "";
+      const status = (err as any)?.status;
+      if (status === 503 || msg.includes("Database") || msg.includes("timed out")) {
+        setError("Backend is reachable but the request timed out or the database is unavailable. Check the backend terminal for errors and ensure DATABASE_URL in backend/.env is correct and the database is running.");
+      } else {
+        setError(msg || "Failed to load centres");
+      }
     } finally {
       setLoading(false);
     }
@@ -145,7 +165,7 @@ const CentresManagementPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Error */}
+      {/* Error with Retry */}
       {error && (
         <Card
           variant="default"
@@ -156,7 +176,12 @@ const CentresManagementPage: React.FC = () => {
             border: `1px solid ${colors.danger.main}40`,
           }}
         >
-          <p style={{ margin: 0, color: colors.danger.main }}>Error: {error}</p>
+          <p style={{ margin: 0, color: colors.danger.main, marginBottom: spacing.sm }}>
+            {error}
+          </p>
+          <Button variant="secondary" size="sm" onClick={() => loadCentres()}>
+            Retry
+          </Button>
         </Card>
       )}
 

@@ -3,7 +3,7 @@
  * Reference constants extracted from the hero section for unified design across homepage
  */
 
-import { colors, typography, spacing, borderRadius, shadows } from "./design-tokens";
+import { colors, typography, spacing, borderRadius, shadows, ctaDimensions } from "./design-tokens";
 
 /**
  * Background overlay gradient matching hero section
@@ -17,7 +17,7 @@ export const heroOverlayGradient = "linear-gradient(135deg, rgba(5, 11, 32, 0.85
 export const heroCTAStyles = {
   // Blue CTA: "Support the Club" style
   blue: {
-    padding: `${spacing.xl} ${spacing['40']}`, // 32px vertical, 40px horizontal - adequate padding for text
+    padding: ctaDimensions.paddingLg,
     borderRadius: borderRadius.button,
     background: colors.primary.main, // Royal blue
     border: "none",
@@ -28,7 +28,7 @@ export const heroCTAStyles = {
     gap: spacing.md,
     cursor: "pointer",
     width: "100%",
-    minHeight: 72,
+    minHeight: ctaDimensions.minHeightHero,
     transition: "all 0.2s ease",
     textStyle: {
       ...typography.body,
@@ -45,7 +45,7 @@ export const heroCTAStyles = {
   
   // Yellow CTA: "Train With Us" style
   yellow: {
-    padding: `${spacing.xl} ${spacing['40']}`, // 32px vertical, 40px horizontal - adequate padding for text
+    padding: ctaDimensions.paddingLg,
     borderRadius: borderRadius.button,
     background: colors.accent.main, // FC Real Bengaluru gold
     border: "none",
@@ -56,7 +56,7 @@ export const heroCTAStyles = {
     gap: spacing.md,
     cursor: "pointer",
     width: "100%",
-    minHeight: 72,
+    minHeight: ctaDimensions.minHeightHero,
     transition: "all 0.2s ease",
     textStyle: {
       ...typography.body,
@@ -73,7 +73,7 @@ export const heroCTAStyles = {
   
   // Dark with border CTA: "Join the Journey" style
   darkWithBorder: {
-    padding: `${spacing.xl} ${spacing['40']}`, // 32px vertical, 40px horizontal - adequate padding for text
+    padding: ctaDimensions.paddingLg,
     borderRadius: borderRadius.button,
     background: colors.surface.card, // Dark card background
     border: `2px solid ${colors.accent.main}`, // Gold border
@@ -99,7 +99,7 @@ export const heroCTAStyles = {
 
 /**
  * Compact CTA (pill) styles matching hero language.
- * Used for in-module actions like "View Gallery", "Programs", "View Fixtures".
+ * Used for in-module actions like "View Gallery", "Programmes", "View Fixtures".
  */
 export const heroCTAPillStyles = {
   base: {
@@ -171,7 +171,7 @@ export const sectionBackgroundOverlay = {
 };
 
 /**
- * Program card overlay (Balanced preset)
+ * Programme card overlay (Balanced preset)
  * Improves text readability on photo cards while staying on-brand (blue + gold).
  */
 export const programCardOverlay = (accent: string) => {

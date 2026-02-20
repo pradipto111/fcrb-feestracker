@@ -347,7 +347,7 @@ test.describe('RealVerse Admin Section - Responsive', () => {
   });
 
   test('Admin Dashboard - Responsive', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/admin`);
+    await page.goto(`${baseURL || ''}/realverse/admin/students`);
     await page.waitForLoadState('networkidle');
     
     await checkViewportFit(page);
@@ -391,30 +391,6 @@ test.describe('RealVerse Admin Section - Responsive', () => {
     await checkTextReadability(page);
     
     await page.screenshot({ path: 'test-results/admin-merch-responsive.png', fullPage: true });
-  });
-
-  test('Admin Analytics - Responsive dashboards', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/admin/analytics`);
-    await page.waitForLoadState('networkidle');
-    
-    await checkViewportFit(page);
-    
-    // Check analytics widgets are responsive
-    const widgets = page.locator('[class*="widget"], [class*="metric"], [class*="stat"]');
-    const widgetCount = await widgets.count();
-    
-    if (widgetCount > 0) {
-      // Check first few widgets fit viewport
-      for (let i = 0; i < Math.min(widgetCount, 5); i++) {
-        const widget = widgets.nth(i);
-        const box = await widget.boundingBox();
-        if (box) {
-          expect(box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
-        }
-      }
-    }
-    
-    await page.screenshot({ path: 'test-results/admin-analytics-responsive.png', fullPage: true });
   });
 });
 

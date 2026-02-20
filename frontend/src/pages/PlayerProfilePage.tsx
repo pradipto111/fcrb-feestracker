@@ -313,13 +313,13 @@ const PlayerProfilePage: React.FC = () => {
             >
               Compare Player
             </Button>
-            <Button
+            {/* <Button
               variant="secondary"
               size="md"
               onClick={() => navigate('/realverse/scouting/board')}
             >
               Scouting Board
-            </Button>
+            </Button> */}
             <Button
               variant="secondary"
               size="md"
@@ -328,7 +328,8 @@ const PlayerProfilePage: React.FC = () => {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => navigate(`/realverse/admin/season-planning/load-dashboard/${studentId}`)}
+              // onClick={() => navigate(`/realverse/admin/season-planning/load-dashboard/${studentId}`)} // Route disabled
+              onClick={() => navigate(`/realverse/player/${studentId}/load-dashboard`)} // Use alternative route
             >
               📊 Load Dashboard
             </Button>

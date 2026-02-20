@@ -15,7 +15,7 @@ import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { api } from "../api/client";
 import ExpandableCard from "../components/ExpandableCard";
 import InfoModal from "../components/InfoModal";
-import { TrophyIcon, ChartLineIcon, CommentIcon } from "../components/icons/IconSet";
+import { TrophyIcon, ChartLineIcon, CommentIcon, ArrowRightIcon } from "../components/icons/IconSet";
 import { 
   brochureAssets, 
   academyAssets, 
@@ -44,6 +44,8 @@ interface LeadData {
 type ProgramType = "youth" | "elite" | null;
 type Step = "welcome" | "age" | "program" | "details" | "contact" | "summary" | "success";
 
+const MOBILE_BREAKPOINT = 768;
+
 const InteractiveBrochurePage: React.FC = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<Step>("welcome");
@@ -53,6 +55,13 @@ const InteractiveBrochurePage: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const {
     infinitySectionVariants,
@@ -166,12 +175,12 @@ const InteractiveBrochurePage: React.FC = () => {
     }
   };
 
-  // Program-specific content
+  // Programme-specific content
   const programContent = {
     youth: {
-      title: "Youth Development Program",
+      title: "Youth Development Programme",
       subtitle: "Building the Foundation for Future Stars",
-      description: "Our Youth Development Program focuses on building fundamental skills, fostering a love for the game, and developing young players through age-appropriate training methods.",
+      description: "Our Youth Development Programme focuses on building fundamental skills, fostering a love for the game, and developing young players through age-appropriate training methods.",
       features: [
         "Age-appropriate skill development",
         "Focus on fun and fundamentals",
@@ -183,9 +192,9 @@ const InteractiveBrochurePage: React.FC = () => {
       image: academyAssets.trainingShot,
     },
     elite: {
-      title: "Elite Training Program",
+      title: "Elite Training Programme",
       subtitle: "Competitive Excellence & Professional Pathway",
-      description: "Our Elite Training Program is designed for serious players aiming to compete at higher levels. We provide intensive training, tactical development, and pathway to professional divisions.",
+      description: "Our Elite Training Programme is designed for serious players aiming to compete at higher levels. We provide intensive training, tactical development, and pathway to professional divisions.",
       features: [
         "Advanced tactical training",
         "Physical conditioning programs",
@@ -206,6 +215,7 @@ const InteractiveBrochurePage: React.FC = () => {
 
   return (
     <div
+      data-realverse-page
       style={{
         minHeight: "100vh",
         background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,
@@ -246,7 +256,7 @@ const InteractiveBrochurePage: React.FC = () => {
         }}
       />
 
-      <div style={{ position: "relative", zIndex: 1, paddingTop: "100px" }}>
+      <div style={{ position: "relative", zIndex: 1, paddingTop: isMobile ? 88 : 100, paddingLeft: isMobile ? spacing.md : spacing.xl, paddingRight: isMobile ? spacing.md : spacing.xl, boxSizing: "border-box", width: "100%" }}>
         <AnimatePresence mode="wait">
           {/* WELCOME STEP */}
           {currentStep === "welcome" && (
@@ -259,8 +269,10 @@ const InteractiveBrochurePage: React.FC = () => {
               style={{
                 maxWidth: "900px",
                 margin: "0 auto",
-                padding: `${spacing["2xl"]} ${spacing.xl}`,
+                padding: isMobile ? `${spacing.xl} ${spacing.md}` : `${spacing["2xl"]} ${spacing.xl}`,
                 textAlign: "center",
+                width: "100%",
+                boxSizing: "border-box",
               }}
             >
               <motion.div
@@ -305,10 +317,13 @@ const InteractiveBrochurePage: React.FC = () => {
                   onClick={handleNext}
                   style={{
                     fontSize: typography.fontSize.lg,
-                    padding: `${spacing.md} ${spacing["2xl"]}`,
+                    padding: `${spacing.xl} ${spacing["40"]}`,
                   }}
                 >
-                  Start Your Journey →
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Start Your Journey</span>
+                    <ArrowRightIcon size={18} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                  </span>
                 </Button>
               </motion.div>
             </motion.div>
@@ -394,11 +409,14 @@ const InteractiveBrochurePage: React.FC = () => {
                 </div>
 
                 <div style={{ display: "flex", gap: spacing.md, justifyContent: "center" }}>
-                  <Button variant="secondary" onClick={() => navigate("/")}>
+                  <Button variant="secondary" onClick={() => navigate("/")} style={{ padding: `${spacing.xl} ${spacing["40"]}` }}>
                     Back to Home
                   </Button>
-                  <Button variant="primary" onClick={handleNext} disabled={!leadData.age}>
-                    Continue →
+                  <Button variant="primary" onClick={handleNext} disabled={!leadData.age} style={{ padding: `${spacing.xl} ${spacing["40"]}` }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Continue</span>
+                      <ArrowRightIcon size={16} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                    </span>
                   </Button>
                 </div>
               </Card>
@@ -426,7 +444,7 @@ const InteractiveBrochurePage: React.FC = () => {
                 viewport={viewportOnce}
               >
                 <Card variant="glass" padding="lg">
-                  {/* Program Header */}
+                  {/* Programme Header */}
                   <motion.div
                     variants={headingVariants}
                     initial="offscreen"
@@ -490,7 +508,7 @@ const InteractiveBrochurePage: React.FC = () => {
                     </p>
                   </motion.div>
 
-                  {/* Program Features */}
+                  {/* Programme Features */}
                   <div
                     style={{
                       display: "grid",
@@ -600,8 +618,11 @@ const InteractiveBrochurePage: React.FC = () => {
                     <Button variant="secondary" onClick={handleBack}>
                       ← Back
                     </Button>
-                    <Button variant="primary" onClick={handleNext}>
-                      Continue to Details →
+                    <Button variant="primary" onClick={handleNext} style={{ padding: `${spacing.xl} ${spacing["40"]}` }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Continue to Details</span>
+                        <ArrowRightIcon size={16} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                      </span>
                     </Button>
                   </div>
                 </Card>
@@ -790,11 +811,17 @@ const InteractiveBrochurePage: React.FC = () => {
                 </div>
 
                 <div style={{ display: "flex", gap: spacing.md, justifyContent: "center", marginTop: spacing.xl }}>
-                  <Button variant="secondary" onClick={handleBack}>
-                    ← Back
+                  <Button variant="secondary" onClick={handleBack} style={{ padding: `${spacing.xl} ${spacing["40"]}` }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                      <ArrowRightIcon size={16} style={{ display: "flex", alignItems: "center", flexShrink: 0, transform: "rotate(180deg)" }} />
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Back</span>
+                    </span>
                   </Button>
-                  <Button variant="primary" onClick={handleNext}>
-                    Continue →
+                  <Button variant="primary" onClick={handleNext} style={{ padding: `${spacing.xl} ${spacing["40"]}` }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Continue</span>
+                      <ArrowRightIcon size={16} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                    </span>
                   </Button>
                 </div>
               </Card>
@@ -1021,11 +1048,17 @@ const InteractiveBrochurePage: React.FC = () => {
                 </div>
 
                 <div style={{ display: "flex", gap: spacing.md, justifyContent: "center", marginTop: spacing.xl }}>
-                  <Button variant="secondary" onClick={handleBack}>
-                    ← Back
+                  <Button variant="secondary" onClick={handleBack} style={{ padding: `${spacing.xl} ${spacing["40"]}` }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                      <ArrowRightIcon size={16} style={{ display: "flex", alignItems: "center", flexShrink: 0, transform: "rotate(180deg)" }} />
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Back</span>
+                    </span>
                   </Button>
-                  <Button variant="primary" onClick={handleNext}>
-                    Review & Submit →
+                  <Button variant="primary" onClick={handleNext} style={{ padding: `${spacing.xl} ${spacing["40"]}` }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Review & Submit</span>
+                      <ArrowRightIcon size={16} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
+                    </span>
                   </Button>
                 </div>
               </Card>
@@ -1083,9 +1116,9 @@ const InteractiveBrochurePage: React.FC = () => {
                 >
                   <div style={{ display: "grid", gap: spacing.md }}>
                     <div>
-                      <strong style={{ color: colors.text.muted }}>Program:</strong>{" "}
+                      <strong style={{ color: colors.text.muted }}>Programme:</strong>{" "}
                       <span style={{ color: colors.text.primary }}>
-                        {programType === "youth" ? "Youth Development Program" : "Elite Training Program"}
+                        {programType === "youth" ? "Youth Development Programme" : "Elite Training Programme"}
                       </span>
                     </div>
                     <div>
@@ -1156,10 +1189,13 @@ const InteractiveBrochurePage: React.FC = () => {
                 )}
 
                 <div style={{ display: "flex", gap: spacing.md, justifyContent: "center" }}>
-                  <Button variant="secondary" onClick={handleBack}>
-                    ← Back
+                  <Button variant="secondary" onClick={handleBack} style={{ padding: `${spacing.xl} ${spacing["40"]}` }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
+                      <ArrowRightIcon size={16} style={{ display: "flex", alignItems: "center", flexShrink: 0, transform: "rotate(180deg)" }} />
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Back</span>
+                    </span>
                   </Button>
-                  <Button variant="primary" onClick={handleSubmit} disabled={loading}>
+                  <Button variant="primary" onClick={handleSubmit} disabled={loading} style={{ padding: `${spacing.xl} ${spacing["40"]}` }}>
                     {loading ? "Submitting..." : "Submit Application"}
                   </Button>
                 </div>
@@ -1224,10 +1260,10 @@ const InteractiveBrochurePage: React.FC = () => {
                   application and get back to you within 24-48 hours.
                 </p>
                 <div style={{ display: "flex", gap: spacing.md, justifyContent: "center", flexWrap: "wrap" }}>
-                  <Button variant="primary" onClick={() => navigate("/")}>
+                  <Button variant="primary" onClick={() => navigate("/")} style={{ padding: `${spacing.xl} ${spacing["40"]}` }}>
                     Return to Home
                   </Button>
-                  <Button variant="secondary" onClick={() => navigate("/realverse/login")}>
+                  <Button variant="secondary" onClick={() => navigate("/realverse/login")} style={{ padding: `${spacing.xl} ${spacing["40"]}` }}>
                     Already a Member? Login
                   </Button>
                 </div>

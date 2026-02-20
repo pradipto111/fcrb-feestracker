@@ -33,13 +33,15 @@ interface ProgramPageTemplateProps {
   };
 }
 
+const MOBILE_BREAKPOINT = 768;
+
 const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) => {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
   const { scrollYProgress } = useScroll();
   const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -62,28 +64,40 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
   }, [program.positioning, program.who]);
 
   return (
-    <div style={{ minHeight: "100vh", background: "transparent", position: "relative" }}>
+    <div
+      data-program-page
+      style={{
+        minHeight: "100vh",
+        width: "100%",
+        maxWidth: "100vw",
+        overflowX: "hidden",
+        background: "transparent",
+        position: "relative",
+      }}
+    >
       <PublicHeader />
       
-      {/* Program Hero - Rich & Cinematic */}
+      {/* Programme Hero - Rich & Cinematic */}
       <motion.section
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         style={{
-          padding: `${spacing["4xl"]} ${spacing.xl}`,
+          padding: isMobile ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
           position: "relative",
           overflow: "hidden",
-          minHeight: "70vh",
+          minHeight: isMobile ? "60vh" : "70vh",
           display: "flex",
           alignItems: "center",
         }}
       >
-        {/* Background Image with Parallax */}
+        {/* Background Image with Parallax - no fixed attachment, constrained width */}
         <motion.div
           style={{
             position: "absolute",
             inset: 0,
+            width: "100%",
+            maxWidth: "100%",
             backgroundImage: program.backgroundImage 
               ? `url(${program.backgroundImage})`
               : `url(${galleryAssets.actionShots[0]?.medium || heroAssets.teamBackground})`,
@@ -94,7 +108,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
           }}
         />
         
-        {/* Heavy Gradient Overlay with Program Accent */}
+        {/* Heavy Gradient Overlay with Programme Accent */}
         <div
           style={{
             position: "absolute",
@@ -185,9 +199,9 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
         </div>
       </motion.section>
 
-      {/* Who This Program Is For - Card Cluster */}
+      {/* Who This Programme Is For - Card Cluster */}
       <section style={{
-        padding: `${spacing["4xl"]} ${spacing.xl}`,
+        padding: isMobile ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
         background: "transparent",
         position: "relative",
       }}>
@@ -220,7 +234,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
                 fontSize: typography.fontSize["3xl"],
               }}
             >
-              Who This Program Is For
+              Who This Programme Is For
             </motion.h2>
 
             {/* Mixed narrative + highlight cards (less monotonous than pure pointers) */}
@@ -317,7 +331,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
                       onClick={() => {
                         window.location.href = "/brochure";
                       }}
-                      style={{ width: isMobile ? "100%" : "auto" }}
+                      style={{ width: isMobile ? "100%" : "auto", minHeight: 44 }}
                     >
                       Apply / Enquire <ArrowRightIcon size={18} style={{ marginLeft: spacing.xs }} />
                     </Button>
@@ -327,7 +341,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
                       onClick={() => {
                         window.location.href = "/realverse/experience";
                       }}
-                      style={{ width: isMobile ? "100%" : "auto" }}
+                      style={{ width: isMobile ? "100%" : "auto", minHeight: 44 }}
                     >
                       See RealVerse Experience <ArrowRightIcon size={18} style={{ marginLeft: spacing.xs }} />
                     </Button>
@@ -416,7 +430,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
 
       {/* MERGED SECTION 1: Training, Match Environment & Progression - Split Layout */}
       <section style={{
-        padding: `${spacing["4xl"]} ${spacing.xl}`,
+        padding: isMobile ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
         background: `linear-gradient(135deg, rgba(0,224,255,0.08) 0%, rgba(255,169,0,0.06) 100%)`,
         position: "relative",
         overflow: "hidden",
@@ -734,7 +748,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
 
       {/* MERGED SECTION 2: Data, Analytics, AI & RealVerse Experience - Unified Dashboard */}
       <section style={{
-        padding: `${spacing["4xl"]} ${spacing.xl}`,
+        padding: isMobile ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
         background: "transparent",
         position: "relative",
         overflow: "hidden",
@@ -1252,7 +1266,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
 
       {/* CTA Section - Premium */}
       <section style={{
-        padding: `${spacing["4xl"]} ${spacing.xl}`,
+        padding: isMobile ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
         background: `linear-gradient(135deg, rgba(0,224,255,0.1) 0%, rgba(255,169,0,0.08) 100%)`,
         position: "relative",
         overflow: "hidden",
@@ -1320,6 +1334,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
                 onClick={() => {
                   window.location.href = "/brochure";
                 }}
+                style={{ width: isMobile ? "100%" : "auto", minHeight: 44 }}
               >
                 Apply / Enquire <ArrowRightIcon size={18} style={{ marginLeft: spacing.xs }} />
               </Button>

@@ -97,9 +97,8 @@
 11. And more...
 
 ### Admin Routes (20+)
-1. `/realverse/admin` - Dashboard
-2. `/realverse/admin/analytics` - Analytics
-3. `/realverse/admin/staff` - Staff management
+1. `/realverse/admin` - Redirects to `/realverse/admin/students` (Players)
+2. `/realverse/admin/staff` - Staff management
 4. `/realverse/admin/payments` - Payments
 5. `/realverse/admin/settings` - Settings
 6. `/realverse/admin/centres` - Centres management

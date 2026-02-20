@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../db/prisma";
 import { authRequired, requireRole } from "../../auth/auth.middleware";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Helper function to extract video ID and generate embed URL
-function getVideoEmbedUrl(url: string, platform: "YOUTUBE" | "INSTAGRAM"): string | null {
+function getVideoEmbedUrl(url: string, platform: "YOUTUBE" | "INSTAGRAM" | "UPLOADED"): string | null {
+  if (platform === "UPLOADED") return null;
   if (platform === "YOUTUBE") {
     // Handle various YouTube URL formats
     const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
@@ -23,7 +23,8 @@ function getVideoEmbedUrl(url: string, platform: "YOUTUBE" | "INSTAGRAM"): strin
 }
 
 // Helper function to get thumbnail URL
-function getThumbnailUrl(url: string, platform: "YOUTUBE" | "INSTAGRAM"): string | null {
+function getThumbnailUrl(url: string, platform: "YOUTUBE" | "INSTAGRAM" | "UPLOADED"): string | null {
+  if (platform === "UPLOADED") return null;
   if (platform === "YOUTUBE") {
     const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
     const match = url.match(youtubeRegex);
@@ -47,7 +48,7 @@ function detectPlatform(url: string): "YOUTUBE" | "INSTAGRAM" {
 
 // Get all videos (accessible by all authenticated users)
 router.get("/", authRequired, async (req, res) => {
-  const { category, platform } = req.query;
+  const { category, platform, mediaType } = req.query;
 
   const where: any = {};
   if (category) {
@@ -55,6 +56,9 @@ router.get("/", authRequired, async (req, res) => {
   }
   if (platform) {
     where.platform = platform;
+  }
+  if (mediaType) {
+    where.mediaType = mediaType;
   }
 
   const videos = await prisma.video.findMany({
@@ -73,12 +77,21 @@ router.get("/", authRequired, async (req, res) => {
     }
   });
 
-  // Add embed URLs and thumbnails
-  const videosWithEmbed = videos.map(video => ({
-    ...video,
-    embedUrl: getVideoEmbedUrl(video.videoUrl, video.platform),
-    thumbnailUrl: video.thumbnailUrl || getThumbnailUrl(video.videoUrl, video.platform)
-  }));
+  // Add embed URLs and thumbnails (only for LINK media type)
+  const videosWithEmbed = videos.map(video => {
+    const result: any = { ...video };
+    
+    // Only add embed/thumbnail for link-based videos
+    if (video.mediaType === "LINK" && video.videoUrl) {
+      result.embedUrl = getVideoEmbedUrl(video.videoUrl, video.platform);
+      result.thumbnailUrl = video.thumbnailUrl || getThumbnailUrl(video.videoUrl, video.platform);
+    } else if (video.mediaType === "IMAGE" && video.fileUrl) {
+      // For images, use fileUrl as thumbnail
+      result.thumbnailUrl = video.fileUrl;
+    }
+    
+    return result;
+  });
 
   res.json(videosWithEmbed);
 });
@@ -104,38 +117,85 @@ router.get("/:id", authRequired, async (req, res) => {
     return res.status(404).json({ message: "Video not found" });
   }
 
+  const embedUrl = video.videoUrl
+    ? getVideoEmbedUrl(video.videoUrl, video.platform)
+    : null;
+  const thumbnailUrl = video.videoUrl
+    ? (video.thumbnailUrl || getThumbnailUrl(video.videoUrl, video.platform))
+    : (video.thumbnailUrl || null);
+
   res.json({
     ...video,
-    embedUrl: getVideoEmbedUrl(video.videoUrl, video.platform),
-    thumbnailUrl: video.thumbnailUrl || getThumbnailUrl(video.videoUrl, video.platform)
+    embedUrl,
+    thumbnailUrl
   });
 });
 
 // Create a video (Admin or Coach only)
 router.post("/", authRequired, requireRole("ADMIN", "COACH"), async (req, res) => {
   const { id } = req.user!;
-  const { title, description, videoUrl, platform, category, thumbnailUrl } = req.body;
+  const { 
+    title, 
+    description, 
+    videoUrl, 
+    platform, 
+    category, 
+    thumbnailUrl,
+    mediaType = "LINK",
+    fileData,
+    fileName,
+    mimeType,
+    fileSize
+  } = req.body;
 
-  if (!title || !videoUrl) {
-    return res.status(400).json({ message: "Title and video URL are required" });
+  if (!title) {
+    return res.status(400).json({ message: "Title is required" });
   }
 
-  // Auto-detect platform if not provided
-  const detectedPlatform = platform || detectPlatform(videoUrl);
+  // Validate based on media type
+  if (mediaType === "LINK") {
+    if (!videoUrl) {
+      return res.status(400).json({ message: "Video URL is required for link type content" });
+    }
+  } else if (["IMAGE", "PDF", "DOCUMENT"].includes(mediaType)) {
+    if (!fileData) {
+      return res.status(400).json({ message: "File data is required for uploaded content" });
+    }
+  }
 
-  // Auto-generate thumbnail if not provided
-  const autoThumbnail = thumbnailUrl || getThumbnailUrl(videoUrl, detectedPlatform);
+  let videoData: any = {
+    title,
+    description: description || null,
+    category: category || null,
+    mediaType,
+    createdById: id
+  };
+
+  if (mediaType === "LINK") {
+    // Handle link-based content (YouTube/Instagram)
+    const detectedPlatform = platform || detectPlatform(videoUrl);
+    const autoThumbnail = thumbnailUrl || getThumbnailUrl(videoUrl, detectedPlatform);
+    
+    videoData.videoUrl = videoUrl;
+    videoData.platform = detectedPlatform;
+    videoData.thumbnailUrl = autoThumbnail;
+  } else {
+    // Handle uploaded files (images, PDFs, documents)
+    // Store base64 data URL directly in fileUrl (like PostCreationPage does)
+    videoData.fileUrl = fileData; // Base64 data URL
+    videoData.fileName = fileName || null;
+    videoData.mimeType = mimeType || null;
+    videoData.fileSize = fileSize || null;
+    videoData.platform = "UPLOADED";
+    
+    // For images, use fileUrl as thumbnail
+    if (mediaType === "IMAGE") {
+      videoData.thumbnailUrl = fileData;
+    }
+  }
 
   const video = await prisma.video.create({
-    data: {
-      title,
-      description: description || null,
-      videoUrl,
-      platform: detectedPlatform,
-      category: category || null,
-      thumbnailUrl: autoThumbnail,
-      createdById: id
-    },
+    data: videoData,
     include: {
       creator: {
         select: {
@@ -147,18 +207,36 @@ router.post("/", authRequired, requireRole("ADMIN", "COACH"), async (req, res) =
     }
   });
 
-  res.status(201).json({
-    ...video,
-    embedUrl: getVideoEmbedUrl(video.videoUrl, video.platform),
-    thumbnailUrl: video.thumbnailUrl || getThumbnailUrl(video.videoUrl, video.platform)
-  });
+  const result: any = { ...video };
+  
+  // Add embed URL only for link-based videos
+  if (video.mediaType === "LINK" && video.videoUrl) {
+    result.embedUrl = getVideoEmbedUrl(video.videoUrl, video.platform);
+    result.thumbnailUrl = video.thumbnailUrl || getThumbnailUrl(video.videoUrl, video.platform);
+  } else if (video.mediaType === "IMAGE" && video.fileUrl) {
+    result.thumbnailUrl = video.fileUrl;
+  }
+
+  res.status(201).json(result);
 });
 
 // Update a video (Admin or the creator Coach)
 router.put("/:id", authRequired, requireRole("ADMIN", "COACH"), async (req, res) => {
   const { role, id } = req.user!;
   const videoId = Number(req.params.id);
-  const { title, description, videoUrl, platform, category, thumbnailUrl } = req.body;
+  const { 
+    title, 
+    description, 
+    videoUrl, 
+    platform, 
+    category, 
+    thumbnailUrl,
+    mediaType,
+    fileData,
+    fileName,
+    mimeType,
+    fileSize
+  } = req.body;
 
   const existingVideo = await prisma.video.findUnique({
     where: { id: videoId }
@@ -173,19 +251,61 @@ router.put("/:id", authRequired, requireRole("ADMIN", "COACH"), async (req, res)
     return res.status(403).json({ message: "You can only update your own videos" });
   }
 
-  const detectedPlatform = platform || (videoUrl ? detectPlatform(videoUrl) : existingVideo.platform);
-  const autoThumbnail = thumbnailUrl || (videoUrl ? getThumbnailUrl(videoUrl, detectedPlatform) : existingVideo.thumbnailUrl);
+  const updateData: any = {};
+  
+  if (title !== undefined) updateData.title = title;
+  if (description !== undefined) updateData.description = description || null;
+  if (category !== undefined) updateData.category = category || null;
+  
+  // Handle media type changes
+  const finalMediaType = mediaType || existingVideo.mediaType;
+  updateData.mediaType = finalMediaType;
+
+  if (finalMediaType === "LINK") {
+    // Update link-based content
+    if (videoUrl !== undefined) {
+      const detectedPlatform = platform || (videoUrl ? detectPlatform(videoUrl) : existingVideo.platform);
+      const autoThumbnail = thumbnailUrl || (videoUrl ? getThumbnailUrl(videoUrl, detectedPlatform) : existingVideo.thumbnailUrl);
+      
+      updateData.videoUrl = videoUrl;
+      updateData.platform = detectedPlatform;
+      updateData.thumbnailUrl = autoThumbnail;
+      
+      // Clear file fields when switching to link
+      updateData.fileUrl = null;
+      updateData.fileName = null;
+      updateData.mimeType = null;
+      updateData.fileSize = null;
+    } else if (platform !== undefined) {
+      updateData.platform = platform;
+    }
+    if (thumbnailUrl !== undefined) {
+      updateData.thumbnailUrl = thumbnailUrl;
+    }
+  } else {
+    // Update uploaded file content
+    if (fileData !== undefined) {
+      updateData.fileUrl = fileData;
+      updateData.fileName = fileName || null;
+      updateData.mimeType = mimeType || null;
+      updateData.fileSize = fileSize || null;
+      updateData.platform = "UPLOADED";
+      
+      // Clear link fields when switching to file
+      if (mediaType && mediaType !== "LINK") {
+        updateData.videoUrl = null;
+      }
+      
+      // For images, use fileUrl as thumbnail
+      if (finalMediaType === "IMAGE") {
+        updateData.thumbnailUrl = fileData;
+      }
+    }
+  }
 
   const video = await prisma.video.update({
     where: { id: videoId },
-    data: {
-      title: title || undefined,
-      description: description !== undefined ? description : undefined,
-      videoUrl: videoUrl || undefined,
-      platform: detectedPlatform || undefined,
-      category: category !== undefined ? category : undefined,
-      thumbnailUrl: autoThumbnail || undefined
-    },
+    data: updateData,
     include: {
       creator: {
         select: {
@@ -197,11 +317,17 @@ router.put("/:id", authRequired, requireRole("ADMIN", "COACH"), async (req, res)
     }
   });
 
-  res.json({
-    ...video,
-    embedUrl: getVideoEmbedUrl(video.videoUrl, video.platform),
-    thumbnailUrl: video.thumbnailUrl || getThumbnailUrl(video.videoUrl, video.platform)
-  });
+  const result: any = { ...video };
+  
+  // Add embed URL only for link-based videos
+  if (video.mediaType === "LINK" && video.videoUrl) {
+    result.embedUrl = getVideoEmbedUrl(video.videoUrl, video.platform);
+    result.thumbnailUrl = video.thumbnailUrl || getThumbnailUrl(video.videoUrl, video.platform);
+  } else if (video.mediaType === "IMAGE" && video.fileUrl) {
+    result.thumbnailUrl = video.fileUrl;
+  }
+
+  res.json(result);
 });
 
 // Delete a video (Admin or the creator Coach)

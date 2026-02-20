@@ -94,11 +94,8 @@ const EnhancedScheduleManagementPage: React.FC = () => {
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [hasAutoSeeded, setHasAutoSeeded] = useState(false);
-  const [loadSuccess, setLoadSuccess] = useState(false);
 
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [draft, setDraft] = useState({
@@ -151,9 +148,16 @@ const EnhancedScheduleManagementPage: React.FC = () => {
   const loadCenters = async () => {
     try {
       const centersData = await api.getCenters();
-      setCenters(centersData);
+      if (centersData && Array.isArray(centersData)) {
+        setCenters(centersData);
+      }
     } catch (err: any) {
-      console.error("Failed to load centres:", err);
+      // Silently handle backend unavailability - only log unexpected errors
+      if (err?.message && !err.message.includes("Cannot reach the backend")) {
+        console.error("Failed to load centres:", err);
+      }
+      // Keep empty array on error
+      setCenters([]);
     }
   };
 
@@ -161,12 +165,19 @@ const EnhancedScheduleManagementPage: React.FC = () => {
     if (!draft.centerId) return;
     try {
       const studentsData = await api.getStudents();
-      const centerStudents = studentsData.filter(
-        (s: any) => s.centerId === Number(draft.centerId) && s.status === "ACTIVE"
-      );
-      setStudents(centerStudents);
+      if (studentsData && Array.isArray(studentsData)) {
+        const centerStudents = studentsData.filter(
+          (s: any) => s.centerId === Number(draft.centerId) && s.status === "ACTIVE"
+        );
+        setStudents(centerStudents);
+      }
     } catch (err: any) {
-      console.error("Failed to load students:", err);
+      // Silently handle backend unavailability - only log unexpected errors
+      if (err?.message && !err.message.includes("Cannot reach the backend")) {
+        console.error("Failed to load students:", err);
+      }
+      // Keep empty array on error
+      setStudents([]);
     }
   };
 
@@ -180,13 +191,15 @@ const EnhancedScheduleManagementPage: React.FC = () => {
       const types = filter === "ALL" ? undefined : filter;
       const data = (await api.getEvents({ from, to, type: types })) as ClubEventDTO[];
       setEvents(Array.isArray(data) ? data : []);
-      setLoadSuccess(true); // Mark as successful load
     } catch (e: any) {
-      console.error("Error loading events:", e);
-      const errorMsg = e?.message || "Failed to fetch events";
-      setError(errorMsg);
+      // Only show user-friendly error for unexpected errors
+      // Suppress console spam for backend unavailability
+      if (e?.message && !e.message.includes("Cannot reach the backend")) {
+        console.error("Error loading events:", e);
+        const errorMsg = e?.message || "Failed to fetch events";
+        setError(errorMsg);
+      }
       setEvents([]);
-      setLoadSuccess(false); // Mark as failed
     } finally {
       setLoading(false);
     }
@@ -196,39 +209,6 @@ const EnhancedScheduleManagementPage: React.FC = () => {
     loadMonth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monthCursor, filter]);
-
-  // Auto-seed demo events on first successful load if admin and no events exist
-  useEffect(() => {
-    const autoSeedDemoEvents = async () => {
-      if (!isAdmin) return; // Only for admins
-      if (hasAutoSeeded) return; // Only seed once
-      if (loading) return; // Wait for initial load
-      if (!loadSuccess) return; // Only seed if API call succeeded
-      if (events.length > 0) return; // Already have events
-      
-      try {
-        setHasAutoSeeded(true);
-        // Try to seed demo events
-        setSeeding(true);
-        await api.seedDemoEvents();
-        setNotice("Demo events created successfully");
-        // Reload events after seeding
-        await loadMonth();
-      } catch (err: any) {
-        console.error("Error seeding demo events:", err);
-        setError(err?.message || "Failed to seed demo events");
-        setHasAutoSeeded(true); // Mark as attempted even on error
-      } finally {
-        setSeeding(false);
-      }
-    };
-
-    // Only auto-seed on successful load when events is empty
-    if (!loading && loadSuccess && events.length === 0 && isAdmin && !hasAutoSeeded) {
-      autoSeedDemoEvents();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, loadSuccess, events.length, isAdmin, hasAutoSeeded]);
 
   const eventsByDay = useMemo(() => {
     const map = new Map<string, ClubEventDTO[]>();
@@ -415,22 +395,6 @@ const EnhancedScheduleManagementPage: React.FC = () => {
     }
   };
 
-  const seedDemo = async () => {
-    if (!isAdmin) return;
-    try {
-      setSeeding(true);
-      setError("");
-      setNotice("");
-      const res = await api.seedDemoEvents();
-      setNotice(res?.message || "Demo fixtures created");
-      await loadMonth();
-    } catch (e: any) {
-      setError(e?.message || "Failed to seed demo fixtures");
-    } finally {
-      setSeeding(false);
-    }
-  };
-
   const weekdayLabels = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
   const todayKey = dateKeyInTZ(new Date(), IST);
 
@@ -450,11 +414,6 @@ const EnhancedScheduleManagementPage: React.FC = () => {
           </div>
 
           <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
-            {isAdmin ? (
-              <Button variant="secondary" onClick={seedDemo} disabled={seeding}>
-                {seeding ? "Seeding…" : "Seed Demo Fixtures"}
-              </Button>
-            ) : null}
             {canEdit && (
               <Button variant="primary" onClick={openCreate} style={{ background: colors.accent.main, color: colors.text.onAccent }}>
                 Create new event
@@ -1159,7 +1118,7 @@ const EnhancedScheduleManagementPage: React.FC = () => {
                               <div style={{ ...typography.body, fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>
                                 {student.fullName}
                               </div>
-                              <div style={{ ...typography.caption, color: colors.text.muted }}>{student.programType || "No Program"}</div>
+                              <div style={{ ...typography.caption, color: colors.text.muted }}>{student.programType || "No Programme"}</div>
                             </div>
                             <div
                               style={{

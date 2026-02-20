@@ -339,23 +339,25 @@ export const SupportCelebrateBelongSection: React.FC<{
                   title="Wear Your Pride"
                   subtitle="Official merch. Real impact."
                   rightCTA={
-                    <Link to="/shop" style={{ textDecoration: "none", width: isMobile ? "100%" : "auto" }}>
-                      <motion.div
-                        whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
-                        whileTap={{ scale: 0.98 }}
-                        style={{
-                          ...heroCTAStyles.blue,
-                          width: isMobile ? "100%" : "auto",
-                          minWidth: isMobile ? "100%" : "200px",
-                        }}
-                      >
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
-                          <span style={heroCTAStyles.blue.textStyle}>Explore Shop</span>
-                          <span style={heroCTAStyles.blue.subtitleStyle}>Official FC Real Bengaluru merchandise</span>
-                        </div>
-                        <ArrowRightIcon size={20} color={colors.text.onPrimary} style={{ flexShrink: 0 }} />
-                      </motion.div>
-                    </Link>
+                    // Shop link disabled in UI, backend code preserved
+                    null
+                    /* <Link to="/shop" style={{ textDecoration: "none", width: isMobile ? "100%" : "auto" }}>
+                    <motion.div
+                      whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
+                      whileTap={{ scale: 0.98 }}
+                      style={{
+                        ...heroCTAStyles.blue,
+                        width: isMobile ? "100%" : "auto",
+                        minWidth: isMobile ? "100%" : "200px",
+                      }}
+                    >
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                        <span style={heroCTAStyles.blue.textStyle}>Explore Shop</span>
+                        <span style={heroCTAStyles.blue.subtitleStyle}>Official FC Real Bengaluru merchandise</span>
+                      </div>
+                      <ArrowRightIcon size={20} color={colors.text.onPrimary} style={{ flexShrink: 0 }} />
+                    </motion.div>
+                  </Link> */
                   }
                 />
 
@@ -423,7 +425,9 @@ export const SupportCelebrateBelongSection: React.FC<{
                       title="Wear Your Pride"
                       subtitle="Official merch. Real impact."
                       rightCTA={
-                        <Link to="/shop" style={{ textDecoration: "none" }}>
+                        // Shop link disabled in UI, backend code preserved
+                        null
+                        /* <Link to="/shop" style={{ textDecoration: "none" }}>
                           <Button
                             variant="primary"
                             size="md"
@@ -437,7 +441,7 @@ export const SupportCelebrateBelongSection: React.FC<{
                               <ArrowRightIcon size={18} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                             </span>
                           </Button>
-                        </Link>
+                        </Link> */
                       }
                     />
 

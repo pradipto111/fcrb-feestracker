@@ -1205,7 +1205,7 @@ const AttendanceManagementPage: React.FC = () => {
             </Button>
           </div>
 
-          {/* Program-wise breakdown */}
+          {/* Programme-wise breakdown */}
           {attendanceAnalytics.programBreakdown && attendanceAnalytics.programBreakdown.length > 0 && (
             <div style={{ 
               display: "grid", 
@@ -1272,7 +1272,7 @@ const AttendanceManagementPage: React.FC = () => {
                 color: colors.text.secondary,
               }}>
                 <div>Student Name</div>
-                <div>Program</div>
+                <div>Programme</div>
                 <div>Status</div>
                 <div>Present</div>
                 <div>Absent</div>
@@ -1563,7 +1563,7 @@ const AttendanceManagementPage: React.FC = () => {
                           fontSize: typography.fontSize.xs, 
                           color: colors.text.muted,
                         }}>
-                          {student.programType || "No Program"} • {student.status}
+                          {student.programType || "No Programme"} • {student.status}
                         </div>
                         {attendance && (
                           <div style={{ 

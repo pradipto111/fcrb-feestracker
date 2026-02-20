@@ -258,8 +258,8 @@ Open your browser and go to: **http://localhost:5173**
 ## 🔑 Login Credentials
 
 **Admin Account:**
-- Email: `admin@feestrack.com`
-- Password: `admin123`
+- Email: `admin@fcrb.com`
+- Password: `20fc24rb!`
 
 **Coach Account:**
 - Email: `coach@feestrack.com`

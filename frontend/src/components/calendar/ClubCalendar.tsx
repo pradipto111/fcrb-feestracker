@@ -104,123 +104,6 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     [reduce]
   );
 
-  // Generate comprehensive dummy data for testing
-  const generateDummyEvents = (month: Date): ClubEventDTO[] => {
-    const dummy: ClubEventDTO[] = [];
-    const year = month.getFullYear();
-    const monthNum = month.getMonth();
-    const now = new Date();
-    
-    const opponents = ["Bangalore Rangers", "Mysore United", "Mangalore FC", "Hubli Warriors", "Belagavi Strikers", "Shimoga City FC", "Davangere Dynamos"];
-    const venues = ["3Lok Football Fitness Hub", "FCRB Training Ground", "KSFA Stadium", "Bangalore Football Arena", "City Sports Complex"];
-    const competitions = ["KSFA Super Division", "KSFA C Division", "KSFA D Division", "Friendly", "Cup Match"];
-    
-    // Add matches (2-3 per week)
-    for (let week = 0; week < 4; week++) {
-      const matchDay = new Date(year, monthNum, 2 + week * 7 + Math.floor(Math.random() * 3));
-      if (matchDay.getMonth() === monthNum) {
-        dummy.push({
-          id: `match-${week}`,
-          type: "MATCH",
-          title: `vs ${opponents[week % opponents.length]}`,
-          startAt: new Date(matchDay.getFullYear(), matchDay.getMonth(), matchDay.getDate(), 18, 0).toISOString(),
-          endAt: new Date(matchDay.getFullYear(), matchDay.getMonth(), matchDay.getDate(), 20, 0).toISOString(),
-          allDay: false,
-          venueName: venues[week % venues.length],
-          competition: competitions[week % competitions.length],
-          opponent: opponents[week % opponents.length],
-          homeAway: week % 2 === 0 ? "HOME" : "AWAY",
-          status: matchDay < now ? "COMPLETED" : "CONFIRMED",
-          createdByUserId: 1,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-      }
-    }
-    
-    // Add training sessions (3-4 per week)
-    for (let week = 0; week < 4; week++) {
-      for (let day = 0; day < 3; day++) {
-        const trainingDay = new Date(year, monthNum, 1 + week * 7 + day * 2 + 1);
-        if (trainingDay.getMonth() === monthNum && trainingDay <= endOfMonth(month)) {
-          dummy.push({
-            id: `training-${week}-${day}`,
-            type: "TRAINING",
-            title: "Senior Squad Training",
-            startAt: new Date(trainingDay.getFullYear(), trainingDay.getMonth(), trainingDay.getDate(), 17, 0).toISOString(),
-            endAt: new Date(trainingDay.getFullYear(), trainingDay.getMonth(), trainingDay.getDate(), 19, 0).toISOString(),
-            allDay: false,
-            venueName: venues[0],
-            status: trainingDay < now ? "COMPLETED" : "CONFIRMED",
-            createdByUserId: 1,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
-        }
-      }
-    }
-    
-    // Add youth training (2 per week)
-    for (let week = 0; week < 4; week++) {
-      const youthDay = new Date(year, monthNum, 3 + week * 7);
-      if (youthDay.getMonth() === monthNum) {
-        dummy.push({
-          id: `youth-${week}`,
-          type: "TRAINING",
-          title: "Youth Academy Training",
-          startAt: new Date(youthDay.getFullYear(), youthDay.getMonth(), youthDay.getDate(), 16, 0).toISOString(),
-          endAt: new Date(youthDay.getFullYear(), youthDay.getMonth(), youthDay.getDate(), 18, 0).toISOString(),
-          allDay: false,
-          venueName: venues[1],
-          status: youthDay < now ? "COMPLETED" : "CONFIRMED",
-          createdByUserId: 1,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-      }
-    }
-    
-    // Add trials (1-2 per month)
-    for (let i = 0; i < 2; i++) {
-      const trialDay = new Date(year, monthNum, 8 + i * 10);
-      if (trialDay.getMonth() === monthNum) {
-        dummy.push({
-          id: `trial-${i}`,
-          type: "TRIAL",
-          title: "Open Trial Session",
-          startAt: new Date(trialDay.getFullYear(), trialDay.getMonth(), trialDay.getDate(), 10, 0).toISOString(),
-          endAt: new Date(trialDay.getFullYear(), trialDay.getMonth(), trialDay.getDate(), 12, 0).toISOString(),
-          allDay: false,
-          venueName: venues[0],
-          status: trialDay < now ? "COMPLETED" : "CONFIRMED",
-          createdByUserId: 1,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-      }
-    }
-    
-    // Add other events (seminars, meetings)
-    const eventDay = new Date(year, monthNum, 15);
-    if (eventDay.getMonth() === monthNum) {
-      dummy.push({
-        id: "seminar-1",
-        type: "SEMINAR",
-        title: "Coaching Workshop",
-        startAt: new Date(eventDay.getFullYear(), eventDay.getMonth(), eventDay.getDate(), 14, 0).toISOString(),
-        endAt: new Date(eventDay.getFullYear(), eventDay.getMonth(), eventDay.getDate(), 16, 0).toISOString(),
-        allDay: false,
-        venueName: venues[2],
-        status: "CONFIRMED",
-        createdByUserId: 1,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-    }
-    
-    return dummy.sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
-  };
-
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
@@ -231,14 +114,11 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         const to = endOfMonth(monthCursor).toISOString();
         const data = (await api.getEvents({ from, to })) as ClubEventDTO[];
         if (!cancelled) {
-          // Use dummy data if API returns empty or for testing
-          const finalData = Array.isArray(data) && data.length > 0 ? data : generateDummyEvents(monthCursor);
-          setEvents(finalData);
+          setEvents(Array.isArray(data) && data.length > 0 ? data : []);
         }
       } catch (e: any) {
         if (!cancelled) {
-          // On error, use dummy data for testing
-          setEvents(generateDummyEvents(monthCursor));
+          setEvents([]);
           setError("");
         }
       } finally {
@@ -262,34 +142,12 @@ export const ClubCalendar: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         if (!cancelled && results.length > 0) {
           setLatestResult(results[0]);
         } else if (!cancelled) {
-          // Fallback dummy data
-          setLatestResult({
-            id: 0,
-            opponent: "Bangalore Rangers",
-            matchDate: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-            matchTime: "18:00",
-            venue: "3Lok Football Fitness Hub",
-            matchType: "League",
-            status: "COMPLETED",
-            center: "FCRB",
-            score: "3-1",
-          });
+          setLatestResult(null);
         }
       } catch (error) {
         console.error("Failed to load fixtures:", error);
         if (!cancelled) {
-          // Fallback dummy data on error
-          setLatestResult({
-            id: 0,
-            opponent: "Bangalore Rangers",
-            matchDate: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-            matchTime: "18:00",
-            venue: "3Lok Football Fitness Hub",
-            matchType: "League",
-            status: "COMPLETED",
-            center: "FCRB",
-            score: "3-1",
-          });
+          setLatestResult(null);
         }
       } finally {
         if (!cancelled) setFixturesLoading(false);

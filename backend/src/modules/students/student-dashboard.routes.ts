@@ -1,10 +1,9 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../db/prisma";
 import { authRequired, requireRole } from "../../auth/auth.middleware";
 import { getSystemDate } from "../../utils/system-date";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 /**
@@ -453,6 +452,191 @@ router.put("/change-password", authRequired, requireRole("STUDENT"), async (req,
     console.error("Error changing password:", error);
     res.status(500).json({ message: error.message || "Failed to change password" });
   }
+});
+
+/**
+ * GET /student/training-calendar
+ * Get student's training sessions (only sessions where student is a participant)
+ */
+router.get("/training-calendar", authRequired, requireRole("STUDENT"), async (req, res) => {
+  const { id } = req.user!;
+  const { month, year } = req.query;
+
+  const student = await prisma.student.findUnique({
+    where: { id },
+    include: { center: true }
+  });
+
+  if (!student) {
+    return res.status(404).json({ message: "Student not found" });
+  }
+
+  // Build date filter for sessions where student is a participant
+  const sessionWhere: any = {
+    participants: {
+      some: {
+        studentId: id
+      }
+    }
+  };
+
+  if (month && year) {
+    const startDate = new Date(Number(year), Number(month) - 1, 1);
+    const endDate = new Date(Number(year), Number(month), 0, 23, 59, 59, 999);
+    sessionWhere.sessionDate = {
+      gte: startDate,
+      lte: endDate
+    };
+  }
+
+  const sessions = await prisma.session.findMany({
+    where: sessionWhere,
+    include: {
+      center: {
+        select: {
+          id: true,
+          name: true,
+          shortName: true
+        }
+      },
+      coach: {
+        select: {
+          id: true,
+          fullName: true
+        }
+      },
+      attendance: {
+        where: { studentId: id },
+        include: {
+          markedByCoach: {
+            select: {
+              id: true,
+              fullName: true
+            }
+          }
+        }
+      }
+    },
+    orderBy: {
+      sessionDate: "asc"
+    }
+  });
+
+  // Format sessions with attendance status
+  const formattedSessions = sessions.map((session: any) => {
+    const attendanceRecord = session.attendance[0];
+    const sessionDate = new Date(session.sessionDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    sessionDate.setHours(0, 0, 0, 0);
+    
+    return {
+      id: session.id,
+      title: session.title,
+      description: session.description,
+      programmeId: session.programmeId,
+      sessionDate: session.sessionDate,
+      startTime: session.startTime,
+      endTime: session.endTime,
+      notes: session.notes,
+      center: session.center,
+      coach: session.coach,
+      attendanceStatus: attendanceRecord ? attendanceRecord.status : "PENDING",
+      attendanceNotes: attendanceRecord?.notes || null,
+      markedBy: attendanceRecord?.markedByCoach || null,
+      markedAt: attendanceRecord?.markedAt || null,
+      isPast: sessionDate < today,
+      isToday: sessionDate.getTime() === today.getTime(),
+      isFuture: sessionDate > today
+    };
+  });
+
+  res.json({
+    sessions: formattedSessions,
+    student: {
+      id: student.id,
+      fullName: student.fullName,
+      center: student.center
+    }
+  });
+});
+
+/**
+ * GET /student/attendance-metrics
+ * Calculate attendance metrics for student
+ */
+router.get("/attendance-metrics", authRequired, requireRole("STUDENT"), async (req, res) => {
+  const { id } = req.user!;
+
+  const student = await prisma.student.findUnique({
+    where: { id }
+  });
+
+  if (!student) {
+    return res.status(404).json({ message: "Student not found" });
+  }
+
+  // Get all sessions where student is a participant (past sessions only for metrics)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const pastSessions = await prisma.session.findMany({
+    where: {
+      participants: {
+        some: {
+          studentId: id
+        }
+      },
+      sessionDate: {
+        lt: today
+      }
+    },
+    include: {
+      attendance: {
+        where: { studentId: id }
+      }
+    },
+    orderBy: {
+      sessionDate: "desc"
+    }
+  });
+
+  const totalSessions = pastSessions.length;
+  const attendanceRecords = pastSessions.filter(s => s.attendance.length > 0);
+  const presentCount = attendanceRecords.filter(s => s.attendance[0]?.status === "PRESENT").length;
+  const absentCount = attendanceRecords.filter(s => s.attendance[0]?.status === "ABSENT").length;
+  const excusedCount = attendanceRecords.filter(s => s.attendance[0]?.status === "EXCUSED").length;
+  const pendingCount = totalSessions - attendanceRecords.length;
+
+  const attendancePercentage = totalSessions > 0 
+    ? Math.round((presentCount / totalSessions) * 100) 
+    : 0;
+
+  // Get recent 5 sessions with status
+  const recentSessions = pastSessions.slice(0, 5).map(session => {
+    const attendanceRecord = session.attendance[0];
+    return {
+      id: session.id,
+      title: session.title,
+      sessionDate: session.sessionDate,
+      startTime: session.startTime,
+      endTime: session.endTime,
+      status: attendanceRecord ? attendanceRecord.status : "PENDING",
+      markedAt: attendanceRecord?.markedAt || null
+    };
+  });
+
+  res.json({
+    summary: {
+      totalSessions,
+      presentCount,
+      absentCount,
+      excusedCount,
+      pendingCount,
+      attendancePercentage
+    },
+    recentSessions
+  });
 });
 
 export default router;

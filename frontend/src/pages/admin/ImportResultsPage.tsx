@@ -113,7 +113,7 @@ const ImportResultsPage: React.FC = () => {
               <th style={{ padding: spacing.md, textAlign: 'left', ...typography.label }}>Name</th>
               <th style={{ padding: spacing.md, textAlign: 'left', ...typography.label }}>Email</th>
               <th style={{ padding: spacing.md, textAlign: 'left', ...typography.label }}>Phone</th>
-              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.label }}>Program</th>
+              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.label }}>Programme</th>
               <th style={{ padding: spacing.md, textAlign: 'left', ...typography.label }}>Status</th>
               <th style={{ padding: spacing.md, textAlign: 'left', ...typography.label }}>Monthly Fee</th>
               <th style={{ padding: spacing.md, textAlign: 'left', ...typography.label }}>Actions</th>
@@ -211,7 +211,7 @@ const ImportResultsPage: React.FC = () => {
         >
           Back to All Students
         </button>
-        <button
+        {/* <button
           onClick={() => navigate('/realverse/admin/students/bulk-import')}
           style={{
             padding: `${spacing.md} ${spacing.xl}`,
@@ -225,7 +225,7 @@ const ImportResultsPage: React.FC = () => {
           }}
         >
           Import More Students
-        </button>
+        </button> */}
       </div>
     </motion.main>
   );

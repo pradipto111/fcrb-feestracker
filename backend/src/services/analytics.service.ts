@@ -5,9 +5,7 @@
  * All queries are safe and do not modify any data.
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import prisma from "../db/prisma";
 
 export interface DateRange {
   from: Date;

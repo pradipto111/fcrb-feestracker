@@ -5,7 +5,7 @@
  */
 
 import { Router } from "express";
-import { authRequired, requireRole } from "../../auth/auth.middleware";
+import { authRequired, requireRole, toPrismaRole } from "../../auth/auth.middleware";
 import {
   createParentReport,
   publishReport,
@@ -181,7 +181,7 @@ router.post("/:reportId/publish", authRequired, requireRole("COACH", "ADMIN"), a
     const report = await publishReport({
       reportId,
       publishedByUserId: userId,
-      publishedByRole: role,
+      publishedByRole: toPrismaRole(role),
       visibleToParent,
     });
 

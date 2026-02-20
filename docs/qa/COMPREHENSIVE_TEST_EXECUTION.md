@@ -124,7 +124,7 @@
 ### Test Cases
 
 #### TC-009: Admin Dashboard Load
-- [ ] Navigate to `/realverse/admin`
+- [ ] Navigate to `/realverse/admin/students`
 - [ ] Verify dashboard loads
 - [ ] Verify all quick action cards visible
 - [ ] Verify no console errors

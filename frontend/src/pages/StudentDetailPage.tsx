@@ -371,7 +371,7 @@ const StudentDetailPage: React.FC = () => {
                 color: colors.text.muted, 
                 marginBottom: spacing.xs 
               }}>
-                Program
+                Programme
               </div>
               <div style={{ 
                 ...typography.body, 

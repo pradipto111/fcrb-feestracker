@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../db/prisma";
 
 // Type definitions (will be available after Prisma generate)
 type TrainingIntensity = "LOW" | "MEDIUM" | "HIGH";
@@ -14,7 +14,6 @@ import {
   getWeekBoundaries,
 } from "./season-planning.service";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Helper to get coach's center IDs

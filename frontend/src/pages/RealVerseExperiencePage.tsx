@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "../components/ui/Card";
@@ -56,7 +56,7 @@ const DashboardPreview: React.FC<{ previewType: string }> = ({ previewType }) =>
                     Player Name
                   </h3>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: spacing.sm, alignItems: "center" }}>
-                    <span style={{ ...typography.body, color: colors.text.secondary }}>Academy Program</span>
+                    <span style={{ ...typography.body, color: colors.text.secondary }}>Academy Programme</span>
                     <span style={{ color: colors.text.muted }}>•</span>
                     <span style={{ ...typography.body, color: colors.text.secondary }}>Center Name</span>
                   </div>
@@ -529,9 +529,12 @@ const DashboardPreview: React.FC<{ previewType: string }> = ({ previewType }) =>
   );
 };
 
+const MOBILE_BREAKPOINT = 768;
+
 const RealVerseExperiencePage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [showLeadForm, setShowLeadForm] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
   const [leadData, setLeadData] = useState({
     name: "",
     email: "",
@@ -597,20 +600,6 @@ const RealVerseExperiencePage: React.FC = () => {
       preview: "feed",
     },
     {
-      id: "leaderboard",
-      title: "Leaderboard",
-      icon: TrophyIcon,
-      description: "Compete with your peers, see where you rank, and stay motivated to improve.",
-      highlights: [
-        "Real-time rankings",
-        "Multiple competition categories",
-        "Achievement badges",
-        "Progress milestones",
-      ],
-      color: colors.accent.main,
-      preview: "leaderboard",
-    },
-    {
       id: "analytics",
       title: "Data Analytics",
       icon: ChartBarIcon,
@@ -628,12 +617,12 @@ const RealVerseExperiencePage: React.FC = () => {
 
   const programs = [
     {
-      name: "Elite Pathway Program (EPP)",
+      name: "Elite Pathway Programme (EPP)",
       description: "For players targeting top-tier football in India and abroad",
       features: ["Super Division focused", "Highest intensity training", "Individual development plans"],
     },
     {
-      name: "Senior Competitive Program (SCP)",
+      name: "Senior Competitive Programme (SCP)",
       description: "The competitive bridge between youth and elite football",
       features: ["C & D Division exposure", "Regular competitive matches", "EPP feeder pathway"],
     },
@@ -643,11 +632,17 @@ const RealVerseExperiencePage: React.FC = () => {
       features: ["Women's B Division", "Year-round matches", "Career pathway"],
     },
     {
-      name: "Foundation & Youth Development Program (FYDP)",
+      name: "Foundation & Youth Development Programme (FYDP)",
       description: "Building intelligent footballers before building competitors",
       features: ["U9, U11, U13 development", "Tactical foundations", "Data-assisted development"],
     },
   ];
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -667,15 +662,20 @@ const RealVerseExperiencePage: React.FC = () => {
 
   return (
     <div
+      data-realverse-page
       style={{
         minHeight: "100vh",
+        width: "100%",
+        maxWidth: "100vw",
+        overflowX: "hidden",
+        overflowY: "auto",
         background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,
         position: "relative",
       }}
     >
       <PublicHeader />
       
-      {/* Background Effects */}
+      {/* Background Effects - no fixed attachment on mobile (performance + layout) */}
       <div
         style={{
           position: "absolute",
@@ -683,10 +683,12 @@ const RealVerseExperiencePage: React.FC = () => {
           left: 0,
           right: 0,
           bottom: 0,
+          width: "100%",
+          maxWidth: "100%",
           backgroundImage: `url(/assets/20250927-DSC_0446.jpg)`,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          backgroundAttachment: "fixed",
+          backgroundAttachment: isMobile ? "scroll" : "fixed",
           opacity: 0.15,
           filter: "blur(10px)",
           zIndex: 0,
@@ -717,17 +719,30 @@ const RealVerseExperiencePage: React.FC = () => {
         }}
       />
 
-      <div style={{ position: "relative", zIndex: 3, paddingTop: "100px" }}>
+      <div
+        style={{
+          position: "relative",
+          zIndex: 3,
+          paddingTop: isMobile ? 80 : 100,
+          paddingLeft: isMobile ? spacing.md : spacing.xl,
+          paddingRight: isMobile ? spacing.md : spacing.xl,
+          boxSizing: "border-box",
+        }}
+      >
         {/* Hero Section */}
         <motion.section
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           style={{
-            padding: `${spacing["4xl"]} ${spacing.xl}`,
+            padding: isMobile ? `${spacing["2xl"]} 0` : `${spacing["4xl"]} ${spacing.xl}`,
+            paddingLeft: 0,
+            paddingRight: 0,
             textAlign: "center",
             maxWidth: "1200px",
             margin: "0 auto",
+            width: "100%",
+            boxSizing: "border-box",
           }}
         >
           <motion.div
@@ -747,10 +762,12 @@ const RealVerseExperiencePage: React.FC = () => {
           <motion.h1
             style={{
               ...typography.h1,
-              fontSize: `clamp(2.5rem, 5vw, 4.5rem)`,
+              fontSize: isMobile ? "clamp(1.75rem, 6vw, 2.5rem)" : "clamp(2.5rem, 5vw, 4.5rem)",
               color: colors.text.primary,
               marginBottom: spacing.lg,
               lineHeight: 1.2,
+              wordWrap: "break-word",
+              overflowWrap: "break-word",
             }}
           >
             Discover How RealVerse
@@ -760,12 +777,14 @@ const RealVerseExperiencePage: React.FC = () => {
           <motion.p
             style={{
               ...typography.body,
-              fontSize: typography.fontSize.xl,
+              fontSize: isMobile ? typography.fontSize.base : typography.fontSize.xl,
               color: colors.text.secondary,
               maxWidth: "800px",
               margin: "0 auto",
               lineHeight: 1.8,
               marginBottom: spacing["2xl"],
+              wordWrap: "break-word",
+              overflowWrap: "break-word",
             }}
           >
             Take an interactive tour of RealVerse—our cutting-edge platform that combines technology, 
@@ -774,7 +793,15 @@ const RealVerseExperiencePage: React.FC = () => {
         </motion.section>
 
         {/* Interactive Feature Tour */}
-        <section style={{ padding: `0 ${spacing.xl} ${spacing["4xl"]}`, maxWidth: "1400px", margin: "0 auto" }}>
+        <section
+          style={{
+            padding: isMobile ? `0 0 ${spacing["2xl"]}` : `0 ${spacing.xl} ${spacing["4xl"]}`,
+            maxWidth: "1400px",
+            margin: "0 auto",
+            width: "100%",
+            boxSizing: "border-box",
+          }}
+        >
           <motion.div
             variants={staggerContainer}
             initial="hidden"
@@ -782,16 +809,18 @@ const RealVerseExperiencePage: React.FC = () => {
             viewport={viewportOnce}
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))",
+              gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))",
               gap: spacing.xl,
-              marginBottom: spacing["3xl"],
+              marginBottom: isMobile ? spacing["2xl"] : spacing["3xl"],
+              width: "100%",
+              alignItems: "stretch",
             }}
           >
             {features.map((feature, idx) => (
               <motion.div
                 key={feature.id}
                 {...getStaggeredCard(idx)}
-                whileHover={cardHover}
+                whileHover={{ y: -2 }}
                 style={{
                   cursor: "pointer",
                 }}
@@ -802,6 +831,7 @@ const RealVerseExperiencePage: React.FC = () => {
                   padding="xl"
                   style={{
                     height: "100%",
+                    minHeight: "320px",
                     background: currentStep === idx
                       ? `linear-gradient(135deg, 
                           rgba(20, 31, 58, 0.95) 0%, 
@@ -815,13 +845,13 @@ const RealVerseExperiencePage: React.FC = () => {
                     boxShadow: currentStep === idx
                       ? `0 8px 32px ${feature.color}30`
                       : `0 4px 16px rgba(0, 0, 0, 0.2)`,
-                    transition: "all 0.3s ease",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   }}
                 >
                   <div
                     style={{
-                      width: "64px",
-                      height: "64px",
+                      width: "48px",
+                      height: "48px",
                       borderRadius: "50%",
                       background: `linear-gradient(135deg, ${feature.color} 0%, ${colors.primary.main} 100%)`,
                       display: "flex",
@@ -830,13 +860,15 @@ const RealVerseExperiencePage: React.FC = () => {
                       marginBottom: spacing.lg,
                     }}
                   >
-                    <feature.icon size={32} color={colors.text.onPrimary} />
+                    <feature.icon size={24} color={colors.text.onPrimary} />
                   </div>
                   <h3
                     style={{
                       ...typography.h3,
                       color: colors.text.primary,
+                      fontWeight: typography.fontWeight.bold,
                       marginBottom: spacing.sm,
+                      lineHeight: 1.6,
                     }}
                   >
                     {feature.title}
@@ -845,8 +877,14 @@ const RealVerseExperiencePage: React.FC = () => {
                     style={{
                       ...typography.body,
                       color: colors.text.secondary,
+                      fontWeight: typography.fontWeight.medium,
                       marginBottom: spacing.md,
                       lineHeight: 1.6,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical" as const,
+                      overflow: "hidden",
+                      maxHeight: "4.5em",
                     }}
                   >
                     {feature.description}
@@ -875,6 +913,8 @@ const RealVerseExperiencePage: React.FC = () => {
                             ...typography.body,
                             color: colors.text.muted,
                             fontSize: typography.fontSize.sm,
+                            fontWeight: typography.fontWeight.normal,
+                            lineHeight: 1.6,
                           }}
                         >
                           {highlight}
@@ -948,8 +988,8 @@ const RealVerseExperiencePage: React.FC = () => {
                     <div
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(min(250px, 100%), 1fr))",
-                        gap: spacing.lg,
+                        gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(min(250px, 100%), 1fr))",
+                        gap: isMobile ? spacing.md : spacing.lg,
                       }}
                     >
                       {currentFeature.highlights.map((highlight, hIdx) => (
@@ -1021,15 +1061,17 @@ const RealVerseExperiencePage: React.FC = () => {
           </AnimatePresence>
         </section>
 
-        {/* Programs Section */}
+        {/* Programmes Section */}
         <section
           style={{
-            padding: `${spacing["4xl"]} ${spacing.xl}`,
+            padding: isMobile ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
             background: `rgba(5, 11, 32, 0.5)`,
-            marginTop: spacing["4xl"],
+            marginTop: isMobile ? spacing["2xl"] : spacing["4xl"],
+            width: "100%",
+            boxSizing: "border-box",
           }}
         >
-          <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+          <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
             <motion.div
               variants={headingVariants}
               initial="offscreen"
@@ -1045,7 +1087,7 @@ const RealVerseExperiencePage: React.FC = () => {
                   marginBottom: spacing.md,
                 }}
               >
-                Join Our Programs & Access RealVerse
+                Join Our Programmes & Access RealVerse
               </h2>
               <p
                 style={{
@@ -1067,9 +1109,10 @@ const RealVerseExperiencePage: React.FC = () => {
               viewport={viewportOnce}
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))",
-                gap: spacing.xl,
-                marginBottom: spacing["3xl"],
+                gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
+                gap: isMobile ? spacing.lg : spacing.xl,
+                marginBottom: isMobile ? spacing["2xl"] : spacing["3xl"],
+                alignItems: "stretch",
               }}
             >
               {programs.map((program, idx) => (
@@ -1083,87 +1126,108 @@ const RealVerseExperiencePage: React.FC = () => {
                     padding="xl"
                     style={{
                       height: "100%",
+                      minHeight: "400px",
                       display: "flex",
                       flexDirection: "column",
+                      justifyContent: "space-between",
                     }}
                   >
-                    <h3
-                      style={{
-                        ...typography.h3,
-                        color: colors.text.primary,
-                        marginBottom: spacing.sm,
-                      }}
-                    >
-                      {program.name}
-                    </h3>
-                    <p
-                      style={{
-                        ...typography.body,
-                        color: colors.text.secondary,
-                        marginBottom: spacing.lg,
-                      }}
-                    >
-                      {program.description}
-                    </p>
-                    <div style={{ flex: 1, marginBottom: spacing.lg }}>
-                      {program.features.map((feature, fIdx) => (
-                        <div
-                          key={fIdx}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: spacing.sm,
-                            marginBottom: spacing.sm,
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: "20px",
-                              height: "20px",
-                              borderRadius: "50%",
-                              background: colors.primary.main,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              flexShrink: 0,
-                            }}
-                          >
-                            <span style={{ color: colors.text.onPrimary, fontSize: "10px" }}>✓</span>
-                          </div>
-                          <span
-                            style={{
-                              ...typography.body,
-                              color: colors.text.muted,
-                              fontSize: typography.fontSize.sm,
-                            }}
-                          >
-                            {feature}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <motion.div
-                      whileHover={primaryButtonHover}
-                      whileTap={primaryButtonTap}
-                      onClick={() => {
-                        setLeadData({ ...leadData, program: program.name });
-                        setShowLeadForm(true);
-                      }}
-                    >
-                      <div
+                    {/* Content Wrapper */}
+                    <div style={{ flex: 1 }}>
+                      <h3
                         style={{
-                          ...heroCTAStyles.blue,
-                          width: "100%",
-                          minHeight: 60,
+                          ...typography.h3,
+                          color: colors.text.primary,
+                          marginBottom: spacing.sm,
                         }}
                       >
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
-                          <span style={heroCTAStyles.blue.textStyle}>Get Started</span>
-                          <span style={heroCTAStyles.blue.subtitleStyle}>Request a call from our team</span>
-                        </div>
-                        <span style={{ color: colors.text.onPrimary, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
+                        {program.name}
+                      </h3>
+                      <p
+                        style={{
+                          ...typography.body,
+                          color: colors.text.secondary,
+                          marginBottom: spacing.lg,
+                        }}
+                      >
+                        {program.description}
+                      </p>
+                      <div style={{ marginBottom: spacing.xl }}>
+                        {program.features.map((feature, fIdx) => (
+                          <div
+                            key={fIdx}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: spacing.sm,
+                              marginBottom: spacing.sm,
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "20px",
+                                height: "20px",
+                                borderRadius: "50%",
+                                background: colors.primary.main,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <span style={{ color: colors.text.onPrimary, fontSize: "10px" }}>✓</span>
+                            </div>
+                            <span
+                              style={{
+                                ...typography.body,
+                                color: colors.text.muted,
+                                fontSize: typography.fontSize.sm,
+                              }}
+                            >
+                              {feature}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                    </motion.div>
+                    </div>
+
+                    {/* CTA Wrapper */}
+                    <div>
+                      <div
+                        style={{
+                          borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+                          marginTop: spacing.xl,
+                          marginBottom: spacing.lg,
+                        }}
+                      />
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={primaryButtonTap}
+                        onClick={() => {
+                          setLeadData({ ...leadData, program: program.name });
+                          setShowLeadForm(true);
+                        }}
+                        style={{
+                          transition: "all 0.25s ease",
+                        }}
+                      >
+                        <div
+                          style={{
+                            ...heroCTAStyles.blue,
+                            width: "100%",
+                            minHeight: 60,
+                            display: "flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                            <span style={heroCTAStyles.blue.textStyle}>Get Started</span>
+                            <span style={heroCTAStyles.blue.subtitleStyle}>Request a call from our team</span>
+                          </div>
+                          <span style={{ color: colors.text.onPrimary, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
+                        </div>
+                      </motion.div>
+                    </div>
                   </Card>
                 </motion.div>
               ))}
@@ -1174,10 +1238,12 @@ const RealVerseExperiencePage: React.FC = () => {
         {/* CTA Section */}
         <section
           style={{
-            padding: `${spacing["4xl"]} ${spacing.xl}`,
+            padding: isMobile ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
             textAlign: "center",
             maxWidth: "1200px",
             margin: "0 auto",
+            width: "100%",
+            boxSizing: "border-box",
           }}
         >
           <motion.div
@@ -1210,13 +1276,24 @@ const RealVerseExperiencePage: React.FC = () => {
               Join FC Real Bengaluru and get access to RealVerse—the platform that's revolutionizing 
               how players develop, train, and compete.
             </p>
-            <div style={{ display: "flex", gap: spacing.md, justifyContent: "center", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                gap: spacing.md,
+                justifyContent: "center",
+                flexWrap: "wrap",
+                alignItems: "stretch",
+                width: "100%",
+              }}
+            >
               <motion.div
                 whileHover={primaryButtonHover}
                 whileTap={primaryButtonTap}
                 onClick={() => setShowLeadForm(true)}
+                style={{ width: isMobile ? "100%" : "auto", minWidth: isMobile ? undefined : 280 }}
               >
-                <div style={{ ...heroCTAStyles.yellow, width: "auto", minWidth: 280 }}>
+                <div style={{ ...heroCTAStyles.yellow, width: isMobile ? "100%" : "auto", minWidth: isMobile ? undefined : 280, minHeight: 44 }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
                     <span style={heroCTAStyles.yellow.textStyle}>Start Your Journey</span>
                     <span style={heroCTAStyles.yellow.subtitleStyle}>Talk to our coaching team</span>
@@ -1224,30 +1301,6 @@ const RealVerseExperiencePage: React.FC = () => {
                   <span style={{ color: colors.text.onAccent, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
                 </div>
               </motion.div>
-              <Link to="/brochure" style={{ textDecoration: "none" }}>
-                <motion.div
-                  whileHover={primaryButtonHover}
-                  whileTap={primaryButtonTap}
-                >
-                  <div
-                    style={{
-                      ...heroCTAStyles.darkWithBorder,
-                      width: "auto",
-                      minWidth: 260,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: spacing.md,
-                    }}
-                  >
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
-                      <span style={heroCTAStyles.darkWithBorder.textStyle}>Download Brochure</span>
-                      <span style={heroCTAStyles.darkWithBorder.subtitleStyle}>Programs, fees, and pathways</span>
-                    </div>
-                    <span style={{ color: colors.accent.main, fontWeight: 800, display: "flex", alignItems: "center", fontSize: "1.25rem", lineHeight: 1 }}>→</span>
-                  </div>
-                </motion.div>
-              </Link>
             </div>
           </motion.div>
         </section>
@@ -1272,7 +1325,9 @@ const RealVerseExperiencePage: React.FC = () => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              padding: spacing.xl,
+              padding: isMobile ? spacing.md : spacing.xl,
+              boxSizing: "border-box",
+              overflowY: "auto",
             }}
             onClick={() => setShowLeadForm(false)}
           >
@@ -1281,7 +1336,13 @@ const RealVerseExperiencePage: React.FC = () => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              style={{ maxWidth: "500px", width: "100%" }}
+              style={{
+                maxWidth: "500px",
+                width: "100%",
+                maxHeight: "100%",
+                overflowY: "auto",
+                boxSizing: "border-box",
+              }}
             >
               <Card
                 variant="elevated"
@@ -1434,7 +1495,7 @@ const RealVerseExperiencePage: React.FC = () => {
                           display: "block",
                         }}
                       >
-                        Program Interest
+                        Programme Interest
                       </label>
                       <select
                         value={leadData.program}

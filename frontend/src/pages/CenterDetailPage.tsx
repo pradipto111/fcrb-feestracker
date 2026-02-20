@@ -168,7 +168,7 @@ const CenterDetailPage: React.FC = () => {
             <thead>
               <tr style={{ background: "#f8f9fa", borderBottom: "2px solid #e0e0e0" }}>
                 <th style={{ padding: 16, textAlign: "left", fontWeight: 600 }}>Name</th>
-                <th style={{ padding: 16, textAlign: "left", fontWeight: 600 }}>Program</th>
+                <th style={{ padding: 16, textAlign: "left", fontWeight: 600 }}>Programme</th>
                 <th style={{ padding: 16, textAlign: "left", fontWeight: 600 }}>Status</th>
                 <th style={{ padding: 16, textAlign: "right", fontWeight: 600 }}>Monthly Fee</th>
                 <th style={{ padding: 16, textAlign: "center", fontWeight: 600 }}>Actions</th>

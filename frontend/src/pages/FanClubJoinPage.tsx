@@ -104,6 +104,7 @@ const LockMark = ({ color = "rgba(255,255,255,0.92)" }: { color?: string }) => (
   </svg>
 );
 
+const MOBILE_BREAKPOINT = 768;
 const tierRank: Record<"rookie" | "regular" | "inner", number> = { rookie: 0, regular: 1, inner: 2 };
 const rewardTierLabel: Record<number, string> = { 0: "Rookie Fan", 1: "Matchday Regular", 2: "Inner Circle" };
 
@@ -348,15 +349,16 @@ const FanClubJoinPage: React.FC = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const reduceMotion = useReducedMotion();
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
   const [packages, setPackages] = useState<PackageTier[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState<FanClubTierId | null>(null);
   const [previewTier, setPreviewTier] = useState<"rookie" | "regular" | "inner">("regular");
+  const [comingSoonMessage, setComingSoonMessage] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = "Join the Fan Club • FC Real Bengaluru";
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const checkMobile = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
@@ -430,20 +432,9 @@ const FanClubJoinPage: React.FC = () => {
 
   const handleSelectPackage = (pkg: PackageTier) => {
     setSelectedPackage(pkg.id);
-    
-    // Add to cart
-    addItem({
-      productId: `fan-club-${pkg.id}`,
-      productName: `${pkg.name} - Fan Club Membership`,
-      productSlug: `fan-club-${pkg.id}`,
-      quantity: 1,
-      unitPrice: pkg.priceValue * 100, // Convert to paise
-    });
-
-    // Navigate to cart after a brief delay for better UX
-    setTimeout(() => {
-      navigate("/cart");
-    }, 300);
+    // Display-only: Fan Club is Coming Soon — do not add to cart or navigate
+    setComingSoonMessage("Coming soon — membership is not yet available.");
+    setTimeout(() => setComingSoonMessage(null), 4000);
   };
 
   const sectionPaddingVertical = isMobile ? spacing["3xl"] : spacing["4xl"];
@@ -477,6 +468,7 @@ const FanClubJoinPage: React.FC = () => {
 
   return (
     <div
+      data-realverse-page
       style={{
         minHeight: "100vh",
         position: "relative",
@@ -511,8 +503,52 @@ const FanClubJoinPage: React.FC = () => {
           maxWidth: maxWidth,
           margin: "0 auto",
           width: "100%",
+          boxSizing: "border-box",
         }}
       >
+        {/* Coming Soon banner */}
+        <div
+          style={{
+            position: "sticky",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 100,
+            padding: `${spacing.sm} ${spacing.xl}`,
+            background: colors.warning.soft,
+            borderBottom: `1px solid ${colors.warning.main}40`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: spacing.sm,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ ...typography.caption, color: colors.warning.main, fontWeight: typography.fontWeight.bold, letterSpacing: "0.12em" }}>FAN CLUB</span>
+          <span style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.semibold }}>Coming Soon.</span>
+          <span style={{ ...typography.caption, color: colors.text.muted, fontSize: typography.fontSize.sm }}>Information below is for display only.</span>
+        </div>
+        {comingSoonMessage && (
+          <div
+            style={{
+              position: "fixed",
+              bottom: spacing.xl,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 1300,
+              padding: `${spacing.md} ${spacing.xl}`,
+              borderRadius: borderRadius.lg,
+              border: `1px solid ${colors.warning.main}60`,
+              background: colors.warning.soft,
+              color: colors.text.primary,
+              ...typography.body,
+              fontWeight: typography.fontWeight.medium,
+              boxShadow: shadows.card,
+            }}
+          >
+            {comingSoonMessage}
+          </div>
+        )}
         {/* Hero Section */}
         <motion.section
           initial={{ opacity: 0 }}
@@ -529,9 +565,9 @@ const FanClubJoinPage: React.FC = () => {
             paddingLeft: 0,
             paddingRight: 0,
             overflow: "hidden",
-            width: "100vw",
-            marginLeft: "calc(50% - 50vw)",
-            marginRight: "calc(50% - 50vw)",
+            width: "100%",
+            maxWidth: "100%",
+            boxSizing: "border-box",
             backgroundImage: `url(/assets/DSC09918.JPG)`,
             backgroundSize: "cover",
             backgroundPosition: "center",
@@ -634,9 +670,9 @@ const FanClubJoinPage: React.FC = () => {
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
-            width: "100vw",
-            marginLeft: "calc(50% - 50vw)",
-            marginRight: "calc(50% - 50vw)",
+            width: "100%",
+            maxWidth: "100%",
+            boxSizing: "border-box",
           }}
         >
           {/* Background overlay */}
@@ -773,6 +809,7 @@ const FanClubJoinPage: React.FC = () => {
                           marginTop: spacing.md,
                           padding: `${spacing.md} ${spacing.lg}`,
                           borderRadius: borderRadius.button,
+                          minHeight: 44,
                           background: pkg.highlight
                             ? `linear-gradient(135deg, ${colors.accent.main} 0%, #FFB82E 100%)`
                             : "rgba(255,255,255,0.08)",
@@ -981,6 +1018,7 @@ const FanClubJoinPage: React.FC = () => {
                           style={{
                             ...heroCTAPillStyles.base,
                             padding: "10px 14px",
+                            minHeight: 44,
                             boxShadow: "none",
                             border: active ? `2px solid ${colors.accent.main}` : "1px solid rgba(255,255,255,0.14)",
                             background: active ? "rgba(245,179,0,0.08)" : "rgba(255,255,255,0.03)",

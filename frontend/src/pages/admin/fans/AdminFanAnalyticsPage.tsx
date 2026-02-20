@@ -101,7 +101,7 @@ const AdminFanAnalyticsPage: React.FC = () => {
             {[
               { label: "Total Fan Club members", value: summary?.fanCount ?? "—", subtext: `${summary?.activeFans ?? 0} active` },
               { label: "Total redemptions", value: summary?.redemptionCount ?? "—", subtext: `${sponsorRows.length} sponsors` },
-              { label: "Program interest leads", value: summary?.leadsCount ?? "—", subtext: `${summary?.growth?.conversionRate ?? 0}% conversion` },
+              { label: "Programme interest leads", value: summary?.leadsCount ?? "—", subtext: `${summary?.growth?.conversionRate ?? 0}% conversion` },
               { label: "New fans (30 days)", value: summary?.growth?.recentFans ?? "—", subtext: "Recent growth" },
             ].map((kpi) => (
               <div key={kpi.label} style={{ borderRadius: borderRadius.xl, border: "1px solid rgba(255,255,255,0.10)", background: "rgba(0,0,0,0.16)", padding: spacing.lg }}>
@@ -252,7 +252,7 @@ const AdminFanAnalyticsPage: React.FC = () => {
           </Card>
 
           <Card variant="default" padding="xl" style={{ borderRadius: borderRadius["2xl"], background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}>
-            <div style={{ ...typography.h3, color: colors.text.primary, margin: 0, marginBottom: spacing.md }}>Program interest</div>
+            <div style={{ ...typography.h3, color: colors.text.primary, margin: 0, marginBottom: spacing.md }}>Programme interest</div>
             <div style={{ display: "grid", gap: 10 }}>
               {programRows.map((r) => (
                 <div key={r.name} style={{ display: "flex", justifyContent: "space-between", gap: spacing.md, color: colors.text.secondary, ...typography.body }}>

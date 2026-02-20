@@ -19,6 +19,14 @@ import leaderboardRoutes from "./modules/leaderboard/leaderboard.routes";
 import leadsRoutes from "./modules/leads/leads.routes";
 import shopRoutes from "./modules/shop/shop.routes";
 import adminRoutes from "./modules/admin/admin.routes";
+import crmAuthRoutes from "./modules/crm/crm-auth.routes";
+import crmUsersRoutes from "./modules/crm/crm-users.routes";
+import crmLeadsRoutes from "./modules/crm/crm-leads.routes";
+import crmActivitiesRoutes from "./modules/crm/crm-activities.routes";
+import crmTasksRoutes from "./modules/crm/crm-tasks.routes";
+import crmImportRoutes from "./modules/crm/crm-import.routes";
+import crmSettingsRoutes from "./modules/crm/crm-settings.routes";
+import crmAnalyticsRoutes from "./modules/crm/crm-analytics.routes";
 import timelineRoutes from "./modules/students/timeline.routes";
 import feedbackRoutes from "./modules/students/feedback.routes";
 import wellnessRoutes from "./modules/students/wellness.routes";
@@ -34,11 +42,54 @@ import fanRoutes from "./modules/fan/fan.routes";
 import fanAdminRoutes from "./modules/fan/fan-admin.routes";
 import legacyRoutes from "./modules/legacy/legacy.routes";
 import footerRoutes from "./modules/footer/footer.routes";
-import { PrismaClient } from "@prisma/client";
+import activityRoutes from "./modules/activity/activity.routes";
+import prisma from "./db/prisma";
 
-const prisma = new PrismaClient();
+// Global error handlers to prevent crashes
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  console.error('[ERROR] Unhandled Promise Rejection:', reason);
+  // Don't exit - log and continue
+});
+
+process.on('uncaughtException', (error: Error) => {
+  console.error('[ERROR] Uncaught Exception:', error);
+  // Don't exit - log and continue
+});
 
 const app = express();
+
+// Request logging middleware (for debugging)
+app.use((req, res, next) => {
+  const startTime = Date.now();
+  const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  (req as any).requestId = requestId;
+  
+  console.log(`[${requestId}] ${req.method} ${req.path} - Started`);
+  
+  res.on('finish', () => {
+    const duration = Date.now() - startTime;
+    console.log(`[${requestId}] ${req.method} ${req.path} - ${res.statusCode} - ${duration}ms`);
+  });
+  
+  next();
+});
+
+// Add request timeout middleware to prevent hanging requests
+app.use((req, res, next) => {
+  // Set timeout for all requests to 25 seconds (less than client timeout of 30s)
+  const timeout = setTimeout(() => {
+    if (!res.headersSent) {
+      console.error(`[${(req as any).requestId}] Request timeout after 25s: ${req.method} ${req.path}`);
+      res.status(504).json({ message: "Request timeout. The server is taking too long to respond." });
+    }
+  }, 25000);
+  
+  // Clear timeout when response is sent
+  res.on('finish', () => clearTimeout(timeout));
+  res.on('close', () => clearTimeout(timeout));
+  
+  next();
+});
 
 // CORS configuration for production
 app.use(cors({
@@ -72,6 +123,15 @@ app.use("/leaderboard", leaderboardRoutes);
 app.use("/leads", leadsRoutes);
 app.use("/shop", shopRoutes);
 app.use("/admin", adminRoutes);
+// CRM (Sales/BD)
+app.use("/crm/auth", crmAuthRoutes);
+app.use("/crm/users", crmUsersRoutes);
+app.use("/crm/leads", crmLeadsRoutes);
+app.use("/crm", crmActivitiesRoutes);
+app.use("/crm", crmTasksRoutes);
+app.use("/crm", crmImportRoutes);
+app.use("/crm/settings", crmSettingsRoutes);
+app.use("/crm", crmAnalyticsRoutes);
 // Fan Club (RealVerse Fan) — separate mount points for spec compatibility
 app.use("/fan", fanRoutes);
 app.use("/api/fan", fanRoutes);
@@ -89,6 +149,7 @@ app.use("/trials", trialsRoutes);
 app.use("/season-planning", seasonPlanningRoutes);
 app.use("/legacy", legacyRoutes);
 app.use("/footer", footerRoutes);
+app.use("/activity", activityRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -124,34 +185,11 @@ async function initializeShop() {
   }
 }
 
-// Seed demo calendar events in development (idempotent)
-async function initializeDemoCalendar() {
-  try {
-    if (process.env.NODE_ENV !== "development") return;
-    // If prisma client doesn't have the model yet (missing generate/migrate), skip gracefully.
-    if (!(prisma as any).clubEvent) return;
-    const count = await (prisma as any).clubEvent.count();
-    if (count > 0) return;
-
-    // Find any admin/coach to attribute demo data to.
-    const coach = await prisma.coach.findFirst({ where: { role: { in: ["ADMIN", "COACH"] } } });
-    if (!coach) return;
-
-    const { seedDemoClubEvents } = await import("./modules/events/seed-demo-events");
-    await seedDemoClubEvents({ createdByUserId: coach.id });
-    console.log("✅ Seeded demo calendar events (development)");
-  } catch (error: any) {
-    // Optional feature; never crash server startup.
-    console.warn("⚠️  Demo calendar seed skipped:", error?.message || error);
-  }
-}
-
 // Start server
 app.listen(PORT, "0.0.0.0", async () => {
   console.log(`✅ Backend listening on http://localhost:${PORT}`);
   console.log(`✅ Backend also accessible on http://0.0.0.0:${PORT}`);
   await initializeShop();
-  await initializeDemoCalendar();
 }).on("error", (err: any) => {
   if (err.code === "EADDRINUSE") {
     console.error(`❌ Port ${PORT} is already in use. Please stop the other process or change the PORT in .env`);

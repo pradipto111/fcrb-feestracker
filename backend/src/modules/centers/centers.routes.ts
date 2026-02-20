@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../db/prisma";
 import { authRequired, requireRole } from "../../auth/auth.middleware";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // PUBLIC: Get active centres for homepage map (no auth required)
@@ -63,43 +62,80 @@ router.get("/public", async (req, res) => {
 });
 
 // List centers (admin sees all, coach sees their assigned centers)
+const DB_QUERY_TIMEOUT_MS = 12000; // Fail fast so client gets 503 instead of hanging
+
 router.get("/", authRequired, async (req, res) => {
+  let timeoutHandle: NodeJS.Timeout | null = null;
   try {
     const { role, id } = req.user!;
     
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutHandle = setTimeout(() => {
+        reject(new Error("Database request timed out"));
+      }, DB_QUERY_TIMEOUT_MS);
+    });
+
     if (role === "ADMIN") {
-      // Admin sees all centers
-      // Fetch without orderBy first to avoid migration errors
-      const centers = await (prisma as any).center.findMany();
-      // Sort by displayOrder if it exists, otherwise by id
-      const sortedCenters = centers.sort((a: any, b: any) => {
-        if (a.displayOrder !== undefined && b.displayOrder !== undefined) {
-          return (a.displayOrder || 0) - (b.displayOrder || 0);
-        }
-        return a.id - b.id;
+      const centersPromise = (prisma as any).center.findMany({
+        take: 100, // Limit results to prevent slow queries
       });
-      return res.json(sortedCenters);
+      
+      try {
+        const centers = await Promise.race([centersPromise, timeoutPromise]);
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+        
+        const sortedCenters = (centers || []).sort((a: any, b: any) => {
+          if (a.displayOrder !== undefined && b.displayOrder !== undefined) {
+            return (a.displayOrder || 0) - (b.displayOrder || 0);
+          }
+          return a.id - b.id;
+        });
+        return res.json(sortedCenters);
+      } catch (raceError: any) {
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+        throw raceError;
+      }
     }
     
     if (role === "COACH") {
-      // Coach sees only their assigned centers
-      const coachCenters = await prisma.coachCenter.findMany({
+      const coachCentersPromise = prisma.coachCenter.findMany({
         where: { coachId: id },
         include: { center: true },
+        take: 50, // Limit results
       });
-      const centers = coachCenters.map(cc => cc.center).sort((a: any, b: any) => {
-        if (a.displayOrder !== undefined && b.displayOrder !== undefined) {
-          return a.displayOrder - b.displayOrder;
-        }
-        return a.id - b.id;
-      });
-      return res.json(centers);
+      
+      try {
+        const coachCenters = await Promise.race([coachCentersPromise, timeoutPromise]);
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+        
+        const centers = (coachCenters || []).map((cc: any) => cc.center).sort((a: any, b: any) => {
+          if (a.displayOrder !== undefined && b.displayOrder !== undefined) {
+            return a.displayOrder - b.displayOrder;
+          }
+          return a.id - b.id;
+        });
+        return res.json(centers);
+      } catch (raceError: any) {
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+        throw raceError;
+      }
     }
     
+    // For STUDENT, FAN, or other roles, return empty array without querying
+    if (timeoutHandle) clearTimeout(timeoutHandle);
     res.json([]);
   } catch (error: any) {
+    if (timeoutHandle) clearTimeout(timeoutHandle);
     console.error("Error fetching centres:", error);
-    res.status(500).json({ message: error.message || "Failed to fetch centres" });
+    if (error.message === "Database request timed out") {
+      return res.status(503).json({
+        message: "Database is slow or unreachable. Check backend logs and DATABASE_URL.",
+      });
+    }
+    // Don't crash the server - return error response instead
+    if (!res.headersSent) {
+      res.status(500).json({ message: error.message || "Failed to fetch centres" });
+    }
   }
 });
 

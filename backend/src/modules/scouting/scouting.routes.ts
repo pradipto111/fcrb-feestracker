@@ -6,7 +6,7 @@
  */
 
 import { Router } from "express";
-import { authRequired, requireRole } from "../../auth/auth.middleware";
+import { authRequired, requireRole, toPrismaRole } from "../../auth/auth.middleware";
 import {
   comparePlayers,
   getScoutingBoards,
@@ -152,7 +152,7 @@ router.post("/boards", async (req, res) => {
       type,
       centerId: centerId ? Number(centerId) : undefined,
       createdByUserId: userId,
-      createdByRole: role,
+      createdByRole: toPrismaRole(role),
     });
 
     res.status(201).json(board);
@@ -226,7 +226,7 @@ router.post("/boards/:boardId/players", async (req, res) => {
       boardId,
       studentId: Number(studentId),
       addedByUserId: userId,
-      addedByRole: role,
+      addedByRole: toPrismaRole(role),
       notes,
     });
 
@@ -288,7 +288,7 @@ router.post("/boards/:boardId/decisions", async (req, res) => {
       decisionState,
       notes,
       decidedByUserId: userId,
-      decidedByRole: role,
+      decidedByRole: toPrismaRole(role),
     });
 
     res.status(201).json(decision);

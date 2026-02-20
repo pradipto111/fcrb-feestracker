@@ -256,7 +256,7 @@ test.describe('RealVerse Admin - Complete Section Tests', () => {
   });
 
   test('Admin Dashboard - All sections', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/admin`);
+    await page.goto(`${baseURL || ''}/realverse/admin/students`);
     await page.waitForLoadState('networkidle');
     
     await expect(page.locator('body')).toBeVisible();
@@ -264,13 +264,6 @@ test.describe('RealVerse Admin - Complete Section Tests', () => {
     // Check for dashboard content
     const dashboard = page.locator('main, [role="main"]').first();
     await expect(dashboard).toBeVisible({ timeout: 10000 });
-  });
-
-  test('Admin Analytics - Analytics dashboards', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/admin/analytics`);
-    await page.waitForLoadState('networkidle');
-    
-    await expect(page.locator('body')).toBeVisible();
   });
 
   test('Admin Students - Student management', async ({ page, baseURL }) => {
@@ -480,8 +473,6 @@ test.describe('RealVerse Navigation - All Sections', () => {
     await loginAs(page, 'admin', baseURL);
     
     const adminRoutes = [
-      '/realverse/admin',
-      '/realverse/admin/analytics',
       '/realverse/admin/students',
       '/realverse/admin/centres',
       '/realverse/admin/merch',

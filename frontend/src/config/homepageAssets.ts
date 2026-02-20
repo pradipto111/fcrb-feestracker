@@ -1,14 +1,9 @@
 /**
  * FC Real Bengaluru Homepage Asset Mapping
  * Comprehensive asset catalog extracted from the deployed homepage (realbengaluru.com)
- * 
- * SOURCE: "Untitled document.txt" - Old deployed homepage HTML
- * All image URLs are from: https://realbengaluru.com/wp-content/uploads/
- * 
- * These are the ONLY approved visual assets for the new homepage.
+ * Uses same base URL as main assets (proxy in dev to avoid cross-origin blocking).
  */
-
-const BASE_URL = 'https://realbengaluru.com/wp-content/uploads';
+import { ASSET_BASE_URL as BASE_URL } from "./assets";
 
 export const homepageAssets = {
   // ============================================

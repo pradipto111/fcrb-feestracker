@@ -80,8 +80,7 @@ Route was missing from App.tsx routing configuration.
 - ✅ `/realverse/scouting/board` - Scouting board
 
 ### Admin Routes
-- ✅ `/realverse/admin` - Dashboard
-- ✅ `/realverse/admin/analytics` - Analytics
+- ✅ `/realverse/admin` - Redirects to `/realverse/admin/students`
 - ✅ `/realverse/admin/staff` - Staff management
 - ✅ `/realverse/admin/payments` - Payments
 - ✅ `/realverse/admin/settings` - Settings

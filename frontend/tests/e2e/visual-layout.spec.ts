@@ -229,7 +229,7 @@ test.describe('Visual Layout - RealVerse Sections', () => {
   test('Admin Dashboard - Layout consistency', async ({ page, baseURL }) => {
     await loginAs(page, 'admin', baseURL);
     
-    await page.goto(`${baseURL || ''}/realverse/admin`);
+    await page.goto(`${baseURL || ''}/realverse/admin/students`);
     await page.waitForLoadState('networkidle');
     
     const hasHorizontalScroll = await page.evaluate(() => {

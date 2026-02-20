@@ -122,7 +122,7 @@ test.describe('Admin CTAs', () => {
   });
 
   test('Quick action cards navigate correctly', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/admin`);
+    await page.goto(`${baseURL || ''}/realverse/admin/students`);
     await page.waitForLoadState('networkidle');
 
     // Wait for dashboard content
@@ -139,7 +139,7 @@ test.describe('Admin CTAs', () => {
   });
 
   test('Sidebar navigation works', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/admin`);
+    await page.goto(`${baseURL || ''}/realverse/admin/students`);
     await page.waitForLoadState('networkidle');
     
     // Click on Centres in sidebar

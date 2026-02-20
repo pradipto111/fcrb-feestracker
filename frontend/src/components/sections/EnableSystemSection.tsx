@@ -161,7 +161,7 @@ const EnableSystemSection: React.FC = () => {
       >
         <Link to="/brochure">
           <Button variant="primary" size="lg">
-            Explore Our Complete Program →
+            Explore Our Complete Programme →
           </Button>
         </Link>
       </motion.div>

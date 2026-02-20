@@ -15,8 +15,10 @@ import type { Player } from "../types/teams";
 const sectionIds = ["senior", "women", "development", "academy", "staff"] as const;
 type SectionId = (typeof sectionIds)[number];
 
+const MOBILE_BREAKPOINT = 768;
+
 const TeamsPage: React.FC = () => {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
   const [activeSection, setActiveSection] = useState<SectionId>("senior");
 
   const seniorRef = useRef<HTMLDivElement | null>(null);
@@ -27,8 +29,7 @@ const TeamsPage: React.FC = () => {
   const subnavRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    setIsMobile(window.innerWidth < 768);
-    const onResize = () => setIsMobile(window.innerWidth < 768);
+    const onResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
@@ -104,8 +105,12 @@ const TeamsPage: React.FC = () => {
 
   return (
     <div
+      data-realverse-page
       style={{
         minHeight: "100vh",
+        width: "100%",
+        maxWidth: "100vw",
+        overflowX: "hidden",
         background: colors.club.background,
         position: "relative",
       }}
@@ -129,6 +134,8 @@ const TeamsPage: React.FC = () => {
           paddingTop: isMobile ? "120px" : "140px",
           maxWidth: "1400px",
           margin: "0 auto",
+          width: "100%",
+          boxSizing: "border-box",
         }}
       >
         {/* HERO */}
@@ -177,14 +184,14 @@ const TeamsPage: React.FC = () => {
               From grassroots to elite competition — this is the RealVerse pathway. Senior squads, women’s football, development teams, and academy age groups all aligned to one
               identity.
             </p>
-            <div style={{ display: "flex", gap: spacing.md, flexWrap: "wrap" }}>
-              <Button variant="primary" size="md" onClick={() => scrollToSection("senior")} style={{ borderRadius: 999 }}>
+            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: spacing.md, flexWrap: "wrap" }}>
+              <Button variant="primary" size="md" onClick={() => scrollToSection("senior")} style={{ borderRadius: 999, width: isMobile ? "100%" : undefined, minHeight: 44 }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.sm }}>
                   <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View First Team</span>
                   <ArrowRightIcon size={18} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                 </span>
               </Button>
-              <Button variant="secondary" size="md" onClick={() => scrollToSection("academy")} style={{ borderRadius: 999 }}>
+              <Button variant="secondary" size="md" onClick={() => scrollToSection("academy")} style={{ borderRadius: 999, width: isMobile ? "100%" : undefined, minHeight: 44 }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.sm }}>
                   <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Explore Academy Pathway</span>
                   <ArrowRightIcon size={18} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />

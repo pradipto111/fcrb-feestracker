@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../db/prisma";
 import { authRequired, requireRole } from "../../auth/auth.middleware";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Helper: Get coach's center IDs
@@ -44,44 +43,63 @@ router.get(
   requireRole("ADMIN"),
   async (req, res) => {
     try {
-      const { centerId, startDate, endDate } = req.query as {
+      const { centerId, startDate, endDate, includeInactive } = req.query as {
         centerId?: string;
         startDate?: string;
         endDate?: string;
+        includeInactive?: string;
       };
 
       const dateFilter: any = {};
       if (startDate) dateFilter.gte = new Date(startDate);
       if (endDate) dateFilter.lte = new Date(endDate);
 
-      const studentFilter: any = { status: "ACTIVE" };
+      // Use same logic as dashboard/summary: default to including inactive for ADMIN
+      const shouldIncludeInactive = includeInactive !== undefined 
+        ? includeInactive === "true" 
+        : true;
+
+      const studentFilter: any = {};
+      if (!shouldIncludeInactive) {
+        studentFilter.status = "ACTIVE";
+      }
       if (centerId) studentFilter.centerId = Number(centerId);
 
-      // Total Active Players
-      const totalActivePlayers = await prisma.student.count({
+      // Total Students (all or active based on includeInactive)
+      const totalStudents = await prisma.student.count({
         where: studentFilter,
       });
 
-      // Average Attendance %
-      const sessions = await prisma.session.findMany({
-        where: {
-          ...(dateFilter.gte || dateFilter.lte
-            ? { sessionDate: dateFilter }
-            : {}),
-          ...(centerId ? { centerId: Number(centerId) } : {}),
-        },
-        include: {
-          attendance: true,
-        },
+      // Total Active Players (always count only active)
+      const activeStudentFilter: any = { status: "ACTIVE" };
+      if (centerId) activeStudentFilter.centerId = Number(centerId);
+      const totalActivePlayers = await prisma.student.count({
+        where: activeStudentFilter,
       });
 
-      let totalScheduled = 0;
-      let totalAttended = 0;
-      sessions.forEach((session) => {
-        totalScheduled += totalActivePlayers;
-        totalAttended += session.attendance.filter(
-          (a) => a.status === "PRESENT"
-        ).length;
+      // Average Attendance % - Use aggregation instead of fetching all records
+      // Limit to last 90 days to avoid loading too much data
+      const attendanceDateFilter = dateFilter.gte || dateFilter.lte 
+        ? dateFilter 
+        : { gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) }; // Last 90 days default
+      
+      const attendanceWhere: any = {
+        session: {
+          sessionDate: attendanceDateFilter,
+          ...(centerId ? { centerId: Number(centerId) } : {}),
+        },
+      };
+
+      // Use aggregation for better performance
+      const totalScheduled = await prisma.attendance.count({
+        where: attendanceWhere,
+      });
+
+      const totalAttended = await prisma.attendance.count({
+        where: {
+          ...attendanceWhere,
+          status: "PRESENT",
+        },
       });
 
       const avgAttendance =
@@ -155,7 +173,8 @@ router.get(
           : 0;
 
       res.json({
-        totalActivePlayers,
+        totalStudents, // Total students (includes inactive if includeInactive=true)
+        totalActivePlayers, // Always only active students
         avgAttendance,
         sessionsLast30Days,
         matchesSeason,
@@ -1213,8 +1232,8 @@ router.get(
             },
           });
 
-          // Attendance rate
-          const sessionsWithAttendance = await prisma.session.findMany({
+          // Attendance rate - Use aggregation instead of fetching all records
+          const sessionIds = await prisma.session.findMany({
             where: {
               centerId: centre.id,
               sessionDate: {
@@ -1222,17 +1241,28 @@ router.get(
                 lte: dateRange.to,
               },
             },
-            include: {
-              attendance: true,
-            },
+            select: { id: true },
+            take: 1000, // Limit to prevent excessive queries
           });
 
-          let totalScheduled = 0;
-          let totalPresent = 0;
-          sessionsWithAttendance.forEach((s) => {
-            totalScheduled += s.attendance.length;
-            totalPresent += s.attendance.filter((a) => a.status === "PRESENT").length;
-          });
+          const sessionIdList = sessionIds.map(s => s.id);
+          
+          const totalScheduled = sessionIdList.length > 0 
+            ? await prisma.attendance.count({
+                where: {
+                  sessionId: { in: sessionIdList },
+                },
+              })
+            : 0;
+
+          const totalPresent = sessionIdList.length > 0
+            ? await prisma.attendance.count({
+                where: {
+                  sessionId: { in: sessionIdList },
+                  status: "PRESENT",
+                },
+              })
+            : 0;
 
           const attendanceRate = totalScheduled > 0
             ? Math.round((totalPresent / totalScheduled) * 100)
@@ -1323,7 +1353,8 @@ router.get(
             },
           });
 
-          const sessions = await prisma.session.findMany({
+          // Optimize: Only get session IDs first, then count attendance
+          const sessionIds = await prisma.session.findMany({
             where: {
               centerId: centre.id,
               sessionDate: {
@@ -1331,17 +1362,28 @@ router.get(
                 lte: dateRange.to,
               },
             },
-            include: {
-              attendance: true,
-            },
+            select: { id: true },
+            take: 1000, // Limit to prevent excessive queries
           });
 
-          let totalScheduled = 0;
-          let totalPresent = 0;
-          sessions.forEach((s) => {
-            totalScheduled += s.attendance.length;
-            totalPresent += s.attendance.filter((a) => a.status === "PRESENT").length;
-          });
+          const sessionIdList = sessionIds.map(s => s.id);
+          
+          const totalScheduled = sessionIdList.length > 0
+            ? await prisma.attendance.count({
+                where: {
+                  sessionId: { in: sessionIdList },
+                },
+              })
+            : 0;
+
+          const totalPresent = sessionIdList.length > 0
+            ? await prisma.attendance.count({
+                where: {
+                  sessionId: { in: sessionIdList },
+                  status: "PRESENT",
+                },
+              })
+            : 0;
 
           const attendanceRate = totalScheduled > 0
             ? Math.round((totalPresent / totalScheduled) * 100)
@@ -1363,7 +1405,7 @@ router.get(
             centreName: centre.name,
             activePlayers,
             attendanceRate,
-            sessions: sessions.length,
+            sessions: sessionIds.length,
             revenue: revenue._sum?.amount || 0,
           };
         })

@@ -6,7 +6,7 @@ This checklist validates the **Fan Club** role end-to-end without breaking exist
 
 - [ ] **Student login** routes to `/realverse/dashboard` and existing pages work.
 - [ ] **Coach login** routes to `/realverse/coach` and existing pages work.
-- [ ] **Admin login** routes to `/realverse/admin` and existing pages work.
+- [ ] **Admin login** routes to `/realverse/admin/students` and existing pages work.
 - [ ] **Fan Club login** routes to `/realverse/fan` and shows Fan Club nav.
 - [ ] **Wrong-role guard**:
   - [ ] Fan trying `/realverse/admin/*` redirects away (no data leakage).

@@ -7,6 +7,7 @@ import { Button } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Input } from "../components/ui/Input";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
+import { CameraIcon } from "../components/icons/IconSet";
 
 const PostCreationPage: React.FC = () => {
   const { user } = useAuth();
@@ -99,7 +100,13 @@ const PostCreationPage: React.FC = () => {
   return (
     <div>
       <PageHeader
-        title="📸 Create Post"
+        tone="dark"
+        title={
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+            <CameraIcon size={24} color={colors.text.primary} />
+            Create Post
+          </span>
+        }
         subtitle={user?.role === "STUDENT" 
           ? "Share photos from sessions (requires approval)" 
           : "Share photos, videos, or links from sessions"}

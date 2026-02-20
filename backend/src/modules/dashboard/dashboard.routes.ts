@@ -1,9 +1,8 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../db/prisma";
 import { authRequired } from "../../auth/auth.middleware";
 import { getSystemDate } from "../../utils/system-date";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 async function getCoachCenterIds(coachId: number) {
@@ -15,15 +14,24 @@ async function getCoachCenterIds(coachId: number) {
 }
 
 /**
- * GET /dashboard/summary?from=YYYY-MM-DD&to=YYYY-MM-DD&centerId=optional
+ * GET /dashboard/summary?from=YYYY-MM-DD&to=YYYY-MM-DD&centerId=optional&includeInactive=optional
+ * Canonical endpoint for dashboard summary data
+ * For ADMIN: includeInactive defaults to true (shows all students)
+ * For COACH: includeInactive defaults to false (shows only active students)
  */
 router.get("/summary", authRequired, async (req, res) => {
   const { id: userId, role } = req.user!;
-  const { from, to, centerId } = req.query as {
+  const { from, to, centerId, includeInactive } = req.query as {
     from?: string;
     to?: string;
     centerId?: string;
+    includeInactive?: string;
   };
+
+  // Default includeInactive based on role: true for ADMIN, false for COACH
+  const shouldIncludeInactive = includeInactive !== undefined 
+    ? includeInactive === "true" 
+    : role === "ADMIN";
 
   const wherePayments: any = {};
   if (from) wherePayments.paymentDate = { gte: new Date(from) };
@@ -42,81 +50,102 @@ router.get("/summary", authRequired, async (req, res) => {
     wherePayments.centerId = Number(centerId);
   }
 
-  const payments = await prisma.payment.findMany({
-    where: wherePayments
+  // Use aggregate for total collected instead of fetching all payments
+  const paymentAggregate = await prisma.payment.aggregate({
+    where: wherePayments,
+    _sum: { amount: true }
   });
-
-  const totalCollected = payments.reduce((s, p) => s + p.amount, 0);
+  const totalCollected = paymentAggregate._sum.amount || 0;
 
   const studentWhere: any = {};
   if (centerFilterIds) studentWhere.centerId = { in: centerFilterIds };
   if (centerId && role === "ADMIN") studentWhere.centerId = Number(centerId);
+  
+  // Apply status filter only if includeInactive is false
+  if (!shouldIncludeInactive) {
+    studentWhere.status = "ACTIVE";
+  }
 
-  const students = await prisma.student.findMany({
-    where: studentWhere,
-    select: {
-      id: true,
-      joiningDate: true,
-      monthlyFeeAmount: true,
-      paymentFrequency: true,
-      churnedDate: true
-    }
+  // Use count for student counts instead of fetching all
+  const studentCount = await prisma.student.count({
+    where: studentWhere
+  });
+  
+  const activeStudentCount = await prisma.student.count({
+    where: { ...studentWhere, status: "ACTIVE" }
   });
 
-  const studentCount = students.length;
-
-  // Calculate total outstanding based on payment frequency and time elapsed
-  // Payment is made at the BEGINNING of the month for that month's service
+  // Only fetch students if we need to calculate outstanding
+  // For now, skip outstanding calculation if there are too many students (performance)
   let totalOutstanding = 0;
-  const now = getSystemDate(); // Use system date for calculations
+  if (studentCount <= 1000) { // Only calculate if reasonable number of students
+    const students = await prisma.student.findMany({
+      where: studentWhere,
+      select: {
+        id: true,
+        status: true,
+        joiningDate: true,
+        monthlyFeeAmount: true,
+        paymentFrequency: true,
+        churnedDate: true
+      }
+    });
+
+    // Calculate total outstanding based on payment frequency and time elapsed
+    // Payment is made at the BEGINNING of the month for that month's service
+    const now = getSystemDate(); // Use system date for calculations
+    
+    // Fetch all payments for all students in one query (much faster)
+    const studentIds = students.map(s => s.id);
+    if (studentIds.length > 0) {
+      const allStudentPayments = await prisma.payment.findMany({
+        where: { 
+          studentId: { in: studentIds }
+        }
+      });
   
-  // Fetch all payments for all students in one query (much faster)
-  const studentIds = students.map(s => s.id);
-  const allStudentPayments = await prisma.payment.findMany({
-    where: { 
-      studentId: { in: studentIds }
-    }
-  });
-  
-  // Group payments by student ID for quick lookup
-  const paymentsByStudent: { [key: number]: number } = {};
-  allStudentPayments.forEach(p => {
-    paymentsByStudent[p.studentId] = (paymentsByStudent[p.studentId] || 0) + p.amount;
-  });
-  
-  // Calculate outstanding for each student
-  for (const student of students) {
-    if (student.joiningDate) {
-      const joining = new Date(student.joiningDate);
+      // Group payments by student ID for quick lookup
+      const paymentsByStudent: { [key: number]: number } = {};
+      allStudentPayments.forEach(p => {
+        paymentsByStudent[p.studentId] = (paymentsByStudent[p.studentId] || 0) + p.amount;
+      });
       
-      // If student is churned, only calculate fees up to churn date
-      const endDate = (student as any).churnedDate ? new Date((student as any).churnedDate) : now;
-      
-      // Calculate months including the churn month (or current month if not churned)
-      // Payment is due at the beginning of each month
-      const monthsElapsed = Math.max(
-        1, // At least 1 month (the joining month itself)
-        (endDate.getFullYear() - joining.getFullYear()) * 12 + 
-        (endDate.getMonth() - joining.getMonth()) + 1 // +1 to include churn month or current month
-      );
-      
-      // Calculate how many COMPLETE payment cycles have passed up to churn date
-      // Use Math.floor to only count complete cycles
-      const paymentFrequency = student.paymentFrequency || 1;
-      const cyclesCompleted = Math.floor(monthsElapsed / paymentFrequency);
-      const expectedAmount = cyclesCompleted * (student.monthlyFeeAmount * paymentFrequency);
-      
-      // Get student's total paid from the pre-fetched data
-      const studentTotalPaid = paymentsByStudent[student.id] || 0;
-      
-      const studentOutstanding = Math.max(0, expectedAmount - studentTotalPaid);
-      totalOutstanding += studentOutstanding;
+      // Calculate outstanding for each student
+      for (const student of students) {
+        if (student.joiningDate) {
+          const joining = new Date(student.joiningDate);
+          
+          // If student is churned, only calculate fees up to churn date
+          const endDate = (student as any).churnedDate ? new Date((student as any).churnedDate) : now;
+          
+          // Calculate months including the churn month (or current month if not churned)
+          // Payment is due at the beginning of each month
+          const monthsElapsed = Math.max(
+            1, // At least 1 month (the joining month itself)
+            (endDate.getFullYear() - joining.getFullYear()) * 12 + 
+            (endDate.getMonth() - joining.getMonth()) + 1 // +1 to include churn month or current month
+          );
+          
+          // Calculate how many COMPLETE payment cycles have passed up to churn date
+          // Use Math.floor to only count complete cycles
+          const paymentFrequency = student.paymentFrequency || 1;
+          const cyclesCompleted = Math.floor(monthsElapsed / paymentFrequency);
+          const expectedAmount = cyclesCompleted * (student.monthlyFeeAmount * paymentFrequency);
+          
+          // Get student's total paid from the pre-fetched data
+          const studentTotalPaid = paymentsByStudent[student.id] || 0;
+          
+          const studentOutstanding = Math.max(0, expectedAmount - studentTotalPaid);
+          totalOutstanding += studentOutstanding;
+        }
+      }
     }
   }
 
   res.json({
     totalCollected,
     studentCount,
+    activeStudentCount,
     approxOutstanding: totalOutstanding
   });
 });
@@ -132,6 +161,8 @@ router.get("/revenue-collections", authRequired, async (req, res) => {
     centerId?: string;
     paymentMode?: string;
   };
+
+  console.log(`[REVENUE-DEBUG] Revenue collections request:`, { months, centerId, paymentMode, role, userId });
 
   // Parse number of months (default 12, max 24)
   const numMonths = Math.min(Math.max(parseInt(months || "12"), 1), 24);
@@ -155,38 +186,99 @@ router.get("/revenue-collections", authRequired, async (req, res) => {
     wherePayments.paymentMode = paymentMode;
   }
 
-  // Get all payments
-  const payments = await prisma.payment.findMany({
-    where: wherePayments,
-    orderBy: { paymentDate: "asc" }
-  });
-
-  // Group payments by payment date month (simple sum)
-  const monthlyData: { [key: string]: number } = {};
-  
-  payments.forEach(payment => {
-    const date = new Date(payment.paymentDate);
-    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    monthlyData[monthKey] = (monthlyData[monthKey] || 0) + payment.amount;
-  });
-
-  // Get last N months from SYSTEM DATE
+  // Calculate date range for the last N months from SYSTEM DATE
+  // For 12 months: include current month + previous 11 months
   const now = getSystemDate();
-  const monthsArray = [];
-  
-  for (let i = numMonths - 1; i >= 0; i--) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  // Start from the first day of the month that is (numMonths-1) months ago
+  const startDate = new Date(now.getFullYear(), now.getMonth() - (numMonths - 1), 1);
+  startDate.setHours(0, 0, 0, 0);
+  // End at the last moment of the current month
+  const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+  // Add date filter to payment query
+  wherePayments.paymentDate = {
+    gte: startDate,
+    lte: endDate
+  };
+
+  console.log(`[REVENUE-DEBUG] Payment where clause:`, JSON.stringify(wherePayments));
+  console.log(`[REVENUE-DEBUG] Date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
+  console.log(`[REVENUE-DEBUG] Requested ${numMonths} months, current date: ${now.toISOString()}`);
+
+  // OPTIMIZED: Use aggregation to get monthly totals instead of fetching all payments
+  // This prevents loading thousands of records into memory
+  try {
+    // First, get a count to see if we have data
+    const paymentCount = await prisma.payment.count({ where: wherePayments });
+    console.log(`[REVENUE-DEBUG] Found ${paymentCount} payments in date range`);
     
-    monthsArray.push({
-      month: monthName,
-      monthKey: monthKey,
-      amount: monthlyData[monthKey] || 0
+    if (paymentCount === 0) {
+      // Return empty months array
+      const monthsArray = [];
+      for (let i = numMonths - 1; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        monthsArray.push({ month: monthName, monthKey: monthKey, amount: 0 });
+      }
+      return res.json(monthsArray);
+    }
+
+    // Get payments with safety limit to prevent loading too many records
+    const payments = await prisma.payment.findMany({
+      where: wherePayments,
+      select: {
+        paymentDate: true,
+        amount: true
+      },
+      orderBy: { paymentDate: "asc" },
+      take: 10000, // Safety limit to prevent timeouts
+    });
+
+    if (payments.length > 0) {
+      const firstPayment = payments[0];
+      const lastPayment = payments[payments.length - 1];
+      console.log(`[REVENUE-DEBUG] Payment date range: ${firstPayment.paymentDate.toISOString()} to ${lastPayment.paymentDate.toISOString()}`);
+      console.log(`[REVENUE-DEBUG] Total payment amount: ${payments.reduce((sum, p) => sum + p.amount, 0)}`);
+    }
+
+    // Group payments by payment date month (simple sum)
+    const monthlyData: { [key: string]: number } = {};
+    
+    payments.forEach(payment => {
+      const date = new Date(payment.paymentDate);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthlyData[monthKey] = (monthlyData[monthKey] || 0) + payment.amount;
+    });
+
+    console.log(`[REVENUE-DEBUG] Monthly data grouped:`, Object.keys(monthlyData).length, 'months');
+
+    // Get last N months from SYSTEM DATE
+    const monthsArray = [];
+    
+    for (let i = numMonths - 1; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      
+      monthsArray.push({
+        month: monthName,
+        monthKey: monthKey,
+        amount: monthlyData[monthKey] || 0
+      });
+    }
+
+    const totalAmount = monthsArray.reduce((sum, m) => sum + m.amount, 0);
+    console.log(`[REVENUE-DEBUG] Returning ${monthsArray.length} months, total amount: ${totalAmount}`);
+
+    res.json(monthsArray);
+  } catch (error: any) {
+    console.error(`[REVENUE-DEBUG] Error fetching revenue collections:`, error);
+    res.status(500).json({ 
+      message: error.message || "Failed to fetch revenue collections",
+      error: "Database query failed or timed out"
     });
   }
-
-  res.json(monthsArray);
 });
 
 /**

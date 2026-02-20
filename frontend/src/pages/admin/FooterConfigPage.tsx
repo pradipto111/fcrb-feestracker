@@ -71,12 +71,12 @@ const FooterConfigPage: React.FC = () => {
         ],
       },
       {
-        sectionTitle: "Programs",
+        sectionTitle: "Programmes",
         displayOrder: 1,
         isActive: true,
         links: [
-          { label: "Programs Overview", url: "/programs", displayOrder: 0, isActive: true },
-          { label: "Shop", url: "/shop", displayOrder: 1, isActive: true },
+          { label: "Programmes Overview", url: "/programs", displayOrder: 0, isActive: true },
+          // { label: "Shop", url: "/shop", displayOrder: 1, isActive: true }, // Disabled in UI, backend code preserved
         ],
       },
     ];

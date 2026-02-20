@@ -25,10 +25,17 @@
 
 html {
   scroll-behavior: smooth;
-  /* Ensure no horizontal scroll */
+  /* Ensure no horizontal scroll - non-negotiable for responsive */
   overflow-x: hidden;
   width: 100%;
+  max-width: 100vw;
   position: relative;
+}
+
+#root {
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
 }
 
 /* Global UX Fixes - Laws of UX Compliance */
@@ -69,6 +76,7 @@ body {
   /* Ensure no horizontal scroll */
   overflow-x: hidden;
   width: 100%;
+  max-width: 100vw;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -404,6 +412,18 @@ img[src*="fcrb-logo"] {
   [style*="display: grid"][style*="repeat(auto-fit"] {
     grid-template-columns: repeat(2, 1fr) !important;
   }
+}
+
+/* RealVerse / public pages: prevent horizontal overflow and clip absolute elements */
+[data-realverse-page],
+main {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Ensure full-bleed fixed/absolute layers don't exceed viewport width */
+body > div[style*="position: relative"] > div[style*="position: absolute"] {
+  max-width: 100%;
 }
 
 /* Accessibility - High Contrast Mode Support */

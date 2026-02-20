@@ -6,7 +6,7 @@
  */
 
 import { Router } from "express";
-import { authRequired, requireRole } from "../../auth/auth.middleware";
+import { authRequired, requireRole, toPrismaRole } from "../../auth/auth.middleware";
 import {
   createTrialEvent,
   getTrialEvents,
@@ -102,7 +102,7 @@ router.post("/events", async (req, res) => {
       notes,
       staffIds: staffIds ? staffIds.map(Number) : undefined,
       createdByUserId: userId,
-      createdByRole: role,
+      createdByRole: toPrismaRole(role),
     });
 
     res.status(201).json(event);

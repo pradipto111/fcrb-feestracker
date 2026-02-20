@@ -145,11 +145,17 @@ const StudentWellnessReportsPage: React.FC = () => {
                   <Button
                     variant="primary"
                     size="md"
-                    onClick={() => navigate(`/realverse/parent-reports/${report.id}`)}
-                    style={{ background: colors.accent.main, color: colors.text.onAccent }}
+                    onClick={() => {}}
+                    disabled={true}
+                    style={{ 
+                      background: colors.text.muted, 
+                      color: colors.text.onAccent,
+                      cursor: "not-allowed",
+                      opacity: 0.6
+                    }}
                   >
                     <span style={{ display: "inline-flex", alignItems: "center", gap: spacing.xs }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>View Full Report</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Coming soon</span>
                       <ArrowRightIcon size={14} color={colors.text.onAccent} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                     </span>
                   </Button>

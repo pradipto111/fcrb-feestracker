@@ -255,7 +255,7 @@ const FeedPage: React.FC = () => {
               variants={headingVariants}
             >
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
-                <CameraIcon size={32} />
+                <CameraIcon size={32} color={colors.text.onPrimary} />
                 Feed
               </span>
             </motion.h1>
@@ -272,7 +272,7 @@ const FeedPage: React.FC = () => {
             </motion.p>
           </div>
           <motion.div variants={headingVariants}>
-            <Button variant="primary" onClick={() => navigate("/feed/create")} style={{ background: colors.accent.main, color: colors.text.onAccent }}>
+            <Button variant="primary" size="lg" onClick={() => navigate("/feed/create")} style={{ background: colors.accent.main, color: colors.text.onAccent }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
                 <PlusIcon size={16} color={colors.text.onAccent} />
                 <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Create Post</span>
@@ -283,15 +283,16 @@ const FeedPage: React.FC = () => {
       </motion.section>
 
       <PageHeader
+        tone="dark"
         title={
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
-            <CameraIcon size={24} />
+            <CameraIcon size={24} color={colors.text.primary} />
             Feed
           </span>
         }
         subtitle="View posts, photos, and videos from sessions"
         actions={
-          <Button variant="primary" onClick={() => navigate("/feed/create")} style={{ display: "none" }}>
+          <Button variant="primary" size="lg" onClick={() => navigate("/feed/create")} style={{ display: "none", background: colors.accent.main, color: colors.text.onAccent }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
               <PlusIcon size={16} color={colors.text.onAccent} />
               <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1 }}>Create Post</span>

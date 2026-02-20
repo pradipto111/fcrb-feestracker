@@ -1,9 +1,8 @@
 import { Router } from "express";
-import { PrismaClient, ClubEventType, ClubEventStatus } from "@prisma/client";
+import { ClubEventType, ClubEventStatus } from "@prisma/client";
+import prisma from "../../db/prisma";
 import { authRequired, requireRole } from "../../auth/auth.middleware";
-import { seedDemoClubEvents } from "./seed-demo-events";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // PUBLIC: Get events for website (no auth required)
@@ -115,7 +114,10 @@ function parseTypeParam(v: any): ClubEventType[] | null {
 }
 
 // PUBLIC READ: GET /events?from=YYYY-MM-DD&to=YYYY-MM-DD&type=...
+const DB_QUERY_TIMEOUT_MS = 12000; // Fail fast so client gets 503 instead of hanging
+
 router.get("/", async (req, res) => {
+  let timeoutHandle: NodeJS.Timeout | null = null;
   try {
     const from = parseDateParam(req.query.from) ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     const to = parseDateParam(req.query.to) ?? new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59, 999);
@@ -126,9 +128,16 @@ router.get("/", async (req, res) => {
     };
     if (types) where.type = { in: types };
 
-    const events = await prisma.clubEvent.findMany({
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutHandle = setTimeout(() => {
+        reject(new Error("Database request timed out"));
+      }, DB_QUERY_TIMEOUT_MS);
+    });
+
+    const eventsPromise = prisma.clubEvent.findMany({
       where,
       orderBy: { startAt: "asc" },
+      take: 500, // Limit results to prevent slow queries
       include: {
         center: {
           select: {
@@ -151,17 +160,32 @@ router.get("/", async (req, res) => {
       },
     });
 
-    res.json(events);
+    try {
+      const events = await Promise.race([eventsPromise, timeoutPromise]);
+      if (timeoutHandle) clearTimeout(timeoutHandle);
+      res.json(events || []);
+    } catch (raceError: any) {
+      if (timeoutHandle) clearTimeout(timeoutHandle);
+      throw raceError;
+    }
   } catch (error: any) {
+    if (timeoutHandle) clearTimeout(timeoutHandle);
     console.error("Error fetching events:", error);
+    if (error.message === "Database request timed out") {
+      return res.status(503).json({
+        message: "Database is slow or unreachable. Check backend logs and DATABASE_URL.",
+      });
+    }
     const errorMessage = error?.message || "Failed to fetch events";
     const errorCode = error?.code || "UNKNOWN";
     console.error("Error details:", { message: errorMessage, code: errorCode, stack: error?.stack });
-    res.status(500).json({ 
-      message: "Failed to fetch events",
-      error: errorMessage,
-      code: errorCode
-    });
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        message: "Failed to fetch events",
+        error: errorMessage,
+        code: errorCode
+      });
+    }
   }
 });
 
@@ -432,17 +456,6 @@ router.delete("/:id", authRequired, requireRole("ADMIN", "COACH"), async (req, r
   } catch (error: any) {
     console.error("Error deleting event:", error);
     res.status(500).json({ message: "Failed to delete event" });
-  }
-});
-
-// ADMIN ONLY: Seed demo fixtures/events (idempotent)
-router.post("/seed", authRequired, requireRole("ADMIN"), async (req, res) => {
-  try {
-    const { count } = await seedDemoClubEvents({ createdByUserId: req.user!.id });
-    res.json({ message: "Demo fixtures created", count });
-  } catch (error: any) {
-    console.error("Error seeding demo events:", error);
-    res.status(500).json({ message: "Failed to seed demo fixtures" });
   }
 });
 

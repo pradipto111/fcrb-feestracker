@@ -4,9 +4,8 @@
  * Service functions for player comparison and scouting board management
  */
 
-import { PrismaClient, Role, ScoutingBoardType, ScoutingDecisionState, PlayerPosition } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Role, ScoutingBoardType, ScoutingDecisionState, PlayerPosition } from '@prisma/client';
+import prisma from '../../db/prisma';
 
 // ============================================
 // TYPES

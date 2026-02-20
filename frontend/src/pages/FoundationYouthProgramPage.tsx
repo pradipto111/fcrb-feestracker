@@ -7,7 +7,7 @@ const FoundationYouthProgramPage: React.FC = () => {
   return (
     <ProgramPageTemplate
       program={{
-        name: "Foundation & Youth Development Program",
+        name: "Foundation & Youth Development Programme",
         acronym: "FYDP",
         positioning: "Building intelligent footballers before building competitors.",
         who: "U9, U11, U13. Gender-neutral. This program welcomes young players at the foundation stage, focusing on technical and tactical development before competitive pressure.",

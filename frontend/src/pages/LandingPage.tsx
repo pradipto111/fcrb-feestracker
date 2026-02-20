@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion, useInView, AnimatePresence, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import PublicHeader from "../components/PublicHeader";
-import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { colors, typography, spacing, borderRadius, shadows, ctaDimensions } from "../theme/design-tokens";
 import { glass } from "../theme/glass";
 import { heroCTAStyles, heroTypography, programCardOverlay } from "../theme/hero-design-patterns";
 import { Card } from "../components/ui/Card";
@@ -13,7 +13,6 @@ import {
   FacebookIcon,
   InstagramIcon,
   TikTokIcon,
-  TwitterIcon,
   YouTubeIcon,
   PhoneIcon,
   EmailIcon,
@@ -66,18 +65,6 @@ interface PublicFixture {
   center: string;
   score?: string | null;
 }
-
-const DUMMY_LAST_RESULT: PublicFixture = {
-  id: 0,
-  opponent: "Bangalore Rangers",
-  matchDate: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-  matchTime: "18:00",
-  venue: "3Lok Football Fitness Hub",
-  matchType: "League",
-  status: "COMPLETED",
-  center: "FCRB",
-  score: "3-1",
-};
 
 type CalendarEvent = {
   id: string;
@@ -1842,14 +1829,14 @@ export const TrophyCabinet: React.FC<{
   );
 };
 
-// Programs Preview Tabs Component for Homepage
+// Programmes Preview Tabs Component for Homepage
 const ProgramsPreviewTabs: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
   const [activeTab, setActiveTab] = useState("epp");
 
   const programs = [
     {
       id: "epp",
-      name: "Elite Pathway Program",
+      name: "Elite Pathway Programme",
       acronym: "EPP",
       positioning: "For players targeting top-tier football in India and abroad.",
       outcomes: [
@@ -1860,7 +1847,7 @@ const ProgramsPreviewTabs: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     },
     {
       id: "scp",
-      name: "Senior Competitive Program",
+      name: "Senior Competitive Programme",
       acronym: "SCP",
       positioning: "The competitive bridge between youth and elite football.",
       outcomes: [
@@ -1882,7 +1869,7 @@ const ProgramsPreviewTabs: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     },
     {
       id: "fydp",
-      name: "Foundation & Youth Development Program",
+      name: "Foundation & Youth Development Programme",
       acronym: "FYDP",
       positioning: "Building intelligent footballers before building competitors.",
       outcomes: [
@@ -1974,7 +1961,7 @@ const ProgramsPreviewTabs: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         })}
       </div>
 
-      {/* Active Program Preview */}
+      {/* Active Programme Preview */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -2070,7 +2057,7 @@ const ProgramsPreviewTabs: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                     fontSize: typography.fontSize.base,
                     fontWeight: typography.fontWeight.semibold,
                   }}>
-                    Explore Program
+                    Explore Programme
                   </span>
                   <ArrowRightIcon size={18} color={colors.accent.main} />
                 </motion.div>
@@ -2610,7 +2597,8 @@ const LandingPage: React.FC = () => {
   const [centres, setCentres] = useState<Centre[]>([]);
   const [centresLoading, setCentresLoading] = useState(true);
   const [footerSections, setFooterSections] = useState<any[]>([]);
-  const [isMobile, setIsMobile] = useState(false);
+  const MOBILE_BREAKPOINT = 768;
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
   // NOTE: Trophy Cabinet is intentionally NOT rendered in the Hero.
   const heroRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -2649,7 +2637,7 @@ const LandingPage: React.FC = () => {
 
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -2691,7 +2679,7 @@ const LandingPage: React.FC = () => {
 
   const latestResult = useMemo<PublicFixture | null>(() => {
     if (fixturesLoading) return null;
-    return (recentResults && recentResults.length > 0 ? recentResults[0] : DUMMY_LAST_RESULT);
+    return (recentResults && recentResults.length > 0 ? recentResults[0] : null);
   }, [fixturesLoading, recentResults]);
 
   // Handle navigation to section when navigating from other pages
@@ -2779,6 +2767,7 @@ const LandingPage: React.FC = () => {
 
   return (
     <div
+      data-realverse-page
       style={{
         position: "relative",
         background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,
@@ -2823,8 +2812,10 @@ const LandingPage: React.FC = () => {
           minHeight: 0,
           paddingTop: 0,
           position: "relative",
-          overflow: "visible",
+          overflowX: "hidden",
           overflowY: "visible",
+          width: "100%",
+          maxWidth: "100vw",
         }}
       >
       {/* 1. HERO SECTION - STUNNING INTERACTIVE EXPERIENCE */}
@@ -3153,187 +3144,6 @@ const LandingPage: React.FC = () => {
               It’s more than a club, coaching meets community, and data supports development. Join the journey to the top of Indian football
             </motion.p>
 
-            {/* Primary CTA row */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.85, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-              style={{ 
-                display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-                gap: spacing.md, 
-                alignItems: "stretch",
-                maxWidth: isMobile ? "100%" : "680px",
-              }}
-            >
-              {/* Football-First CTA Buttons - Solid, Bold, Sports Badge Style */}
-              <Link
-                to="/shop"
-                className="hero-link"
-                style={{ textDecoration: "none", width: "100%" }}
-              >
-                <motion.div
-                  whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
-                  whileTap={{ scale: 0.98 }}
-                  style={{
-                    padding: `${spacing.lg} ${spacing.xl}`,
-                    borderRadius: borderRadius.button,
-                    background: colors.primary.main, // Royal blue - solid club color
-                    border: "none",
-                    boxShadow: shadows.button,
-                    display: "flex", 
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: spacing.md,
-                    cursor: "pointer",
-                    width: "100%",
-                    minHeight: 72, // Increased tap area
-                    transition: "all 0.2s ease",
-                  }}
-                >
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
-                    <span style={{ ...typography.body, color: colors.text.onPrimary, fontWeight: typography.fontWeight.bold, fontSize: typography.fontSize.lg }}>
-                      Support the Club
-                    </span>
-                    <span style={{ ...typography.caption, color: "rgba(255,255,255,0.85)", fontSize: typography.fontSize.sm }}>
-                      Shop official FC Real Bengaluru merchandise
-                    </span>
-                  </div>
-                  <ArrowRightIcon size={20} color={colors.text.onPrimary} style={{ flexShrink: 0 }} />
-                </motion.div>
-              </Link>
-
-              <Link to="/programs" className="hero-link" style={{ textDecoration: "none", width: "100%" }}>
-                <motion.div
-                  whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
-                  whileTap={{ scale: 0.98 }}
-                    style={{
-                    padding: `${spacing.lg} ${spacing.xl}`,
-                    borderRadius: borderRadius.button,
-                    background: colors.accent.main, // FC Real Bengaluru gold - solid club color
-                    border: "none",
-                    boxShadow: shadows.button,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: spacing.md,
-                    cursor: "pointer",
-                    width: "100%",
-                    minHeight: 72, // Increased tap area
-                    transition: "all 0.2s ease",
-                  }}
-                >
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
-                    <span style={{ ...typography.body, color: colors.text.onAccent, fontWeight: typography.fontWeight.bold, fontSize: typography.fontSize.lg }}>
-                      Train With Us
-                    </span>
-                    <span style={{ ...typography.caption, color: "rgba(2,12,27,0.85)", fontSize: typography.fontSize.sm }}>
-                      Explore competitive coaching pathways
-                    </span>
-                  </div>
-                  <motion.div
-                    animate={{ x: [0, 3, 0] }}
-                    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-                    style={{ display: "flex", alignItems: "center", flexShrink: 0 }}
-                  >
-                    <ArrowRightIcon size={20} color={colors.text.onAccent} />
-                  </motion.div>
-                </motion.div>
-              </Link>
-                </motion.div>
-
-            {/* Join the Journey CTA - Football Badge Style */}
-            <a
-              href="#content-stream"
-              className="hero-link"
-              onClick={(e) => {
-                e.preventDefault();
-                const element = document.getElementById("content-stream");
-                if (element) {
-                  element.scrollIntoView({ behavior: "smooth", block: "start" });
-                  setTimeout(() => {
-                    const fanClubSection = document.querySelector('#fan-club-teaser') as HTMLElement | null;
-                    if (fanClubSection) fanClubSection.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }, 100);
-                }
-              }}
-              style={{ textDecoration: "none", display: "block" }}
-              aria-label="Join the Journey — discover the Fanclub for exclusive gifts and VIP access"
-            >
-                <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.05, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
-                whileTap={{ scale: 0.99 }}
-                    style={{
-                  marginTop: spacing.md,
-                  width: "100%",
-                  maxWidth: isMobile ? "100%" : "680px",
-                  padding: `${spacing.lg} ${spacing.xl}`,
-                  borderRadius: borderRadius.button,
-                  background: colors.surface.card, // Dark card background
-                  border: `2px solid ${colors.accent.main}`, // Gold border - sports badge feel
-                  boxShadow: shadows.button,
-                  position: "relative",
-                  overflow: "hidden",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: spacing.md }}>
-                  <div
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: "50%",
-                      background: colors.accent.main, // Gold background
-                      border: `2px solid ${colors.accent.main}`,
-                      display: "flex", 
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: shadows.sm,
-                      flexShrink: 0,
-                    }}
-                  >
-                    <StarIcon size={20} style={{ color: colors.text.onAccent }} />
-                  </div>
-
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        ...typography.body,
-                        color: colors.text.primary,
-                        fontWeight: typography.fontWeight.bold,
-                      fontSize: typography.fontSize.lg,
-                        lineHeight: 1.25,
-                        marginBottom: 4,
-                      }}
-                    >
-                      Join the Journey
-                    </div>
-                    <div
-                      style={{
-                        ...typography.body,
-                        color: colors.text.secondary,
-                        fontSize: typography.fontSize.sm,
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      Fanclub benefits: <span style={{ color: colors.accent.main, fontWeight: typography.fontWeight.semibold }}>exclusive gifts</span>,{" "}
-                      <span style={{ color: colors.accent.main, fontWeight: typography.fontWeight.semibold }}>VIP access</span>, member-only drops
-                    </div>
-                  </div>
-
-                  <motion.div
-                    animate={{ x: [0, 4, 0] }}
-                    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-                    style={{ display: "flex", alignItems: "center", flexShrink: 0 }}
-                  >
-                    <ArrowRightIcon size={20} color={colors.accent.main} />
-                </motion.div>
-                </div>
-            </motion.div>
-            </a>
           </motion.div>
 
           {/* RIGHT: Interactive CTA cards (removed per request) */}
@@ -3955,7 +3765,7 @@ const LandingPage: React.FC = () => {
             left: 0,
             width: "100vw",
             height: "100vh",
-            backgroundImage: "url('/assets/20250927-DSC_0446.jpg')",
+            backgroundImage: "url('/assets/IMG_4908.jpg')",
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
@@ -4075,7 +3885,7 @@ const LandingPage: React.FC = () => {
         </div>
       </InfinitySection>
 
-      {/* Scroll Indicator - Transition between Our Story and Integrated Program */}
+      {/* Scroll Indicator - Transition between Our Story and Integrated Programme */}
       <ScrollIndicator delay={0.2} />
 
         {/* 5. INTEGRATED FOOTBALL PROGRAM - Teams, Tech, Data & Training */}
@@ -4220,14 +4030,14 @@ const LandingPage: React.FC = () => {
                 </div>
                 {/* (removed per request) */}
                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: spacing.md }}>
-                  {/* Senior Leagues & Programs */}
+                  {/* Senior Leagues & Programmes */}
                   {[
                     {
                       level: "KSFA Super Division League",
                       desc: "First Team - Top Tier Competition",
                       highlighted: true,
                       importance: "highest",
-                      program: "Elite Pathway Program (EPP) + Senior Competitive Program (SCP)",
+                      program: "Elite Pathway Programme (EPP) + Senior Competitive Programme (SCP)",
                       programDesc: "Promotions via EPP and SCP into Super Division.",
                     isChild: false,
                     },
@@ -4245,7 +4055,7 @@ const LandingPage: React.FC = () => {
                       desc: "Development Competitive",
                       highlighted: false,
                       importance: "medium",
-                      program: "Senior Competitive Program (SCP)",
+                      program: "Senior Competitive Programme (SCP)",
                       programDesc: "SCP develops and rotates players for KSFA C & D Divisions.",
                     isChild: false,
                     },
@@ -4254,7 +4064,7 @@ const LandingPage: React.FC = () => {
                       desc: "Entry-level Competitive",
                       highlighted: false,
                       importance: "medium",
-                      program: "Senior Competitive Program (SCP)",
+                      program: "Senior Competitive Programme (SCP)",
                       programDesc: "SCP supports players not yet selected for higher divisions.",
                     isChild: false,
                     },
@@ -4423,7 +4233,7 @@ const LandingPage: React.FC = () => {
                            lineHeight: 1.5,
               }}
             >
-                         Grassroots Development Programs
+                         Grassroots Development Programmes
           </div>
                      </div>
                    </motion.div>
@@ -4609,7 +4419,7 @@ const LandingPage: React.FC = () => {
                     label: "Players Promoted",
                     subLabel: "To Super Division",
                   description: "",
-                  program: "Elite Pathway Program (EPP) + Senior Competitive Program (SCP)",
+                  program: "Elite Pathway Programme (EPP) + Senior Competitive Programme (SCP)",
                   programDesc: "Promotions via EPP and SCP into Super Division.",
                     gradient: `linear-gradient(135deg, rgba(255, 169, 0, 0.32) 0%, rgba(255, 194, 51, 0.18) 50%, rgba(4, 61, 208, 0.12) 100%)`,
                     glowColor: colors.accent.main,
@@ -4639,7 +4449,7 @@ const LandingPage: React.FC = () => {
                     label: "Players Competing",
                     subLabel: "In KSFA C & D Division",
                   description: "",
-                  program: "Senior Competitive Program (SCP)",
+                  program: "Senior Competitive Programme (SCP)",
                   programDesc: "SCP develops and rotates players for KSFA C & D Divisions.",
                     gradient: `linear-gradient(135deg, rgba(4, 61, 208, 0.3) 0%, rgba(45, 95, 232, 0.2) 100%)`,
                     glowColor: colors.primary.light,
@@ -4654,7 +4464,7 @@ const LandingPage: React.FC = () => {
                     label: "Youth Players",
                     subLabel: "In Youth Leagues",
                   description: "",
-                  program: "Foundation & Youth Development Program (FYDP)",
+                  program: "Foundation & Youth Development Programme (FYDP)",
                   programDesc: "FYDP develops U9–U13 talent for youth competitions.",
                     gradient: `linear-gradient(135deg, rgba(42, 153, 107, 0.26) 0%, rgba(77, 184, 138, 0.14) 55%, rgba(0, 224, 255, 0.12) 100%)`,
                     glowColor: colors.success.main,
@@ -4928,11 +4738,11 @@ const LandingPage: React.FC = () => {
                               // Conversion-driven labels (destinations unchanged)
                               // - Parents: clarity + age band + outcomes
                               // - Competitive athletes: pathway + progression framing (no promises)
-                              if (stat.program.includes("Elite Pathway Program (EPP)")) {
+                              if (stat.program.includes("Elite Pathway Programme (EPP)")) {
                                 return {
                                   to: "/programs/epp",
                                   label: "See Elite Pathway Details",
-                                  ariaLabel: "See Elite Pathway Program details",
+                                  ariaLabel: "See Elite Pathway Programme details",
                                 };
                               }
                               if (stat.program.includes("WPP")) {
@@ -4942,21 +4752,21 @@ const LandingPage: React.FC = () => {
                                   ariaLabel: "See Women’s Performance Pathway details",
                                 };
                               }
-                              if (stat.program.includes("Senior Competitive Program (SCP)")) {
+                              if (stat.program.includes("Senior Competitive Programme (SCP)")) {
                                 return {
                                   to: "/programs/scp",
                                   label: "See Competitive Squad Pathway",
-                                  ariaLabel: "See Senior Competitive Program pathway details",
+                                  ariaLabel: "See Senior Competitive Programme pathway details",
                                 };
                               }
                               if (
-                                stat.program.includes("Foundation & Youth Development Program (FYDP)") ||
+                                stat.program.includes("Foundation & Youth Development Programme (FYDP)") ||
                                 stat.program.includes("FYDP")
                               ) {
                                 return {
                                   to: "/programs/fydp",
-                                  label: "Parents: See Youth Program (U9–U13)",
-                                  ariaLabel: "For parents: see Foundation and Youth Development Program details for U9 to U13",
+                                  label: "Parents: See Youth Programme (U9–U13)",
+                                  ariaLabel: "For parents: see Foundation and Youth Development Programme details for U9 to U13",
                                 };
                               }
                               return null;
@@ -5013,7 +4823,7 @@ const LandingPage: React.FC = () => {
                                 whileTap={cta ? { scale: 0.98 } : undefined}
                               >
                                 <div style={{ position: "relative", zIndex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: spacing.xs }}>
-                                  <span style={{ ...textStyle, display: "inline-flex", alignItems: "center", lineHeight: 1 }}>{cta ? cta.label : "Explore Program (coming soon)"}</span>
+                                  <span style={{ ...textStyle, display: "inline-flex", alignItems: "center", lineHeight: 1 }}>{cta ? cta.label : "Explore Programme (coming soon)"}</span>
                                   <ArrowRightIcon size={16} style={{ color: unifiedAccent, display: "flex", alignItems: "center", flexShrink: 0 }} />
                                 </div>
                               </motion.div>
@@ -5072,7 +4882,7 @@ const LandingPage: React.FC = () => {
           overflow: "hidden",
         }}
       >
-              {/* shared texture so it feels like the same “Our Football Program” world */}
+              {/* shared texture so it feels like the same "Our Football Programme" world */}
         <div
                 aria-hidden="true"
           style={{
@@ -5346,7 +5156,7 @@ const LandingPage: React.FC = () => {
 
                       <div style={{ marginTop: "auto" }}>
                         <Link to="/brochure" style={{ textDecoration: "none" }}>
-                          <Button variant="secondary" size="md" style={{ width: "100%" }}>
+                          <Button variant="secondary" size="lg" style={{ width: "100%" }}>
                       Explore Coaching Pathways →
                 </Button>
             </Link>
@@ -5466,7 +5276,7 @@ const LandingPage: React.FC = () => {
 
                       <div style={{ marginTop: "auto" }}>
                         <Link to="/realverse/experience" style={{ textDecoration: "none" }}>
-                          <Button variant="primary" size="md" style={{ width: "100%" }}>
+                          <Button variant="primary" size="lg" style={{ width: "100%" }}>
                             Experience RealVerse →
                           </Button>
                         </Link>
@@ -5486,7 +5296,7 @@ const LandingPage: React.FC = () => {
       {/* End Post-Hero Story Weave Wrapper */}
       </div>
 
-      {/* Scroll Indicator - Transition between Integrated Program and Fan Club */}
+      {/* Scroll Indicator - Transition between Integrated Programme and Fan Club */}
       <ScrollIndicator delay={0.2} />
 
       {/* Fan Club Ecosystem × Sponsor Rewards × Pricing × Sales Enablement */}
@@ -5564,6 +5374,23 @@ const LandingPage: React.FC = () => {
           />
           
           <div style={{ position: "relative", zIndex: 3 }}>
+            {/* Coming Soon ribbon for Fan Club section */}
+            <div
+              style={{
+                width: "100%",
+                padding: `${spacing.sm} ${spacing.xl}`,
+                background: colors.warning.soft,
+                borderBottom: `1px solid ${colors.warning.main}40`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: spacing.sm,
+              }}
+            >
+              <span style={{ ...typography.caption, color: colors.warning.main, fontWeight: typography.fontWeight.bold, letterSpacing: "0.12em" }}>FAN CLUB</span>
+              <span style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.semibold }}>Coming Soon</span>
+              <span style={{ ...typography.caption, color: colors.text.muted, fontSize: typography.fontSize.sm }}>— Preview below; membership not yet available.</span>
+            </div>
             <FanClubTeaserSection isMobile={isMobile} />
           </div>
         </InfinitySection>
@@ -5829,7 +5656,6 @@ const LandingPage: React.FC = () => {
                 {[
                   { name: "Facebook", url: clubInfo.social.facebook, Icon: FacebookIcon },
                   { name: "Instagram", url: clubInfo.social.instagram, Icon: InstagramIcon },
-                  { name: "Twitter", url: clubInfo.social.twitter || "#", Icon: TwitterIcon },
                   { name: "YouTube", url: clubInfo.social.youtube, Icon: YouTubeIcon },
                 ].map((social) => {
                   const Icon = social.Icon;

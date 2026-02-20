@@ -18,29 +18,24 @@ import { pageVariants, cardVariants, primaryButtonWhileHover, primaryButtonWhile
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { adminAssets, academyAssets, galleryAssets } from "../config/assets";
 import { PlusIcon, CloseIcon, ErrorIcon, SuccessIcon, SearchIcon, BuildingIcon, ChartBarIcon, ChartLineIcon, EditIcon, TrashIcon, MoneyIcon } from "../components/icons/IconSet";
+import { KPICard } from "../components/ui/KPICard";
+import { useAdminAnalytics } from "../hooks/useAdminAnalytics";
 
 const EnhancedStudentsPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [students, setStudents] = useState<any[]>(() => {
-    // Try to load from sessionStorage for instant display
-    try {
-      const cached = sessionStorage.getItem('students-page-data');
-      return cached ? JSON.parse(cached) : [];
-    } catch {
-      return [];
-    }
+  
+  // Use centralized analytics hook - single source of truth
+  const { summary: dashboardSummary, loading: summaryLoading, error: summaryError, refresh: refreshSummary } = useAdminAnalytics({
+    includeInactive: true, // Admin sees all students
+    autoRefresh: false,
   });
+  
+  const [students, setStudents] = useState<any[]>([]);
   const [centers, setCenters] = useState<any[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<any[]>([]);
-  const [studentPayments, setStudentPayments] = useState<{ [key: number]: { totalPaid: number; outstanding: number } }>(() => {
-    try {
-      const cached = sessionStorage.getItem('students-page-payments');
-      return cached ? JSON.parse(cached) : {};
-    } catch {
-      return {};
-    }
-  });
+  const [studentPayments, setStudentPayments] = useState<{ [key: number]: { totalPaid: number; outstanding: number } }>({});
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [centerFilter, setCenterFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -89,6 +84,7 @@ const EnhancedStudentsPage: React.FC = () => {
         clearTimeout(refreshTimeout);
         refreshTimeout = setTimeout(() => {
           if (mounted) {
+            refreshSummary();
             loadData();
           }
         }, 500); // Debounce to prevent multiple rapid calls
@@ -101,7 +97,7 @@ const EnhancedStudentsPage: React.FC = () => {
       clearTimeout(refreshTimeout);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [refreshSummary]);
 
   useEffect(() => {
     filterStudents();
@@ -140,12 +136,16 @@ const EnhancedStudentsPage: React.FC = () => {
   const loadData = async () => {
     try {
       setError(""); // Clear previous errors
+      setLoading(true);
       
       const [studentsData, centersData] = await Promise.all([
         api.getStudents(undefined, undefined, true).catch(err => {
-          console.error("Failed to load students:", err);
-          // Return empty array instead of throwing
-          return [];
+          console.error("Failed to load students with payments:", err);
+          // Try to load without payments if the first call fails
+          return api.getStudents().catch(err2 => {
+            console.error("Failed to load students without payments:", err2);
+            return [];
+          });
         }),
         api.getCenters().catch(err => {
           console.error("Failed to load centers:", err);
@@ -153,13 +153,12 @@ const EnhancedStudentsPage: React.FC = () => {
         })
       ]);
       
-      // Only update if we got valid data
-      if (!Array.isArray(studentsData) || studentsData.length === 0) {
-        // If we have existing students, keep them
-        if (students.length > 0) {
-          console.warn("Failed to load students, keeping existing data");
-          return;
-        }
+      // Always update students if we got valid array data (even if empty)
+      if (!Array.isArray(studentsData)) {
+        // If no valid data, set empty array
+        setStudents([]);
+        setLoading(false);
+        return;
       }
       
       // Enrich students with center info
@@ -168,6 +167,7 @@ const EnhancedStudentsPage: React.FC = () => {
         centerName: centersData.find((c: any) => c.id === s.centerId)?.name || "Unknown"
       }));
       
+      // Always update students state, even if array is empty
       setStudents(enrichedStudents);
       if (centersData && centersData.length > 0) {
         setCenters(centersData);
@@ -183,20 +183,15 @@ const EnhancedStudentsPage: React.FC = () => {
       });
       
       setStudentPayments(paymentsMap);
-      
-      // Cache data for persistence
-      try {
-        sessionStorage.setItem('students-page-data', JSON.stringify(enrichedStudents));
-        sessionStorage.setItem('students-page-payments', JSON.stringify(paymentsMap));
-      } catch (e) {
-        console.warn("Failed to cache students data:", e);
-      }
     } catch (err: any) {
       console.error("Error in loadData:", err);
+      setError(err.message || "Failed to load students data");
       // Don't clear existing data on error
       if (students.length === 0) {
         setError(err.message || "Failed to load students");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -224,7 +219,7 @@ const EnhancedStudentsPage: React.FC = () => {
       filtered = filtered.filter(s => s.status === statusFilter);
     }
 
-    // Program filter
+    // Programme filter
     if (programFilter) {
       filtered = filtered.filter(s => s.programType === programFilter);
     }
@@ -477,7 +472,7 @@ const EnhancedStudentsPage: React.FC = () => {
   const endIndex = startIndex + itemsPerPage;
   const paginatedStudents = (filteredStudents || []).slice(startIndex, endIndex);
 
-  // Calculate KPIs - use filteredStudents safely
+  // Calculate KPIs - use filteredStudents safely for filtered view
   const activePlayers = (filteredStudents || []).filter(s => s.status === "ACTIVE").length;
   const trialPlayers = (filteredStudents || []).filter(s => s.status === "TRIAL").length;
   const totalPlayers = (filteredStudents || []).length;
@@ -487,6 +482,13 @@ const EnhancedStudentsPage: React.FC = () => {
     const now = new Date();
     return joining.getMonth() === now.getMonth() && joining.getFullYear() === now.getFullYear();
   }).length;
+
+  // Use dashboard summary for consistent data with admin dashboard
+  const totalStudentsFromSummary = dashboardSummary?.studentCount || students.length;
+  const totalRevenue = dashboardSummary?.totalCollected || 0;
+  const outstanding = dashboardSummary?.approxOutstanding || 0;
+  const totalExpected = totalRevenue + outstanding;
+  const activeStudentsFromData = students.filter(s => s.status === "ACTIVE").length;
 
   return (
     <motion.main
@@ -583,46 +585,113 @@ const EnhancedStudentsPage: React.FC = () => {
             </span>
           </motion.h1>
           
-          {/* KPI Cards Row */}
+          {/* KPI Cards Row - Matching Dashboard */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: spacing.md,
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: spacing.lg,
               marginTop: spacing.md,
             }}
           >
-            {[
-              { label: "Active Players", value: activePlayers, subLabel: "All centres" },
-              { label: "Trial Players", value: trialPlayers, subLabel: "Evaluation" },
-              { label: "Total Players", value: totalPlayers, subLabel: "All statuses" },
-              { label: "New This Month", value: newThisMonth, subLabel: "Recent joins" },
-            ].map((kpi, index) => (
-              <motion.div
-                key={kpi.label}
-                {...getStaggeredCard(index)}
+            <motion.div custom={0} variants={cardVariants} initial="initial" animate="animate">
+              <KPICard
+                title="Total Revenue"
+                value={`₹${totalRevenue.toLocaleString()}`}
+                subtitle="All-time collections"
+                variant="primary"
+              />
+            </motion.div>
+
+            <motion.div custom={1} variants={cardVariants} initial="initial" animate="animate">
+              <KPICard
+                title="Outstanding"
+                value={`₹${outstanding.toLocaleString()}`}
+                subtitle="Pending collections"
+                variant="warning"
+              />
+            </motion.div>
+
+            <motion.div custom={2} variants={cardVariants} initial="initial" animate="animate">
+              <KPICard
+                title="Total Students"
+                value={totalStudentsFromSummary.toString()}
+                subtitle={`${activeStudentsFromData} Active across ${centers.length} centers`}
+                variant="info"
+              />
+            </motion.div>
+
+            <motion.div custom={3} variants={cardVariants} initial="initial" animate="animate">
+              <KPICard
+                title="Total Expected"
+                value={`₹${totalExpected.toLocaleString()}`}
+                subtitle="Collected + Outstanding"
+                variant="success"
+              />
+            </motion.div>
+          </div>
+          
+          {/* Payment Logs CTA */}
+          {user?.role === "ADMIN" && (
+            <motion.div 
+              custom={4} 
+              variants={cardVariants} 
+              initial="initial" 
+              animate="animate"
+              style={{ marginTop: spacing.lg }}
+            >
+              <Card 
+                variant="default" 
+                padding="md"
                 style={{
-                  background: "rgba(255, 255, 255, 0.1)",
-                  backdropFilter: "blur(10px)",
-                  borderRadius: borderRadius.lg,
-                  padding: spacing.md,
-                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  background: `linear-gradient(135deg, ${colors.primary.main}20 0%, ${colors.accent.main}20 100%)`,
+                  border: `1px solid ${colors.primary.main}40`,
+                  cursor: "pointer",
+                  transition: "all 0.2s ease"
+                }}
+                onClick={() => navigate("/realverse/admin/payment-logs")}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = shadows.lg;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = shadows.md;
                 }}
               >
-                <p style={{ ...typography.caption, color: colors.text.onPrimary, opacity: 0.8, marginBottom: spacing.xs }}>
-                  {kpi.label}
-                </p>
-                <p style={{ ...typography.h2, color: colors.text.onPrimary, margin: 0 }}>
-                  {kpi.value}
-                </p>
-                {kpi.subLabel && (
-                  <p style={{ ...typography.caption, color: colors.text.onPrimary, opacity: 0.6, marginTop: spacing.xs, margin: 0 }}>
-                    {kpi.subLabel}
-                  </p>
-                )}
-              </motion.div>
-            ))}
-          </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <h3 style={{ 
+                      ...typography.h3, 
+                      margin: 0, 
+                      marginBottom: spacing.xs,
+                      color: colors.text.primary
+                    }}>
+                      Payment Logs
+                    </h3>
+                    <p style={{ 
+                      ...typography.body, 
+                      margin: 0, 
+                      color: colors.text.muted,
+                      fontSize: typography.fontSize.sm
+                    }}>
+                      Track all payment & revenue updates by Admin, Coach, and CRM users
+                    </p>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate("/realverse/admin/payment-logs");
+                    }}
+                  >
+                    View Logs
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          )}
         </div>
       </motion.section>
 
@@ -728,7 +797,7 @@ const EnhancedStudentsPage: React.FC = () => {
               fontWeight: typography.fontWeight.semibold,
               color: colors.text.secondary,
             }}>
-              🎯 Program
+              🎯 Programme
             </label>
             <select
               value={programFilter}
@@ -751,7 +820,7 @@ const EnhancedStudentsPage: React.FC = () => {
                 paddingRight: spacing.xl,
               }}
             >
-              <option value="">All Programs</option>
+              <option value="">All Programmes</option>
               {programs.map(p => (
                 <option key={p} value={p}>{p}</option>
               ))}
@@ -802,7 +871,11 @@ const EnhancedStudentsPage: React.FC = () => {
         {/* Students Table - Wrapped in DataTableCard for consistent structure */}
         <DataTableCard
           title="All Players"
-          description={`${filteredStudents.length} player${filteredStudents.length !== 1 ? 's' : ''} found`}
+          description={
+            filteredStudents.length !== students.length
+              ? `Showing ${filteredStudents.length} of ${students.length} players`
+              : `${students.length} player${students.length !== 1 ? 's' : ''} found`
+          }
           filters={
             <div style={{ display: "flex", gap: spacing.sm, alignItems: "center" }}>
               {(searchTerm || centerFilter || statusFilter || programFilter) && (
@@ -823,7 +896,7 @@ const EnhancedStudentsPage: React.FC = () => {
           }
           actions={
             <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
-              {(user?.role === "ADMIN" || user?.role === "COACH") && (
+              {user?.role === "ADMIN" && (
                 <Button
                   variant="primary"
                   size="md"
@@ -851,7 +924,7 @@ const EnhancedStudentsPage: React.FC = () => {
               <p style={{ ...typography.body, marginBottom: spacing.sm }}>
                 {students.length === 0 ? "No players yet" : "No players match the filters"}
               </p>
-              {students.length === 0 && (user?.role === "ADMIN" || user?.role === "COACH") && (
+              {students.length === 0 && user?.role === "ADMIN" && (
                 <Button
                   variant="primary"
                   size="md"
@@ -889,7 +962,7 @@ const EnhancedStudentsPage: React.FC = () => {
                 ...typography.caption,
                 fontWeight: typography.fontWeight.semibold,
                 color: colors.text.secondary,
-              }}>Program</th>
+              }}>Programme</th>
               <th style={{ 
                 padding: spacing.md, 
                 textAlign: "left", 
@@ -1029,21 +1102,23 @@ const EnhancedStudentsPage: React.FC = () => {
                         Update Payment
                       </span>
                     </Button>
-                    <Button
-                      variant="utility"
-                      size="sm"
-                      onClick={() => handleDeleteClick(student)}
-                      style={{
-                        background: colors.danger.soft,
-                        color: colors.danger.main,
-                        border: `1px solid ${colors.danger.main}40`
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
-                        <TrashIcon size={16} />
-                        Delete
-                      </span>
-                    </Button>
+                    {user?.role === "ADMIN" && (
+                      <Button
+                        variant="utility"
+                        size="sm"
+                        onClick={() => handleDeleteClick(student)}
+                        style={{
+                          background: colors.danger.soft,
+                          color: colors.danger.main,
+                          border: `1px solid ${colors.danger.main}40`
+                        }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                          <TrashIcon size={16} />
+                          Delete
+                        </span>
+                      </Button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -1468,7 +1543,7 @@ const EnhancedStudentsPage: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Program</label>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Programme</label>
                   <select
                     value={newStudent.programType}
                     onChange={(e) => setNewStudent({ ...newStudent, programType: e.target.value })}
@@ -1484,7 +1559,7 @@ const EnhancedStudentsPage: React.FC = () => {
                       lineHeight: typography.lineHeight.normal,
                     }}
                   >
-                    <option value="">Select Program</option>
+                    <option value="">Select Programme</option>
                     {programs.map(p => (
                       <option key={p} value={p}>{p}</option>
                     ))}
@@ -1843,316 +1918,418 @@ const EnhancedStudentsPage: React.FC = () => {
             )}
             
             <form onSubmit={handleUpdateStudent} style={{ display: "grid", gap: 16 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Full Name *</label>
-                  <input
-                    required
-                    value={editingStudent.fullName}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, fullName: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`,
-                      border: `1px solid rgba(255, 255, 255, 0.2)`,
-                      borderRadius: borderRadius.md,
-                      fontSize: typography.fontSize.base,
-                      background: colors.surface.soft,
-                      color: colors.text.primary,
-                      boxSizing: 'border-box',
-                      lineHeight: typography.lineHeight.normal,
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Date of Birth</label>
-                  <input
-                    type="date"
-                    value={editingStudent.dateOfBirth}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, dateOfBirth: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`,
-                      border: `1px solid rgba(255, 255, 255, 0.2)`,
-                      borderRadius: borderRadius.md,
-                      fontSize: typography.fontSize.base,
-                      background: colors.surface.soft,
-                      color: colors.text.primary,
-                      boxSizing: 'border-box',
-                      lineHeight: typography.lineHeight.normal,
-                    }}
-                  />
-                </div>
-              </div>
+              {user?.role === "COACH" ? (
+                // Coach view: Only payment fields
+                <>
+                  <div style={{ 
+                    padding: spacing.md, 
+                    background: colors.info.soft, 
+                    borderRadius: borderRadius.md,
+                    marginBottom: spacing.md 
+                  }}>
+                    <p style={{ 
+                      margin: 0, 
+                      color: colors.info.main, 
+                      fontSize: typography.fontSize.sm,
+                      fontWeight: typography.fontWeight.semibold
+                    }}>
+                      ℹ️ As a coach, you can only update payment-related information for students from your assigned centers.
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.secondary }}>Student Name</label>
+                    <input
+                      value={editingStudent.fullName}
+                      disabled
+                      style={{
+                        width: "100%",
+                        padding: `${spacing.md} ${spacing.lg}`,
+                        border: `1px solid rgba(255, 255, 255, 0.1)`,
+                        borderRadius: borderRadius.md,
+                        fontSize: typography.fontSize.base,
+                        background: colors.surface.soft,
+                        color: colors.text.muted,
+                        boxSizing: 'border-box',
+                        lineHeight: typography.lineHeight.normal,
+                        cursor: 'not-allowed',
+                      }}
+                    />
+                  </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Phone Number</label>
-                  <input
-                    value={editingStudent.phoneNumber || ""}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, phoneNumber: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`,
-                      border: `1px solid rgba(255, 255, 255, 0.2)`,
-                      borderRadius: borderRadius.md,
-                      fontSize: typography.fontSize.base,
-                      background: colors.surface.soft,
-                      color: colors.text.primary,
-                      boxSizing: 'border-box',
-                      lineHeight: typography.lineHeight.normal,
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Parent Name</label>
-                  <input
-                    value={editingStudent.parentName || ""}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, parentName: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`,
-                      border: `1px solid rgba(255, 255, 255, 0.2)`,
-                      borderRadius: borderRadius.md,
-                      fontSize: typography.fontSize.base,
-                      background: colors.surface.soft,
-                      color: colors.text.primary,
-                      boxSizing: 'border-box',
-                      lineHeight: typography.lineHeight.normal,
-                    }}
-                  />
-                </div>
-              </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <div>
+                      <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Monthly Fee (₹) *</label>
+                      <input
+                        required
+                        type="number"
+                        value={editingStudent.monthlyFeeAmount}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, monthlyFeeAmount: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: `${spacing.md} ${spacing.lg}`,
+                          border: `1px solid rgba(255, 255, 255, 0.2)`,
+                          borderRadius: borderRadius.md,
+                          fontSize: typography.fontSize.base,
+                          background: colors.surface.soft,
+                          color: colors.text.primary,
+                          boxSizing: 'border-box',
+                          lineHeight: typography.lineHeight.normal,
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Payment Frequency *</label>
+                      <select
+                        required
+                        value={editingStudent.paymentFrequency}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, paymentFrequency: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: `${spacing.md} ${spacing.lg}`,
+                          border: `1px solid rgba(255, 255, 255, 0.2)`,
+                          borderRadius: borderRadius.md,
+                          fontSize: typography.fontSize.base,
+                          cursor: "pointer",
+                          background: colors.surface.card,
+                          color: colors.text.primary,
+                          fontFamily: typography.fontFamily.primary,
+                          boxSizing: 'border-box',
+                          appearance: 'none',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: `right ${spacing.md} center`,
+                          paddingRight: spacing.xl,
+                        }}
+                      >
+                        {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => (
+                          <option key={n} value={n}>
+                            {n === 1 ? "Monthly (1 month)" :
+                             n === 3 ? "Quarterly (3 months)" :
+                             n === 6 ? "Half-yearly (6 months)" :
+                             n === 12 ? "Yearly (12 months)" :
+                             `${n} months`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                // Admin view: All fields
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <div>
+                      <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Full Name *</label>
+                      <input
+                        required
+                        value={editingStudent.fullName}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, fullName: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: `${spacing.md} ${spacing.lg}`,
+                          border: `1px solid rgba(255, 255, 255, 0.2)`,
+                          borderRadius: borderRadius.md,
+                          fontSize: typography.fontSize.base,
+                          background: colors.surface.soft,
+                          color: colors.text.primary,
+                          boxSizing: 'border-box',
+                          lineHeight: typography.lineHeight.normal,
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Date of Birth</label>
+                      <input
+                        type="date"
+                        value={editingStudent.dateOfBirth}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, dateOfBirth: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: `${spacing.md} ${spacing.lg}`,
+                          border: `1px solid rgba(255, 255, 255, 0.2)`,
+                          borderRadius: borderRadius.md,
+                          fontSize: typography.fontSize.base,
+                          background: colors.surface.soft,
+                          color: colors.text.primary,
+                          boxSizing: 'border-box',
+                          lineHeight: typography.lineHeight.normal,
+                        }}
+                      />
+                    </div>
+                  </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Parent Phone Number</label>
-                  <input
-                    value={editingStudent.parentPhoneNumber || ""}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, parentPhoneNumber: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`,
-                      border: `1px solid rgba(255, 255, 255, 0.2)`,
-                      borderRadius: borderRadius.md,
-                      fontSize: typography.fontSize.base,
-                      background: colors.surface.soft,
-                      color: colors.text.primary,
-                      boxSizing: 'border-box',
-                      lineHeight: typography.lineHeight.normal,
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Joining Date</label>
-                  <input
-                    type="date"
-                    value={editingStudent.joiningDate}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, joiningDate: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`,
-                      border: `1px solid rgba(255, 255, 255, 0.2)`,
-                      borderRadius: borderRadius.md,
-                      fontSize: typography.fontSize.base,
-                      background: colors.surface.soft,
-                      color: colors.text.primary,
-                      boxSizing: 'border-box',
-                      lineHeight: typography.lineHeight.normal,
-                    }}
-                  />
-                </div>
-              </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <div>
+                      <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Phone Number</label>
+                      <input
+                        value={editingStudent.phoneNumber || ""}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, phoneNumber: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: `${spacing.md} ${spacing.lg}`,
+                          border: `1px solid rgba(255, 255, 255, 0.2)`,
+                          borderRadius: borderRadius.md,
+                          fontSize: typography.fontSize.base,
+                          background: colors.surface.soft,
+                          color: colors.text.primary,
+                          boxSizing: 'border-box',
+                          lineHeight: typography.lineHeight.normal,
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Parent Name</label>
+                      <input
+                        value={editingStudent.parentName || ""}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, parentName: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: `${spacing.md} ${spacing.lg}`,
+                          border: `1px solid rgba(255, 255, 255, 0.2)`,
+                          borderRadius: borderRadius.md,
+                          fontSize: typography.fontSize.base,
+                          background: colors.surface.soft,
+                          color: colors.text.primary,
+                          boxSizing: 'border-box',
+                          lineHeight: typography.lineHeight.normal,
+                        }}
+                      />
+                    </div>
+                  </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Email (for login)</label>
-                  <input
-                    type="email"
-                    value={editingStudent.email || ""}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, email: e.target.value })}
-                    placeholder="Optional - for student portal access"
-                    style={{
-                      width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`,
-                      border: `1px solid rgba(255, 255, 255, 0.2)`,
-                      borderRadius: borderRadius.md,
-                      fontSize: typography.fontSize.base,
-                      background: colors.surface.soft,
-                      color: colors.text.primary,
-                      boxSizing: 'border-box',
-                      lineHeight: typography.lineHeight.normal,
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>New Password (optional)</label>
-                  <input
-                    type="password"
-                    value={editingStudent.newPassword || ""}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, newPassword: e.target.value })}
-                    placeholder="Leave blank to keep current"
-                    style={{
-                      width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`,
-                      border: `1px solid rgba(255, 255, 255, 0.2)`,
-                      borderRadius: borderRadius.md,
-                      fontSize: typography.fontSize.base,
-                      background: colors.surface.soft,
-                      color: colors.text.primary,
-                      boxSizing: 'border-box',
-                      lineHeight: typography.lineHeight.normal,
-                    }}
-                  />
-                </div>
-              </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <div>
+                      <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Parent Phone Number</label>
+                      <input
+                        value={editingStudent.parentPhoneNumber || ""}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, parentPhoneNumber: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: `${spacing.md} ${spacing.lg}`,
+                          border: `1px solid rgba(255, 255, 255, 0.2)`,
+                          borderRadius: borderRadius.md,
+                          fontSize: typography.fontSize.base,
+                          background: colors.surface.soft,
+                          color: colors.text.primary,
+                          boxSizing: 'border-box',
+                          lineHeight: typography.lineHeight.normal,
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Joining Date</label>
+                      <input
+                        type="date"
+                        value={editingStudent.joiningDate}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, joiningDate: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: `${spacing.md} ${spacing.lg}`,
+                          border: `1px solid rgba(255, 255, 255, 0.2)`,
+                          borderRadius: borderRadius.md,
+                          fontSize: typography.fontSize.base,
+                          background: colors.surface.soft,
+                          color: colors.text.primary,
+                          boxSizing: 'border-box',
+                          lineHeight: typography.lineHeight.normal,
+                        }}
+                      />
+                    </div>
+                  </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Center *</label>
-                  <select
-                    required
-                    value={editingStudent.centerId}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, centerId: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`,
-                      border: `1px solid rgba(255, 255, 255, 0.2)`,
-                      borderRadius: borderRadius.md,
-                      fontSize: typography.fontSize.base,
-                      cursor: "pointer",
-                      background: colors.surface.card,
-                      color: colors.text.primary,
-                      fontFamily: typography.fontFamily.primary,
-                      boxSizing: 'border-box',
-                      appearance: 'none',
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: `right ${spacing.md} center`,
-                      paddingRight: spacing.xl,
-                    }}
-                  >
-                    {centers.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Program</label>
-                  <select
-                    value={editingStudent.programType || ""}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, programType: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`,
-                      border: `1px solid rgba(255, 255, 255, 0.2)`,
-                      borderRadius: borderRadius.md,
-                      fontSize: typography.fontSize.base,
-                      cursor: "pointer",
-                      background: colors.surface.card,
-                      color: colors.text.primary,
-                      fontFamily: typography.fontFamily.primary,
-                      boxSizing: 'border-box',
-                      appearance: 'none',
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: `right ${spacing.md} center`,
-                      paddingRight: spacing.xl,
-                    }}
-                  >
-                    <option value="">Select Program</option>
-                    {programs.map(p => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Status *</label>
-                  <select
-                    required
-                    value={editingStudent.status}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, status: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`,
-                      border: `1px solid rgba(255, 255, 255, 0.2)`,
-                      borderRadius: borderRadius.md,
-                      fontSize: typography.fontSize.base,
-                      cursor: "pointer",
-                      background: colors.surface.card,
-                      color: colors.text.primary,
-                      fontFamily: typography.fontFamily.primary,
-                      boxSizing: 'border-box',
-                      appearance: 'none',
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: `right ${spacing.md} center`,
-                      paddingRight: spacing.xl,
-                    }}
-                  >
-                    {statuses.map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <div>
+                      <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Email (for login)</label>
+                      <input
+                        type="email"
+                        value={editingStudent.email || ""}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, email: e.target.value })}
+                        placeholder="Optional - for student portal access"
+                        style={{
+                          width: "100%",
+                          padding: `${spacing.md} ${spacing.lg}`,
+                          border: `1px solid rgba(255, 255, 255, 0.2)`,
+                          borderRadius: borderRadius.md,
+                          fontSize: typography.fontSize.base,
+                          background: colors.surface.soft,
+                          color: colors.text.primary,
+                          boxSizing: 'border-box',
+                          lineHeight: typography.lineHeight.normal,
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>New Password (optional)</label>
+                      <input
+                        type="password"
+                        value={editingStudent.newPassword || ""}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, newPassword: e.target.value })}
+                        placeholder="Leave blank to keep current"
+                        style={{
+                          width: "100%",
+                          padding: `${spacing.md} ${spacing.lg}`,
+                          border: `1px solid rgba(255, 255, 255, 0.2)`,
+                          borderRadius: borderRadius.md,
+                          fontSize: typography.fontSize.base,
+                          background: colors.surface.soft,
+                          color: colors.text.primary,
+                          boxSizing: 'border-box',
+                          lineHeight: typography.lineHeight.normal,
+                        }}
+                      />
+                    </div>
+                  </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Monthly Fee (₹) *</label>
-                  <input
-                    required
-                    type="number"
-                    value={editingStudent.monthlyFeeAmount}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, monthlyFeeAmount: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`,
-                      border: `1px solid rgba(255, 255, 255, 0.2)`,
-                      borderRadius: borderRadius.md,
-                      fontSize: typography.fontSize.base,
-                      background: colors.surface.soft,
-                      color: colors.text.primary,
-                      boxSizing: 'border-box',
-                      lineHeight: typography.lineHeight.normal,
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Payment Frequency *</label>
-                  <select
-                    required
-                    value={editingStudent.paymentFrequency}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, paymentFrequency: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: `${spacing.md} ${spacing.lg}`,
-                      border: `1px solid rgba(255, 255, 255, 0.2)`,
-                      borderRadius: borderRadius.md,
-                      fontSize: typography.fontSize.base,
-                      cursor: "pointer",
-                      background: colors.surface.card,
-                      color: colors.text.primary,
-                      fontFamily: typography.fontFamily.primary,
-                      boxSizing: 'border-box',
-                      appearance: 'none',
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: `right ${spacing.md} center`,
-                      paddingRight: spacing.xl,
-                    }}
-                  >
-                    {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => (
-                      <option key={n} value={n}>
-                        {n === 1 ? "Monthly (1 month)" :
-                         n === 3 ? "Quarterly (3 months)" :
-                         n === 6 ? "Half-yearly (6 months)" :
-                         n === 12 ? "Yearly (12 months)" :
-                         `${n} months`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+                    <div>
+                      <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Center *</label>
+                      <select
+                        required
+                        value={editingStudent.centerId}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, centerId: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: `${spacing.md} ${spacing.lg}`,
+                          border: `1px solid rgba(255, 255, 255, 0.2)`,
+                          borderRadius: borderRadius.md,
+                          fontSize: typography.fontSize.base,
+                          cursor: "pointer",
+                          background: colors.surface.card,
+                          color: colors.text.primary,
+                          fontFamily: typography.fontFamily.primary,
+                          boxSizing: 'border-box',
+                          appearance: 'none',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: `right ${spacing.md} center`,
+                          paddingRight: spacing.xl,
+                        }}
+                      >
+                        {centers.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Programme</label>
+                      <select
+                        value={editingStudent.programType || ""}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, programType: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: `${spacing.md} ${spacing.lg}`,
+                          border: `1px solid rgba(255, 255, 255, 0.2)`,
+                          borderRadius: borderRadius.md,
+                          fontSize: typography.fontSize.base,
+                          cursor: "pointer",
+                          background: colors.surface.card,
+                          color: colors.text.primary,
+                          fontFamily: typography.fontFamily.primary,
+                          boxSizing: 'border-box',
+                          appearance: 'none',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: `right ${spacing.md} center`,
+                          paddingRight: spacing.xl,
+                        }}
+                      >
+                        <option value="">Select Programme</option>
+                        {programs.map(p => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Status *</label>
+                      <select
+                        required
+                        value={editingStudent.status}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, status: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: `${spacing.md} ${spacing.lg}`,
+                          border: `1px solid rgba(255, 255, 255, 0.2)`,
+                          borderRadius: borderRadius.md,
+                          fontSize: typography.fontSize.base,
+                          cursor: "pointer",
+                          background: colors.surface.card,
+                          color: colors.text.primary,
+                          fontFamily: typography.fontFamily.primary,
+                          boxSizing: 'border-box',
+                          appearance: 'none',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: `right ${spacing.md} center`,
+                          paddingRight: spacing.xl,
+                        }}
+                      >
+                        {statuses.map(s => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <div>
+                      <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Monthly Fee (₹) *</label>
+                      <input
+                        required
+                        type="number"
+                        value={editingStudent.monthlyFeeAmount}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, monthlyFeeAmount: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: `${spacing.md} ${spacing.lg}`,
+                          border: `1px solid rgba(255, 255, 255, 0.2)`,
+                          borderRadius: borderRadius.md,
+                          fontSize: typography.fontSize.base,
+                          background: colors.surface.soft,
+                          color: colors.text.primary,
+                          boxSizing: 'border-box',
+                          lineHeight: typography.lineHeight.normal,
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Payment Frequency *</label>
+                      <select
+                        required
+                        value={editingStudent.paymentFrequency}
+                        onChange={(e) => setEditingStudent({ ...editingStudent, paymentFrequency: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: `${spacing.md} ${spacing.lg}`,
+                          border: `1px solid rgba(255, 255, 255, 0.2)`,
+                          borderRadius: borderRadius.md,
+                          fontSize: typography.fontSize.base,
+                          cursor: "pointer",
+                          background: colors.surface.card,
+                          color: colors.text.primary,
+                          fontFamily: typography.fontFamily.primary,
+                          boxSizing: 'border-box',
+                          appearance: 'none',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: `right ${spacing.md} center`,
+                          paddingRight: spacing.xl,
+                        }}
+                      >
+                        {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => (
+                          <option key={n} value={n}>
+                            {n === 1 ? "Monthly (1 month)" :
+                             n === 3 ? "Quarterly (3 months)" :
+                             n === 6 ? "Half-yearly (6 months)" :
+                             n === 12 ? "Yearly (12 months)" :
+                             `${n} months`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
                 <button

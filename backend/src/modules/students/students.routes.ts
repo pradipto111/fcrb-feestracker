@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../db/prisma";
 import { authRequired } from "../../auth/auth.middleware";
 import bcrypt from "bcryptjs";
 import { getSystemDate } from "../../utils/system-date";
+import { logSystemActivity } from "../../utils/system-activity";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 /**
@@ -39,7 +39,8 @@ router.get("/", authRequired, async (req, res) => {
 
   const students = await prisma.student.findMany({
     where,
-    orderBy: { fullName: "asc" }
+    orderBy: { fullName: "asc" },
+    take: 10000, // Safety limit to prevent loading too many records
   });
 
   // If includePayments is true, add payment summaries
@@ -122,45 +123,140 @@ router.post("/", authRequired, async (req, res) => {
   }
 });
 
-// Admin: update student
+// Admin/Coach: update student
 router.put("/:id", authRequired, async (req, res) => {
-  const { role } = req.user!;
-  if (role !== "ADMIN") {
-    return res.status(403).json({ message: "Forbidden" });
-  }
+  const { role, id: userId } = req.user!;
   const studentId = Number(req.params.id);
-  const { password, ...data } = req.body;
   
-  // Convert empty email to null to avoid unique constraint issues
-  if (data.email === "" || data.email === undefined) {
-    data.email = null;
+  // Get student to check center access and for logging
+  const existingStudent = await prisma.student.findUnique({
+    where: { id: studentId }
+  });
+  
+  if (!existingStudent) {
+    return res.status(404).json({ message: "Student not found" });
   }
   
-  // Hash password if provided
-  if (password) {
-    data.passwordHash = await bcrypt.hash(password, 10);
-  }
-  
-  try {
-    // Handle churnedDate conversion
-    if (data.churnedDate !== undefined) {
-      if (data.churnedDate === null || data.churnedDate === "") {
-        data.churnedDate = null;
-      } else if (typeof data.churnedDate === 'string') {
-        data.churnedDate = new Date(data.churnedDate);
+  // If coach, validate center access and restrict to payment fields only
+  if (role === "COACH") {
+    const centerIds = await getCoachCenterIds(userId);
+    if (!centerIds.includes(existingStudent.centerId)) {
+      return res.status(403).json({ message: "Forbidden: You don't have access to this student's center" });
+    }
+    
+    // Coaches can only update payment-related fields
+    const allowedFields = ['monthlyFeeAmount', 'paymentFrequency'];
+    const updateData: any = {};
+    const beforeState: any = {};
+    
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+        beforeState[field] = existingStudent[field as keyof typeof existingStudent];
       }
     }
     
-    const student = await prisma.student.update({
-      where: { id: studentId },
-      data
-    });
-    res.json(student);
-  } catch (error: any) {
-    if (error.code === 'P2002') {
-      return res.status(400).json({ message: "A student with this email already exists" });
+    // If no allowed fields to update, return error
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: "Coaches can only update payment-related fields (monthlyFeeAmount, paymentFrequency)" });
     }
-    throw error;
+    
+    try {
+      const updatedStudent = await prisma.student.update({
+        where: { id: studentId },
+        data: updateData
+      });
+      
+      // Log payment update activity
+      await logSystemActivity({
+        actorType: "COACH",
+        actorId: userId,
+        action: "PAYMENT_STATUS_UPDATED",
+        entityType: "STUDENT",
+        entityId: studentId,
+        before: beforeState,
+        after: updateData,
+        metadata: {
+          studentName: existingStudent.fullName,
+          studentId: studentId,
+          centerId: existingStudent.centerId
+        }
+      });
+      
+      res.json(updatedStudent);
+    } catch (error: any) {
+      throw error;
+    }
+  } else if (role === "ADMIN") {
+    // Admin can update all fields
+    const { password, ...data } = req.body;
+    
+    // Convert empty email to null to avoid unique constraint issues
+    if (data.email === "" || data.email === undefined) {
+      data.email = null;
+    }
+    
+    // Hash password if provided
+    if (password) {
+      data.passwordHash = await bcrypt.hash(password, 10);
+    }
+    
+    // Track payment-related changes for logging
+    const paymentFields = ['monthlyFeeAmount', 'paymentFrequency'];
+    const beforeState: any = {};
+    const afterState: any = {};
+    let hasPaymentChanges = false;
+    
+    for (const field of paymentFields) {
+      if (data[field] !== undefined && data[field] !== existingStudent[field as keyof typeof existingStudent]) {
+        beforeState[field] = existingStudent[field as keyof typeof existingStudent];
+        afterState[field] = data[field];
+        hasPaymentChanges = true;
+      }
+    }
+    
+    try {
+      // Handle churnedDate conversion
+      if (data.churnedDate !== undefined) {
+        if (data.churnedDate === null || data.churnedDate === "") {
+          data.churnedDate = null;
+        } else if (typeof data.churnedDate === 'string') {
+          data.churnedDate = new Date(data.churnedDate);
+        }
+      }
+      
+      const student = await prisma.student.update({
+        where: { id: studentId },
+        data
+      });
+      
+      // Log payment update activity if payment fields changed
+      if (hasPaymentChanges) {
+        await logSystemActivity({
+          actorType: "ADMIN",
+          actorId: userId,
+          action: "PAYMENT_STATUS_UPDATED",
+          entityType: "STUDENT",
+          entityId: studentId,
+          before: beforeState,
+          after: afterState,
+          metadata: {
+            studentName: existingStudent.fullName,
+            studentId: studentId,
+            centerId: existingStudent.centerId
+          }
+        });
+      }
+      
+      res.json(student);
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        return res.status(400).json({ message: "A student with this email already exists" });
+      }
+      throw error;
+    }
+  } else {
+    return res.status(403).json({ message: "Forbidden" });
   }
 });
 

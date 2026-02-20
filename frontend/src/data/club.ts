@@ -88,7 +88,7 @@ export const teams: Team[] = [
     id: "u17",
     name: "U17 Academy Team",
     description: "Advanced training for promising young talents with structured development pathways.",
-    tagline: "Advanced Academy Program",
+    tagline: "Advanced Academy Programme",
     ageGroup: "U17",
   },
   {
@@ -107,7 +107,7 @@ export const teams: Team[] = [
   },
   {
     id: "grassroots",
-    name: "Grassroots Programs",
+    name: "Grassroots Programmes",
     description: "Open programs for all ages focusing on basic skills, fitness, and love for the game.",
     tagline: "Open to All",
   },
@@ -156,40 +156,7 @@ export const mockFixtures: Fixture[] = [
   },
 ];
 
-export const mockNews: NewsItem[] = [
-  {
-    id: "1",
-    title: "U19 Team Wins Academy Championship",
-    summary: "Our U19 squad secured a thrilling victory in the regional academy championship, showcasing exceptional teamwork and skill.",
-    date: "2024-12-10",
-    imageUrl: "/photo1.png",
-    category: "Achievements",
-  },
-  {
-    id: "2",
-    title: "New Training Center Opens",
-    summary: "We're excited to announce the opening of our new state-of-the-art training facility, expanding our capacity to develop young talent.",
-    date: "2024-12-05",
-    imageUrl: "/photo2.png",
-    category: "News",
-  },
-  {
-    id: "3",
-    title: "Academy Trials Now Open",
-    summary: "Registration is now open for our upcoming academy trials. Join us and take the first step towards your football journey.",
-    date: "2024-11-28",
-    imageUrl: "/photo3.png",
-    category: "Academy",
-  },
-  {
-    id: "4",
-    title: "Senior Team Prepares for Super Division",
-    summary: "Our senior squad is gearing up for the upcoming Super Division season with intensive pre-season training.",
-    date: "2024-11-20",
-    imageUrl: "/photo1.png",
-    category: "Team News",
-  },
-];
+export const mockNews: NewsItem[] = [];
 
 // Note: Icons are now handled by IconSet component
 // This data structure is kept for backward compatibility

@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../db/prisma";
 import { authRequired, requireRole } from "../../auth/auth.middleware";
 import bcrypt from "bcryptjs";
+import { upsertCrmLead } from "../crm/crm-sync";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Create website lead (public endpoint)
@@ -49,6 +49,19 @@ router.post("/", async (req, res) => {
         skillsShowcaseLink: skillsShowcaseLink || null,
         status: "NEW",
       },
+    });
+
+    // Best-effort: also create/update CRM lead
+    await upsertCrmLead({
+      sourceType: "WEBSITE",
+      sourceId: lead.id,
+      primaryName: lead.playerName,
+      phone: lead.phone,
+      email: lead.email,
+      preferredCentre: lead.preferredCentre,
+      programmeInterest: lead.programmeInterest,
+      statusHint: lead.status,
+      convertedStudentId: lead.convertedPlayerId || null,
     });
 
     res.json(lead);
@@ -141,6 +154,18 @@ router.put("/:id", authRequired, requireRole("ADMIN"), async (req, res) => {
       data: updateData,
     });
 
+    await upsertCrmLead({
+      sourceType: "WEBSITE",
+      sourceId: lead.id,
+      primaryName: lead.playerName,
+      phone: lead.phone,
+      email: lead.email,
+      preferredCentre: lead.preferredCentre,
+      programmeInterest: lead.programmeInterest,
+      statusHint: lead.status,
+      convertedStudentId: lead.convertedPlayerId || null,
+    });
+
     res.json(lead);
   } catch (error: any) {
     console.error("Error updating lead:", error);
@@ -211,6 +236,18 @@ router.post("/:id/convert", authRequired, requireRole("ADMIN"), async (req, res)
         convertedPlayerId: student.id,
         status: "CONVERTED",
       },
+    });
+
+    await upsertCrmLead({
+      sourceType: "WEBSITE",
+      sourceId: leadId,
+      primaryName: lead.playerName,
+      phone: lead.phone,
+      email: lead.email,
+      preferredCentre: lead.preferredCentre,
+      programmeInterest: lead.programmeInterest,
+      statusHint: "CONVERTED",
+      convertedStudentId: student.id,
     });
 
     res.json({ student, lead });

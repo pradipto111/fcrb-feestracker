@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../db/prisma";
 import { authRequired, requireRole } from "../../auth/auth.middleware";
+import { upsertCrmLead } from "../crm/crm-sync";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Create legacy lead (public endpoint)
@@ -78,6 +78,17 @@ router.post("/", async (req, res) => {
       },
     });
 
+    await upsertCrmLead({
+      sourceType: "LEGACY",
+      sourceId: lead.id,
+      primaryName: lead.name,
+      phone: lead.phone,
+      email: null,
+      preferredCentre: null,
+      programmeInterest: null,
+      statusHint: lead.status,
+    });
+
     res.json(lead);
   } catch (error: any) {
     console.error("Error creating legacy lead:", error);
@@ -147,6 +158,17 @@ router.put("/:id", authRequired, requireRole("ADMIN"), async (req, res) => {
     const lead = await (prisma as any).legacyLead.update({
       where: { id: parseInt(req.params.id) },
       data: updateData,
+    });
+
+    await upsertCrmLead({
+      sourceType: "LEGACY",
+      sourceId: lead.id,
+      primaryName: lead.name,
+      phone: lead.phone,
+      email: null,
+      preferredCentre: null,
+      programmeInterest: null,
+      statusHint: lead.status,
     });
 
     res.json(lead);

@@ -10,13 +10,13 @@ import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { brochureAssets, galleryAssets, academyAssets, heroAssets, clubAssets, getGalleryImage } from "../config/assets";
 import { TrophyIcon, ChartLineIcon, CommentIcon } from "../components/icons/IconSet";
 
+const MOBILE_BREAKPOINT = 768;
+
 const BrochurePage: React.FC = () => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
+    const handleResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -30,8 +30,12 @@ const BrochurePage: React.FC = () => {
 
   return (
     <div
+      data-realverse-page
       style={{
         minHeight: "100vh",
+        width: "100%",
+        maxWidth: "100vw",
+        overflowX: "hidden",
         background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,
         color: colors.text.primary,
       }}
@@ -42,6 +46,8 @@ const BrochurePage: React.FC = () => {
         style={{
           maxWidth: "1200px",
           margin: "0 auto",
+          width: "100%",
+          boxSizing: "border-box",
           padding: `${spacing["4xl"]} ${isMobile ? spacing.md : spacing.xl}`,
           paddingTop: isMobile ? "100px" : "120px",
           paddingBottom: isMobile ? spacing["3xl"] : spacing["4xl"],
@@ -101,8 +107,9 @@ const BrochurePage: React.FC = () => {
               position: "absolute",
               top: "30%",
               left: "20%",
-              width: "500px",
-              height: "500px",
+              width: "min(500px, 100vw)",
+              height: "min(500px, 80vh)",
+              maxWidth: "100vw",
               background: "radial-gradient(circle, rgba(0, 224, 255, 0.2) 0%, transparent 70%)",
               borderRadius: "50%",
               filter: "blur(60px)",
@@ -192,20 +199,18 @@ const BrochurePage: React.FC = () => {
             <div
               style={{
                 display: "flex",
+                flexDirection: isMobile ? "column" : "row",
                 gap: spacing.md,
                 justifyContent: "center",
                 flexWrap: "wrap",
+                width: isMobile ? "100%" : undefined,
               }}
             >
-              <Link to="/brochure" style={{ textDecoration: "none" }}>
-                <Button variant="primary" size="lg">
-                  Join the Academy
-                </Button>
+              <Link to="/brochure" style={{ textDecoration: "none", width: isMobile ? "100%" : undefined }}>
+                <Button variant="primary" size="lg" style={{ minHeight: 44, width: isMobile ? "100%" : undefined }}>Join the Academy</Button>
               </Link>
-              <Link to="/brochure" style={{ textDecoration: "none" }}>
-                <Button variant="secondary" size="lg">
-                  Book a Call / Know More
-                </Button>
+              <Link to="/brochure" style={{ textDecoration: "none", width: isMobile ? "100%" : undefined }}>
+                <Button variant="secondary" size="lg" style={{ minHeight: 44, width: isMobile ? "100%" : undefined }}>Book a Call / Know More</Button>
               </Link>
             </div>
           </div>
@@ -528,10 +533,8 @@ const BrochurePage: React.FC = () => {
           >
             Ready to Start Training?
           </h3>
-          <Link to="/realverse/join" style={{ textDecoration: "none" }}>
-            <Button variant="primary" size="lg">
-              Join our Academy
-            </Button>
+          <Link to="/realverse/join" style={{ textDecoration: "none", width: isMobile ? "100%" : undefined }}>
+            <Button variant="primary" size="lg" style={{ minHeight: 44, width: isMobile ? "100%" : undefined }}>Join our Academy</Button>
           </Link>
         </motion.section>
 
@@ -879,10 +882,8 @@ const BrochurePage: React.FC = () => {
           >
             Ready to Begin Your Journey?
           </h3>
-          <Link to="/realverse/join" style={{ textDecoration: "none" }}>
-            <Button variant="primary" size="lg">
-              Apply for Trials
-            </Button>
+          <Link to="/realverse/join" style={{ textDecoration: "none", width: isMobile ? "100%" : undefined }}>
+            <Button variant="primary" size="lg" style={{ minHeight: 44, width: isMobile ? "100%" : undefined }}>Apply for Trials</Button>
           </Link>
         </motion.section>
 
@@ -1152,20 +1153,18 @@ const BrochurePage: React.FC = () => {
           <div
             style={{
               display: "flex",
+              flexDirection: isMobile ? "column" : "row",
               gap: spacing.lg,
               justifyContent: "center",
               flexWrap: "wrap",
+              width: isMobile ? "100%" : undefined,
             }}
           >
-            <Link to="/realverse/join" style={{ textDecoration: "none" }}>
-              <Button variant="primary" size="lg">
-                Join our Academy
-              </Button>
+            <Link to="/realverse/join" style={{ textDecoration: "none", width: isMobile ? "100%" : undefined }}>
+              <Button variant="primary" size="lg" style={{ minHeight: 44, width: isMobile ? "100%" : undefined }}>Join our Academy</Button>
             </Link>
-            <Link to="/realverse/join" style={{ textDecoration: "none" }}>
-              <Button variant="secondary" size="lg">
-                Apply for Trials
-              </Button>
+            <Link to="/realverse/join" style={{ textDecoration: "none", width: isMobile ? "100%" : undefined }}>
+              <Button variant="secondary" size="lg" style={{ minHeight: 44, width: isMobile ? "100%" : undefined }}>Apply for Trials</Button>
             </Link>
           </div>
         </motion.section>

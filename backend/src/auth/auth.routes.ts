@@ -1,10 +1,9 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../db/prisma";
 import { JWT_SECRET } from "../config";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 /**
@@ -69,7 +68,11 @@ router.post("/login", async (req, res) => {
   // Try to find coach/admin first
   const coach = await prisma.coach.findUnique({ where: { email } });
   if (coach) {
-    if (role && role !== coach.role) return res.status(403).json({ message: "Access denied" });
+    // Allow both ADMIN and COACH to log in as staff (so "Admin dashboard" login works for coach accounts too)
+    const staffRoles: Array<string> = ["ADMIN", "COACH"];
+    if (role && role !== coach.role && !(staffRoles.includes(role) && staffRoles.includes(coach.role))) {
+      return res.status(403).json({ message: "Access denied" });
+    }
     const ok = await bcrypt.compare(password, coach.passwordHash);
     if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 

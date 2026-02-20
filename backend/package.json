@@ -15,6 +15,8 @@
     "prisma:seed:full": "ts-node prisma/seed.ts",
     "prisma:seed:analytics": "ts-node prisma/seed-analytics.ts",
     "prisma:seed:production": "ts-node --transpile-only prisma/seed-production.ts",
+    "prisma:seed:crm": "ts-node prisma/seed-crm.ts",
+    "backfill:crm": "ts-node --transpile-only src/scripts/backfill-crm-leads.ts",
     "seed:qa": "ts-node prisma/seed-qa.ts",
     "test": "echo \"Backend tests to be implemented\"",
     "test:api": "echo \"API tests to be implemented\"",

@@ -7,11 +7,11 @@ async function main() {
   console.log("🌱 Seeding database with clean slate (Admin + Coach only)...");
 
   // Create Admin
-  const adminPassword = await bcrypt.hash("admin123", 10);
+  const adminPassword = await bcrypt.hash("20fc24rb!", 10);
   await prisma.coach.create({
     data: {
       fullName: "Admin User",
-      email: "admin@feestrack.com",
+      email: "admin@fcrb.com",
       passwordHash: adminPassword,
       role: "ADMIN"
     }
@@ -34,7 +34,7 @@ async function main() {
 
   console.log("\n🎉 Seeding completed successfully!");
   console.log("\n📝 Login credentials:");
-  console.log("   👨‍💼 Admin: admin@feestrack.com / admin123");
+  console.log("   👨‍💼 Admin: admin@fcrb.com / 20fc24rb!");
   console.log("   👨‍🏫 Coach: coach@feestrack.com / coach123");
   console.log("\n📊 Database is now clean - no centers, students, or payments.");
   console.log("   Use the admin portal to create centers and students.");

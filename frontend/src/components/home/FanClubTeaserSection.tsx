@@ -1,11 +1,10 @@
 /**
  * Fan Club Teaser Section - Homepage
  * Beautifully redesigned section with enhanced tier cards and sponsor integration
- * Links to /fan-club/benefits for full details
+ * Fan Club teaser section (benefits page removed)
  */
 
 import React from "react";
-import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { colors, typography, spacing, borderRadius, shadows } from "../../theme/design-tokens";
 import { heroCTAStyles, heroTypography } from "../../theme/hero-design-patterns";
@@ -59,28 +58,6 @@ export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile
     >
       {/* Header Section - Enhanced */}
       <motion.div variants={itemVariants} style={{ textAlign: "center", marginBottom: spacing.md }}>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: spacing.sm,
-            padding: `${spacing.xs} ${spacing.md}`,
-            borderRadius: 999,
-            border: `1px solid ${colors.accent.main}40`,
-            background: `linear-gradient(135deg, ${colors.accent.main}15, ${colors.primary.main}15)`,
-            backdropFilter: "blur(8px)",
-            marginBottom: spacing.lg,
-          }}
-        >
-          <StarIcon size={16} color={colors.accent.main} />
-          <span style={{ ...typography.overline, color: colors.accent.main, letterSpacing: "0.15em" }}>
-            FAN CLUB ECOSYSTEM
-          </span>
-        </motion.div>
         <h2
           style={{
             ...heroTypography.heading,
@@ -345,80 +322,6 @@ export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile
         </div>
       </motion.div>
 
-      {/* Primary CTA - Enhanced */}
-      <motion.div variants={itemVariants} style={{ textAlign: "center", maxWidth: "720px", margin: "0 auto", width: "100%" }}>
-        <Link to="/fan-club/benefits" style={{ textDecoration: "none", display: "block", width: "100%" }}>
-          <motion.div
-            whileHover={!reduce ? { y: -4, scale: 1.01, boxShadow: shadows.buttonHover } : undefined}
-            whileTap={{ scale: 0.98 }}
-            style={{
-              ...heroCTAStyles.darkWithBorder,
-              display: "flex",
-              alignItems: "center",
-              gap: spacing.lg,
-              padding: `${spacing.xl} ${spacing["40"]}`,
-              background: `linear-gradient(135deg, rgba(28, 36, 48, 0.9) 0%, rgba(10, 22, 51, 0.85) 100%)`,
-              border: `2px solid ${colors.accent.main}`,
-              boxShadow: `0 12px 40px rgba(0,0,0,0.4), 0 0 30px ${colors.accent.main}20`,
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            {/* Background glow effect */}
-            <motion.div
-              animate={{ opacity: [0.3, 0.5, 0.3] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: `radial-gradient(circle at 50% 50%, ${colors.accent.main}15 0%, transparent 70%)`,
-                pointerEvents: "none",
-              }}
-            />
-            
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                background: `linear-gradient(135deg, ${colors.accent.main}, ${colors.accent.light})`,
-                border: `2px solid ${colors.accent.main}`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: `0 4px 20px ${colors.accent.main}40`,
-                flexShrink: 0,
-                position: "relative",
-                zIndex: 1,
-              }}
-            >
-              <StarIcon size={24} style={{ color: colors.text.onAccent }} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0, position: "relative", zIndex: 1 }}>
-              <div style={{
-                ...heroCTAStyles.darkWithBorder.textStyle,
-                fontSize: typography.fontSize.xl,
-                marginBottom: spacing.xs,
-              }}>
-                Explore all Fan Club benefits
-              </div>
-              <div style={{
-                ...heroCTAStyles.darkWithBorder.subtitleStyle,
-                fontSize: typography.fontSize.base,
-              }}>
-                Exclusive gifts, <span style={{ color: colors.accent.main, fontWeight: typography.fontWeight.bold }}>VIP access</span>, member-only drops
-              </div>
-            </div>
-            <motion.div
-              animate={{ x: [0, 6, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              style={{ display: "flex", alignItems: "center", flexShrink: 0, position: "relative", zIndex: 1 }}
-            >
-              <ArrowRightIcon size={24} color={colors.accent.main} />
-            </motion.div>
-          </motion.div>
-        </Link>
-      </motion.div>
     </motion.section>
   );
 };

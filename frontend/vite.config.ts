@@ -5,7 +5,15 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    host: true
+    host: true,
+    proxy: {
+      // Proxy external realbengaluru images to avoid ERR_BLOCKED_BY_RESPONSE.NotSameOrigin in dev
+      "/realbengaluru-images": {
+        target: "https://realbengaluru.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/realbengaluru-images/, "/wp-content/uploads"),
+      },
+    },
   },
   preview: {
     port: 4173,

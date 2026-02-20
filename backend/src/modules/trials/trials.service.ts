@@ -4,9 +4,8 @@
  * Handles trial events, trialists, reports, templates, and comparisons
  */
 
-import { PrismaClient, Role, TrialEventStatus, TrialObservationType, TrialRecommendedAction, TrialPositionScope } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Role, TrialEventStatus, TrialObservationType, TrialRecommendedAction, TrialPositionScope } from '@prisma/client';
+import prisma from '../../db/prisma';
 
 // ============================================
 // TYPES

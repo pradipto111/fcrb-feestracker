@@ -1,8 +1,9 @@
 import React from "react";
 import { motion } from "framer-motion";
-import MatchSelectionPanel from "../../components/MatchSelectionPanel";
 import { PageHeader } from "../../components/ui/PageHeader";
+import { Card } from "../../components/ui/Card";
 import { useHomepageAnimation } from "../../hooks/useHomepageAnimation";
+import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
 
 const StudentMatchesPage: React.FC = () => {
   const {
@@ -20,7 +21,30 @@ const StudentMatchesPage: React.FC = () => {
         />
       </motion.div>
 
-      <MatchSelectionPanel />
+      <Card variant="default" padding="xl" style={{ marginTop: spacing.xl }}>
+        <div style={{ textAlign: "center", padding: spacing.xl }}>
+          <div style={{ fontSize: "4rem", marginBottom: spacing.lg }}>⚽</div>
+          <h3 style={{ ...typography.h3, color: colors.text.primary, marginBottom: spacing.md }}>
+            Coming Soon
+          </h3>
+          <p style={{ ...typography.body, color: colors.text.secondary, maxWidth: "600px", margin: "0 auto" }}>
+            The Matches & Selection feature is currently under development. You'll be able to view your match exposure history and selection status here soon.
+          </p>
+          <div style={{ marginTop: spacing.lg }}>
+            <span style={{ 
+              ...typography.caption, 
+              padding: `${spacing.sm} ${spacing.md}`, 
+              borderRadius: borderRadius.md, 
+              background: colors.warning.soft, 
+              color: colors.warning.main,
+              fontWeight: typography.fontWeight.semibold,
+              fontSize: typography.fontSize.sm
+            }}>
+              Coming soon
+            </span>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 };

@@ -7,6 +7,17 @@ import { ThemeProvider } from "./theme/theme-provider";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "./index.css";
 
+// Suppress React DevTools warning in development
+if (import.meta.env.DEV) {
+  const originalWarn = console.warn;
+  console.warn = (...args: any[]) => {
+    if (args[0]?.includes?.("Download the React DevTools")) {
+      return; // Suppress React DevTools warning
+    }
+    originalWarn.apply(console, args);
+  };
+}
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <ErrorBoundary>

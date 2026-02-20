@@ -41,8 +41,10 @@ import { galleryAssets, heroAssets, clubAssets } from "../config/assets";
 import { SPONSOR_BENEFITS } from "../data/fanclubBenefits";
 import { clubInfo } from "../data/club";
 
+const MOBILE_BREAKPOINT = 768;
+
 const AboutPage: React.FC = () => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
   const [expandedFounder, setExpandedFounder] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,7 +52,7 @@ const AboutPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth <= 768);
+    const onResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
@@ -172,6 +174,7 @@ const AboutPage: React.FC = () => {
 
   return (
     <div
+      data-realverse-page
       style={{
         minHeight: "100vh",
         background: colors.club.deep,
@@ -510,8 +513,8 @@ const AboutPage: React.FC = () => {
                 title: "Fan Club",
                 description: "The 'Blue Army' is more than just a fan base; it's the soul of FC Real Bengaluru. Our passionate supporters back the club through thick and thin, creating an electrifying atmosphere on and off the pitch.",
                 icon: <UsersIcon size={32} color={colors.primary.main} />,
-                cta: "Discover the Blue Army",
-                ctaLink: "/fan-club/benefits",
+                cta: "Coming soon",
+                ctaLink: "#",
                 accent: colors.primary.main,
               },
             ].map((item) => (
@@ -847,23 +850,21 @@ const AboutPage: React.FC = () => {
             />
           </div>
           <div style={{ textAlign: "center" }}>
-            <Link to="/fan-club/benefits" style={{ textDecoration: "none", display: "inline-block" }}>
-              <motion.div
-                whileHover={{ y: -2, boxShadow: shadows.buttonHover }}
-                whileTap={{ scale: 0.98 }}
-                style={{
-                  ...heroCTAPillStyles.base,
-                  ...heroCTAPillStyles.gold,
-                  padding: `${spacing.md} ${spacing.xl}`,
-                  display: "inline-flex",
-                }}
-              >
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                  Explore partner benefits
-                  <ArrowRightIcon size={16} color={colors.accent.main} />
-                </span>
-              </motion.div>
-            </Link>
+            <span
+              style={{
+                ...heroCTAPillStyles.base,
+                ...heroCTAPillStyles.gold,
+                padding: `${spacing.md} ${spacing.xl}`,
+                display: "inline-flex",
+                opacity: 0.7,
+                cursor: "default",
+              }}
+            >
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                Explore partner benefits
+                <span style={{ ...typography.caption, background: colors.warning.soft, color: colors.warning.main, padding: "2px 8px", borderRadius: 999, fontWeight: typography.fontWeight.semibold }}>Coming soon</span>
+              </span>
+            </span>
           </div>
         </motion.div>
       </SectionWrapper>

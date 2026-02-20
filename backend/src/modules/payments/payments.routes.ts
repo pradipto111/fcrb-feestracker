@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
-import { authRequired } from "../../auth/auth.middleware";
+import prisma from "../../db/prisma";
+import { authRequired, requireRole } from "../../auth/auth.middleware";
 import { getSystemDate } from "../../utils/system-date";
+import { logSystemActivity } from "../../utils/system-activity";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 async function getCoachCenterIds(coachId: number) {
@@ -51,6 +51,30 @@ router.post("/", authRequired, async (req, res) => {
       amount,
       paymentDate: paymentDate ? new Date(paymentDate) : getSystemDate(),
       paymentMode,
+      upiOrTxnReference,
+      notes
+    }
+  });
+
+  // Log payment creation activity
+  await logSystemActivity({
+    actorType: role === "ADMIN" ? "ADMIN" : role === "COACH" ? "COACH" : role === "CRM" ? "CRM" : "ADMIN",
+    actorId: userId,
+    action: "PAYMENT_CREATED",
+    entityType: "PAYMENT",
+    entityId: payment.id,
+    before: null,
+    after: {
+      amount,
+      paymentMode,
+      paymentDate: payment.paymentDate,
+      studentId,
+      centerId: student.centerId
+    },
+    metadata: {
+      studentName: student.fullName,
+      studentId,
+      centerId: student.centerId,
       upiOrTxnReference,
       notes
     }
@@ -139,6 +163,139 @@ router.post("/deduct-fees", authRequired, async (req, res) => {
   } catch (error: any) {
     console.error("Error deducting fees:", error);
     res.status(500).json({ message: error.message || "Failed to deduct fees" });
+  }
+});
+
+/**
+ * GET /payments/logs
+ * Admin-only: Get payment activity logs
+ */
+router.get("/logs", authRequired, requireRole("ADMIN"), async (req, res) => {
+  try {
+    const { page = 1, limit = 50, actorType, dateFrom, dateTo } = req.query as {
+      page?: string;
+      limit?: string;
+      actorType?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    };
+
+    const pageNum = parseInt(String(page), 10) || 1;
+    const limitNum = parseInt(String(limit), 10) || 50;
+    const skip = (pageNum - 1) * limitNum;
+
+    const where: any = {
+      OR: [
+        { entityType: "PAYMENT" },
+        { entityType: "STUDENT", action: { contains: "PAYMENT" } },
+        { entityType: "STUDENT", action: { contains: "FEES" } }
+      ]
+    };
+
+    if (actorType) {
+      where.actorType = actorType.toUpperCase();
+    }
+
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) {
+        where.createdAt.gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        where.createdAt.lte = new Date(dateTo);
+      }
+    }
+
+    const [logs, total] = await Promise.all([
+      (prisma as any).systemActivityLog.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: limitNum,
+        skip
+      }),
+      (prisma as any).systemActivityLog.count({ where })
+    ]);
+
+    // Enrich logs with actor names
+    const enrichedLogs = await Promise.all(
+      logs.map(async (log: any) => {
+        let actorName = "Unknown";
+        let actorRole = log.actorType;
+
+        if (log.actorId) {
+          if (log.actorType === "ADMIN" || log.actorType === "COACH") {
+            const coach = await prisma.coach.findUnique({
+              where: { id: parseInt(log.actorId) },
+              select: { fullName: true, role: true }
+            });
+            if (coach) {
+              actorName = coach.fullName;
+              actorRole = coach.role;
+            }
+          } else if (log.actorType === "CRM") {
+            const crmUser = await (prisma as any).crmUser?.findUnique({
+              where: { id: parseInt(log.actorId) },
+              select: { fullName: true, role: true }
+            });
+            if (crmUser) {
+              actorName = crmUser.fullName;
+              actorRole = crmUser.role;
+            }
+          }
+        }
+
+        // Get student name from metadata or entity
+        let studentName = "Unknown";
+        if (log.metadata?.studentName) {
+          studentName = log.metadata.studentName;
+        } else if (log.entityType === "STUDENT") {
+          const student = await prisma.student.findUnique({
+            where: { id: parseInt(log.entityId) },
+            select: { fullName: true }
+          });
+          if (student) {
+            studentName = student.fullName;
+          }
+        } else if (log.entityType === "PAYMENT" && log.metadata?.studentId) {
+          const student = await prisma.student.findUnique({
+            where: { id: log.metadata.studentId },
+            select: { fullName: true }
+          });
+          if (student) {
+            studentName = student.fullName;
+          }
+        }
+
+        return {
+          id: log.id,
+          timestamp: log.createdAt,
+          actorType: log.actorType,
+          actorName,
+          actorRole,
+          action: log.action,
+          entityType: log.entityType,
+          entityId: log.entityId,
+          studentName,
+          amount: log.after?.amount || log.metadata?.amount || null,
+          before: log.before,
+          after: log.after,
+          metadata: log.metadata
+        };
+      })
+    );
+
+    res.json({
+      logs: enrichedLogs,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    });
+  } catch (error: any) {
+    console.error("Error fetching payment logs:", error);
+    res.status(500).json({ message: error.message || "Failed to fetch payment logs" });
   }
 });
 

@@ -5,9 +5,8 @@
  * This service helps coaches self-correct bias and ensures consistency across centres.
  */
 
-import { PrismaClient, MetricCategory, PlayerPosition, Role } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { MetricCategory, PlayerPosition, Role } from '@prisma/client';
+import prisma from '../../db/prisma';
 
 export interface CoachScoringProfile {
   coachId: number;

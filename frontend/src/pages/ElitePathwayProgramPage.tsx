@@ -7,7 +7,7 @@ const ElitePathwayProgramPage: React.FC = () => {
   return (
     <ProgramPageTemplate
       program={{
-        name: "Elite Pathway Program",
+        name: "Elite Pathway Programme",
         acronym: "EPP",
         positioning: "For players targeting top-tier football in India and abroad.",
         who: "Invitation / merit-based. Performance + data + coach review determine eligibility. This program is for players who demonstrate exceptional ability, commitment, and potential for professional football.",

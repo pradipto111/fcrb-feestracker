@@ -101,9 +101,9 @@ const FanProgramsPage: React.FC = () => {
 
         {flags.programs === false ? (
           <Card variant="default" padding="xl" style={{ borderRadius: borderRadius["2xl"], background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.10)" }}>
-            <div style={{ ...typography.h3, color: colors.text.primary, margin: 0 }}>Programs conversion is disabled</div>
+            <div style={{ ...typography.h3, color: colors.text.primary, margin: 0 }}>Programmes conversion is disabled</div>
             <div style={{ ...typography.body, color: colors.text.secondary, marginTop: spacing.md, lineHeight: 1.7 }}>
-              Program interest capture is disabled via Admin feature flags for your tier.
+              Programme interest capture is disabled via Admin feature flags for your tier.
             </div>
           </Card>
         ) : (
@@ -139,9 +139,9 @@ const FanProgramsPage: React.FC = () => {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: spacing.md }}>
               {[
                 { id: "FYDP" as const, name: "Foundation & Youth Development", code: "FYDP", one: "Build intelligent footballers before building competitors." },
-                { id: "SCP" as const, name: "Senior Competitive Program", code: "SCP", one: "The competitive bridge between youth and elite football." },
-                { id: "WPP" as const, name: "Women’s Performance Pathway", code: "WPP", one: "A unified pathway for women footballers aiming professional levels." },
-                { id: "EPP" as const, name: "Elite Pathway Program", code: "EPP", one: "For players targeting top-tier football in India and abroad." },
+                { id: "SCP" as const, name: "Senior Competitive Programme", code: "SCP", one: "The competitive bridge between youth and elite football." },
+                { id: "WPP" as const, name: "Women's Performance Pathway", code: "WPP", one: "A unified pathway for women footballers aiming professional levels." },
+                { id: "EPP" as const, name: "Elite Pathway Programme", code: "EPP", one: "For players targeting top-tier football in India and abroad." },
               ].map((p) => (
                 <motion.div key={p.id}>
                   <div style={{ borderRadius: borderRadius["2xl"], border: "1px solid rgba(255,255,255,0.10)", background: "rgba(0,0,0,0.16)", padding: spacing.lg, minHeight: 220, display: "flex", flexDirection: "column" }}>

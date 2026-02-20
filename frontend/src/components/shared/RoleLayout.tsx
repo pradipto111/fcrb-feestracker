@@ -3,6 +3,8 @@ import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { colors, typography, spacing, borderRadius, shadows } from "../../theme/design-tokens";
 
+const MOBILE_BREAKPOINT = 768;
+
 interface NavItem {
   path: string;
   label: string;
@@ -12,7 +14,7 @@ interface NavItem {
 }
 
 interface RoleLayoutProps {
-  role: "STUDENT" | "COACH" | "ADMIN" | "FAN";
+  role: "STUDENT" | "COACH" | "ADMIN" | "FAN" | "CRM";
   navItems: NavItem[];
   getIcon: (iconName: string) => React.ReactNode;
   profileData?: any;
@@ -100,6 +102,13 @@ export const IconPayments = () => (
   </svg>
 );
 
+export const IconFeed = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="3" width="16" height="14" rx="2" />
+    <path d="M6 7h8M6 11h8M6 15h4" />
+  </svg>
+);
+
 const RoleLayout: React.FC<RoleLayoutProps> = ({
   role,
   navItems,
@@ -110,7 +119,7 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
@@ -120,8 +129,8 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-      if (window.innerWidth > 768) {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+      if (window.innerWidth >= MOBILE_BREAKPOINT) {
         setMobileMenuOpen(false);
       }
     };
@@ -148,7 +157,17 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
 
   if (isMobile) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <div
+        data-realverse-page
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100vh",
+          width: "100%",
+          maxWidth: "100vw",
+          overflowX: "hidden",
+        }}
+      >
         {/* Mobile Top Nav */}
         <div
           style={{
@@ -269,7 +288,16 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
 
   // Desktop Layout
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
+    <div
+      data-realverse-page
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        width: "100%",
+        maxWidth: "100vw",
+        overflowX: "hidden",
+      }}
+    >
       {/* Sidebar */}
       <aside
         style={{

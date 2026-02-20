@@ -5,7 +5,8 @@ declare global {
     interface Request {
       user?: {
         id: number;
-        role: "ADMIN" | "COACH" | "STUDENT" | "FAN";
+        role: "ADMIN" | "COACH" | "STUDENT" | "FAN" | "CRM";
+        crmRole?: "AGENT";
       };
     }
   }

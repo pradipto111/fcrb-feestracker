@@ -8,7 +8,7 @@ async function main() {
 
   // Preserve admin credentials
   const existingAdmin = await prisma.coach.findUnique({
-    where: { email: "admin@feestrack.com" },
+    where: { email: "admin@fcrb.com" },
   });
 
   let adminPasswordHash = "";
@@ -16,7 +16,7 @@ async function main() {
     adminPasswordHash = existingAdmin.passwordHash;
     console.log("✅ Found existing admin, preserving credentials");
   } else {
-    adminPasswordHash = await bcrypt.hash("admin123", 10);
+    adminPasswordHash = await bcrypt.hash("20fc24rb!", 10);
     console.log("✅ Creating new admin with default password");
   }
 
@@ -44,7 +44,7 @@ async function main() {
   const admin = await prisma.coach.create({
     data: {
       fullName: "Admin User",
-      email: "admin@feestrack.com",
+      email: "admin@fcrb.com",
       passwordHash: adminPasswordHash,
       role: "ADMIN",
     },
@@ -590,7 +590,7 @@ async function main() {
 
   console.log("\n🎉 Analytics mock data seeding completed successfully!");
   console.log("\n📝 Login Credentials:");
-  console.log("   👨‍💼 Admin: admin@feestrack.com / admin123 (or existing password)");
+  console.log("   👨‍💼 Admin: admin@fcrb.com / 20fc24rb! (or existing password)");
   console.log("   👨‍🏫 Coach 1: nitesh.sharma@fcrb.com / coach123");
   console.log("   👨‍🏫 Coach 2: dhruv.katyal@fcrb.com / coach123");
   console.log("   👨‍🎓 Students: [name]@student.fcrb.com / student123");

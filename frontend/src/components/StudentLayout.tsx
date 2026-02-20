@@ -89,11 +89,13 @@ const IconFeed = () => (
   </svg>
 );
 
-const IconLeaderboard = () => (
+const IconFanclub = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 10l2 4 4-8 2 4v4H4v-4z" />
+    <path d="M10 2L12.5 7.5L18 8.5L14 12.5L15 18L10 15L5 18L6 12.5L2 8.5L7.5 7.5L10 2Z" />
+    <circle cx="10" cy="10" r="2" fill="currentColor" />
   </svg>
 );
+
 
 const StudentLayout: React.FC = () => {
   const location = useLocation();
@@ -140,16 +142,16 @@ const StudentLayout: React.FC = () => {
       description: "Overview & quick links",
     },
     {
+      path: "/realverse/student/training-calendar",
+      label: "Training Calendar",
+      icon: "attendance",
+      description: "View your training sessions & attendance",
+    },
+    {
       path: "/realverse/my-attendance",
       label: "My Attendance",
       icon: "attendance",
       description: "Track your training sessions",
-    },
-    {
-      path: "/realverse/student/schedule",
-      label: "Schedule",
-      icon: "matches",
-      description: "Matches, training & events",
     },
   ];
 
@@ -187,11 +189,14 @@ const StudentLayout: React.FC = () => {
       icon: "feed",
       description: "Club updates & posts",
     },
+  ];
+
+  const fanclubNavItems: NavItem[] = [
     {
-      path: "/realverse/leaderboard",
-      label: "Leaderboard",
-      icon: "leaderboard",
-      description: "Rankings & achievements",
+      path: "/realverse/student/fanclub-benefits",
+      label: "Fanclub Benefits",
+      icon: "fanclub",
+      description: "Exclusive perks & rewards",
     },
   ];
 
@@ -217,8 +222,8 @@ const StudentLayout: React.FC = () => {
         return <IconDrills />;
       case "feed":
         return <IconFeed />;
-      case "leaderboard":
-        return <IconLeaderboard />;
+      case "fanclub":
+        return <IconFanclub />;
       default:
         return null;
     }
@@ -232,7 +237,7 @@ const StudentLayout: React.FC = () => {
   };
 
   const student = studentData?.student;
-  const allNavItems = [...mainNavItems, ...developmentNavItems, ...contentNavItems];
+  const allNavItems = [...mainNavItems, ...contentNavItems, ...developmentNavItems, ...fanclubNavItems];
   const activeNavItem = allNavItems.find((item) => isActive(item.path));
   const currentPageLabel = activeNavItem?.label || "Student Dashboard";
 
@@ -335,8 +340,79 @@ const StudentLayout: React.FC = () => {
               </Link>
 
               {/* All navigation items combined for mobile */}
-              {[...mainNavItems, ...developmentNavItems, ...contentNavItems].map((item) => {
+              {[...mainNavItems, ...contentNavItems, ...developmentNavItems, ...fanclubNavItems].map((item) => {
                 const active = isActive(item.path);
+                const isWellnessReports = item.path === "/realverse/student/wellness-reports";
+                const isAnalytics = item.path === "/realverse/student/analytics";
+                const isMatchesSelection = item.path === "/realverse/student/matches";
+                const isMyDevelopment = item.path === "/realverse/student/development";
+                const isFanclubBenefits = item.path === "/realverse/student/fanclub-benefits";
+                const isDisabled = isWellnessReports || isAnalytics || isMatchesSelection || isMyDevelopment || isFanclubBenefits;
+                
+                if (isDisabled) {
+                  return (
+                    <div
+                      key={item.path}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      style={{
+                        textDecoration: "none",
+                        padding: spacing.md,
+                        borderRadius: borderRadius.md,
+                        background: "transparent",
+                        borderLeft: "3px solid transparent",
+                        color: colors.text.secondary,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: spacing.md,
+                        transition: "all 0.15s ease-out",
+                        cursor: "not-allowed",
+                        opacity: 0.6,
+                      }}
+                    >
+                      <div style={{ color: colors.text.muted, opacity: 0.7 }}>
+                        {getIcon(item.icon)}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: spacing.xs }}>
+                          <div
+                            style={{
+                              ...typography.body,
+                              fontWeight: typography.fontWeight.medium,
+                              fontSize: typography.fontSize.sm,
+                            }}
+                          >
+                            {item.label}
+                          </div>
+                          <span style={{ 
+                            ...typography.caption, 
+                            padding: `2px ${spacing.xs}`, 
+                            borderRadius: borderRadius.sm, 
+                            background: colors.warning.soft, 
+                            color: colors.warning.main,
+                            fontWeight: typography.fontWeight.semibold,
+                            fontSize: typography.fontSize.xs
+                          }}>
+                            Coming soon
+                          </span>
+                        </div>
+                        <div
+                          style={{
+                            ...typography.caption,
+                            fontSize: typography.fontSize.xs,
+                            color: colors.text.muted,
+                            marginTop: spacing.xs,
+                          }}
+                        >
+                          {item.description}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                
                 return (
                   <Link
                     key={item.path}
@@ -540,37 +616,29 @@ const StudentLayout: React.FC = () => {
         )}
 
         {/* Analytics CTA - Prominent Section */}
-        <Link
-          to="/realverse/student/analytics"
+        <div
           style={{
             textDecoration: "none",
             marginBottom: spacing.lg,
+            cursor: "not-allowed",
+            opacity: 0.6,
           }}
+          onClick={(e) => e.preventDefault()}
         >
           <div
             style={{
-              background: `linear-gradient(135deg, ${colors.accent.main}15 0%, ${colors.primary.main}15 100%)`,
-              border: `2px solid ${isActive("/realverse/student/analytics") ? colors.accent.main : colors.accent.main + "40"}`,
+              background: `linear-gradient(135deg, ${colors.accent.main}08 0%, ${colors.primary.main}08 100%)`,
+              border: `2px solid ${colors.text.muted}40`,
               borderRadius: borderRadius.lg,
               padding: spacing.md,
-              cursor: "pointer",
+              cursor: "not-allowed",
               transition: "all 0.2s ease",
               position: "relative",
               overflow: "hidden",
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = shadows.glassDark;
-              e.currentTarget.style.borderColor = colors.accent.main;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "none";
-              e.currentTarget.style.borderColor = isActive("/realverse/student/analytics") ? colors.accent.main : colors.accent.main + "40";
-            }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, marginBottom: spacing.xs }}>
-              <div style={{ color: colors.accent.main }}>
+              <div style={{ color: colors.text.muted }}>
                 <IconAnalytics />
               </div>
               <div
@@ -583,6 +651,18 @@ const StudentLayout: React.FC = () => {
               >
                 Analytics
               </div>
+              <span style={{ 
+                ...typography.caption, 
+                padding: `2px ${spacing.xs}`, 
+                borderRadius: borderRadius.sm, 
+                background: colors.warning.soft, 
+                color: colors.warning.main,
+                fontWeight: typography.fontWeight.semibold,
+                fontSize: typography.fontSize.xs,
+                marginLeft: "auto"
+              }}>
+                Coming soon
+              </span>
             </div>
             <div
               style={{
@@ -595,7 +675,7 @@ const StudentLayout: React.FC = () => {
               View your performance metrics & insights
             </div>
           </div>
-        </Link>
+        </div>
 
         {/* Navigation Sections */}
         <nav 
@@ -631,98 +711,6 @@ const StudentLayout: React.FC = () => {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
               {mainNavItems.map((item) => {
-                const active = isActive(item.path);
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    style={{
-                      textDecoration: "none",
-                      padding: spacing.md,
-                      borderRadius: borderRadius.md,
-                      background: active
-                        ? colors.primary.main + "12"
-                        : "transparent",
-                      borderLeft: active ? `3px solid ${colors.primary.main}` : "3px solid transparent",
-                      color: active ? colors.text.primary : colors.text.secondary,
-                      transition: "all 0.15s ease-out",
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: spacing.md,
-                      cursor: "pointer",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!active) {
-                        e.currentTarget.style.background = colors.surface.soft;
-                        e.currentTarget.style.color = colors.text.primary;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!active) {
-                        e.currentTarget.style.background = "transparent";
-                        e.currentTarget.style.color = colors.text.secondary;
-                      }
-                    }}
-                  >
-                    <div
-                      style={{
-                        color: active ? colors.primary.light : colors.text.muted,
-                        opacity: active ? 1 : 0.7,
-                        flexShrink: 0,
-                        marginTop: "2px",
-                      }}
-                    >
-                      {getIcon(item.icon)}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          ...typography.body,
-                          fontWeight: active
-                            ? typography.fontWeight.semibold
-                            : typography.fontWeight.medium,
-                          marginBottom: spacing.xs,
-                          fontSize: typography.fontSize.sm,
-                          color: "inherit",
-                        }}
-                      >
-                        {item.label}
-                      </div>
-                      <div
-                        style={{
-                          ...typography.caption,
-                          fontSize: typography.fontSize.xs,
-                          color: colors.text.muted,
-                          lineHeight: 1.4,
-                          opacity: active ? 0.8 : 0.6,
-                        }}
-                      >
-                        {item.description}
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Development Section */}
-          <div>
-            <div
-              style={{
-                ...typography.caption,
-                fontSize: typography.fontSize.xs,
-                color: colors.text.muted,
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                marginBottom: spacing.sm,
-                paddingLeft: spacing.xs,
-              }}
-            >
-              Development
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
-              {developmentNavItems.map((item) => {
                 const active = isActive(item.path);
                 return (
                   <Link
@@ -885,6 +873,312 @@ const StudentLayout: React.FC = () => {
                       </div>
                     </div>
                   </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Development Section */}
+          <div>
+            <div
+              style={{
+                ...typography.caption,
+                fontSize: typography.fontSize.xs,
+                color: colors.text.muted,
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                marginBottom: spacing.sm,
+                paddingLeft: spacing.xs,
+              }}
+            >
+              Development
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
+              {developmentNavItems.map((item) => {
+                const active = isActive(item.path);
+                const isWellnessReports = item.path === "/realverse/student/wellness-reports";
+                const isMatchesSelection = item.path === "/realverse/student/matches";
+                const isMyDevelopment = item.path === "/realverse/student/development";
+                const isDisabled = isWellnessReports || isMatchesSelection || isMyDevelopment;
+                return (
+                  <div
+                    key={item.path}
+                    onClick={(e) => {
+                      if (isDisabled) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }}
+                    style={{
+                      textDecoration: "none",
+                      padding: spacing.md,
+                      borderRadius: borderRadius.md,
+                      background: active && !isDisabled
+                        ? colors.primary.main + "12"
+                        : "transparent",
+                      borderLeft: isDisabled ? "3px solid transparent" : (active ? `3px solid ${colors.primary.main}` : "3px solid transparent"),
+                      color: active && !isDisabled ? colors.text.primary : colors.text.secondary,
+                      transition: "all 0.15s ease-out",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: spacing.md,
+                      cursor: isDisabled ? "not-allowed" : "pointer",
+                      opacity: isDisabled ? 0.6 : 1,
+                      position: "relative",
+                    }}
+                  >
+                    {isDisabled ? (
+                      <>
+                        <div
+                          style={{
+                            color: colors.text.muted,
+                            opacity: 0.7,
+                            flexShrink: 0,
+                            marginTop: "2px",
+                          }}
+                        >
+                          {getIcon(item.icon)}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: spacing.xs, marginBottom: spacing.xs }}>
+                            <div
+                              style={{
+                                ...typography.body,
+                                fontWeight: typography.fontWeight.medium,
+                                fontSize: typography.fontSize.sm,
+                                color: "inherit",
+                              }}
+                            >
+                              {item.label}
+                            </div>
+                            <span style={{ 
+                              ...typography.caption, 
+                              padding: `2px ${spacing.xs}`, 
+                              borderRadius: borderRadius.sm, 
+                              background: colors.warning.soft, 
+                              color: colors.warning.main,
+                              fontWeight: typography.fontWeight.semibold,
+                              fontSize: typography.fontSize.xs
+                            }}>
+                              Coming soon
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              ...typography.caption,
+                              fontSize: typography.fontSize.xs,
+                              color: colors.text.muted,
+                              lineHeight: 1.4,
+                              opacity: 0.6,
+                            }}
+                          >
+                            {item.description}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <Link
+                        to={item.path}
+                        style={{
+                          textDecoration: "none",
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: spacing.md,
+                          width: "100%",
+                          color: "inherit",
+                        }}
+                      >
+                        <div
+                          style={{
+                            color: active ? colors.primary.light : colors.text.muted,
+                            opacity: active ? 1 : 0.7,
+                            flexShrink: 0,
+                            marginTop: "2px",
+                          }}
+                        >
+                          {getIcon(item.icon)}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              ...typography.body,
+                              fontWeight: active
+                                ? typography.fontWeight.semibold
+                                : typography.fontWeight.medium,
+                              marginBottom: spacing.xs,
+                              fontSize: typography.fontSize.sm,
+                              color: "inherit",
+                            }}
+                          >
+                            {item.label}
+                          </div>
+                          <div
+                            style={{
+                              ...typography.caption,
+                              fontSize: typography.fontSize.xs,
+                              color: colors.text.muted,
+                              lineHeight: 1.4,
+                              opacity: active ? 0.8 : 0.6,
+                            }}
+                          >
+                            {item.description}
+                          </div>
+                        </div>
+                      </Link>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Fanclub Benefits Section */}
+          <div>
+            <div
+              style={{
+                ...typography.caption,
+                fontSize: typography.fontSize.xs,
+                color: colors.text.muted,
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                marginBottom: spacing.sm,
+                paddingLeft: spacing.xs,
+              }}
+            >
+              Fanclub Benefits
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
+              {fanclubNavItems.map((item) => {
+                const active = isActive(item.path);
+                const isFanclubBenefits = item.path === "/realverse/student/fanclub-benefits";
+                const isDisabled = isFanclubBenefits;
+                return (
+                  <div
+                    key={item.path}
+                    onClick={(e) => {
+                      if (isDisabled) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }}
+                    style={{
+                      textDecoration: "none",
+                      padding: spacing.md,
+                      borderRadius: borderRadius.md,
+                      background: active && !isDisabled
+                        ? colors.primary.main + "12"
+                        : "transparent",
+                      borderLeft: isDisabled ? "3px solid transparent" : (active ? `3px solid ${colors.primary.main}` : "3px solid transparent"),
+                      color: active && !isDisabled ? colors.text.primary : colors.text.secondary,
+                      transition: "all 0.15s ease-out",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: spacing.md,
+                      cursor: isDisabled ? "not-allowed" : "pointer",
+                      opacity: isDisabled ? 0.6 : 1,
+                      position: "relative",
+                    }}
+                  >
+                    {isDisabled ? (
+                      <>
+                        <div
+                          style={{
+                            color: colors.text.muted,
+                            opacity: 0.7,
+                            flexShrink: 0,
+                            marginTop: "2px",
+                          }}
+                        >
+                          {getIcon(item.icon)}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: spacing.xs, marginBottom: spacing.xs }}>
+                            <div
+                              style={{
+                                ...typography.body,
+                                fontWeight: typography.fontWeight.medium,
+                                fontSize: typography.fontSize.sm,
+                                color: "inherit",
+                              }}
+                            >
+                              {item.label}
+                            </div>
+                            <span style={{ 
+                              ...typography.caption, 
+                              padding: `2px ${spacing.xs}`, 
+                              borderRadius: borderRadius.sm, 
+                              background: colors.warning.soft, 
+                              color: colors.warning.main,
+                              fontWeight: typography.fontWeight.semibold,
+                              fontSize: typography.fontSize.xs
+                            }}>
+                              Coming soon
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              ...typography.caption,
+                              fontSize: typography.fontSize.xs,
+                              color: colors.text.muted,
+                              lineHeight: 1.4,
+                              opacity: 0.6,
+                            }}
+                          >
+                            {item.description}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <Link
+                        to={item.path}
+                        style={{
+                          textDecoration: "none",
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: spacing.md,
+                          width: "100%",
+                          color: "inherit",
+                        }}
+                      >
+                        <div
+                          style={{
+                            color: active ? colors.primary.light : colors.text.muted,
+                            opacity: active ? 1 : 0.7,
+                            flexShrink: 0,
+                            marginTop: "2px",
+                          }}
+                        >
+                          {getIcon(item.icon)}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              ...typography.body,
+                              fontWeight: active
+                                ? typography.fontWeight.semibold
+                                : typography.fontWeight.medium,
+                              marginBottom: spacing.xs,
+                              fontSize: typography.fontSize.sm,
+                              color: "inherit",
+                            }}
+                          >
+                            {item.label}
+                          </div>
+                          <div
+                            style={{
+                              ...typography.caption,
+                              fontSize: typography.fontSize.xs,
+                              color: colors.text.muted,
+                              lineHeight: 1.4,
+                              opacity: active ? 0.8 : 0.6,
+                            }}
+                          >
+                            {item.description}
+                          </div>
+                        </div>
+                      </Link>
+                    )}
+                  </div>
                 );
               })}
             </div>

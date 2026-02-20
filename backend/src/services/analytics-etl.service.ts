@@ -5,9 +5,7 @@
  * This runs periodically (e.g., daily/hourly) to refresh analytics.
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import prisma from "../db/prisma";
 
 /**
  * Refresh materialized views

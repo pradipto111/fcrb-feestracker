@@ -124,8 +124,7 @@ cd backend && npm run build
 
 | Route | Purpose | CTAs | Expected Action | Role Required |
 |-------|---------|------|----------------|---------------|
-| `/realverse/admin` | Admin dashboard | All coach CTAs + admin-specific | Full system access | ADMIN |
-| `/realverse/admin/analytics` | Global analytics | Charts, exports, filters | System-wide analytics | ADMIN |
+| `/realverse/admin` | Redirects to `/realverse/admin/students` | — | — | ADMIN |
 | `/realverse/admin/staff` | Staff management | "Add Staff", "Edit", "Remove" | Manage coaches/admins | ADMIN |
 | `/realverse/admin/payments` | Payment tracking | "Mark Paid", "Generate Invoice", "Export" | Manage payments | ADMIN |
 | `/realverse/admin/settings` | System settings | "Save Settings", "Reset" | Configure system | ADMIN |

@@ -56,9 +56,8 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
     { path: '/realverse/drills/manage', label: 'Manage Videos', Icon: FilmIcon, roles: ['ADMIN', 'COACH'] },
     { path: '/realverse/feed', label: 'Feed', Icon: CameraIcon, roles: ['ADMIN', 'COACH', 'STUDENT'] },
     { path: '/realverse/feed/approve', label: 'Approve Posts', Icon: SuccessIcon, roles: ['ADMIN', 'COACH'] },
-    { path: '/realverse/leaderboard', label: 'Leaderboard', Icon: TrophyIcon, roles: ['ADMIN', 'COACH', 'STUDENT'] },
-    { path: '/realverse/admin', label: 'Admin', Icon: GearIcon, roles: ['ADMIN'] },
-    { path: '/realverse/admin/leads', label: 'Website Leads', Icon: ClipboardIcon, roles: ['ADMIN'] },
+    { path: '/realverse/admin/students', label: 'Admin', Icon: GearIcon, roles: ['ADMIN'] },
+    { path: '/realverse/admin/leads', label: 'Leads', Icon: ClipboardIcon, roles: ['ADMIN'] },
     { path: '/realverse/admin/merch', label: 'Merchandise', Icon: ShoppingBagIcon, roles: ['ADMIN'] },
     { path: '/realverse/admin/centres', label: 'Centres', Icon: LocationIcon, roles: ['ADMIN'] },
   ];
@@ -90,8 +89,7 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
     location.pathname.startsWith('/realverse/my-attendance') ||
     location.pathname.startsWith('/realverse/my-fixtures') ||
     location.pathname.startsWith('/realverse/drills') ||
-    location.pathname.startsWith('/realverse/feed') ||
-    location.pathname.startsWith('/realverse/leaderboard');
+    location.pathname.startsWith('/realverse/feed');
   const isCoachRoute = location.pathname.startsWith('/realverse/coach');
   const isAdminRoute = location.pathname.startsWith('/realverse/admin');
   const shouldHideSidebar = isStudentRoute || isCoachRoute || isAdminRoute;

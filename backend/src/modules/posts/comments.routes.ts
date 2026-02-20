@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
-import { authRequired } from "../../auth/auth.middleware";
+import prisma from "../../db/prisma";
+import { authRequired, toPrismaRole } from "../../auth/auth.middleware";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Get comments for a post
@@ -83,7 +82,7 @@ router.post("/", authRequired, async (req, res) => {
     data: {
       postId: Number(postId),
       content,
-      createdByRole: role,
+      createdByRole: toPrismaRole(role),
       createdById: id
     }
   });

@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../db/prisma";
 import { authRequired, requireRole } from "../../auth/auth.middleware";
+import { upsertCrmLead } from "../crm/crm-sync";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Fan-only endpoints (Fan Club HQ)
@@ -383,6 +383,18 @@ router.post("/program-interest", async (req, res) => {
         status: "NEW",
         notes: notes || null,
       },
+    });
+
+    await upsertCrmLead({
+      sourceType: "FAN",
+      sourceId: lead.id,
+      primaryName: profile.fullName || `Fan#${profile.id}`,
+      phone: profile.phone || null,
+      email: null,
+      preferredCentre: null,
+      programmeInterest: programInterest || null,
+      statusHint: lead.status,
+      convertedFanId: profile.id,
     });
     return res.status(201).json(lead);
   } catch (error: any) {

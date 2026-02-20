@@ -1,43 +1,66 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
-import { useCart } from "../context/CartContext";
+
+const MOBILE_NAV_DRAWER_ID = "mobile-nav-drawer";
+
+const MOBILE_BREAKPOINT = 768;
 
 const PublicHeader: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [homeDropdownOpen, setHomeDropdownOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < MOBILE_BREAKPOINT);
   const location = useLocation();
   const navigate = useNavigate();
-  const { getItemCount } = useCart();
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-      if (window.innerWidth > 768) {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+      if (window.innerWidth >= MOBILE_BREAKPOINT) {
         setIsMobileMenuOpen(false);
-        setHomeDropdownOpen(false);
       }
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Close dropdown when clicking outside
+  // Lock body scroll when mobile menu is open
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('[data-dropdown-container]')) {
-        setHomeDropdownOpen(false);
-      }
-    };
-
-    if (homeDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+    if (isMobileMenuOpen && isMobile) {
+      const scrollY = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = "0";
+      document.body.style.right = "0";
+      document.body.style.overflow = "hidden";
+    } else {
+      const scrollY = document.body.style.top ? Math.abs(parseInt(document.body.style.top, 10)) : 0;
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.overflow = "";
+      if (scrollY) window.scrollTo(0, scrollY);
     }
-  }, [homeDropdownOpen]);
+    return () => {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen, isMobile]);
+
+  // Restore focus to menu button when mobile menu closes (not on initial mount)
+  const prevMobileMenuOpen = useRef(false);
+  useEffect(() => {
+    if (prevMobileMenuOpen.current && !isMobileMenuOpen && mobileMenuButtonRef.current) {
+      mobileMenuButtonRef.current.focus();
+    }
+    prevMobileMenuOpen.current = isMobileMenuOpen;
+  }, [isMobileMenuOpen]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,53 +70,8 @@ const PublicHeader: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Home sections that are on the landing page
-  const homeSections = [
-    { id: "stats", label: "Club Snapshot" },
-    { id: "pyramid", label: "Football Pyramid" },
-    { id: "matches", label: "Match Centre" },
-    { id: "teams", label: "Teams" },
-    { id: "philosophy", label: "Club Philosophy" },
-    { id: "centres", label: "Our Centres" },
-    { id: "realverse", label: "RealVerse" },
-    { id: "fan-club", label: "Fan Club" },
-    { id: "fanclub-perks", label: "Fan Club Perks" },
-    { id: "shop", label: "Shop" },
-    { id: "news", label: "News" },
-  ];
-
-  // Handle navigation to home sections - works from any route
-  const handleHomeSectionClick = (sectionId: string) => {
-    setIsMobileMenuOpen(false);
-    setHomeDropdownOpen(false);
-    
-    if (location.pathname !== "/") {
-      // Navigate to home with hash, landing page will handle scroll
-      navigate(`/#${sectionId}`);
-    } else {
-      // Already on home, just scroll
-      const element = document.getElementById(sectionId);
-      if (element) {
-        // Use Lenis for smooth scrolling if available
-        const lenis = (window as any).lenis;
-        if (lenis) {
-          lenis.scrollTo(element, {
-            offset: -100, // Account for header height
-            duration: 1.2,
-          });
-        } else {
-          // Fallback to native smooth scroll
-          element.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      }
-      // Update URL hash
-      window.history.pushState(null, "", `#${sectionId}`);
-    }
-  };
-
   const handleHomeClick = () => {
     setIsMobileMenuOpen(false);
-    setHomeDropdownOpen(false);
     const lenis = (window as any).lenis;
     if (location.pathname !== "/") {
       navigate("/");
@@ -123,7 +101,7 @@ const PublicHeader: React.FC = () => {
         right: 0,
         zIndex: 1200,
         background: "transparent",
-        padding: `${spacing.md} ${spacing.xl}`,
+        padding: isMobile ? `${spacing.sm} ${spacing.sm}` : `${spacing.md} ${spacing.xl}`,
         transition: "all 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
       }}
     >
@@ -174,7 +152,7 @@ const PublicHeader: React.FC = () => {
                0 0 60px rgba(0, 224, 255, 0.08)`
             : `0 4px 24px rgba(0, 0, 0, 0.2), 
                0 0 0 1px rgba(255, 255, 255, 0.03) inset`,
-          padding: `${spacing.md} ${spacing.lg}`,
+          padding: isMobile ? `${spacing.sm} ${spacing.md}` : `${spacing.md} ${spacing.lg}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -272,27 +250,8 @@ const PublicHeader: React.FC = () => {
             height: "100%",
           }}
         >
-          {/* Home with Dropdown */}
-          <div
-            data-dropdown-container
-            style={{
-              position: "relative",
-              zIndex: 1001,
-            }}
-            onMouseEnter={() => {
-              if (!isMobile) {
-                setHomeDropdownOpen(true);
-              }
-            }}
-            onMouseLeave={() => {
-              if (!isMobile) {
-                // Small delay to allow moving to dropdown
-                setTimeout(() => {
-                  setHomeDropdownOpen(false);
-                }, 100);
-              }
-            }}
-          >
+          {/* Home */}
+          <div style={{ position: "relative", zIndex: 1001 }}>
             <button
               onClick={handleHomeClick}
               style={{
@@ -326,7 +285,7 @@ const PublicHeader: React.FC = () => {
             </button>
           </div>
 
-          {/* Programs */}
+          {/* Programmes */}
           <Link
             to="/programs"
             style={{
@@ -358,7 +317,7 @@ const PublicHeader: React.FC = () => {
               }
             }}
           >
-            Programs
+            Programmes
           </Link>
 
           {/* About Us */}
@@ -396,16 +355,16 @@ const PublicHeader: React.FC = () => {
             About Us
           </Link>
 
-          {/* Public Fan Club preview CTA (no login required) */}
+          {/* Explore RealVerse CTA */}
           <Link
-            to="/fan-club/benefits"
+            to="/realverse/experience"
             style={{
               textDecoration: "none",
               ...typography.body,
               fontSize: typography.fontSize.sm,
               fontWeight: typography.fontWeight.medium,
-              color: location.pathname.startsWith("/fan-club/benefits") ? colors.text.primary : colors.text.secondary,
-              background: location.pathname.startsWith("/fan-club/benefits") ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.03)",
+              color: location.pathname.startsWith("/realverse/experience") ? colors.text.primary : colors.text.secondary,
+              background: location.pathname.startsWith("/realverse/experience") ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.03)",
               padding: `${spacing.xs} ${spacing.sm}`,
               borderRadius: borderRadius.md,
               transition: "all 0.2s ease",
@@ -423,16 +382,16 @@ const PublicHeader: React.FC = () => {
               e.currentTarget.style.border = "1px solid rgba(0,224,255,0.32)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = location.pathname.startsWith("/fan-club/benefits") ? colors.text.primary : colors.text.secondary;
-              e.currentTarget.style.background = location.pathname.startsWith("/fan-club/benefits") ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.03)";
+              e.currentTarget.style.color = location.pathname.startsWith("/realverse/experience") ? colors.text.primary : colors.text.secondary;
+              e.currentTarget.style.background = location.pathname.startsWith("/realverse/experience") ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.03)";
               e.currentTarget.style.border = "1px solid rgba(0,224,255,0.18)";
             }}
           >
-            Explore our Fanclub
+            Explore RealVerse
           </Link>
 
-          {/* Shop */}
-          <button
+          {/* Shop - Disabled in UI, backend code preserved */}
+          {/* <button
             onClick={() => {
               navigate("/shop");
               setIsMobileMenuOpen(false);
@@ -468,7 +427,7 @@ const PublicHeader: React.FC = () => {
             }}
           >
             Shop
-          </button>
+          </button> */}
         </nav>
 
         {/* CTAs - Ordered by importance: Secondary actions → Primary action */}
@@ -482,64 +441,6 @@ const PublicHeader: React.FC = () => {
             height: "100%",
           }}
         >
-          {/* Cart Icon - Utility action */}
-          <Link
-            to="/cart"
-            style={{
-              position: "relative",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 36,
-              height: 36,
-              background: "rgba(255, 255, 255, 0.08)",
-              borderRadius: borderRadius.md,
-              textDecoration: "none",
-              color: colors.text.muted,
-              fontSize: "16px",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.15)";
-              e.currentTarget.style.color = colors.text.primary;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
-              e.currentTarget.style.color = colors.text.muted;
-            }}
-          >
-            🛒
-            {getItemCount() > 0 && (
-              <span
-                style={{
-                  position: "absolute",
-                  top: -4,
-                  right: -4,
-                  background: colors.accent.main,
-                  color: colors.brand.charcoal,
-                  borderRadius: "50%",
-                  width: 18,
-                  height: 18,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "10px",
-                  fontWeight: typography.fontWeight.bold,
-                }}
-              >
-                {getItemCount() > 9 ? "9+" : getItemCount()}
-              </span>
-            )}
-          </Link>
-
-          {/* Vertical Divider */}
-          <div style={{ 
-            width: 1, 
-            height: 24, 
-            background: "rgba(255, 255, 255, 0.15)",
-            alignSelf: "center",
-          }} />
-
           {/* Login - Secondary action */}
           <Link
             to="/login"
@@ -575,21 +476,56 @@ const PublicHeader: React.FC = () => {
             Login
           </Link>
 
-          {/* Join RealVerse - Primary CTA with highest visibility */}
+          {/* Join Fan Club - Secondary CTA */}
+          <Link
+            to="/fan-club/join"
+            style={{
+              ...typography.body,
+              fontSize: "13px",
+              fontWeight: typography.fontWeight.medium,
+              padding: `8px 16px`,
+              borderRadius: borderRadius.md,
+              background: "transparent",
+              color: colors.text.secondary,
+              textDecoration: "none",
+              border: `1px solid rgba(255, 255, 255, 0.25)`,
+              transition: "all 0.2s ease",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "36px",
+              minHeight: "36px",
+              boxSizing: "border-box",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+              e.currentTarget.style.color = colors.text.primary;
+              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = colors.text.secondary;
+              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
+            }}
+          >
+            Join Fan Club
+          </Link>
+
+          {/* Join our Academy - Primary CTA with highest visibility */}
           <Link
             to="/brochure"
             style={{
               ...typography.body,
               fontSize: "14px",
               fontWeight: typography.fontWeight.bold,
-              padding: `10px 24px`,
+              padding: "10px 24px",
               borderRadius: borderRadius.md,
               background: `linear-gradient(135deg, ${colors.accent.main} 0%, #FFB82E 100%)`,
-              color: colors.brand.charcoal,
+              color: colors.text.onAccent,
               textDecoration: "none",
               transition: "all 0.2s ease",
               border: "none",
-              boxShadow: `0 4px 16px rgba(255, 169, 0, 0.35)`,
+              boxShadow: "0 4px 16px rgba(255, 169, 0, 0.35)",
               letterSpacing: "0.02em",
               display: "flex",
               alignItems: "center",
@@ -600,26 +536,32 @@ const PublicHeader: React.FC = () => {
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = `0 6px 24px rgba(255, 169, 0, 0.5)`;
+              e.currentTarget.style.boxShadow = "0 6px 24px rgba(255, 169, 0, 0.5)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = `0 4px 16px rgba(255, 169, 0, 0.35)`;
+              e.currentTarget.style.boxShadow = "0 4px 16px rgba(255, 169, 0, 0.35)";
             }}
           >
             Join our Academy
           </Link>
         </div>
 
-        {/* Mobile Menu Button */}
+        {/* Mobile Menu Button - min 44px touch target */}
         <button
+          ref={mobileMenuButtonRef}
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={isMobileMenuOpen}
+          aria-controls={MOBILE_NAV_DRAWER_ID}
           style={{
             display: isMobile ? "flex" : "none",
             alignItems: "center",
             justifyContent: "center",
-            width: 40,
-            height: 40,
+            minWidth: 44,
+            minHeight: 44,
+            width: 44,
+            height: 44,
             background: "rgba(255, 255, 255, 0.1)",
             border: "none",
             borderRadius: borderRadius.md,
@@ -639,35 +581,67 @@ const PublicHeader: React.FC = () => {
         </button>
       </div>
 
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 12px)",
-            left: spacing.xl,
-            right: spacing.xl,
-            maxWidth: "1400px",
-            margin: "0 auto",
-            background: `linear-gradient(135deg, 
-              rgba(5, 11, 32, 0.85) 0%, 
-              rgba(10, 22, 51, 0.8) 50%, 
-              rgba(5, 11, 32, 0.85) 100%)`,
-            backdropFilter: "blur(20px) saturate(180%)",
-            WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            borderRadius: borderRadius.xl,
-            border: `1px solid rgba(255, 255, 255, 0.15)`,
-            padding: spacing.lg,
-            display: "flex",
-            flexDirection: "column",
-            gap: spacing.md,
-            boxShadow: `0 8px 32px rgba(0, 0, 0, 0.4), 
-                        0 0 0 1px rgba(255, 255, 255, 0.05) inset`,
-            maxHeight: "80vh",
-            overflowY: "auto",
-            zIndex: 1201,
-          }}
-        >
+      {/* Mobile Menu - Rendered via portal to avoid header overflow/clipping */}
+      {isMobileMenuOpen &&
+        isMobile &&
+        ReactDOM.createPortal(
+          <>
+            {/* Backdrop - closes menu on tap, prevents interaction with page */}
+            <div
+              role="button"
+              tabIndex={-1}
+              aria-label="Close menu"
+              onClick={() => setIsMobileMenuOpen(false)}
+              onKeyDown={(e) => e.key === "Escape" && setIsMobileMenuOpen(false)}
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 1201,
+                background: "rgba(0, 0, 0, 0.5)",
+                backdropFilter: "blur(4px)",
+                WebkitBackdropFilter: "blur(4px)",
+              }}
+            />
+            {/* Drawer - fixed below header, no horizontal overflow */}
+            <div
+              id={MOBILE_NAV_DRAWER_ID}
+              role="navigation"
+              aria-label="Main navigation"
+              style={{
+              position: "fixed",
+              top: 72,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 1202,
+              width: "100%",
+              maxWidth: "100vw",
+              boxSizing: "border-box",
+              padding: spacing.lg,
+              paddingLeft: `max(${spacing.lg}, env(safe-area-inset-left))`,
+              paddingRight: `max(${spacing.lg}, env(safe-area-inset-right))`,
+              background: `linear-gradient(135deg, 
+                rgba(5, 11, 32, 0.98) 0%, 
+                rgba(10, 22, 51, 0.95) 50%, 
+                rgba(5, 11, 32, 0.98) 100%)`,
+              backdropFilter: "blur(20px) saturate(180%)",
+              WebkitBackdropFilter: "blur(20px) saturate(180%)",
+              borderTopLeftRadius: borderRadius.xl,
+              borderTopRightRadius: borderRadius.xl,
+              border: `1px solid rgba(255, 255, 255, 0.15)`,
+              borderBottom: "none",
+              boxShadow: `0 -8px 32px rgba(0, 0, 0, 0.4)`,
+              overflowY: "auto",
+              overflowX: "hidden",
+              display: "flex",
+              flexDirection: "column",
+              gap: spacing.md,
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
           {/* Home */}
           <button
             onClick={handleHomeClick}
@@ -682,6 +656,7 @@ const PublicHeader: React.FC = () => {
               borderRadius: borderRadius.md,
               cursor: "pointer",
               width: "100%",
+              minHeight: 44,
               textAlign: "left",
               transition: "all 0.2s ease",
             }}
@@ -689,7 +664,7 @@ const PublicHeader: React.FC = () => {
             Home
           </button>
 
-          {/* Programs */}
+          {/* Programmes */}
           <Link
             to="/programs"
             onClick={() => setIsMobileMenuOpen(false)}
@@ -704,10 +679,12 @@ const PublicHeader: React.FC = () => {
               borderRadius: borderRadius.md,
               textAlign: "left",
               width: "100%",
-              display: "block",
+              minHeight: 44,
+              display: "flex",
+              alignItems: "center",
             }}
           >
-            Programs
+            Programmes
           </Link>
 
           {/* About Us */}
@@ -725,15 +702,17 @@ const PublicHeader: React.FC = () => {
               borderRadius: borderRadius.md,
               textAlign: "left",
               width: "100%",
-              display: "block",
+              minHeight: 44,
+              display: "flex",
+              alignItems: "center",
             }}
           >
             About Us
           </Link>
 
-          {/* Public Fan Club benefits preview */}
+          {/* Explore RealVerse */}
           <Link
-            to="/fan-club/benefits"
+            to="/realverse/experience"
             onClick={() => setIsMobileMenuOpen(false)}
             style={{
               textDecoration: "none",
@@ -746,15 +725,41 @@ const PublicHeader: React.FC = () => {
               borderRadius: borderRadius.md,
               textAlign: "left",
               width: "100%",
-              display: "block",
+              minHeight: 44,
+              display: "flex",
+              alignItems: "center",
               border: "1px solid rgba(0,224,255,0.18)",
             }}
           >
-            Explore our Fanclub
+            Explore RealVerse
           </Link>
 
-          {/* Shop */}
-          <button
+          {/* Join Fan Club - Secondary CTA */}
+          <Link
+            to="/fan-club/join"
+            onClick={() => setIsMobileMenuOpen(false)}
+            style={{
+              ...typography.body,
+              fontSize: typography.fontSize.base,
+              fontWeight: typography.fontWeight.medium,
+              padding: spacing.md,
+              borderRadius: borderRadius.md,
+              background: "transparent",
+              color: colors.text.secondary,
+              textDecoration: "none",
+              textAlign: "center",
+              border: `1px solid rgba(255, 255, 255, 0.25)`,
+              minHeight: 44,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            Join Fan Club
+          </Link>
+
+          {/* Shop - Disabled in UI, backend code preserved */}
+          {/* <button
             onClick={() => {
               navigate("/shop");
               setIsMobileMenuOpen(false);
@@ -774,46 +779,7 @@ const PublicHeader: React.FC = () => {
             }}
           >
             Shop
-          </button>
-
-          {/* Cart */}
-          <Link
-            to="/cart"
-            onClick={() => setIsMobileMenuOpen(false)}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.base,
-              fontWeight: typography.fontWeight.medium,
-              color: colors.text.secondary,
-              textDecoration: "none",
-              padding: spacing.md,
-              borderRadius: borderRadius.md,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <span>Cart</span>
-            {getItemCount() > 0 && (
-              <span style={{
-                background: colors.accent.main,
-                color: colors.brand.charcoal,
-                borderRadius: "12px",
-                padding: "2px 8px",
-                fontSize: typography.fontSize.xs,
-                fontWeight: typography.fontWeight.bold,
-              }}>
-                {getItemCount()}
-              </span>
-            )}
-          </Link>
-
-          {/* Divider */}
-          <div style={{ 
-            height: 1, 
-            background: "rgba(255, 255, 255, 0.1)", 
-            margin: `${spacing.sm} 0` 
-          }} />
+          </button> */}
 
           {/* Login - Secondary */}
           <Link
@@ -830,6 +796,10 @@ const PublicHeader: React.FC = () => {
               textDecoration: "none",
               textAlign: "center",
               border: `1px solid rgba(255, 255, 255, 0.25)`,
+              minHeight: 44,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             Login
@@ -846,17 +816,23 @@ const PublicHeader: React.FC = () => {
               padding: `${spacing.md} ${spacing.lg}`,
               borderRadius: borderRadius.md,
               background: `linear-gradient(135deg, ${colors.accent.main} 0%, #FFB82E 100%)`,
-              color: colors.brand.charcoal,
+              color: colors.text.onAccent,
               textDecoration: "none",
               textAlign: "center",
               marginTop: spacing.sm,
-              boxShadow: `0 4px 16px rgba(255, 169, 0, 0.35)`,
+              boxShadow: "0 4px 16px rgba(255, 169, 0, 0.35)",
               letterSpacing: "0.02em",
+              minHeight: 44,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             Join our Academy
           </Link>
-        </div>
+          </div>
+        </>,
+        document.body
       )}
       </div>
     </header>

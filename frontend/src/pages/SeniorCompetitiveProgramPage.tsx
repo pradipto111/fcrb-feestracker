@@ -7,7 +7,7 @@ const SeniorCompetitiveProgramPage: React.FC = () => {
   return (
     <ProgramPageTemplate
       program={{
-        name: "Senior Competitive Program",
+        name: "Senior Competitive Programme",
         acronym: "SCP",
         positioning: "The competitive bridge between youth and elite football.",
         who: "Open application. Merit-based progression. This program welcomes players who are ready for competitive football and demonstrate commitment to structured development.",
@@ -27,7 +27,7 @@ const SeniorCompetitiveProgramPage: React.FC = () => {
           ],
         },
         progression: {
-          description: "Primary pathway to Elite Pathway Program. Internal promotions based on consistent performance, competitive readiness, and data trends. Movement is merit-based with clear progression criteria.",
+          description: "Primary pathway to Elite Pathway Programme. Internal promotions based on consistent performance, competitive readiness, and data trends. Movement is merit-based with clear progression criteria.",
           points: [
             "Primary internal feeder to EPP",
             "Merit-based promotion opportunities",

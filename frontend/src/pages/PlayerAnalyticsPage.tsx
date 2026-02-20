@@ -6,7 +6,7 @@ import { PageHeader } from "../components/ui/PageHeader";
 import { colors, typography, spacing } from "../theme/design-tokens";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { ChartBarIcon, RefreshIcon, UserIcon } from "../components/icons/IconSet";
-import { StudentPlayerProfileView } from "./student/StudentPlayerProfilePage";
+import { StudentPlayerProfileView } from "../components/player-profile/StudentPlayerProfileView";
 
 const PlayerAnalyticsPage: React.FC = () => {
   const [refreshKey, setRefreshKey] = useState(0);

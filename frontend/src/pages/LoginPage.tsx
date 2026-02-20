@@ -8,15 +8,24 @@ import { Card } from "../components/ui/Card";
 import { colors, typography, spacing, shadows } from "../theme/design-tokens";
 import { realverseAssets, galleryAssets } from "../config/assets";
 
+const MOBILE_BREAKPOINT = 768;
+
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loginRole, setLoginRole] = useState<"STUDENT" | "COACH" | "ADMIN" | "FAN">("STUDENT");
+  const [loginRole, setLoginRole] = useState<"STUDENT" | "COACH" | "ADMIN" | "FAN" | "CRM">("STUDENT");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   // Use RealVerse login cover and gallery images
   const images = [
@@ -48,15 +57,22 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      position: "relative",
-      overflow: "hidden",
-      padding: spacing.lg,
-    }}>
+    <div
+      data-realverse-page
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+        width: "100%",
+        maxWidth: "100vw",
+        overflowX: "hidden",
+        overflowY: "auto",
+        padding: isMobile ? spacing.md : spacing.lg,
+        boxSizing: "border-box",
+      }}
+    >
       <SpaceBackground variant="full" style={{
         position: "absolute",
         top: 0,
@@ -122,6 +138,7 @@ const LoginPage: React.FC = () => {
           border: "1px solid rgba(255, 255, 255, 0.12)",
           boxShadow: "0 26px 80px rgba(0,0,0,0.55)",
           overflow: "hidden",
+          boxSizing: "border-box",
         }}
       >
         {/* Strong overlay wash for text clarity (keeps flow consistent) */}
@@ -206,7 +223,7 @@ const LoginPage: React.FC = () => {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gridTemplateColumns: isMobile ? "repeat(2, minmax(0, 1fr))" : "repeat(3, minmax(0, 1fr))",
                 gap: spacing.sm,
               }}
             >
@@ -214,28 +231,60 @@ const LoginPage: React.FC = () => {
                 { id: "STUDENT" as const, label: "Student" },
                 { id: "COACH" as const, label: "Coach" },
                 { id: "ADMIN" as const, label: "Admin" },
-                { id: "FAN" as const, label: "Fan Club" },
+                { id: "FAN" as const, label: "Fan Club", comingSoon: true },
+                { id: "CRM" as const, label: "CRM" },
               ].map((opt) => {
                 const active = loginRole === opt.id;
+                const isComingSoon = (opt as any).comingSoon;
                 return (
                   <button
                     key={opt.id}
                     type="button"
-                    onClick={() => setLoginRole(opt.id)}
+                    onClick={() => {
+                      if (!isComingSoon) {
+                        setLoginRole(opt.id);
+                      }
+                    }}
+                    disabled={isComingSoon}
                     style={{
-                      padding: "12px 12px",
+                      padding: isComingSoon ? "12px 8px" : "12px 12px",
                       borderRadius: 14,
-                      border: active ? `1px solid rgba(0, 224, 255, 0.45)` : "1px solid rgba(255, 255, 255, 0.12)",
-                      background: active ? "rgba(0, 224, 255, 0.12)" : "rgba(255,255,255,0.04)",
-                      color: active ? colors.text.primary : colors.text.secondary,
-                      cursor: "pointer",
-                      fontWeight: active ? typography.fontWeight.semibold : typography.fontWeight.medium,
+                      border: active && !isComingSoon ? `1px solid rgba(0, 224, 255, 0.45)` : isComingSoon ? "1px solid rgba(255, 255, 255, 0.08)" : "1px solid rgba(255, 255, 255, 0.12)",
+                      background: active && !isComingSoon ? "rgba(0, 224, 255, 0.12)" : isComingSoon ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)",
+                      color: active && !isComingSoon ? colors.text.primary : isComingSoon ? colors.text.muted : colors.text.secondary,
+                      cursor: isComingSoon ? "not-allowed" : "pointer",
+                      fontWeight: active && !isComingSoon ? typography.fontWeight.semibold : typography.fontWeight.medium,
                       textAlign: "left",
                       transition: "all 0.2s ease",
                       outline: "none",
+                      opacity: isComingSoon ? 0.6 : 1,
+                      position: "relative",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      justifyContent: "center",
+                      gap: spacing.xs,
+                      overflow: "hidden",
+                      minHeight: isComingSoon ? "auto" : "auto",
                     }}
                   >
-                    {opt.label}
+                    <span style={{ width: "100%", textAlign: "left" }}>{opt.label}</span>
+                    {isComingSoon && (
+                      <span style={{
+                        ...typography.caption,
+                        padding: `2px ${spacing.xs}`,
+                        borderRadius: "6px",
+                        background: colors.warning.soft,
+                        color: colors.warning.main,
+                        fontWeight: typography.fontWeight.semibold,
+                        fontSize: typography.fontSize.xs,
+                        whiteSpace: "nowrap",
+                        alignSelf: "flex-start",
+                        lineHeight: 1.2,
+                      }}>
+                        Coming soon
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -297,11 +346,56 @@ const LoginPage: React.FC = () => {
             style={{
               background: `linear-gradient(135deg, ${colors.accent.main} 0%, ${colors.accent.dark} 100%)`,
               color: colors.text.onAccent,
+              minHeight: 44,
             }}
           >
             {loading ? "Signing in..." : "Sign In"}
           </Button>
         </form>
+
+        {/* Back to Home CTA */}
+        <div style={{ 
+          marginTop: spacing.lg, 
+          paddingTop: spacing.lg, 
+          borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+          textAlign: "center" 
+        }}>
+          <a
+            href="/"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: `${spacing.md} ${spacing.xl}`,
+              borderRadius: "12px",
+              border: "1px solid rgba(255, 255, 255, 0.16)",
+              background: "rgba(255, 255, 255, 0.04)",
+              color: colors.text.secondary,
+              textDecoration: "none",
+              fontSize: typography.fontSize.sm,
+              fontWeight: typography.fontWeight.medium,
+              transition: "all 0.2s ease",
+              cursor: "pointer",
+              width: "100%",
+              minHeight: 44,
+              boxSizing: "border-box",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.24)";
+              e.currentTarget.style.color = colors.text.primary;
+              e.currentTarget.style.transform = "translateY(-1px)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.16)";
+              e.currentTarget.style.color = colors.text.secondary;
+              e.currentTarget.style.transform = "translateY(0)";
+            }}
+          >
+            ← Back to Main Website
+          </a>
+        </div>
         </div>
       </Card>
     </div>

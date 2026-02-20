@@ -1,5 +1,5 @@
 import React from 'react';
-import { colors, borderRadius, shadows, transitions, typography, spacing } from '../../theme/design-tokens';
+import { colors, borderRadius, shadows, transitions, typography, spacing, ctaDimensions } from '../../theme/design-tokens';
 import '../../styles/animations.css';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -40,18 +40,15 @@ export const Button: React.FC<ButtonProps> = ({
   const sizeStyles: Record<string, React.CSSProperties> = {
     sm: {
       fontSize: '0.875rem',
-      minHeight: '36px', // Increased tap area
-      // Padding handled in variantStyles
+      minHeight: '36px',
     },
     md: {
       fontSize: '1rem',
-      minHeight: '44px', // Increased tap area
-      // Padding handled in variantStyles
+      minHeight: '44px',
     },
     lg: {
       fontSize: '1.125rem',
-      minHeight: '52px', // Increased tap area
-      // Padding handled in variantStyles
+      minHeight: `${ctaDimensions.minHeightLg}px`,
     },
   };
 
@@ -66,8 +63,7 @@ export const Button: React.FC<ButtonProps> = ({
       fontFamily: typography.fontFamily.heading, // Bold football typography
       fontWeight: typography.fontWeight.bold, // 700 - Bold
       borderRadius: borderRadius.button, // 8px - football-first
-      // Ensure text is centered, never touching borders (minimum 16px padding)
-      padding: size === 'sm' ? `${spacing['10']} ${spacing['20']}` : size === 'md' ? `${spacing.md} ${spacing['28']}` : `${spacing['18']} ${spacing['36']}`,
+      padding: size === 'sm' ? `${spacing.sm} ${spacing['20']}` : size === 'md' ? `${spacing.md} ${spacing['24']}` : ctaDimensions.paddingLg,
     },
     // 2. SECONDARY ACTION - Match hero "dark with gold border"
     secondary: {
@@ -78,7 +74,7 @@ export const Button: React.FC<ButtonProps> = ({
       fontFamily: typography.fontFamily.heading, // Bold football typography
       fontWeight: typography.fontWeight.bold, // 700 - Bold
       borderRadius: borderRadius.button, // 8px - football-first
-      padding: size === 'sm' ? `${spacing['10']} ${spacing['20']}` : size === 'md' ? `${spacing.md} ${spacing['28']}` : `${spacing['18']} ${spacing['36']}`,
+      padding: size === 'sm' ? `${spacing.sm} ${spacing['20']}` : size === 'md' ? `${spacing.md} ${spacing['24']}` : ctaDimensions.paddingLg,
     },
     // 3. UTILITY ACTION - Outline style, low-contrast
     utility: {

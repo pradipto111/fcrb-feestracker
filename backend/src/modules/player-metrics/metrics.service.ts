@@ -5,9 +5,8 @@
  * Implements Football Manager-style player rating system with time-series tracking.
  */
 
-import { PrismaClient, Role, MetricCategory, PlayerPosition, MetricSourceContext } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Role, MetricCategory, PlayerPosition, MetricSourceContext } from '@prisma/client';
+import prisma from '../../db/prisma';
 
 // ============================================
 // TYPES

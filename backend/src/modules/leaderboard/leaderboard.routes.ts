@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
-import { authRequired, requireRole } from "../../auth/auth.middleware";
+import prisma from "../../db/prisma";
+import { authRequired, requireRole, toPrismaRole } from "../../auth/auth.middleware";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Helper function to update student stats
@@ -197,7 +196,7 @@ router.post("/vote", authRequired, async (req, res) => {
     where: {
       sessionId: Number(sessionId),
       voterId: id,
-      voterRole: role
+      voterRole: toPrismaRole(role)
     }
   });
 
@@ -213,7 +212,7 @@ router.post("/vote", authRequired, async (req, res) => {
   const votes = await prisma.vote.createMany({
     data: votedForIds.map((votedForId: any) => ({
       sessionId: Number(sessionId),
-      voterRole: role,
+      voterRole: toPrismaRole(role),
       voterId: id,
       votedForId: Number(votedForId),
       points: pointsPerVote,
@@ -423,7 +422,7 @@ router.get("/session/:sessionId/voted", authRequired, async (req, res) => {
     where: {
       sessionId,
       voterId: id,
-      voterRole: role
+      voterRole: toPrismaRole(role)
     },
     include: {
       session: {

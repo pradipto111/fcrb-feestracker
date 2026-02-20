@@ -161,7 +161,7 @@ test.describe('Admin Role - Navigation', () => {
   });
 
   test('Dashboard loads', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/admin`);
+    await page.goto(`${baseURL || ''}/realverse/admin/students`);
     await page.waitForLoadState('networkidle');
     await expect(page.locator('body')).toBeVisible();
   });

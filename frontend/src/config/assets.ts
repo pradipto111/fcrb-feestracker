@@ -1,9 +1,13 @@
 /**
  * FC Real Bengaluru - Centralized Asset Registry
  * All image and video assets from the official website
+ * In dev we use a Vite proxy to avoid cross-origin blocking of images.
  */
-
-const BASE_URL = 'https://realbengaluru.com/wp-content/uploads';
+export const ASSET_BASE_URL =
+  typeof import.meta !== "undefined" && import.meta.env?.DEV
+    ? "/realbengaluru-images"
+    : "https://realbengaluru.com/wp-content/uploads";
+const BASE_URL = ASSET_BASE_URL;
 
 // ============================================
 // CLUB ASSETS

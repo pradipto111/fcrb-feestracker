@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../db/prisma";
 import crypto from "crypto";
+import { upsertCrmLead } from "../crm/crm-sync";
+import { authRequired, requireRole } from "../../auth/auth.middleware";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Get all active products
@@ -94,7 +95,7 @@ router.post("/orders/create", async (req, res) => {
         if (!product.isActive) {
           // Save checkout lead before returning error
           try {
-            await prisma.checkoutLead.create({
+            const checkoutLead = await prisma.checkoutLead.create({
               data: {
                 customerName: customerName || "Guest",
                 phone: phone || "",
@@ -107,6 +108,17 @@ router.post("/orders/create", async (req, res) => {
                 errorMessage: `Product ${item.productId} is inactive.`,
                 status: "NEW",
               },
+            });
+            await upsertCrmLead({
+              sourceType: "CHECKOUT",
+              sourceId: checkoutLead.id,
+              primaryName: checkoutLead.customerName || "Guest",
+              phone: checkoutLead.phone,
+              email: checkoutLead.email,
+              preferredCentre: null,
+              programmeInterest: null,
+              statusHint: checkoutLead.status,
+              convertedOrderId: checkoutLead.convertedOrderId || null,
             });
           } catch (leadError: any) {
             console.error("Failed to save checkout lead:", leadError);
@@ -123,7 +135,7 @@ router.post("/orders/create", async (req, res) => {
         if (!item.productName || !item.unitPrice) {
           // Save checkout lead before returning error
           try {
-            await prisma.checkoutLead.create({
+            const checkoutLead = await prisma.checkoutLead.create({
               data: {
                 customerName: customerName || "Guest",
                 phone: phone || "",
@@ -136,6 +148,17 @@ router.post("/orders/create", async (req, res) => {
                 errorMessage: `Product ${item.productId} not found and missing product details.`,
                 status: "NEW",
               },
+            });
+            await upsertCrmLead({
+              sourceType: "CHECKOUT",
+              sourceId: checkoutLead.id,
+              primaryName: checkoutLead.customerName || "Guest",
+              phone: checkoutLead.phone,
+              email: checkoutLead.email,
+              preferredCentre: null,
+              programmeInterest: null,
+              statusHint: checkoutLead.status,
+              convertedOrderId: checkoutLead.convertedOrderId || null,
             });
           } catch (leadError: any) {
             console.error("Failed to save checkout lead:", leadError);
@@ -249,7 +272,7 @@ router.post("/orders/create", async (req, res) => {
     
     // Save checkout lead even if order creation fails
     try {
-      await prisma.checkoutLead.create({
+      const checkoutLead = await prisma.checkoutLead.create({
         data: {
           customerName: customerName || "Guest",
           phone: phone || "",
@@ -262,6 +285,17 @@ router.post("/orders/create", async (req, res) => {
           errorMessage: error.message || "Failed to create order",
           status: "NEW",
         },
+      });
+      await upsertCrmLead({
+        sourceType: "CHECKOUT",
+        sourceId: checkoutLead.id,
+        primaryName: checkoutLead.customerName || "Guest",
+        phone: checkoutLead.phone,
+        email: checkoutLead.email,
+        preferredCentre: null,
+        programmeInterest: null,
+        statusHint: checkoutLead.status,
+        convertedOrderId: checkoutLead.convertedOrderId || null,
       });
     } catch (leadError: any) {
       console.error("Failed to save checkout lead:", leadError);
@@ -367,7 +401,7 @@ router.get("/orders/:orderNumber", async (req, res) => {
 });
 
 // Get checkout leads (admin only)
-router.get("/checkout-leads", async (req, res) => {
+router.get("/checkout-leads", authRequired, requireRole("ADMIN"), async (req, res) => {
   try {
     const { status, fromDate, toDate } = req.query;
 
@@ -397,7 +431,7 @@ router.get("/checkout-leads", async (req, res) => {
 });
 
 // Get single checkout lead (admin only)
-router.get("/checkout-leads/:id", async (req, res) => {
+router.get("/checkout-leads/:id", authRequired, requireRole("ADMIN"), async (req, res) => {
   try {
     const lead = await prisma.checkoutLead.findUnique({
       where: { id: parseInt(req.params.id) },
@@ -415,7 +449,7 @@ router.get("/checkout-leads/:id", async (req, res) => {
 });
 
 // Update checkout lead (admin only)
-router.put("/checkout-leads/:id", async (req, res) => {
+router.put("/checkout-leads/:id", authRequired, requireRole("ADMIN"), async (req, res) => {
   try {
     const { status, assignedTo, internalNotes } = req.body;
 
@@ -426,6 +460,18 @@ router.put("/checkout-leads/:id", async (req, res) => {
         ...(assignedTo !== undefined && { assignedTo }),
         ...(internalNotes !== undefined && { internalNotes }),
       },
+    });
+
+    await upsertCrmLead({
+      sourceType: "CHECKOUT",
+      sourceId: lead.id,
+      primaryName: lead.customerName || "Guest",
+      phone: lead.phone,
+      email: lead.email,
+      preferredCentre: null,
+      programmeInterest: null,
+      statusHint: lead.status,
+      convertedOrderId: lead.convertedOrderId || null,
     });
 
     res.json(lead);

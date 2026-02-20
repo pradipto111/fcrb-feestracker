@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../db/prisma";
 import { authRequired, requireRole } from "../../auth/auth.middleware";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Helper function to get coach's center IDs
@@ -17,10 +16,10 @@ async function getCoachCenterIds(coachId: number): Promise<number[]> {
 // Create a session (Admin or Coach)
 router.post("/sessions", authRequired, async (req, res) => {
   const { role, id } = req.user!;
-  const { centerId, sessionDate, startTime, endTime, notes } = req.body;
+  const { centerId, title, description, programmeId, sessionDate, startTime, endTime, notes } = req.body;
 
-  if (!centerId || !sessionDate || !startTime || !endTime) {
-    return res.status(400).json({ message: "Missing required fields" });
+  if (!centerId || !title || !sessionDate || !startTime || !endTime) {
+    return res.status(400).json({ message: "Missing required fields: centerId, title, sessionDate, startTime, endTime" });
   }
 
   // Coaches can only create sessions for their assigned centers
@@ -31,6 +30,39 @@ router.post("/sessions", authRequired, async (req, res) => {
     }
   }
 
+  // Check for overlapping sessions for the same coach
+  const sessionDateObj = new Date(sessionDate);
+  const overlappingSession = await prisma.session.findFirst({
+    where: {
+      coachId: id,
+      sessionDate: sessionDateObj,
+      OR: [
+        {
+          AND: [
+            { startTime: { lte: startTime } },
+            { endTime: { gt: startTime } }
+          ]
+        },
+        {
+          AND: [
+            { startTime: { lt: endTime } },
+            { endTime: { gte: endTime } }
+          ]
+        },
+        {
+          AND: [
+            { startTime: { gte: startTime } },
+            { endTime: { lte: endTime } }
+          ]
+        }
+      ]
+    }
+  });
+
+  if (overlappingSession) {
+    return res.status(400).json({ message: "You already have a session scheduled at this time" });
+  }
+
   // Get all active students for this center
   const students = await prisma.student.findMany({
     where: {
@@ -39,29 +71,36 @@ router.post("/sessions", authRequired, async (req, res) => {
     }
   });
 
-  // Create session and auto-create attendance records for all students
+  // Create session with auto-populated participants (NO attendance records)
   const session = await prisma.session.create({
     data: {
       centerId: Number(centerId),
       coachId: id,
-      sessionDate: new Date(sessionDate),
+      title,
+      description: description || null,
+      programmeId: programmeId || null,
+      sessionDate: sessionDateObj,
       startTime,
       endTime,
       notes: notes || null,
-      attendance: {
+      participants: {
         create: students.map(student => ({
-          studentId: student.id,
-          status: "ABSENT", // Default to absent, can be updated later
-          notes: null
+          studentId: student.id
         }))
       }
     },
     include: {
       center: true,
       coach: true,
-      attendance: {
+      participants: {
         include: {
-          student: true
+          student: {
+            select: {
+              id: true,
+              fullName: true,
+              status: true
+            }
+          }
         }
       }
     }
@@ -73,7 +112,7 @@ router.post("/sessions", authRequired, async (req, res) => {
 // Create multiple sessions at once (for monthly planning)
 router.post("/sessions/bulk", authRequired, async (req, res) => {
   const { role, id } = req.user!;
-  const { centerId, sessions } = req.body; // sessions is an array of { sessionDate, startTime, endTime, notes? }
+  const { centerId, sessions } = req.body; // sessions is an array of { title, description?, programmeId?, sessionDate, startTime, endTime, notes? }
 
   if (!centerId || !Array.isArray(sessions) || sessions.length === 0) {
     return res.status(400).json({ message: "Missing required fields: centerId and sessions array" });
@@ -95,35 +134,42 @@ router.post("/sessions/bulk", authRequired, async (req, res) => {
     }
   });
 
-  // Create all sessions with attendance records
+  // Create all sessions with participants (NO attendance records)
   const createdSessions = await Promise.all(
-    sessions.map(async ({ sessionDate, startTime, endTime, notes }: any) => {
-      if (!sessionDate || !startTime || !endTime) {
-        throw new Error("Each session must have sessionDate, startTime, and endTime");
+    sessions.map(async ({ title, description, programmeId, sessionDate, startTime, endTime, notes }: any) => {
+      if (!title || !sessionDate || !startTime || !endTime) {
+        throw new Error("Each session must have title, sessionDate, startTime, and endTime");
       }
 
       return await prisma.session.create({
         data: {
           centerId: Number(centerId),
           coachId: id,
+          title,
+          description: description || null,
+          programmeId: programmeId || null,
           sessionDate: new Date(sessionDate),
           startTime,
           endTime,
           notes: notes || null,
-          attendance: {
+          participants: {
             create: students.map(student => ({
-              studentId: student.id,
-              status: "ABSENT", // Default to absent
-              notes: null
+              studentId: student.id
             }))
           }
         },
         include: {
           center: true,
           coach: true,
-          attendance: {
+          participants: {
             include: {
-              student: true
+              student: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  status: true
+                }
+              }
             }
           }
         }
@@ -183,9 +229,32 @@ router.get("/sessions", authRequired, async (req, res) => {
     include: {
       center: true,
       coach: true,
+      participants: {
+        include: {
+          student: {
+            select: {
+              id: true,
+              fullName: true,
+              status: true
+            }
+          }
+        }
+      },
       attendance: {
         include: {
-          student: true
+          student: {
+            select: {
+              id: true,
+              fullName: true,
+              status: true
+            }
+          },
+          markedByCoach: {
+            select: {
+              id: true,
+              fullName: true
+            }
+          }
         }
       }
     },
@@ -207,9 +276,32 @@ router.get("/sessions/:id", authRequired, async (req, res) => {
     include: {
       center: true,
       coach: true,
+      participants: {
+        include: {
+          student: {
+            select: {
+              id: true,
+              fullName: true,
+              status: true
+            }
+          }
+        }
+      },
       attendance: {
         include: {
-          student: true
+          student: {
+            select: {
+              id: true,
+              fullName: true,
+              status: true
+            }
+          },
+          markedByCoach: {
+            select: {
+              id: true,
+              fullName: true
+            }
+          }
         }
       }
     }
@@ -234,7 +326,7 @@ router.get("/sessions/:id", authRequired, async (req, res) => {
 router.put("/sessions/:id", authRequired, async (req, res) => {
   const { role, id } = req.user!;
   const sessionId = Number(req.params.id);
-  const { sessionDate, startTime, endTime, notes } = req.body;
+  const { title, description, programmeId, sessionDate, startTime, endTime, notes } = req.body;
 
   const existingSession = await prisma.session.findUnique({
     where: { id: sessionId }
@@ -249,17 +341,32 @@ router.put("/sessions/:id", authRequired, async (req, res) => {
     return res.status(403).json({ message: "You can only update your own sessions" });
   }
 
+  const updateData: any = {};
+  if (title !== undefined) updateData.title = title;
+  if (description !== undefined) updateData.description = description;
+  if (programmeId !== undefined) updateData.programmeId = programmeId;
+  if (sessionDate !== undefined) updateData.sessionDate = new Date(sessionDate);
+  if (startTime !== undefined) updateData.startTime = startTime;
+  if (endTime !== undefined) updateData.endTime = endTime;
+  if (notes !== undefined) updateData.notes = notes;
+
   const session = await prisma.session.update({
     where: { id: sessionId },
-    data: {
-      sessionDate: sessionDate ? new Date(sessionDate) : undefined,
-      startTime,
-      endTime,
-      notes
-    },
+    data: updateData,
     include: {
       center: true,
-      coach: true
+      coach: true,
+      participants: {
+        include: {
+          student: {
+            select: {
+              id: true,
+              fullName: true,
+              status: true
+            }
+          }
+        }
+      }
     }
   });
 
@@ -298,12 +405,17 @@ router.post("/sessions/:sessionId/attendance", authRequired, async (req, res) =>
   const { studentId, status, notes } = req.body;
 
   if (!studentId || !status) {
-    return res.status(400).json({ message: "Missing required fields" });
+    return res.status(400).json({ message: "Missing required fields: studentId and status" });
   }
 
   const session = await prisma.session.findUnique({
     where: { id: sessionId },
-    include: { center: true }
+    include: { 
+      center: true,
+      participants: {
+        where: { studentId: Number(studentId) }
+      }
+    }
   });
 
   if (!session) {
@@ -318,6 +430,11 @@ router.post("/sessions/:sessionId/attendance", authRequired, async (req, res) =>
     }
   }
 
+  // Verify student is a participant
+  if (session.participants.length === 0) {
+    return res.status(400).json({ message: "Student is not a participant in this session" });
+  }
+
   // Verify student belongs to the center
   const student = await prisma.student.findUnique({
     where: { id: Number(studentId) }
@@ -327,7 +444,22 @@ router.post("/sessions/:sessionId/attendance", authRequired, async (req, res) =>
     return res.status(400).json({ message: "Student does not belong to this center" });
   }
 
-  // Upsert attendance
+  // Check if attendance can be marked (on session day or up to 7 days after)
+  const sessionDate = new Date(session.sessionDate);
+  sessionDate.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const daysDiff = Math.floor((today.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (daysDiff < 0) {
+    return res.status(400).json({ message: "Cannot mark attendance for future sessions" });
+  }
+  
+  if (daysDiff > 7) {
+    return res.status(400).json({ message: "Attendance can only be marked within 7 days of the session" });
+  }
+
+  // Upsert attendance with markedBy and markedAt tracking
   const attendance = await prisma.attendance.upsert({
     where: {
       sessionId_studentId: {
@@ -337,16 +469,32 @@ router.post("/sessions/:sessionId/attendance", authRequired, async (req, res) =>
     },
     update: {
       status,
-      notes: notes || null
+      notes: notes || null,
+      markedBy: id,
+      markedAt: new Date()
     },
     create: {
       sessionId,
       studentId: Number(studentId),
       status,
-      notes: notes || null
+      notes: notes || null,
+      markedBy: id,
+      markedAt: new Date()
     },
     include: {
-      student: true,
+      student: {
+        select: {
+          id: true,
+          fullName: true,
+          status: true
+        }
+      },
+      markedByCoach: {
+        select: {
+          id: true,
+          fullName: true
+        }
+      },
       session: {
         include: {
           center: true
@@ -396,6 +544,20 @@ router.post("/sessions/:sessionId/attendance/bulk", authRequired, async (req, re
         return { studentId, error: "Student does not belong to this center" };
       }
 
+      // Verify student is a participant
+      const participant = await prisma.sessionParticipant.findUnique({
+        where: {
+          sessionId_studentId: {
+            sessionId,
+            studentId: Number(studentId)
+          }
+        }
+      });
+
+      if (!participant) {
+        return { studentId, error: "Student is not a participant in this session" };
+      }
+
       try {
         const attendance = await prisma.attendance.upsert({
           where: {
@@ -406,16 +568,32 @@ router.post("/sessions/:sessionId/attendance/bulk", authRequired, async (req, re
           },
           update: {
             status,
-            notes: notes || null
+            notes: notes || null,
+            markedBy: id,
+            markedAt: new Date()
           },
           create: {
             sessionId,
             studentId: Number(studentId),
             status,
-            notes: notes || null
+            notes: notes || null,
+            markedBy: id,
+            markedAt: new Date()
           },
           include: {
-            student: true
+            student: {
+              select: {
+                id: true,
+                fullName: true,
+                status: true
+              }
+            },
+            markedByCoach: {
+              select: {
+                id: true,
+                fullName: true
+              }
+            }
           }
         });
         return attendance;
@@ -428,7 +606,7 @@ router.post("/sessions/:sessionId/attendance/bulk", authRequired, async (req, re
   res.json({ results });
 });
 
-// Get student's attendance (for students)
+// Get student's attendance (for students) - Only sessions where student is a participant
 router.get("/student/attendance", authRequired, requireRole("STUDENT"), async (req, res) => {
   const { id } = req.user!;
   const { month, year } = req.query;
@@ -441,46 +619,13 @@ router.get("/student/attendance", authRequired, requireRole("STUDENT"), async (r
     return res.status(404).json({ message: "Student not found" });
   }
 
-  // Build date filter
-  const where: any = {
-    session: {
-      centerId: student.centerId
-    },
-    studentId: id
-  };
-
-  if (month && year) {
-    const startDate = new Date(Number(year), Number(month) - 1, 1);
-    const endDate = new Date(Number(year), Number(month), 0, 23, 59, 59, 999);
-    where.session = {
-      ...where.session,
-      sessionDate: {
-        gte: startDate,
-        lte: endDate
-      }
-    };
-  }
-
-  const attendance = await prisma.attendance.findMany({
-    where,
-    include: {
-      session: {
-        include: {
-          center: true,
-          coach: true
-        }
-      }
-    },
-    orderBy: {
-      session: {
-        sessionDate: "asc"
+  // Build date filter for sessions where student is a participant
+  const sessionWhere: any = {
+    participants: {
+      some: {
+        studentId: id
       }
     }
-  });
-
-  // Also get all sessions for the month (even if attendance not marked)
-  const sessionWhere: any = {
-    centerId: student.centerId
   };
 
   if (month && year) {
@@ -492,13 +637,21 @@ router.get("/student/attendance", authRequired, requireRole("STUDENT"), async (r
     };
   }
 
-  const allSessions = await prisma.session.findMany({
+  const sessions = await prisma.session.findMany({
     where: sessionWhere,
     include: {
       center: true,
       coach: true,
       attendance: {
-        where: { studentId: id }
+        where: { studentId: id },
+        include: {
+          markedByCoach: {
+            select: {
+              id: true,
+              fullName: true
+            }
+          }
+        }
       }
     },
     orderBy: {
@@ -507,20 +660,180 @@ router.get("/student/attendance", authRequired, requireRole("STUDENT"), async (r
   });
 
   // Combine sessions with attendance status
-  const sessionsWithAttendance = allSessions.map((session: any) => {
+  const sessionsWithAttendance = sessions.map((session: any) => {
     const attendanceRecord = session.attendance[0];
     return {
       ...session,
-      attendanceStatus: attendanceRecord ? attendanceRecord.status : "NOT_MARKED",
+      attendanceStatus: attendanceRecord ? attendanceRecord.status : "PENDING",
       attendanceNotes: attendanceRecord?.notes || null,
-      attendanceId: attendanceRecord?.id || null
+      attendanceId: attendanceRecord?.id || null,
+      markedBy: attendanceRecord?.markedByCoach || null,
+      markedAt: attendanceRecord?.markedAt || null
     };
   });
 
   res.json({
     sessions: sessionsWithAttendance,
-    attendanceRecords: attendance
+    attendanceRecords: sessions.flatMap(s => s.attendance)
   });
+});
+
+// Get session participants
+router.get("/sessions/:sessionId/participants", authRequired, async (req, res) => {
+  const { role, id } = req.user!;
+  const sessionId = Number(req.params.sessionId);
+
+  const session = await prisma.session.findUnique({
+    where: { id: sessionId },
+    include: { center: true }
+  });
+
+  if (!session) {
+    return res.status(404).json({ message: "Session not found" });
+  }
+
+  // Check access
+  if (role === "COACH") {
+    const coachCenterIds = await getCoachCenterIds(id);
+    if (!coachCenterIds.includes(session.centerId)) {
+      return res.status(403).json({ message: "You don't have access to this session" });
+    }
+  }
+
+  const participants = await prisma.sessionParticipant.findMany({
+    where: { sessionId },
+    include: {
+      student: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          status: true,
+          programType: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: "asc"
+    }
+  });
+
+  res.json(participants);
+});
+
+// Add participant to session
+router.post("/sessions/:sessionId/participants", authRequired, async (req, res) => {
+  const { role, id } = req.user!;
+  const sessionId = Number(req.params.sessionId);
+  const { studentId } = req.body;
+
+  if (!studentId) {
+    return res.status(400).json({ message: "Missing required field: studentId" });
+  }
+
+  const session = await prisma.session.findUnique({
+    where: { id: sessionId },
+    include: { center: true }
+  });
+
+  if (!session) {
+    return res.status(404).json({ message: "Session not found" });
+  }
+
+  // Check access
+  if (role === "COACH") {
+    const coachCenterIds = await getCoachCenterIds(id);
+    if (!coachCenterIds.includes(session.centerId)) {
+      return res.status(403).json({ message: "You don't have access to this session" });
+    }
+  }
+
+  // Verify student belongs to the same center
+  const student = await prisma.student.findUnique({
+    where: { id: Number(studentId) }
+  });
+
+  if (!student || student.centerId !== session.centerId) {
+    return res.status(400).json({ message: "Student does not belong to this center" });
+  }
+
+  // Check if already a participant
+  const existing = await prisma.sessionParticipant.findUnique({
+    where: {
+      sessionId_studentId: {
+        sessionId,
+        studentId: Number(studentId)
+      }
+    }
+  });
+
+  if (existing) {
+    return res.status(400).json({ message: "Student is already a participant" });
+  }
+
+  const participant = await prisma.sessionParticipant.create({
+    data: {
+      sessionId,
+      studentId: Number(studentId)
+    },
+    include: {
+      student: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          status: true,
+          programType: true
+        }
+      }
+    }
+  });
+
+  res.status(201).json(participant);
+});
+
+// Remove participant from session
+router.delete("/sessions/:sessionId/participants/:studentId", authRequired, async (req, res) => {
+  const { role, id } = req.user!;
+  const sessionId = Number(req.params.sessionId);
+  const studentId = Number(req.params.studentId);
+
+  const session = await prisma.session.findUnique({
+    where: { id: sessionId },
+    include: { center: true }
+  });
+
+  if (!session) {
+    return res.status(404).json({ message: "Session not found" });
+  }
+
+  // Check access
+  if (role === "COACH") {
+    const coachCenterIds = await getCoachCenterIds(id);
+    if (!coachCenterIds.includes(session.centerId)) {
+      return res.status(403).json({ message: "You don't have access to this session" });
+    }
+  }
+
+  // Delete attendance record if exists
+  await prisma.attendance.deleteMany({
+    where: {
+      sessionId,
+      studentId
+    }
+  });
+
+  // Delete participant
+  await prisma.sessionParticipant.delete({
+    where: {
+      sessionId_studentId: {
+        sessionId,
+        studentId
+      }
+    }
+  });
+
+  res.json({ message: "Participant removed successfully" });
 });
 
 // Get attendance analytics for a centre

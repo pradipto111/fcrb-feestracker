@@ -260,6 +260,13 @@ export const spacing = {
   sectionGap: '4rem', // 64px - preferred between sections
 };
 
+/** Standard CTA dimensions (brochure + landing reference). Use for all primary/secondary CTAs. */
+export const ctaDimensions = {
+  paddingLg: '2rem 2.5rem', // 32px vertical, 40px horizontal (spacing.xl, spacing['40'])
+  minHeightLg: 52,
+  minHeightHero: 72, // full-width hero CTAs
+} as const;
+
 export const borderRadius = {
   // Football Club Card Style - Rounded corners 12-16px
   none: '0',

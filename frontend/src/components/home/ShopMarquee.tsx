@@ -100,11 +100,12 @@ export default function ShopMarquee({ products, isMobile, speedPxPerSec = 62 }: 
           </div>
           <div style={{ ...typography.caption, color: colors.text.muted, marginTop: 4 }}>Visit the shop to check what’s live.</div>
         </div>
-        <Link to="/shop" style={{ textDecoration: "none", flexShrink: 0 }}>
+        {/* Shop link disabled in UI, backend code preserved */}
+        {/* <Link to="/shop" style={{ textDecoration: "none", flexShrink: 0 }}>
           <Button variant="primary" size="md">
             Visit Shop <ArrowRightIcon size={18} style={{ marginLeft: 8 }} />
           </Button>
-        </Link>
+        </Link> */}
       </div>
     );
   }
