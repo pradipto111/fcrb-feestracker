@@ -1,0 +1,2282 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Center {
+  id             Int                    @id @default(autoincrement())
+  name           String
+  shortName      String?                @unique // e.g., "3LOK", "DEPOT18" - Made optional for migration
+  addressLine    String?
+  locality       String? // e.g., "Seegehalli", "Jayamahal"
+  city           String?
+  state          String?
+  postalCode     String?
+  latitude       Float? // For map pin placement
+  longitude      Float? // For map pin placement
+  googleMapsUrl  String? // Direct link to Google Maps
+  isActive       Boolean                @default(true)
+  displayOrder   Int                    @default(0) // For sorting in UI
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  // Legacy fields (kept for backward compatibility during migration)
+  location       String?
+  address        String?
+  // Relations
+  students       Student[]
+  coachLinks     CoachCenter[]
+  payments       Payment[]
+  sessions       Session[]
+  fixtures       Fixture[]
+  posts          Post[]
+  votes          Vote[]
+  studentStats   StudentStats[]
+  monthlyMetrics CentreMonthlyMetrics[]
+  scoutingBoards ScoutingBoard[]
+  seasonPlans    SeasonPlan[]
+  weeklyLoads    PlayerWeeklyLoad[]
+  trialEvents    TrialEvent[]
+  clubEvents     ClubEvent[]
+
+  @@index([shortName])
+  @@index([isActive])
+  @@index([displayOrder])
+}
+
+model Coach {
+  id                        Int                       @id @default(autoincrement())
+  fullName                  String
+  email                     String                    @unique
+  passwordHash              String
+  role                      Role                      @default(COACH)
+  createdAt                 DateTime                  @default(now())
+  updatedAt                 DateTime                  @updatedAt
+  centers                   CoachCenter[]
+  sessions                  Session[]
+  fixtures                  Fixture[]
+  videos                    Video[]
+  feedbacks                 MonthlyFeedback[]
+  publishedFeedbacks        MonthlyFeedback[]         @relation("FeedbackPublisher")
+  progressRoadmaps          ProgressRoadmap[]         @relation("RoadmapUpdater")
+  createdMetricSnapshots    PlayerMetricSnapshot[]    @relation("MetricSnapshotCreator")
+  metricAuditLogs           PlayerMetricAuditLog[]    @relation("AuditLogCreator")
+  authoredNotes             PlayerCoachNote[]         @relation("NoteAuthor")
+  createdScoutingBoards     ScoutingBoard[]           @relation("ScoutingBoardCreator")
+  addedScoutingBoardPlayers ScoutingBoardPlayer[]     @relation("ScoutingBoardPlayerAdder")
+  scoutingDecisions         ScoutingDecisionLog[]     @relation("ScoutingDecisionMaker")
+  publishedReports          ParentDevelopmentReport[] @relation("ReportPublisher")
+  createdSeasonPlans        SeasonPlan[]              @relation("SeasonPlanCreator")
+  createdSessionLoads       TrainingSessionLoad[]     @relation("SessionLoadCreator")
+  createdDevelopmentBlocks  DevelopmentBlock[]        @relation("DevelopmentBlockCreator")
+  createdTrialEvents        TrialEvent[]              @relation("TrialEventCreator")
+  trialEventStaff           TrialEventStaff[]         @relation("TrialEventStaff")
+  createdTrialTemplates     TrialMetricTemplate[]     @relation("TrialTemplateCreator")
+  createdTrialReports       TrialReport[]             @relation("TrialReportCreator")
+  revisedTrialReports       TrialReportRevision[]     @relation("TrialReportRevisor")
+  createdTrialShortlists    TrialShortlist[]          @relation("TrialShortlistCreator")
+  trialDecisions            TrialDecisionLog[]        @relation("TrialDecisionMaker")
+  clubEvents                ClubEvent[]
+  markedAttendance          Attendance[]              @relation("MarkedAttendance")
+}
+
+model CoachCenter {
+  id       Int    @id @default(autoincrement())
+  coachId  Int
+  centerId Int
+  coach    Coach  @relation(fields: [coachId], references: [id])
+  center   Center @relation(fields: [centerId], references: [id])
+
+  @@unique([coachId, centerId])
+}
+
+model Student {
+  id                   Int                       @id @default(autoincrement())
+  fullName             String
+  dateOfBirth          DateTime?
+  phoneNumber          String?
+  parentName           String?
+  parentPhoneNumber    String?
+  email                String?                   @unique
+  passwordHash         String?
+  centerId             Int
+  joiningDate          DateTime?
+  programType          String? // "EPP", "SCP", "WPP", "FYDP"
+  monthlyFeeAmount     Int                       @default(0)
+  paymentFrequency     Int                       @default(1) // Payment frequency in months (1-12)
+  walletBalance        Int                       @default(0) // Credit balance in wallet (positive = credit, negative = outstanding)
+  lastFeeDeduction     DateTime? // Last time fees were deducted from wallet
+  status               StudentStatus             @default(ACTIVE)
+  churnedDate          DateTime? // Date when student was churned (null if not churned)
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  center               Center                    @relation(fields: [centerId], references: [id])
+  payments             Payment[]
+  attendance           Attendance[]
+  sessionParticipants  SessionParticipant[]
+  fixturePlayers       FixturePlayer[]
+  stats                StudentStats[]
+  timelineEvents       TimelineEvent[]
+  monthlyFeedbacks     MonthlyFeedback[]
+  wellnessChecks       WellnessCheck[]
+  progressRoadmap      ProgressRoadmap?
+  metricSnapshots      PlayerMetricSnapshot[]
+  metricAuditLogs      PlayerMetricAuditLog[]
+  coachNotes           PlayerCoachNote[]
+  scoutingBoardPlayers ScoutingBoardPlayer[]
+  scoutingDecisions    ScoutingDecisionLog[]
+  parentReports        ParentDevelopmentReport[]
+  weeklyLoads          PlayerWeeklyLoad[]
+  clubEventPlayers     ClubEventPlayer[]
+}
+
+model Payment {
+  id                Int      @id @default(autoincrement())
+  studentId         Int
+  centerId          Int
+  amount            Int
+  paymentDate       DateTime @default(now())
+  paymentMode       String // UPI, cash, bank transfer
+  upiOrTxnReference String?
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  student           Student  @relation(fields: [studentId], references: [id])
+  center            Center   @relation(fields: [centerId], references: [id])
+
+  @@index([studentId])
+  @@index([centerId])
+}
+
+enum Role {
+  ADMIN
+  COACH
+  STUDENT
+  FAN
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  TRIAL
+}
+
+// ============================
+// FAN CLUB (REALVERSE FAN)
+// ============================
+
+enum FanAccountStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum FanCenterPreference {
+  THREELOK
+  DEPOT18
+  BLITZZ
+  TRONIC
+}
+
+enum RewardCampaignType {
+  STATIC
+  DYNAMIC_ROLLING
+}
+
+enum CouponCodeType {
+  SINGLE_USE
+  MULTI_USE
+}
+
+enum CouponDiscountType {
+  PERCENT
+  FLAT
+  FREEBIE
+}
+
+enum CouponRedemptionStatus {
+  REDEEMED
+  REVOKED
+}
+
+enum FanGameType {
+  QUIZ
+  PREDICT_SCORE
+  SPIN
+  COLLECT
+  STREAK
+}
+
+enum FanConversionLeadStatus {
+  NEW
+  CONTACTED
+  CONVERTED
+  DROPPED
+}
+
+enum FanProgramInterest {
+  EPP
+  SCP
+  WPP
+  FYDP
+}
+
+enum FanPersonaType {
+  PURE_FAN
+  ASPIRING_PLAYER
+  ANALYST
+  COMMUNITY_SUPPORTER
+}
+
+model FanUser {
+  id           Int              @id @default(autoincrement())
+  email        String           @unique
+  passwordHash String
+  role         Role             @default(FAN)
+  status       FanAccountStatus @default(ACTIVE)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  profile FanProfile?
+
+  @@index([role])
+  @@index([status])
+}
+
+model FanProfile {
+  id               Int                  @id @default(autoincrement())
+  userId           Int                  @unique
+  fullName         String
+  phone            String?
+  city             String?
+  centerPreference FanCenterPreference?
+  tierId           Int?
+  points           Int                  @default(0)
+  badges           String[]             @default([])
+  streakDays       Int                  @default(0)
+  joinedAt         DateTime             @default(now())
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  user FanUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier FanTier? @relation(fields: [tierId], references: [id])
+
+  redemptions     CouponRedemption[]
+  gameSessions    FanGameSession[]
+  conversionLeads FanConversionLead[]
+  onboarding      FanOnboarding?
+  pointLedger     FanPointLedger[]
+  badgesEarned    FanBadgeEarned[]
+
+  @@index([tierId])
+  @@index([joinedAt])
+}
+
+model FanTier {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  monthlyPriceINR Int
+  yearlyPriceINR  Int
+  benefitsJson    Json // array of benefit objects (schema-ready)
+  featureFlags    Json // module toggles for fan dashboard
+  sortOrder       Int      @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  fans        FanProfile[]
+  onboardings FanOnboarding[]
+
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
+model FanSponsor {
+  id             Int      @id @default(autoincrement())
+  name           String   @unique
+  logoAssetKey   String
+  brandPrimary   String
+  brandSecondary String
+  description    String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  campaigns   RewardCampaign[]
+  couponPools CouponPool[]
+
+  @@index([isActive])
+}
+
+model RewardCampaign {
+  id              Int                @id @default(autoincrement())
+  sponsorId       Int
+  title           String
+  type            RewardCampaignType @default(STATIC)
+  copy            String
+  rulesJson       Json?
+  validFrom       DateTime?
+  validTo         DateTime?
+  tierEligibility Int[]              @default([])
+  isActive        Boolean            @default(true)
+  priority        Int                @default(0)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  sponsor FanSponsor @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+
+  @@index([sponsorId])
+  @@index([isActive])
+  @@index([priority])
+}
+
+model CouponPool {
+  id              Int                @id @default(autoincrement())
+  sponsorId       Int
+  name            String
+  codeType        CouponCodeType
+  multiUseCode    String? // used when codeType = MULTI_USE
+  discountType    CouponDiscountType
+  discountValue   Int
+  conditionsText  String
+  tierEligibility Int[]              @default([])
+  maxRedemptions  Int?
+  expiresAt       DateTime?
+  isActive        Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  sponsor     FanSponsor         @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  codes       CouponCode[]
+  redemptions CouponRedemption[]
+
+  @@index([sponsorId])
+  @@index([isActive])
+  @@index([expiresAt])
+}
+
+model CouponCode {
+  id           Int       @id @default(autoincrement())
+  couponPoolId Int
+  code         String
+  isUsed       Boolean   @default(false)
+  usedAt       DateTime?
+  createdAt    DateTime  @default(now())
+
+  pool CouponPool @relation(fields: [couponPoolId], references: [id], onDelete: Cascade)
+
+  @@unique([couponPoolId, code])
+  @@index([couponPoolId])
+  @@index([isUsed])
+}
+
+model CouponRedemption {
+  id           Int                    @id @default(autoincrement())
+  fanId        Int
+  couponPoolId Int
+  codeUsed     String
+  redeemedAt   DateTime               @default(now())
+  status       CouponRedemptionStatus @default(REDEEMED)
+
+  fan  FanProfile @relation(fields: [fanId], references: [id], onDelete: Cascade)
+  pool CouponPool @relation(fields: [couponPoolId], references: [id], onDelete: Restrict)
+
+  @@unique([fanId, couponPoolId])
+  @@index([fanId])
+  @@index([couponPoolId])
+  @@index([redeemedAt])
+}
+
+model FanQuest {
+  id              Int      @id @default(autoincrement())
+  title           String
+  description     String
+  pointsReward    Int      @default(0)
+  badgeReward     String?
+  unlockRule      String?
+  tierEligibility Int[]    @default([])
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model FanGameSession {
+  id           Int         @id @default(autoincrement())
+  fanId        Int
+  gameType     FanGameType
+  input        Json?
+  result       Json?
+  pointsEarned Int         @default(0)
+  createdAt    DateTime    @default(now())
+
+  fan FanProfile @relation(fields: [fanId], references: [id], onDelete: Cascade)
+
+  @@index([fanId])
+  @@index([gameType])
+  @@index([createdAt])
+}
+
+model FanConversionLead {
+  id              Int                     @id @default(autoincrement())
+  fanId           Int
+  programInterest FanProgramInterest
+  status          FanConversionLeadStatus @default(NEW)
+  notes           String?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  fan FanProfile @relation(fields: [fanId], references: [id], onDelete: Cascade)
+
+  @@index([fanId])
+  @@index([programInterest])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model FanOnboarding {
+  id             Int             @id @default(autoincrement())
+  fanId          Int             @unique
+  persona        FanPersonaType?
+  favoritePlayer String?
+  locality       String?
+  goals          String[]        @default([])
+  assignedTierId Int?
+  completedAt    DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  fan          FanProfile @relation(fields: [fanId], references: [id], onDelete: Cascade)
+  assignedTier FanTier?   @relation(fields: [assignedTierId], references: [id])
+
+  @@index([assignedTierId])
+  @@index([completedAt])
+}
+
+model FanPointLedger {
+  id        Int      @id @default(autoincrement())
+  fanId     Int
+  delta     Int
+  reason    String
+  source    String? // e.g. "ADMIN_ADJUST", "GAME", "QUEST", "REWARD"
+  actorId   Int? // Coach/Admin id (stored as scalar to avoid cross-role relation complexity)
+  createdAt DateTime @default(now())
+
+  fan FanProfile @relation(fields: [fanId], references: [id], onDelete: Cascade)
+
+  @@index([fanId])
+  @@index([createdAt])
+}
+
+model FanBadgeEarned {
+  id        Int      @id @default(autoincrement())
+  fanId     Int
+  badgeKey  String
+  badgeName String?
+  source    String?
+  earnedAt  DateTime @default(now())
+
+  fan FanProfile @relation(fields: [fanId], references: [id], onDelete: Cascade)
+
+  @@unique([fanId, badgeKey])
+  @@index([fanId])
+  @@index([earnedAt])
+}
+
+model MatchdayMoment {
+  id           Int       @id @default(autoincrement())
+  title        String
+  category     String // e.g. "GOAL", "HIGHLIGHT", "POTW", "BTS"
+  mediaUrl     String?
+  thumbnailUrl String?
+  fixtureId    Int?
+  isFeatured   Boolean   @default(false)
+  isLocked     Boolean   @default(false)
+  unlockAt     DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([fixtureId])
+  @@index([isFeatured])
+  @@index([createdAt])
+}
+
+model DynamicRewardRule {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique // e.g. "WIN_BONUS", "MATCHDAY_SPECIAL"
+  title       String
+  description String
+  rulesJson   Json?
+  isActive    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  actorAdminId Int
+  action       String
+  entityType   String
+  entityId     String
+  before       Json?
+  after        Json?
+  createdAt    DateTime @default(now())
+
+  @@index([actorAdminId])
+  @@index([entityType])
+  @@index([createdAt])
+}
+
+model Session {
+  id             Int                  @id @default(autoincrement())
+  centerId       Int
+  coachId        Int
+  title          String // e.g., "U17 Technical Training"
+  description    String? // Optional session description
+  programmeId    String? // Optional: "EPP", "SCP", "WPP", "FYDP"
+  sessionDate    DateTime
+  startTime      String // e.g., "09:00"
+  endTime        String // e.g., "10:30"
+  notes          String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  center         Center               @relation(fields: [centerId], references: [id])
+  coach          Coach                @relation(fields: [coachId], references: [id])
+  participants   SessionParticipant[]
+  attendance     Attendance[]
+  votes          Vote[]
+  wellnessChecks WellnessCheck[]
+  sessionLoad    TrainingSessionLoad?
+
+  @@index([centerId])
+  @@index([coachId])
+  @@index([sessionDate])
+  @@index([programmeId])
+}
+
+model SessionParticipant {
+  id        Int      @id @default(autoincrement())
+  sessionId Int
+  studentId Int
+  createdAt DateTime @default(now())
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+  @@index([sessionId])
+  @@index([studentId])
+}
+
+model Attendance {
+  id            Int              @id @default(autoincrement())
+  sessionId     Int
+  studentId     Int
+  status        AttendanceStatus @default(ABSENT)
+  notes         String?
+  markedBy      Int // Coach ID who marked the attendance
+  markedAt      DateTime         @default(now())
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  session       Session          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student       Student          @relation(fields: [studentId], references: [id])
+  markedByCoach Coach            @relation("MarkedAttendance", fields: [markedBy], references: [id])
+
+  @@unique([sessionId, studentId])
+  @@index([sessionId])
+  @@index([studentId])
+  @@index([markedBy])
+  @@index([markedAt])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  EXCUSED
+}
+
+model Fixture {
+  id        Int             @id @default(autoincrement())
+  centerId  Int
+  coachId   Int
+  matchType String // e.g., "Friendly", "League", "Tournament", "Practice Match"
+  opponent  String? // Opponent team name
+  matchDate DateTime
+  matchTime String // e.g., "14:00"
+  venue     String? // Match venue/location
+  notes     String?
+  status    FixtureStatus   @default(UPCOMING)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  center    Center          @relation(fields: [centerId], references: [id])
+  coach     Coach           @relation(fields: [coachId], references: [id])
+  players   FixturePlayer[]
+
+  @@index([centerId])
+  @@index([coachId])
+  @@index([matchDate])
+}
+
+model FixturePlayer {
+  id              Int                   @id @default(autoincrement())
+  fixtureId       Int
+  studentId       Int
+  position        String? // e.g., "Forward", "Midfielder", "Defender", "Goalkeeper"
+  role            String? // e.g., "Starting XI", "Substitute", "Reserve"
+  selectionStatus MatchSelectionStatus  @default(NOT_SELECTED)
+  selectionReason MatchSelectionReason?
+  notes           String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  fixture         Fixture               @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  student         Student               @relation(fields: [studentId], references: [id])
+
+  @@unique([fixtureId, studentId])
+  @@index([fixtureId])
+  @@index([studentId])
+  @@index([selectionStatus])
+}
+
+enum MatchSelectionStatus {
+  SELECTED
+  NOT_SELECTED
+  INJURED_UNAVAILABLE
+  RESERVE
+}
+
+enum MatchSelectionReason {
+  PERFORMANCE_BASED
+  TACTICAL_FIT
+  ATTENDANCE_REQUIREMENT
+  PHYSICAL_READINESS
+  SQUAD_ROTATION
+  INJURY_RECOVERY
+  OTHER
+}
+
+enum FixtureStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+  POSTPONED
+}
+
+// ============================================
+// CLUB CALENDAR EVENTS (PUBLIC + ADMIN SCHEDULE)
+// ============================================
+enum ClubEventType {
+  MATCH
+  TRAINING
+  TRIAL
+  SEMINAR
+  MEETING
+  OTHER
+}
+
+enum ClubEventStatus {
+  SCHEDULED
+  CONFIRMED
+  POSTPONED
+  CANCELLED
+  COMPLETED
+}
+
+enum HomeAway {
+  HOME
+  AWAY
+}
+
+model ClubEvent {
+  id              String          @id @default(uuid())
+  type            ClubEventType
+  title           String
+  startAt         DateTime
+  endAt           DateTime?
+  allDay          Boolean         @default(false)
+  venueName       String?
+  venueAddress    String?
+  googleMapsUrl   String?
+  competition     String?
+  opponent        String?
+  homeAway        HomeAway?
+  teamId          Int?
+  centerId        Int?
+  status          ClubEventStatus @default(SCHEDULED)
+  notes           String?
+  createdByUserId Int
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  center    Center?           @relation(fields: [centerId], references: [id])
+  createdBy Coach             @relation(fields: [createdByUserId], references: [id])
+  players   ClubEventPlayer[]
+
+  @@unique([title, startAt])
+  @@index([startAt])
+  @@index([type])
+  @@index([status])
+  @@index([centerId])
+}
+
+model ClubEventPlayer {
+  id        Int      @id @default(autoincrement())
+  eventId   String
+  studentId Int
+  position  String? // e.g., "Forward", "Midfielder", "Defender"
+  role      String? // e.g., "Starting XI", "Substitute", "Reserve"
+  notes     String? // Additional notes about player's participation
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event   ClubEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  student Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, studentId])
+  @@index([eventId])
+  @@index([studentId])
+}
+
+model Video {
+  id           Int            @id @default(autoincrement())
+  title        String
+  description  String?
+  videoUrl     String? // YouTube or Instagram URL (nullable for uploaded files)
+  platform     VideoPlatform  @default(YOUTUBE)
+  category     String? // e.g., "Dribbling", "Passing", "Shooting", "Defense", "Fitness", "Tactics"
+  thumbnailUrl String? // Optional thumbnail URL
+  mediaType    DrillMediaType @default(LINK) // Type of media content
+  fileUrl      String? // URL/path for uploaded files (images, PDFs)
+  fileSize     Int? // File size in bytes
+  fileName     String? // Original filename
+  mimeType     String? // MIME type (image/jpeg, application/pdf, etc.)
+  createdById  Int // Coach or Admin who created it
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  creator      Coach          @relation(fields: [createdById], references: [id])
+
+  @@index([createdById])
+  @@index([category])
+  @@index([platform])
+  @@index([mediaType])
+}
+
+enum VideoPlatform {
+  YOUTUBE
+  INSTAGRAM
+  UPLOADED
+}
+
+enum DrillMediaType {
+  LINK // YouTube/Instagram links (existing)
+  IMAGE // Uploaded images
+  PDF // Uploaded PDF documents
+  DOCUMENT // Other documents (DOCX, etc.)
+  VIDEO // Direct video uploads (future)
+}
+
+model Post {
+  id             Int                @id @default(autoincrement())
+  title          String?
+  description    String?
+  mediaType      PostMediaType      @default(IMAGE)
+  mediaUrl       String // URL to image, video, or external link
+  platform       PostPlatform? // For external links (YouTube/Instagram)
+  centerId       Int? // Optional: associate with a center
+  createdByRole  Role // ADMIN, COACH, or STUDENT
+  createdById    Int // ID of the creator (coach or student)
+  approvalStatus PostApprovalStatus @default(PENDING) // For student posts
+  approvedById   Int? // Coach/Admin who approved
+  approvedAt     DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  center         Center?            @relation(fields: [centerId], references: [id])
+  comments       Comment[]
+
+  @@index([createdById, createdByRole])
+  @@index([centerId])
+  @@index([approvalStatus])
+  @@index([createdAt])
+}
+
+enum PostMediaType {
+  IMAGE
+  VIDEO
+  LINK
+}
+
+enum PostPlatform {
+  YOUTUBE
+  INSTAGRAM
+  INTERNAL
+}
+
+enum PostApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Comment {
+  id            Int      @id @default(autoincrement())
+  postId        Int
+  content       String
+  createdByRole Role // ADMIN, COACH, or STUDENT
+  createdById   Int // ID of the creator (coach or student)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  post          Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([createdById, createdByRole])
+  @@index([createdAt])
+}
+
+model Vote {
+  id         Int      @id @default(autoincrement())
+  sessionId  Int // Session where voting happened
+  voterRole  Role // STUDENT or COACH/ADMIN
+  voterId    Int // Student or Coach who voted
+  votedForId Int // Student who received the vote
+  points     Int      @default(1) // 1 for student, 2 for coach
+  centerId   Int // Center for filtering
+  createdAt  DateTime @default(now())
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  center     Center   @relation(fields: [centerId], references: [id])
+
+  @@unique([sessionId, voterId, voterRole, votedForId]) // Prevent duplicate votes
+  @@index([sessionId])
+  @@index([votedForId])
+  @@index([centerId])
+  @@index([createdAt])
+}
+
+model StudentStats {
+  id            Int       @id @default(autoincrement())
+  studentId     Int
+  centerId      Int
+  totalPoints   Int       @default(0)
+  studentVotes  Int       @default(0) // Votes from students
+  coachVotes    Int       @default(0) // Votes from coaches
+  sessionsVoted Int       @default(0) // Number of sessions this student was voted for
+  currentStreak Int       @default(0) // Consecutive sessions with votes
+  longestStreak Int       @default(0)
+  weeklyPoints  Int       @default(0) // Points this week
+  monthlyPoints Int       @default(0) // Points this month
+  lastVotedAt   DateTime? // Last time this student received a vote
+  updatedAt     DateTime  @updatedAt
+  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  center        Center    @relation(fields: [centerId], references: [id])
+  badges        Badge[]
+
+  @@unique([studentId, centerId])
+  @@index([centerId, totalPoints])
+  @@index([centerId, weeklyPoints])
+  @@index([centerId, monthlyPoints])
+}
+
+model Badge {
+  id             Int          @id @default(autoincrement())
+  studentStatsId Int
+  badgeType      BadgeType
+  earnedAt       DateTime     @default(now())
+  studentStats   StudentStats @relation(fields: [studentStatsId], references: [id], onDelete: Cascade)
+
+  @@index([studentStatsId])
+  @@index([badgeType])
+}
+
+enum BadgeType {
+  FIRST_VOTE // First time receiving a vote
+  TOP_WEEKLY // Top performer of the week
+  TOP_MONTHLY // Top performer of the month
+  STREAK_5 // 5 consecutive sessions with votes
+  STREAK_10 // 10 consecutive sessions with votes
+  STREAK_20 // 20 consecutive sessions with votes
+  CENTURY // 100 total points
+  FIVE_HUNDRED // 500 total points
+  THOUSAND // 1000 total points
+  COACH_FAVORITE // Most coach votes in a period
+  PEER_FAVORITE // Most student votes in a period
+  CONSISTENT // Voted for in 10+ different sessions
+}
+
+model WebsiteLead {
+  id                 Int        @id @default(autoincrement())
+  source             String     @default("website_join") // e.g., "website_join", "utm_campaign"
+  playerName         String
+  playerDob          DateTime?
+  ageBracket         String? // e.g., "U11", "U13", "U15", "U17", "U19", "U21", "Senior"
+  guardianName       String
+  phone              String
+  email              String
+  preferredCentre    String
+  programmeInterest  String // e.g., "Grassroots", "Development", "High Performance", "Women's Programme", "Goalkeeper Training"
+  playingPosition    String? // e.g., "Forward", "Midfielder", "Defender", "Goalkeeper"
+  currentLevel       String // e.g., "Beginner", "Academy", "School Team", "State Level", "District Level", "Other"
+  heardFrom          String // e.g., "Referral", "Instagram", "Facebook", "Tournament", "Friend/Family", "Website", "Other"
+  notes              String? // Free text from applicant
+  skillsShowcaseLink String? // Google Drive or YouTube link showcasing player skills
+  status             LeadStatus @default(NEW)
+  assignedTo         Int? // Coach/Admin ID who is handling this lead
+  internalNotes      String? // Internal notes for admin/coach
+  convertedPlayerId  Int? // If converted to actual Student
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([status])
+  @@index([preferredCentre])
+  @@index([programmeInterest])
+  @@index([createdAt])
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  CONVERTED
+  LOST
+  QUALIFIED
+  CONTACT_REQUESTED
+}
+
+// ============================
+// CRM (Sales/BD) + SYSTEM ACTIVITY
+// ============================
+
+enum CrmUserRole {
+  AGENT
+}
+
+enum CrmUserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum CrmLeadSourceType {
+  WEBSITE
+  LEGACY
+  CHECKOUT
+  FAN
+  MANUAL
+}
+
+enum CrmLeadStage {
+  NEW
+  CONTACTED
+  FOLLOW_UP
+  WILL_JOIN
+  JOINED
+  UNINTERESTED_NO_RESPONSE
+}
+
+enum CrmLeadStatus {
+  OPEN
+  CLOSED
+}
+
+enum CrmActivityType {
+  NOTE
+  CALL
+  EMAIL
+  WHATSAPP
+  MEETING
+  STAGE_CHANGED
+  STATUS_CHANGED
+  OWNER_CHANGED
+  IMPORTED
+  MERGED
+}
+
+enum CrmTaskStatus {
+  OPEN
+  DONE
+  CANCELLED
+}
+
+enum SystemActorType {
+  ADMIN
+  COACH
+  STUDENT
+  FAN
+  CRM
+  SYSTEM
+}
+
+model LegacyLead {
+  id                     Int        @id @default(autoincrement())
+  source                 String     @default("Find Your Legacy")
+  name                   String
+  phone                  String
+  age                    Int
+  heightCmInput          Int // Original user input
+  weightKgInput          Int // Original user input
+  heightCmBucket         Int // Snapped to nearest 5cm bucket [150..205]
+  weightKgBucket         Int // Snapped to nearest 5kg bucket [45..115]
+  matchedPlayerId        String? // ID from dataset JSON
+  matchedPlayerName      String?
+  matchedPlayerPosition  String?
+  matchedPlayerArchetype String?
+  matchedPlayerLegacy    Json? // Full legacy timeline data
+  consent                Boolean    @default(false)
+  status                 LeadStatus @default(NEW)
+  notes                  String?
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([matchedPlayerId])
+}
+
+model CrmUser {
+  id           Int           @id @default(autoincrement())
+  fullName     String
+  email        String        @unique
+  passwordHash String
+  role         CrmUserRole   @default(AGENT)
+  status       CrmUserStatus @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  ownedLeads CrmLead[]      @relation("CrmLeadOwner")
+  activities CrmActivity[]
+  tasks      CrmTask[]
+  imports    CrmImportJob[] @relation("CrmImportJobCreator")
+
+  @@index([role])
+  @@index([status])
+}
+
+model CrmSettings {
+  id              Int      @id @default(autoincrement())
+  stages          Json
+  tags            String[] @default([])
+  slaHoursByStage Json?
+  assignmentRules Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([updatedAt])
+}
+
+model CrmLead {
+  id         String            @id @default(uuid())
+  sourceType CrmLeadSourceType
+  sourceId   Int
+
+  // Normalized contact fields (best-effort across sources)
+  primaryName       String
+  phone             String?
+  email             String?
+  city              String?
+  preferredCentre   String?
+  programmeInterest String?
+
+  // Pipeline
+  stage    CrmLeadStage  @default(NEW)
+  status   CrmLeadStatus @default(OPEN)
+  priority Int           @default(0) // 0..3 (or custom scoring)
+  score    Int? // optional lead score
+
+  ownerId Int?
+  owner   CrmUser? @relation("CrmLeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  tags         String[] @default([])
+  customFields Json?
+
+  // Link-outs / conversion references
+  convertedStudentId Int?
+  convertedFanId     Int?
+  convertedOrderId   Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  activities CrmActivity[]
+  tasks      CrmTask[]
+
+  @@unique([sourceType, sourceId])
+  @@index([sourceType])
+  @@index([stage])
+  @@index([status])
+  @@index([ownerId])
+  @@index([createdAt])
+}
+
+// Source table for manually imported leads (CSV/XLSX uploads)
+// We keep this separate so CrmLead can still maintain a stable (sourceType, sourceId) link.
+model CrmManualLeadSource {
+  id                Int      @id @default(autoincrement())
+  primaryName       String
+  phone             String?
+  email             String?
+  preferredCentre   String?
+  programmeInterest String?
+  raw               Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([email])
+  @@index([phone])
+}
+
+model CrmActivity {
+  id         String          @id @default(uuid())
+  leadId     String
+  type       CrmActivityType
+  occurredAt DateTime        @default(now())
+
+  // Freeform body + structured metadata (optional)
+  title    String?
+  body     String?
+  metadata Json?
+
+  createdByCrmUserId Int?
+  createdByCrmUser   CrmUser? @relation(fields: [createdByCrmUserId], references: [id], onDelete: SetNull)
+
+  lead CrmLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@index([type])
+  @@index([occurredAt])
+  @@index([createdByCrmUserId])
+}
+
+model CrmTask {
+  id          String        @id @default(uuid())
+  leadId      String
+  title       String
+  description String?
+  dueAt       DateTime?
+  status      CrmTaskStatus @default(OPEN)
+
+  assignedToCrmUserId Int?
+  assignedTo          CrmUser? @relation(fields: [assignedToCrmUserId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lead CrmLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@index([status])
+  @@index([dueAt])
+  @@index([assignedToCrmUserId])
+}
+
+enum CrmImportStatus {
+  DRAFT
+  VALIDATED
+  COMMITTED
+  FAILED
+}
+
+model CrmImportJob {
+  id       String          @id @default(uuid())
+  source   String // e.g. "csv_upload", "xlsx_upload"
+  filename String?
+  status   CrmImportStatus @default(DRAFT)
+  mapping  Json? // column mapping config
+  summary  Json? // counts, errors, dedupe summary
+
+  createdByCrmUserId Int?
+  createdBy          CrmUser? @relation("CrmImportJobCreator", fields: [createdByCrmUserId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rows CrmImportRow[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([createdByCrmUserId])
+}
+
+model CrmImportRow {
+  id             String  @id @default(uuid())
+  jobId          String
+  rowNumber      Int
+  raw            Json // raw row payload
+  normalized     Json? // parsed/normalized candidate lead fields
+  isValid        Boolean @default(false)
+  error          String?
+  dedupeKey      String? // computed key for dedupe grouping
+  resolvedLeadId String? // if committed or matched
+
+  createdAt DateTime @default(now())
+
+  job CrmImportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([isValid])
+  @@index([dedupeKey])
+  @@index([rowNumber])
+}
+
+model SystemActivityLog {
+  id         String          @id @default(uuid())
+  actorType  SystemActorType
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  before     Json?
+  after      Json?
+  metadata   Json?
+  createdAt  DateTime        @default(now())
+
+  @@index([actorType])
+  @@index([entityType])
+  @@index([createdAt])
+}
+
+model Product {
+  id           Int         @id @default(autoincrement())
+  name         String
+  slug         String      @unique
+  description  String?
+  images       String[] // Array of image URLs
+  price        Int // Price in paise (e.g., 299900 = ₹2999.00)
+  currency     String      @default("INR") // Currency code
+  sizes        String[] // e.g., ["S", "M", "L", "XL"] for apparel
+  variants     Json? // JSON for variant options (e.g., {"color": ["Blue", "Red"], "kit": ["Home", "Away"]})
+  stock        Int? // Optional stock count
+  category     String? // e.g., "Jersey", "Shorts", "Accessories"
+  tags         String[] // Array of tags for filtering/search
+  displayOrder Int         @default(0) // For custom sorting in shop
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  orderItems   OrderItem[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@index([category])
+  @@index([displayOrder])
+}
+
+model Order {
+  id               Int         @id @default(autoincrement())
+  orderNumber      String      @unique // Human-readable order number
+  items            OrderItem[]
+  subtotal         Int // Subtotal in paise
+  shippingFee      Int         @default(0) // Shipping fee in paise
+  total            Int // Total in paise
+  customerName     String
+  phone            String
+  email            String
+  shippingAddress  Json // {addressLine1, addressLine2?, city, state, pincode, country}
+  status           OrderStatus @default(PENDING_PAYMENT)
+  paymentProvider  String? // e.g., "razorpay"
+  paymentReference String? // Payment ID from provider
+  paymentData      Json? // Full payment response from provider
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([status])
+  @@index([orderNumber])
+  @@index([email])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  productId   Int? // Nullable for local products (frontend-only products)
+  productName String // Snapshot of product name
+  variant     String? // Selected variant (e.g., "Blue - Home")
+  size        String? // Selected size
+  quantity    Int
+  unitPrice   Int // Price per unit in paise (snapshot)
+  totalPrice  Int // Total for this line item in paise
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  FAILED
+  CANCELLED
+  SHIPPED
+  DELIVERED
+}
+
+model CheckoutLead {
+  id               Int        @id @default(autoincrement())
+  source           String     @default("checkout")
+  customerName     String
+  phone            String
+  email            String
+  shippingAddress  Json // {addressLine1, addressLine2?, city, state, pincode, country}
+  items            Json // Array of items from checkout
+  subtotal         Int // Subtotal in paise
+  shippingFee      Int        @default(0) // Shipping fee in paise
+  total            Int // Total in paise
+  errorMessage     String? // Error message if order creation failed
+  status           LeadStatus @default(NEW)
+  assignedTo       Int? // Coach/Admin ID who is handling this lead
+  internalNotes    String? // Internal notes for admin/coach
+  convertedOrderId Int? // If converted to actual Order
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@index([status])
+  @@index([email])
+  @@index([createdAt])
+}
+
+model TimelineEvent {
+  id            Int               @id @default(autoincrement())
+  studentId     Int
+  eventType     TimelineEventType
+  title         String
+  description   String?
+  eventDate     DateTime
+  metadata      Json? // Flexible JSON for event-specific data
+  createdByRole Role? // ADMIN, COACH (null for auto-generated events)
+  createdById   Int? // Coach/Admin who created (null for auto-generated)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  student       Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([eventDate])
+  @@index([eventType])
+}
+
+enum TimelineEventType {
+  JOINED_ACADEMY
+  ATTENDANCE_MILESTONE
+  LEAGUE_PARTICIPATION
+  MATCH_APPEARANCE
+  PERFORMANCE_EVALUATION
+  PROMOTION
+  COACH_FEEDBACK
+  BADGE_EARNED
+  PAYMENT_MILESTONE
+  CUSTOM
+}
+
+model MonthlyFeedback {
+  id             Int       @id @default(autoincrement())
+  studentId      Int
+  coachId        Int // Coach who wrote the feedback
+  month          Int // 1-12
+  year           Int
+  strengths      String[] // Array of 1-2 strength points
+  areasToImprove String[] // Array of 1-2 improvement areas
+  focusGoal      String // One actionable focus goal
+  overallNote    String? // Optional overall note
+  isPublished    Boolean   @default(false) // Admin must publish
+  publishedById  Int? // Admin who published
+  publishedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  student        Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  coach          Coach     @relation(fields: [coachId], references: [id])
+  publishedBy    Coach?    @relation("FeedbackPublisher", fields: [publishedById], references: [id])
+
+  @@unique([studentId, month, year])
+  @@index([studentId])
+  @@index([coachId])
+  @@index([year, month])
+  @@index([isPublished])
+}
+
+model WellnessCheck {
+  id             Int         @id @default(autoincrement())
+  studentId      Int
+  sessionId      Int? // Optional: link to specific session
+  checkDate      DateTime    @default(now())
+  exertionLevel  Int // 1-5 scale
+  muscleSoreness Int? // Optional: 1-5 scale
+  energyLevel    EnergyLevel
+  comment        String? // Optional short comment
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  student        Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  session        Session?    @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@unique([studentId, checkDate]) // One check per day
+  @@index([studentId])
+  @@index([checkDate])
+  @@index([sessionId])
+}
+
+enum EnergyLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model ProgressRoadmap {
+  id                    Int      @id @default(autoincrement())
+  studentId             Int      @unique // One roadmap per student
+  currentLevel          String // e.g., "Youth League Squad"
+  nextPotentialLevel    String? // e.g., "KSFA D Division"
+  attendanceRequirement String? // e.g., "90% attendance for 3 months"
+  physicalBenchmark     String? // e.g., "Pass fitness test"
+  tacticalRequirement   String? // e.g., "Demonstrate positional understanding"
+  coachRecommendation   Boolean  @default(false)
+  isEligible            Boolean  @default(false) // Coach/admin flag
+  eligibilityNotes      String? // Internal notes (not visible to student)
+  updatedByRole         Role // Who last updated
+  updatedById           Int // Coach/Admin who updated
+  updatedAt             DateTime @updatedAt
+  createdAt             DateTime @default(now())
+  student               Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  updatedBy             Coach    @relation("RoadmapUpdater", fields: [updatedById], references: [id])
+
+  @@index([studentId])
+  @@index([isEligible])
+}
+
+model CentreMonthlyMetrics {
+  id                Int      @id @default(autoincrement())
+  centreId          Int
+  year              Int
+  month             Int // 1-12
+  totalPlayers      Int? // Snapshot at end of month
+  activePlayers     Int?
+  churnedPlayers    Int?
+  residential       Int?
+  nonResidential    Int?
+  totalRevenue      Int? // In paise
+  additionalRevenue Int? // In paise
+  netRentalCharges  Int? // In paise
+  coachingCosts     Int? // In paise
+  otherExpenses     Int? // In paise
+  netProfit         Int? // Calculated: totalRevenue + additionalRevenue - netRentalCharges - coachingCosts - otherExpenses
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  centre            Center   @relation(fields: [centreId], references: [id], onDelete: Cascade)
+
+  @@unique([centreId, year, month])
+  @@index([centreId])
+  @@index([year, month])
+  @@index([centreId, year, month])
+}
+
+// ============================================
+// PLAYER METRICS SYSTEM (Football Manager-style)
+// ============================================
+
+enum MetricCategory {
+  TECHNICAL
+  PHYSICAL
+  MENTAL
+  ATTITUDE
+  GOALKEEPING
+}
+
+enum PlayerPosition {
+  GK // Goalkeeper
+  CB // Centre Back
+  FB // Full Back
+  WB // Wing Back
+  DM // Defensive Midfielder
+  CM // Central Midfielder
+  AM // Attacking Midfielder
+  W // Winger
+  ST // Striker
+}
+
+enum MetricSourceContext {
+  TRAINING_BLOCK
+  MATCH_BLOCK
+  TRIAL
+  MONTHLY_REVIEW
+  QUARTERLY_ASSESSMENT
+  SEASON_START
+  SEASON_END
+  CUSTOM
+}
+
+// Metric catalog - defines all available metrics
+model PlayerMetricDefinition {
+  id           Int                   @id @default(autoincrement())
+  key          String                @unique // e.g., "first_touch", "acceleration", "work_rate"
+  displayName  String // Human-readable name
+  category     MetricCategory
+  description  String? // Optional description
+  minValue     Int                   @default(0)
+  maxValue     Int                   @default(100)
+  isActive     Boolean               @default(true)
+  isCoachOnly  Boolean               @default(false) // Hide from players if true (e.g., attitude traits)
+  displayOrder Int                   @default(0) // For UI sorting
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  // Relations
+  values       PlayerMetricValue[]
+  traits       PlayerTraitSnapshot[]
+
+  @@index([key])
+  @@index([category])
+  @@index([isActive])
+  @@index([displayOrder])
+}
+
+// Time-series snapshot - complete player assessment at a point in time
+model PlayerMetricSnapshot {
+  id              Int                           @id @default(autoincrement())
+  studentId       Int // Links to Student (player)
+  createdByUserId Int // Coach or Admin who created this snapshot
+  createdByRole   Role // ADMIN or COACH
+  createdAt       DateTime                      @default(now())
+  sourceContext   MetricSourceContext
+  seasonId        String? // Optional: e.g., "2024-25"
+  notes           String? // Optional summary notes
+  // Relations
+  student         Student                       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdBy       Coach                         @relation("MetricSnapshotCreator", fields: [createdByUserId], references: [id])
+  values          PlayerMetricValue[]
+  positional      PlayerPositionalSuitability[]
+  traits          PlayerTraitSnapshot[]
+  auditLogs       PlayerMetricAuditLog[]
+  readiness       PlayerReadinessIndex?
+  coachNotes      PlayerCoachNote[]
+  parentReports   ParentDevelopmentReport[]
+
+  @@index([studentId, createdAt])
+  @@index([createdByUserId])
+  @@index([sourceContext])
+  @@index([createdAt])
+}
+
+// Individual metric values within a snapshot
+model PlayerMetricValue {
+  id                 Int                    @id @default(autoincrement())
+  snapshotId         Int
+  metricDefinitionId Int
+  valueNumber        Int // 0-100 scale
+  confidence         Int? // 0-100: coach confidence in this rating
+  comment            String? // Optional short comment
+  // Relations
+  snapshot           PlayerMetricSnapshot   @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  metricDefinition   PlayerMetricDefinition @relation(fields: [metricDefinitionId], references: [id])
+
+  @@unique([snapshotId, metricDefinitionId])
+  @@index([snapshotId])
+  @@index([metricDefinitionId])
+  @@index([valueNumber])
+}
+
+// Positional suitability ratings per snapshot
+model PlayerPositionalSuitability {
+  id          Int                  @id @default(autoincrement())
+  snapshotId  Int
+  position    PlayerPosition
+  suitability Int // 0-100: how well player fits this position
+  comment     String? // Optional: e.g., "Natural fit", "Needs work on positioning"
+  // Relations
+  snapshot    PlayerMetricSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@unique([snapshotId, position])
+  @@index([snapshotId])
+  @@index([position])
+  @@index([suitability])
+}
+
+// Coach-assessed traits (attitude/personality) per snapshot
+model PlayerTraitSnapshot {
+  id                 Int                    @id @default(autoincrement())
+  snapshotId         Int
+  metricDefinitionId Int // Links to PlayerMetricDefinition with category ATTITUDE
+  valueNumber        Int // 0-100
+  comment            String? // Optional coach note
+  // Relations
+  snapshot           PlayerMetricSnapshot   @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  metricDefinition   PlayerMetricDefinition @relation(fields: [metricDefinitionId], references: [id])
+
+  @@unique([snapshotId, metricDefinitionId])
+  @@index([snapshotId])
+  @@index([metricDefinitionId])
+}
+
+// Audit log for tracking changes between snapshots
+model PlayerMetricAuditLog {
+  id                 Int                  @id @default(autoincrement())
+  studentId          Int
+  snapshotId         Int // New snapshot
+  previousSnapshotId Int? // Previous snapshot (null for first snapshot)
+  changedByUserId    Int // Coach/Admin who created the change
+  changedByRole      Role // ADMIN or COACH
+  createdAt          DateTime             @default(now())
+  diffJson           Json // Array of { metricKey, oldValue, newValue, comment }
+  summary            String? // Short summary of changes
+  // Relations
+  student            Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  snapshot           PlayerMetricSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  changedBy          Coach                @relation("AuditLogCreator", fields: [changedByUserId], references: [id])
+
+  @@index([studentId, createdAt])
+  @@index([snapshotId])
+  @@index([changedByUserId])
+  @@index([createdAt])
+}
+
+// Qualitative coach notes tied to a snapshot or date range
+model PlayerCoachNote {
+  id                Int                   @id @default(autoincrement())
+  studentId         Int
+  authorUserId      Int // Coach/Admin who wrote the note
+  authorRole        Role // ADMIN or COACH
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  title             String
+  body              String // Full text note
+  tags              String[] // Array of tags for filtering
+  relatedSnapshotId Int? // Optional: link to specific snapshot
+  isVisibleToPlayer Boolean               @default(false) // Whether player can see this note
+  // Relations
+  student           Student               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  author            Coach                 @relation("NoteAuthor", fields: [authorUserId], references: [id])
+  relatedSnapshot   PlayerMetricSnapshot? @relation(fields: [relatedSnapshotId], references: [id], onDelete: SetNull)
+
+  @@index([studentId, createdAt])
+  @@index([authorUserId])
+  @@index([relatedSnapshotId])
+  @@index([tags])
+  @@index([isVisibleToPlayer])
+}
+
+// Derived readiness index - computed and stored for fast reads
+model PlayerReadinessIndex {
+  id              Int                  @id @default(autoincrement())
+  snapshotId      Int                  @unique
+  overall         Int // 0-100 overall readiness
+  technical       Int // 0-100 technical readiness
+  physical        Int // 0-100 physical readiness
+  mental          Int // 0-100 mental readiness
+  attitude        Int // 0-100 attitude score
+  tacticalFit     Int // 0-100 tactical understanding
+  explanationJson Json // { topStrengths: [metricKey], topRisks: [metricKey], recommendedFocus: [metricKey], ruleTriggers: [string] }
+  computedAt      DateTime             @default(now())
+  // Relations
+  snapshot        PlayerMetricSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@index([snapshotId])
+  @@index([overall])
+}
+
+// ============================================
+// SCOUTING BOARD & COMPARISON SYSTEM
+// ============================================
+
+enum ScoutingBoardType {
+  CENTRE_VIEW // Players from a specific centre
+  CLUB_WIDE // All centres combined
+  CUSTOM // Coach-created shortlist
+}
+
+enum ScoutingDecisionState {
+  OBSERVING
+  TRIAL_RECOMMENDED
+  READY_FOR_PROMOTION
+  HOLD_FOR_DEVELOPMENT
+  INTERVENTION_NEEDED
+}
+
+// Scouting Board - a decision workspace for coaches/admins
+model ScoutingBoard {
+  id              Int                   @id @default(autoincrement())
+  name            String // e.g., "U17 CM – Promotion Candidates"
+  description     String? // Optional description
+  type            ScoutingBoardType
+  centerId        Int? // Required for CENTRE_VIEW, null for CLUB_WIDE/CUSTOM
+  createdByUserId Int // Coach/Admin who created
+  createdByRole   Role // ADMIN or COACH
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  // Relations
+  center          Center?               @relation(fields: [centerId], references: [id], onDelete: SetNull)
+  createdBy       Coach                 @relation("ScoutingBoardCreator", fields: [createdByUserId], references: [id])
+  players         ScoutingBoardPlayer[]
+  decisions       ScoutingDecisionLog[]
+
+  @@index([createdByUserId])
+  @@index([type])
+  @@index([centerId])
+  @@index([createdAt])
+}
+
+// Players on a scouting board
+model ScoutingBoardPlayer {
+  id            Int           @id @default(autoincrement())
+  boardId       Int
+  studentId     Int
+  addedAt       DateTime      @default(now())
+  addedByUserId Int // Coach/Admin who added
+  addedByRole   Role // ADMIN or COACH
+  notes         String? // Optional notes specific to this board
+  // Relations
+  board         ScoutingBoard @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  addedBy       Coach         @relation("ScoutingBoardPlayerAdder", fields: [addedByUserId], references: [id])
+
+  @@unique([boardId, studentId])
+  @@index([boardId])
+  @@index([studentId])
+  @@index([addedAt])
+}
+
+// Decision log for tracking scouting decisions
+model ScoutingDecisionLog {
+  id              Int                   @id @default(autoincrement())
+  boardId         Int
+  studentId       Int
+  decisionState   ScoutingDecisionState
+  notes           String? // Decision rationale
+  decidedByUserId Int // Coach/Admin who made decision
+  decidedByRole   Role // ADMIN or COACH
+  decidedAt       DateTime              @default(now())
+  // Relations
+  board           ScoutingBoard         @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  student         Student               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  decidedBy       Coach                 @relation("ScoutingDecisionMaker", fields: [decidedByUserId], references: [id])
+
+  @@index([boardId])
+  @@index([studentId])
+  @@index([decisionState])
+  @@index([decidedAt])
+}
+
+// Add relations to existing models
+// (These will be added to the existing model definitions above)
+
+// ============================================
+// PARENT-FACING DEVELOPMENT REPORTS
+// ============================================
+
+// Parent-friendly development report generated from a snapshot
+model ParentDevelopmentReport {
+  id                   Int                  @id @default(autoincrement())
+  studentId            Int // Links to Student
+  snapshotId           Int // Links to the snapshot this report is based on
+  publishedAt          DateTime? // When report was published (null = draft)
+  publishedByUserId    Int? // Coach/Admin who published
+  publishedByRole      Role? // ADMIN or COACH
+  visibleToParent      Boolean              @default(false) // Whether parent/player can see this
+  reportingPeriodStart DateTime? // Optional: start of reporting period
+  reportingPeriodEnd   DateTime? // Optional: end of reporting period
+  // Content stored as JSON for flexibility
+  contentJson          Json // { headline, bands, strengths, focusAreas, coachNote, readinessStage, parentSupportTips }
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  // Relations
+  student              Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  snapshot             PlayerMetricSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  publishedBy          Coach?               @relation("ReportPublisher", fields: [publishedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([studentId])
+  @@index([snapshotId])
+  @@index([publishedAt])
+  @@index([visibleToParent])
+  @@index([createdAt])
+}
+
+// ============================================
+// SEASON PLANNING & LOAD PREDICTION SYSTEM
+// ============================================
+
+enum SeasonPhaseType {
+  PREPARATION
+  COMPETITIVE
+  RECOVERY
+  TRANSITION
+}
+
+enum TrainingIntensity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TrainingFocus {
+  TECHNICAL
+  TACTICAL
+  PHYSICAL
+  RECOVERY
+}
+
+// Season Plan - defines the overall season structure
+model SeasonPlan {
+  id                Int                   @id @default(autoincrement())
+  centerId          Int
+  name              String // e.g., "2024-25 Season"
+  seasonStart       DateTime
+  seasonEnd         DateTime
+  description       String?
+  createdByUserId   Int // Coach/Admin who created
+  createdByRole     Role // ADMIN or COACH
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  // Relations
+  center            Center                @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  createdBy         Coach                 @relation("SeasonPlanCreator", fields: [createdByUserId], references: [id])
+  phases            SeasonPhase[]
+  sessionLoads      TrainingSessionLoad[]
+  developmentBlocks DevelopmentBlock[]
+
+  @@index([centerId])
+  @@index([createdByUserId])
+  @@index([seasonStart, seasonEnd])
+}
+
+// Season Phase - periods within a season (preparation, competitive, recovery)
+model SeasonPhase {
+  id              Int             @id @default(autoincrement())
+  seasonPlanId    Int
+  name            String // e.g., "Pre-Season", "League Phase"
+  phaseType       SeasonPhaseType
+  startDate       DateTime
+  endDate         DateTime
+  description     String?
+  targetLoadRange Json? // { min: number, max: number } - recommended load range
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  // Relations
+  seasonPlan      SeasonPlan      @relation(fields: [seasonPlanId], references: [id], onDelete: Cascade)
+
+  @@index([seasonPlanId])
+  @@index([startDate, endDate])
+}
+
+// Training Session Load - manual load assessment for each session
+model TrainingSessionLoad {
+  id              Int               @id @default(autoincrement())
+  sessionId       Int               @unique // Links to Session
+  seasonPlanId    Int? // Optional: link to season plan
+  intensity       TrainingIntensity
+  duration        Int // Duration in minutes
+  focusTags       TrainingFocus[] // Array of focus areas
+  estimatedLoad   Float // Computed: Duration × Intensity Multiplier
+  notes           String? // Optional notes
+  createdByUserId Int // Coach/Admin who assessed
+  createdByRole   Role // ADMIN or COACH
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  // Relations
+  session         Session           @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  seasonPlan      SeasonPlan?       @relation(fields: [seasonPlanId], references: [id], onDelete: SetNull)
+  createdBy       Coach             @relation("SessionLoadCreator", fields: [createdByUserId], references: [id])
+
+  @@index([sessionId])
+  @@index([seasonPlanId])
+  @@index([createdByUserId])
+  @@index([createdAt])
+}
+
+// Player Weekly Load - aggregated weekly load per player (derived/cacheable)
+model PlayerWeeklyLoad {
+  id                Int                @id @default(autoincrement())
+  studentId         Int
+  centerId          Int
+  weekStart         DateTime // Monday of the week
+  weekEnd           DateTime // Sunday of the week
+  totalLoad         Float // Sum of estimated load from sessions attended
+  sessionCount      Int                @default(0) // Number of sessions in this week
+  averageIntensity  TrainingIntensity?
+  focusDistribution Json? // { TECHNICAL: number, TACTICAL: number, PHYSICAL: number, RECOVERY: number }
+  squadAverage      Float? // Squad average for comparison
+  ageGroupRange     Json? // { min: number, max: number } - recommended for age group
+  loadStatus        String? // "LOW", "NORMAL", "HIGH", "CRITICAL" - soft indicator
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  // Relations
+  student           Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  center            Center             @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, weekStart])
+  @@index([studentId, weekStart])
+  @@index([centerId, weekStart])
+  @@index([weekStart, weekEnd])
+}
+
+// Development Block - links planning to specific development goals
+model DevelopmentBlock {
+  id                       Int        @id @default(autoincrement())
+  seasonPlanId             Int
+  name                     String // e.g., "Ball Retention Focus"
+  startDate                DateTime
+  endDate                  DateTime
+  focusArea                String // Development focus (e.g., "Ball retention", "Defensive positioning")
+  targetMetrics            String[] // Array of metric keys to focus on
+  suggestedLoadRange       Json? // { min: number, max: number }
+  sessionFocusDistribution Json? // { TECHNICAL: number, TACTICAL: number, PHYSICAL: number, RECOVERY: number }
+  description              String?
+  createdByUserId          Int
+  createdByRole            Role
+  createdAt                DateTime   @default(now())
+  updatedAt                DateTime   @updatedAt
+  // Relations
+  seasonPlan               SeasonPlan @relation(fields: [seasonPlanId], references: [id], onDelete: Cascade)
+  createdBy                Coach      @relation("DevelopmentBlockCreator", fields: [createdByUserId], references: [id])
+
+  @@index([seasonPlanId])
+  @@index([startDate, endDate])
+}
+
+// ============================================
+// TRIAL INTAKE & EXTERNAL SCOUTING SYSTEM
+// ============================================
+
+enum TrialEventStatus {
+  DRAFT
+  LIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum TrialObservationType {
+  DRILLS
+  MATCH
+  BOTH
+}
+
+enum TrialRecommendedAction {
+  INVITE_BACK
+  SELECT_NOW
+  DEVELOPMENT_POOL
+  NOT_SELECTED
+  NEED_MORE_DATA
+}
+
+enum TrialMetricCategory {
+  TECHNICAL
+  PHYSICAL
+  MENTAL
+  ATTITUDE
+  TACTICAL
+  ROLE_FIT
+}
+
+enum TrialPositionScope {
+  OUTFIELD
+  GK
+  ANY
+}
+
+// Trial Event - the session container
+model TrialEvent {
+  id              Int                  @id @default(autoincrement())
+  title           String // e.g., "U17 Trials – Jan 2026 – Centre 3lok"
+  centerId        Int
+  startDateTime   DateTime
+  endDateTime     DateTime
+  ageGroups       String[] // Array: ["U13", "U15", "U17"]
+  positionsNeeded String[] // Array: ["CM", "ST", "CB"]
+  format          String? // "small-sided" / "full match" / "drills + match"
+  status          TrialEventStatus     @default(DRAFT)
+  notes           String? // Internal notes
+  createdByUserId Int // Coach/Admin who created
+  createdByRole   Role // ADMIN or COACH
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  // Relations
+  center          Center               @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  createdBy       Coach                @relation("TrialEventCreator", fields: [createdByUserId], references: [id])
+  staffAssigned   TrialEventStaff[]
+  trialists       TrialEventTrialist[]
+  reports         TrialReport[]
+  shortlists      TrialShortlist[]
+  decisions       TrialDecisionLog[]
+
+  @@index([centerId])
+  @@index([startDateTime])
+  @@index([status])
+  @@index([createdByUserId])
+}
+
+// Staff assigned to trial event
+model TrialEventStaff {
+  id           Int        @id @default(autoincrement())
+  trialEventId Int
+  coachId      Int
+  role         String? // e.g., "Lead Evaluator", "Observer"
+  createdAt    DateTime   @default(now())
+  // Relations
+  trialEvent   TrialEvent @relation(fields: [trialEventId], references: [id], onDelete: Cascade)
+  coach        Coach      @relation("TrialEventStaff", fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@unique([trialEventId, coachId])
+  @@index([trialEventId])
+  @@index([coachId])
+}
+
+// Trialist - external player record (separate from Student)
+model Trialist {
+  id                 Int                  @id @default(autoincrement())
+  fullName           String
+  phone              String?
+  guardianPhone      String?
+  email              String?
+  dateOfBirth        DateTime?
+  preferredFoot      String? // "Left" / "Right" / "Both"
+  primaryPosition    String? // e.g., "CM"
+  secondaryPositions String[] // Array: ["AM", "DM"]
+  currentClub        String? // Current club/academy
+  location           String? // City/location
+  height             Int? // cm
+  weight             Int? // kg
+  injuryNotes        String?
+  consentAccepted    Boolean              @default(false)
+  consentAcceptedAt  DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  // Relations
+  trialEvents        TrialEventTrialist[]
+  reports            TrialReport[]
+  shortlistItems     TrialShortlistItem[]
+  decisions          TrialDecisionLog[]
+
+  @@index([fullName])
+  @@index([phone])
+  @@index([email])
+  @@index([createdAt])
+}
+
+// Link trialist to trial event
+model TrialEventTrialist {
+  id           Int        @id @default(autoincrement())
+  trialEventId Int
+  trialistId   Int
+  registeredAt DateTime   @default(now())
+  notes        String? // Registration notes
+  // Relations
+  trialEvent   TrialEvent @relation(fields: [trialEventId], references: [id], onDelete: Cascade)
+  trialist     Trialist   @relation(fields: [trialistId], references: [id], onDelete: Cascade)
+
+  @@unique([trialEventId, trialistId])
+  @@index([trialEventId])
+  @@index([trialistId])
+}
+
+// Trial Metric Template - coach-configurable evaluation templates
+model TrialMetricTemplate {
+  id                Int                       @id @default(autoincrement())
+  name              String // e.g., "FCRB Standard Trial – Outfield"
+  positionScope     TrialPositionScope        @default(ANY)
+  specificPositions String[] // Array if positionScope is specific
+  ageScope          String[] // Optional: ["U13", "U15"]
+  description       String?
+  isDefault         Boolean                   @default(false)
+  createdByCoachId  Int // Coach/Admin who created
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  // Relations
+  createdBy         Coach                     @relation("TrialTemplateCreator", fields: [createdByCoachId], references: [id])
+  items             TrialMetricTemplateItem[]
+  reports           TrialReport[]
+
+  @@index([createdByCoachId])
+  @@index([isDefault])
+}
+
+// Template metric items
+model TrialMetricTemplateItem {
+  id           Int                 @id @default(autoincrement())
+  templateId   Int
+  metricKey    String // e.g., "acceleration"
+  displayName  String // e.g., "Acceleration"
+  category     TrialMetricCategory
+  description  String? // What to observe
+  anchors      Json? // { "40": "description", "60": "description", "80": "description" }
+  weight       Float? // Optional weight for overall score calculation
+  required     Boolean             @default(false)
+  displayOrder Int                 @default(0)
+  createdAt    DateTime            @default(now())
+  // Relations
+  template     TrialMetricTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  reportValues TrialReportValue[]
+
+  @@index([templateId])
+  @@index([metricKey])
+  @@index([displayOrder])
+}
+
+// Trial Report - evaluation record
+model TrialReport {
+  id                Int                     @id @default(autoincrement())
+  trialEventId      Int
+  trialistId        Int
+  templateId        Int // Template used
+  createdByCoachId  Int // Coach who created
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  // Context
+  observedPosition  String // Required position context
+  ageGroup          String // Required age group
+  observationType   TrialObservationType
+  confidence        Int? // 0-100
+  minutesObserved   Int?
+  weatherNotes      String?
+  pitchNotes        String?
+  // Evaluation
+  strengths         String[] // Max 3 tags
+  risks             String[] // Max 3 tags
+  coachSummary      String? // Short text summary
+  recommendedAction TrialRecommendedAction
+  decisionNotes     String? // Internal decision rationale
+  // Derived score (cached)
+  overallScore      Float? // 0-100, calculated from template weights
+  // Relations
+  trialEvent        TrialEvent              @relation(fields: [trialEventId], references: [id], onDelete: Cascade)
+  trialist          Trialist                @relation(fields: [trialistId], references: [id], onDelete: Cascade)
+  template          TrialMetricTemplate     @relation(fields: [templateId], references: [id])
+  createdBy         Coach                   @relation("TrialReportCreator", fields: [createdByCoachId], references: [id])
+  values            TrialReportValue[]
+  positional        TrialReportPositional[]
+  revisions         TrialReportRevision[]
+
+  @@index([trialEventId, trialistId, createdAt])
+  @@index([trialistId])
+  @@index([createdByCoachId])
+  @@index([recommendedAction])
+  @@index([createdAt])
+}
+
+// Individual metric values in a report
+model TrialReportValue {
+  id             Int                     @id @default(autoincrement())
+  reportId       Int
+  templateItemId Int // Links to template item
+  value          Int // 0-100
+  comment        String? // Optional comment
+  confidence     Int? // 0-100, metric-specific confidence
+  createdAt      DateTime                @default(now())
+  // Relations
+  report         TrialReport             @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  templateItem   TrialMetricTemplateItem @relation(fields: [templateItemId], references: [id])
+
+  @@unique([reportId, templateItemId])
+  @@index([reportId])
+  @@index([templateItemId])
+}
+
+// Positional suitability in trial report
+model TrialReportPositional {
+  id          Int         @id @default(autoincrement())
+  reportId    Int
+  position    String // e.g., "CM"
+  suitability Int // 0-100
+  comment     String?
+  createdAt   DateTime    @default(now())
+  // Relations
+  report      TrialReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, position])
+  @@index([reportId])
+}
+
+// Report revision history (audit trail)
+model TrialReportRevision {
+  id               Int         @id @default(autoincrement())
+  reportId         Int
+  previousData     Json // Snapshot of previous report data
+  revisedByCoachId Int
+  revisedAt        DateTime    @default(now())
+  reason           String? // Reason for revision
+  // Relations
+  report           TrialReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  revisedBy        Coach       @relation("TrialReportRevisor", fields: [revisedByCoachId], references: [id])
+
+  @@index([reportId])
+  @@index([revisedByCoachId])
+  @@index([revisedAt])
+}
+
+// Trial Shortlist - decision workspace
+model TrialShortlist {
+  id               Int                  @id @default(autoincrement())
+  trialEventId     Int
+  name             String // e.g., "Invite Back", "Select Now"
+  description      String?
+  createdByCoachId Int
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  // Relations
+  trialEvent       TrialEvent           @relation(fields: [trialEventId], references: [id], onDelete: Cascade)
+  createdBy        Coach                @relation("TrialShortlistCreator", fields: [createdByCoachId], references: [id])
+  items            TrialShortlistItem[]
+
+  @@index([trialEventId])
+  @@index([createdByCoachId])
+}
+
+// Shortlist items
+model TrialShortlistItem {
+  id          Int            @id @default(autoincrement())
+  shortlistId Int
+  trialistId  Int
+  notes       String?
+  addedAt     DateTime       @default(now())
+  // Relations
+  shortlist   TrialShortlist @relation(fields: [shortlistId], references: [id], onDelete: Cascade)
+  trialist    Trialist       @relation(fields: [trialistId], references: [id], onDelete: Cascade)
+
+  @@unique([shortlistId, trialistId])
+  @@index([shortlistId])
+  @@index([trialistId])
+}
+
+// Decision log - track final decisions
+model TrialDecisionLog {
+  id               Int                    @id @default(autoincrement())
+  trialEventId     Int
+  trialistId       Int
+  decision         TrialRecommendedAction
+  notes            String? // Decision rationale
+  decidedByCoachId Int
+  decidedAt        DateTime               @default(now())
+  // Relations
+  trialEvent       TrialEvent             @relation(fields: [trialEventId], references: [id], onDelete: Cascade)
+  trialist         Trialist               @relation(fields: [trialistId], references: [id], onDelete: Cascade)
+  decidedBy        Coach                  @relation("TrialDecisionMaker", fields: [decidedByCoachId], references: [id])
+
+  @@index([trialEventId])
+  @@index([trialistId])
+  @@index([decision])
+  @@index([decidedAt])
+}
+
+// Footer Configuration - Configurable footer sections and links
+model FooterConfig {
+  id           Int          @id @default(autoincrement())
+  sectionTitle String // e.g., "About Clubs", "Teams Info"
+  displayOrder Int          @default(0) // For sorting sections
+  isActive     Boolean      @default(true)
+  links        FooterLink[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([displayOrder])
+  @@index([isActive])
+}
+
+// Footer Links - Individual links within footer sections
+model FooterLink {
+  id             Int          @id @default(autoincrement())
+  footerConfigId Int
+  label          String // Display text for the link
+  url            String // URL or path (can be internal or external)
+  displayOrder   Int          @default(0) // For sorting links within a section
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  // Relations
+  footerConfig   FooterConfig @relation(fields: [footerConfigId], references: [id], onDelete: Cascade)
+
+  @@index([footerConfigId])
+  @@index([displayOrder])
+  @@index([isActive])
+}

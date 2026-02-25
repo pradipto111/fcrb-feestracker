@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction, type RequestHandler } from "express";
 
 type CacheEntry = { body: unknown; expiresAt: number };
 
@@ -40,7 +40,8 @@ export function set(key: string, body: unknown, ttlMs: number): void {
   });
 }
 
-type RequestHandler = (req: Request, res: Response, next: NextFunction) => void | Promise<void>;
+/** Handler that may return Response (e.g. return res.json()) — we ignore return value. */
+type CachedHandler = (req: Request, res: Response, next: NextFunction) => void | Promise<void | Response | undefined>;
 
 /**
  * Wraps an async GET handler to cache its JSON response.
@@ -49,22 +50,24 @@ type RequestHandler = (req: Request, res: Response, next: NextFunction) => void 
  * On miss: runs the handler and intercepts res.json(body) to cache the body.
  */
 export function withCache(ttlMs: number, pathPrefix: string) {
-  return (handler: RequestHandler): RequestHandler => {
-    return (req: Request, res: Response, next: NextFunction) => {
+  return (handler: CachedHandler): RequestHandler => {
+    return (req: Request, res: Response, next: NextFunction): void => {
       if (req.method !== "GET") {
-        return handler(req, res, next);
+        void handler(req, res, next);
+        return;
       }
       const key = buildCacheKey(req, pathPrefix);
       const cached = get(key);
       if (cached !== null) {
-        return res.json(cached);
+        res.json(cached);
+        return;
       }
       const originalJson = res.json.bind(res);
       res.json = (body: unknown) => {
         set(key, body, ttlMs);
         return originalJson(body);
       };
-      return handler(req, res, next);
+      void handler(req, res, next);
     };
   };
 }
