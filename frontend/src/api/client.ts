@@ -129,7 +129,10 @@ async function request(
         const msg = isRender
           ? `Request timed out. The backend at ${API_BASE} may be waking up (cold start can take up to 60s). Please try again in a moment.`
           : `Request timed out. The backend at ${API_BASE} may not be running. Start it with: cd backend && npm run dev`;
-        throw new Error(msg);
+        const timeoutErr = new Error(msg);
+        (timeoutErr as any).name = "TimeoutError";
+        (timeoutErr as any).isTimeout = true;
+        throw timeoutErr;
       }
       // Otherwise, it's likely an intentional cancellation (component unmount, etc.)
       throw new Error("Request was cancelled. Please try again.");
@@ -149,6 +152,9 @@ export function healthCheck(timeoutMs = 5000): Promise<{ status: string }> {
 /** When backend is on Render, use longer timeout for login and retry once on timeout (handles cold start + dead connection after sign-out). */
 const isRenderBackend = () => /\.onrender\.com/i.test(import.meta.env.VITE_API_URL || "");
 
+/** Login timeout: Render cold start can take up to 60s; use 75s so one attempt + retry can succeed. */
+const LOGIN_TIMEOUT_MS = isRenderBackend() ? 75000 : 30000;
+
 export const api = {
   healthCheck,
   async login(email: string, password: string, _role?: "ADMIN" | "COACH" | "STUDENT" | "FAN" | "CRM") {
@@ -156,7 +162,7 @@ export const api = {
     const opts = {
       method: "POST" as const,
       body: JSON.stringify({ email, password }),
-      timeout: isRenderBackend() ? 55000 : 30000,
+      timeout: LOGIN_TIMEOUT_MS,
       cache: "no-store" as RequestCache
     };
     try {
