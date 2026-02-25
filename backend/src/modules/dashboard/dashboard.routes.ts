@@ -2,8 +2,11 @@ import { Router } from "express";
 import prisma from "../../db/prisma";
 import { authRequired } from "../../auth/auth.middleware";
 import { getSystemDate } from "../../utils/system-date";
+import { withCache } from "../../utils/response-cache";
 
 const router = Router();
+const dashboardCache = withCache(60 * 1000, "/dashboard");
+const isDev = process.env.NODE_ENV !== "production";
 
 async function getCoachCenterIds(coachId: number) {
   const links = await prisma.coachCenter.findMany({
@@ -19,7 +22,7 @@ async function getCoachCenterIds(coachId: number) {
  * For ADMIN: includeInactive defaults to true (shows all students)
  * For COACH: includeInactive defaults to false (shows only active students)
  */
-router.get("/summary", authRequired, async (req, res) => {
+router.get("/summary", authRequired, dashboardCache(async (req, res) => {
   const { id: userId, role } = req.user!;
   const { from, to, centerId, includeInactive } = req.query as {
     from?: string;
@@ -75,12 +78,12 @@ router.get("/summary", authRequired, async (req, res) => {
     where: { ...studentWhere, status: "ACTIVE" }
   });
 
-  // Only fetch students if we need to calculate outstanding
-  // For now, skip outstanding calculation if there are too many students (performance)
+  // Only fetch students if we need to calculate outstanding (cap for performance)
   let totalOutstanding = 0;
-  if (studentCount <= 1000) { // Only calculate if reasonable number of students
+  if (studentCount > 0 && studentCount <= 500) {
     const students = await prisma.student.findMany({
       where: studentWhere,
+      take: 500,
       select: {
         id: true,
         status: true,
@@ -91,16 +94,15 @@ router.get("/summary", authRequired, async (req, res) => {
       }
     });
 
-    // Calculate total outstanding based on payment frequency and time elapsed
-    // Payment is made at the BEGINNING of the month for that month's service
-    const now = getSystemDate(); // Use system date for calculations
-    
-    // Fetch all payments for all students in one query (much faster)
+    const now = getSystemDate();
     const studentIds = students.map(s => s.id);
     if (studentIds.length > 0) {
+      // Only load payments from last 3 years to avoid huge query
+      const paymentsStart = new Date(now.getFullYear() - 3, now.getMonth(), 1);
       const allStudentPayments = await prisma.payment.findMany({
-        where: { 
-          studentId: { in: studentIds }
+        where: {
+          studentId: { in: studentIds },
+          paymentDate: { gte: paymentsStart }
         }
       });
   
@@ -148,13 +150,13 @@ router.get("/summary", authRequired, async (req, res) => {
     activeStudentCount,
     approxOutstanding: totalOutstanding
   });
-});
+}));
 
 /**
  * GET /dashboard/revenue-collections?months=12&centerId=1&paymentMode=UPI
  * Chart 1: Revenue Collections - Simple sum of payments by payment date
  */
-router.get("/revenue-collections", authRequired, async (req, res) => {
+router.get("/revenue-collections", authRequired, dashboardCache(async (req, res) => {
   const { id: userId, role } = req.user!;
   const { months, centerId, paymentMode } = req.query as {
     months?: string;
@@ -162,7 +164,7 @@ router.get("/revenue-collections", authRequired, async (req, res) => {
     paymentMode?: string;
   };
 
-  console.log(`[REVENUE-DEBUG] Revenue collections request:`, { months, centerId, paymentMode, role, userId });
+  if (isDev) console.log(`[REVENUE-DEBUG] Revenue collections request:`, { months, centerId, paymentMode, role, userId });
 
   // Parse number of months (default 12, max 24)
   const numMonths = Math.min(Math.max(parseInt(months || "12"), 1), 24);
@@ -210,7 +212,7 @@ router.get("/revenue-collections", authRequired, async (req, res) => {
   try {
     // First, get a count to see if we have data
     const paymentCount = await prisma.payment.count({ where: wherePayments });
-    console.log(`[REVENUE-DEBUG] Found ${paymentCount} payments in date range`);
+    if (isDev) console.log(`[REVENUE-DEBUG] Found ${paymentCount} payments in date range`);
     
     if (paymentCount === 0) {
       // Return empty months array
@@ -238,8 +240,10 @@ router.get("/revenue-collections", authRequired, async (req, res) => {
     if (payments.length > 0) {
       const firstPayment = payments[0];
       const lastPayment = payments[payments.length - 1];
-      console.log(`[REVENUE-DEBUG] Payment date range: ${firstPayment.paymentDate.toISOString()} to ${lastPayment.paymentDate.toISOString()}`);
-      console.log(`[REVENUE-DEBUG] Total payment amount: ${payments.reduce((sum, p) => sum + p.amount, 0)}`);
+      if (isDev) {
+        console.log(`[REVENUE-DEBUG] Payment date range: ${firstPayment.paymentDate.toISOString()} to ${lastPayment.paymentDate.toISOString()}`);
+        console.log(`[REVENUE-DEBUG] Total payment amount: ${payments.reduce((sum, p) => sum + p.amount, 0)}`);
+      }
     }
 
     // Group payments by payment date month (simple sum)
@@ -251,7 +255,7 @@ router.get("/revenue-collections", authRequired, async (req, res) => {
       monthlyData[monthKey] = (monthlyData[monthKey] || 0) + payment.amount;
     });
 
-    console.log(`[REVENUE-DEBUG] Monthly data grouped:`, Object.keys(monthlyData).length, 'months');
+    if (isDev) console.log(`[REVENUE-DEBUG] Monthly data grouped:`, Object.keys(monthlyData).length, 'months');
 
     // Get last N months from SYSTEM DATE
     const monthsArray = [];
@@ -269,23 +273,23 @@ router.get("/revenue-collections", authRequired, async (req, res) => {
     }
 
     const totalAmount = monthsArray.reduce((sum, m) => sum + m.amount, 0);
-    console.log(`[REVENUE-DEBUG] Returning ${monthsArray.length} months, total amount: ${totalAmount}`);
+    if (isDev) console.log(`[REVENUE-DEBUG] Returning ${monthsArray.length} months, total amount: ${totalAmount}`);
 
     res.json(monthsArray);
   } catch (error: any) {
-    console.error(`[REVENUE-DEBUG] Error fetching revenue collections:`, error);
+    console.error("Error fetching revenue collections:", error);
     res.status(500).json({ 
       message: error.message || "Failed to fetch revenue collections",
       error: "Database query failed or timed out"
     });
   }
-});
+}));
 
 /**
  * GET /dashboard/monthly-collections?months=12&centerId=1&paymentMode=UPI
  * Chart 2: Monthly Collections - Allocated across months based on student frequency
  */
-router.get("/monthly-collections", authRequired, async (req, res) => {
+router.get("/monthly-collections", authRequired, dashboardCache(async (req, res) => {
   const { id: userId, role } = req.user!;
   const { months, centerId, paymentMode } = req.query as {
     months?: string;
@@ -315,7 +319,7 @@ router.get("/monthly-collections", authRequired, async (req, res) => {
     wherePayments.paymentMode = paymentMode;
   }
 
-  // Get all students that match the filter
+  // Get all students that match the filter (cap for performance)
   const studentWhere: any = {};
   if (centerId && role === "ADMIN") {
     studentWhere.centerId = Number(centerId);
@@ -323,11 +327,23 @@ router.get("/monthly-collections", authRequired, async (req, res) => {
     studentWhere.centerId = { in: centerFilterIds };
   }
 
+  // Only load payments in a bounded date range (chart shows last numMonths; allow extra for late allocation)
+  const now = getSystemDate();
+  const paymentsStart = new Date(now.getFullYear(), now.getMonth() - (numMonths + 24), 1);
+  const paymentsEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const paymentWhere: any = {
+    paymentDate: { gte: paymentsStart, lte: paymentsEnd }
+  };
+  if (paymentMode && paymentMode !== "all") {
+    paymentWhere.paymentMode = paymentMode;
+  }
+
   const students = await prisma.student.findMany({
     where: studentWhere,
+    take: 5000,
     include: {
       payments: {
-        where: paymentMode && paymentMode !== "all" ? { paymentMode } : {},
+        where: paymentWhere,
         orderBy: { paymentDate: "asc" }
       }
     }
@@ -435,13 +451,13 @@ router.get("/monthly-collections", authRequired, async (req, res) => {
   }
 
   res.json(monthsArray);
-});
+}));
 
 /**
  * GET /dashboard/payment-mode-breakdown
  * Get payment breakdown by payment mode
  */
-router.get("/payment-mode-breakdown", authRequired, async (req, res) => {
+router.get("/payment-mode-breakdown", authRequired, dashboardCache(async (req, res) => {
   const { role, id: userId } = req.user!;
 
   try {
@@ -492,7 +508,7 @@ router.get("/payment-mode-breakdown", authRequired, async (req, res) => {
     console.error("Error fetching payment mode breakdown:", error);
     res.status(500).json({ message: error.message || "Failed to fetch payment mode breakdown" });
   }
-});
+}));
 
 /**
  * GET /dashboard/fan-club-revenue

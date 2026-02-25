@@ -13,8 +13,20 @@ import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { centresAssets, adminAssets, heroAssets, clubAssets } from "../config/assets";
 import { FootballIcon, ClipboardIcon, CalendarIcon, ChartBarIcon, ChartLineIcon, UsersIcon } from "../components/icons/IconSet";
 
+const COACH_DASHBOARD_CACHE_TTL_MS = 60000; // 1 min for stale-while-revalidate
+
+function getCoachDashboardCacheFresh(): boolean {
+  try {
+    const at = sessionStorage.getItem('coach-dashboard-cache-at');
+    return at ? (Date.now() - parseInt(at, 10)) < COACH_DASHBOARD_CACHE_TTL_MS : false;
+  } catch {
+    return false;
+  }
+}
+
 const EnhancedCoachDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const cacheFresh = getCoachDashboardCacheFresh();
   const [summary, setSummary] = useState<any>(() => {
     const cached = sessionStorage.getItem('coach-dashboard-summary');
     return cached ? JSON.parse(cached) : null;
@@ -26,7 +38,7 @@ const EnhancedCoachDashboard: React.FC = () => {
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [error, setError] = useState("");
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(!cacheFresh);
   
   // Revenue Chart filters
   const [revenueMonths, setRevenueMonths] = useState(12);
@@ -92,6 +104,9 @@ const EnhancedCoachDashboard: React.FC = () => {
       if (studentsData && Array.isArray(studentsData)) {
         setStudents(studentsData);
         sessionStorage.setItem('coach-dashboard-students', JSON.stringify(studentsData));
+      }
+      if ((summaryData || studentsData) !== undefined) {
+        sessionStorage.setItem('coach-dashboard-cache-at', String(Date.now()));
       }
       
       await loadRevenueData();

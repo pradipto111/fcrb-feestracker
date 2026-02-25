@@ -125,7 +125,11 @@ async function request(
     if (error.name === "AbortError" || error.name === "TimeoutError") {
       // Check if this was a timeout vs intentional cancellation
       if (error.isTimeout || error.name === "TimeoutError") {
-        throw new Error(`Request timed out. The backend at ${API_BASE} may not be running. Start it with: cd backend && npm run dev`);
+        const isRender = /\.onrender\.com/i.test(API_BASE);
+        const msg = isRender
+          ? `Request timed out. The backend at ${API_BASE} may be waking up (cold start can take up to 60s). Please try again in a moment.`
+          : `Request timed out. The backend at ${API_BASE} may not be running. Start it with: cd backend && npm run dev`;
+        throw new Error(msg);
       }
       // Otherwise, it's likely an intentional cancellation (component unmount, etc.)
       throw new Error("Request was cancelled. Please try again.");
@@ -142,14 +146,28 @@ export function healthCheck(timeoutMs = 5000): Promise<{ status: string }> {
   return request("/", { timeout: timeoutMs });
 }
 
+/** When backend is on Render, use longer timeout for login and retry once on timeout (handles cold start + dead connection after sign-out). */
+const isRenderBackend = () => /\.onrender\.com/i.test(import.meta.env.VITE_API_URL || "");
+
 export const api = {
   healthCheck,
-  login(email: string, password: string, role?: "ADMIN" | "COACH" | "STUDENT" | "FAN" | "CRM") {
+  async login(email: string, password: string, role?: "ADMIN" | "COACH" | "STUDENT" | "FAN" | "CRM") {
     const path = role === "CRM" ? "/crm/auth/login" : "/auth/login";
-    return request(path, {
-      method: "POST",
-      body: JSON.stringify({ email, password, role })
-    });
+    const opts = {
+      method: "POST" as const,
+      body: JSON.stringify({ email, password, role }),
+      timeout: isRenderBackend() ? 55000 : 30000,
+      cache: "no-store" as RequestCache
+    };
+    try {
+      return await request(path, opts);
+    } catch (err: any) {
+      // After sign-out, browser may reuse a dead connection; retry once with fresh request
+      if ((err.isTimeout || err.name === "TimeoutError") && isRenderBackend()) {
+        return request(path, opts);
+      }
+      throw err;
+    }
   },
   getDashboardSummary(params?: { from?: string; to?: string; centerId?: string; includeInactive?: boolean }) {
     const query = new URLSearchParams();

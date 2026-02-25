@@ -1,11 +1,13 @@
 import { Router } from "express";
 import prisma from "../../db/prisma";
 import { authRequired, requireRole } from "../../auth/auth.middleware";
+import { withCache } from "../../utils/response-cache";
 
 const router = Router();
+const centersCache = withCache(120 * 1000, "/centers");
 
 // PUBLIC: Get active centres for homepage map (no auth required)
-router.get("/public", async (req, res) => {
+router.get("/public", centersCache(async (req, res) => {
   try {
     // Check if new fields exist, fallback to old fields if migration hasn't run
     const centers = await (prisma as any).center.findMany({
@@ -59,12 +61,12 @@ router.get("/public", async (req, res) => {
     }
     res.status(500).json({ message: error.message || "Failed to fetch centres" });
   }
-});
+}));
 
 // List centers (admin sees all, coach sees their assigned centers)
 const DB_QUERY_TIMEOUT_MS = 12000; // Fail fast so client gets 503 instead of hanging
 
-router.get("/", authRequired, async (req, res) => {
+router.get("/", authRequired, centersCache(async (req, res) => {
   let timeoutHandle: NodeJS.Timeout | null = null;
   try {
     const { role, id } = req.user!;
@@ -137,7 +139,7 @@ router.get("/", authRequired, async (req, res) => {
       res.status(500).json({ message: error.message || "Failed to fetch centres" });
     }
   }
-});
+}));
 
 // Admin only: create center
 router.post("/", authRequired, requireRole("ADMIN"), async (req, res) => {

@@ -57,6 +57,8 @@ router.post("/register-admin", async (req, res) => {
   }
 });
 
+const LOGIN_DB_TIMEOUT_MS = 15000; // Fail fast so client gets 503 instead of hanging (e.g. cold DB on Render)
+
 /**
  * POST /auth/login
  * body: { email, password }
@@ -64,7 +66,12 @@ router.post("/register-admin", async (req, res) => {
  */
 router.post("/login", async (req, res) => {
   const { email, password, role } = req.body as { email: string; password: string; role?: "ADMIN" | "COACH" | "STUDENT" | "FAN" };
-  
+
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("LOGIN_TIMEOUT")), LOGIN_DB_TIMEOUT_MS)
+  );
+
+  const runLogin = async () => {
   // Try to find coach/admin first
   const coach = await prisma.coach.findUnique({ where: { email } });
   if (coach) {
@@ -133,6 +140,18 @@ router.post("/login", async (req, res) => {
   }
 
   return res.status(401).json({ message: "Invalid credentials" });
+  };
+
+  try {
+    await Promise.race([runLogin(), timeoutPromise]);
+  } catch (err: any) {
+    if (err.message === "LOGIN_TIMEOUT") {
+      return res.status(503).json({
+        message: "Login timed out. The database may be slow or waking up. Please try again in a moment.",
+      });
+    }
+    throw err;
+  }
 });
 
 export default router;

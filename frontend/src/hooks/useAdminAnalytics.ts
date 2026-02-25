@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "../api/client";
 import { DashboardSummary } from "../types/analytics";
 
+const ADMIN_SUMMARY_CACHE_TTL_MS = 60000; // 1 min stale-while-revalidate
+
 interface UseAdminAnalyticsOptions {
   centerId?: string;
   includeInactive?: boolean;
@@ -14,6 +16,13 @@ interface UseAdminAnalyticsReturn {
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
+}
+
+/** Module-level cache for admin summary (keyed by centerId + includeInactive) for instant load on navigate back */
+let lastAdminSummary: { params: string; data: DashboardSummary; at: number } | null = null;
+
+function adminSummaryCacheKey(centerId?: string, includeInactive?: boolean): string {
+  return `${centerId ?? ""}:${includeInactive ?? true}`;
 }
 
 /**
@@ -30,8 +39,11 @@ export function useAdminAnalytics(
     refreshInterval = 30000, // 30 seconds default
   } = options;
 
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = adminSummaryCacheKey(centerId, includeInactive);
+  const cached = lastAdminSummary && lastAdminSummary.params === cacheKey && (Date.now() - lastAdminSummary.at) < ADMIN_SUMMARY_CACHE_TTL_MS;
+
+  const [summary, setSummary] = useState<DashboardSummary | null>(() => (cached ? lastAdminSummary!.data : null));
+  const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
   const summaryRef = useRef<DashboardSummary | null>(null);
   
@@ -43,7 +55,7 @@ export function useAdminAnalytics(
   const fetchSummary = useCallback(async () => {
     try {
       setError(null);
-      setLoading(true);
+      if (!summaryRef.current) setLoading(true);
 
       const params: {
         centerId?: string;
@@ -56,6 +68,7 @@ export function useAdminAnalytics(
 
       if (data) {
         setSummary(data);
+        lastAdminSummary = { params: cacheKey, data, at: Date.now() };
       } else {
         // Set default values if no data returned
         setSummary({
@@ -84,7 +97,7 @@ export function useAdminAnalytics(
     } finally {
       setLoading(false);
     }
-  }, [centerId, includeInactive]); // REMOVED summary from dependencies to break the cycle
+  }, [centerId, includeInactive, cacheKey]);
 
   useEffect(() => {
     let mounted = true;
@@ -96,7 +109,12 @@ export function useAdminAnalytics(
       }
     };
 
-    // Initial load
+    // If we had fresh cache, show it and revalidate in background without blocking UI
+    if (cached && lastAdminSummary) {
+      setSummary(lastAdminSummary.data);
+      setLoading(false);
+    }
+    // Initial load (or revalidate)
     load();
 
     // Auto-refresh if enabled

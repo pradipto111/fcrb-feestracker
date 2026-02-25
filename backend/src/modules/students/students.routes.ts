@@ -4,8 +4,10 @@ import { authRequired } from "../../auth/auth.middleware";
 import bcrypt from "bcryptjs";
 import { getSystemDate } from "../../utils/system-date";
 import { logSystemActivity } from "../../utils/system-activity";
+import { withCache } from "../../utils/response-cache";
 
 const router = Router();
+const studentsListCache = withCache(120 * 1000, "/students");
 
 /**
  * Helper to get coach's center IDs
@@ -19,7 +21,7 @@ async function getCoachCenterIds(coachId: number) {
 }
 
 // Admin: list all students with filters
-router.get("/", authRequired, async (req, res) => {
+router.get("/", authRequired, studentsListCache(async (req, res) => {
   const { role, id } = req.user!;
   const { q, centerId, includePayments } = req.query as { q?: string; centerId?: string; includePayments?: string };
 
@@ -37,17 +39,22 @@ router.get("/", authRequired, async (req, res) => {
     where.centerId = { in: centerIds };
   }
 
+  const takeLimit = includePayments === "true" ? 2000 : 10000;
   const students = await prisma.student.findMany({
     where,
     orderBy: { fullName: "asc" },
-    take: 10000, // Safety limit to prevent loading too many records
+    take: takeLimit,
   });
 
-  // If includePayments is true, add payment summaries
+  // If includePayments is true, add payment summaries (bounded for performance)
   if (includePayments === "true") {
     const studentIds = students.map(s => s.id);
+    const paymentsStart = new Date(getSystemDate().getFullYear() - 3, 0, 1);
     const allPayments = await prisma.payment.findMany({
-      where: { studentId: { in: studentIds } }
+      where: {
+        studentId: { in: studentIds },
+        paymentDate: { gte: paymentsStart }
+      }
     });
 
     // Group payments by student
@@ -88,7 +95,7 @@ router.get("/", authRequired, async (req, res) => {
   }
 
   res.json(students);
-});
+}));
 
 // Admin: create student
 router.post("/", authRequired, async (req, res) => {

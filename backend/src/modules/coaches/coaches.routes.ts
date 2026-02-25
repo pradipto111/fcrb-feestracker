@@ -3,8 +3,10 @@ import { Role } from "@prisma/client";
 import prisma from "../../db/prisma";
 import bcrypt from "bcryptjs";
 import { authRequired, requireRole } from "../../auth/auth.middleware";
+import { withCache } from "../../utils/response-cache";
 
 const router = Router();
+const coachesListCache = withCache(120 * 1000, "/coaches");
 
 // Admin: create coach + assign to selected centers (or all if centerIds not provided)
 router.post("/", authRequired, requireRole("ADMIN"), async (req, res) => {
@@ -53,7 +55,7 @@ router.post("/", authRequired, requireRole("ADMIN"), async (req, res) => {
 const DB_QUERY_TIMEOUT_MS = 12000;
 
 // Admin: list coaches
-router.get("/", authRequired, requireRole("ADMIN"), async (req, res) => {
+router.get("/", authRequired, requireRole("ADMIN"), coachesListCache(async (req, res) => {
   try {
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error("Database request timed out")), DB_QUERY_TIMEOUT_MS)
@@ -71,7 +73,7 @@ router.get("/", authRequired, requireRole("ADMIN"), async (req, res) => {
     }
     throw error;
   }
-});
+}));
 
 export default router;
 
