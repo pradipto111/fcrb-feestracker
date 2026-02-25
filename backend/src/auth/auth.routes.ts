@@ -61,11 +61,16 @@ const LOGIN_DB_TIMEOUT_MS = 15000; // Fail fast so client gets 503 instead of ha
 
 /**
  * POST /auth/login
- * body: { email, password }
- * Supports login for Admin, Coach, and Student
+ * body: { email, password } (optional role for legacy clients)
+ * Single login flow: looks up Coach/Admin, Fan, Student, then CRM by email and returns the matching user's role.
  */
 router.post("/login", async (req, res) => {
-  const { email, password, role } = req.body as { email: string; password: string; role?: "ADMIN" | "COACH" | "STUDENT" | "FAN" };
+  const loginStartedAt = Date.now();
+  res.once("finish", () => {
+    console.log(`[auth/login] status=${res.statusCode} duration=${Date.now() - loginStartedAt}ms`);
+  });
+
+  const { email, password, role } = req.body as { email: string; password: string; role?: "ADMIN" | "COACH" | "STUDENT" | "FAN" | "CRM" };
 
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error("LOGIN_TIMEOUT")), LOGIN_DB_TIMEOUT_MS)
@@ -136,6 +141,24 @@ router.post("/login", async (req, res) => {
     return res.json({
       token,
       user: { id: student.id, role: "STUDENT", fullName: student.fullName }
+    });
+  }
+
+  // Try CRM user (unified login – single flow, no role selection)
+  const crmUser = await (prisma as any).crmUser?.findUnique({ where: { email } });
+  if (crmUser) {
+    if (role && role !== "CRM") return res.status(403).json({ message: "Access denied" });
+    if (crmUser.status === "DISABLED") return res.status(403).json({ message: "Account disabled" });
+    const ok = await bcrypt.compare(password, crmUser.passwordHash);
+    if (!ok) return res.status(401).json({ message: "Invalid credentials" });
+    const token = jwt.sign(
+      { id: crmUser.id, role: "CRM", crmRole: crmUser.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+    return res.json({
+      token,
+      user: { id: crmUser.id, role: "CRM", fullName: crmUser.fullName, crmRole: crmUser.role }
     });
   }
 

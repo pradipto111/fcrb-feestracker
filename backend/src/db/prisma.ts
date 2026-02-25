@@ -19,9 +19,9 @@ function getDatabaseUrlWithPool(): string {
     return dbUrl;
   }
 
-  // Add connection pool parameters
+  // Add connection pool + connect_timeout (fail fast on Render if DB is unreachable/slow)
   const separator = dbUrl.includes("?") ? "&" : "?";
-  return `${dbUrl}${separator}connection_limit=10&pool_timeout=20`;
+  return `${dbUrl}${separator}connection_limit=10&pool_timeout=20&connect_timeout=10`;
 }
 
 // Create a single shared instance with optimized connection pooling

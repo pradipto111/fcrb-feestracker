@@ -39,7 +39,6 @@ import parentReportsRoutes from "./modules/parent-reports/parent-reports.routes"
 import seasonPlanningRoutes from "./modules/season-planning/season-planning.routes";
 import trialsRoutes from "./modules/trials/trials.routes";
 import fanRoutes from "./modules/fan/fan.routes";
-import fanAdminRoutes from "./modules/fan/fan-admin.routes";
 import legacyRoutes from "./modules/legacy/legacy.routes";
 import footerRoutes from "./modules/footer/footer.routes";
 import activityRoutes from "./modules/activity/activity.routes";
@@ -135,7 +134,6 @@ app.use("/crm", crmAnalyticsRoutes);
 // Fan Club (RealVerse Fan) — separate mount points for spec compatibility
 app.use("/fan", fanRoutes);
 app.use("/api/fan", fanRoutes);
-app.use("/api/admin/fans", fanAdminRoutes);
 app.use("/timeline", timelineRoutes);
 app.use("/feedback", feedbackRoutes);
 app.use("/wellness", wellnessRoutes);

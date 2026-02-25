@@ -15,7 +15,6 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loginRole, setLoginRole] = useState<"STUDENT" | "COACH" | "ADMIN" | "FAN" | "CRM">("STUDENT");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -47,7 +46,7 @@ const LoginPage: React.FC = () => {
     setError("");
     setLoading(true);
     try {
-      await login(email, password, loginRole);
+      await login(email, password);
       navigate("/realverse");
     } catch (err: any) {
       setError(err.message || "Login failed");
@@ -217,80 +216,6 @@ const LoginPage: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: spacing.lg }}>
-          {/* Role Selector */}
-          <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
-            <div style={{ ...typography.caption, color: colors.text.muted }}>Sign in as</div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: isMobile ? "repeat(2, minmax(0, 1fr))" : "repeat(3, minmax(0, 1fr))",
-                gap: spacing.sm,
-              }}
-            >
-              {[
-                { id: "STUDENT" as const, label: "Student" },
-                { id: "COACH" as const, label: "Coach" },
-                { id: "ADMIN" as const, label: "Admin" },
-                { id: "FAN" as const, label: "Fan Club", comingSoon: true },
-                { id: "CRM" as const, label: "CRM" },
-              ].map((opt) => {
-                const active = loginRole === opt.id;
-                const isComingSoon = (opt as any).comingSoon;
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => {
-                      if (!isComingSoon) {
-                        setLoginRole(opt.id);
-                      }
-                    }}
-                    disabled={isComingSoon}
-                    style={{
-                      padding: isComingSoon ? "12px 8px" : "12px 12px",
-                      borderRadius: 14,
-                      border: active && !isComingSoon ? `1px solid rgba(0, 224, 255, 0.45)` : isComingSoon ? "1px solid rgba(255, 255, 255, 0.08)" : "1px solid rgba(255, 255, 255, 0.12)",
-                      background: active && !isComingSoon ? "rgba(0, 224, 255, 0.12)" : isComingSoon ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)",
-                      color: active && !isComingSoon ? colors.text.primary : isComingSoon ? colors.text.muted : colors.text.secondary,
-                      cursor: isComingSoon ? "not-allowed" : "pointer",
-                      fontWeight: active && !isComingSoon ? typography.fontWeight.semibold : typography.fontWeight.medium,
-                      textAlign: "left",
-                      transition: "all 0.2s ease",
-                      outline: "none",
-                      opacity: isComingSoon ? 0.6 : 1,
-                      position: "relative",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      justifyContent: "center",
-                      gap: spacing.xs,
-                      overflow: "hidden",
-                      minHeight: isComingSoon ? "auto" : "auto",
-                    }}
-                  >
-                    <span style={{ width: "100%", textAlign: "left" }}>{opt.label}</span>
-                    {isComingSoon && (
-                      <span style={{
-                        ...typography.caption,
-                        padding: `2px ${spacing.xs}`,
-                        borderRadius: "6px",
-                        background: colors.warning.soft,
-                        color: colors.warning.main,
-                        fontWeight: typography.fontWeight.semibold,
-                        fontSize: typography.fontSize.xs,
-                        whiteSpace: "nowrap",
-                        alignSelf: "flex-start",
-                        lineHeight: 1.2,
-                      }}>
-                        Coming soon
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           <Input
             type="email"
             label="Email"

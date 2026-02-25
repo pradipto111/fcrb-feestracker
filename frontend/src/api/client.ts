@@ -151,20 +151,20 @@ const isRenderBackend = () => /\.onrender\.com/i.test(import.meta.env.VITE_API_U
 
 export const api = {
   healthCheck,
-  async login(email: string, password: string, role?: "ADMIN" | "COACH" | "STUDENT" | "FAN" | "CRM") {
-    const path = role === "CRM" ? "/crm/auth/login" : "/auth/login";
+  async login(email: string, password: string, _role?: "ADMIN" | "COACH" | "STUDENT" | "FAN" | "CRM") {
+    // Single login flow: backend determines role from credentials and returns the appropriate user
     const opts = {
       method: "POST" as const,
-      body: JSON.stringify({ email, password, role }),
+      body: JSON.stringify({ email, password }),
       timeout: isRenderBackend() ? 55000 : 30000,
       cache: "no-store" as RequestCache
     };
     try {
-      return await request(path, opts);
+      return await request("/auth/login", opts);
     } catch (err: any) {
       // After sign-out, browser may reuse a dead connection; retry once with fresh request
       if ((err.isTimeout || err.name === "TimeoutError") && isRenderBackend()) {
-        return request(path, opts);
+        return request("/auth/login", opts);
       }
       throw err;
     }
@@ -1640,97 +1640,12 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
     return request("/fan/program-interest", { method: "POST", body: JSON.stringify(payload) });
   },
 
-  // Admin Fan Club control plane (read-only / CRUD)
-  adminGetFans() {
-    return request("/api/admin/fans");
-  },
-  adminCreateFan(payload: { email: string; fullName: string; phone?: string; city?: string; centerPreference?: string; tierId?: number | null; password?: string }) {
-    return request("/api/admin/fans", { method: "POST", body: JSON.stringify(payload) });
-  },
-  adminUpdateFanStatus(fanUserId: number, status: "ACTIVE" | "SUSPENDED") {
-    return request(`/api/admin/fans/${fanUserId}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
-  },
-  adminAssignFanTier(fanUserId: number, tierId: number | null) {
-    return request(`/api/admin/fans/${fanUserId}/tier`, { method: "PATCH", body: JSON.stringify({ tierId }) });
-  },
-  adminAdjustFanPoints(fanUserId: number, payload: { delta: number; reason?: string }) {
-    return request(`/api/admin/fans/${fanUserId}/points`, { method: "POST", body: JSON.stringify(payload) });
-  },
-  adminAssignFanBadge(fanUserId: number, payload: { badgeKey: string; badgeName?: string; source?: string }) {
-    return request(`/api/admin/fans/${fanUserId}/badges`, { method: "POST", body: JSON.stringify(payload) });
-  },
-  adminResetFanPassword(fanUserId: number, password?: string) {
-    return request(`/api/admin/fans/${fanUserId}/reset-password`, { method: "POST", body: JSON.stringify({ password }) });
-  },
-  adminGetFanTiers() {
-    return request("/api/admin/fans/tiers");
-  },
-  adminCreateFanTier(payload: any) {
-    return request("/api/admin/fans/tiers", { method: "POST", body: JSON.stringify(payload) });
-  },
-  adminUpdateFanTier(tierId: number, payload: any) {
-    return request(`/api/admin/fans/tiers/${tierId}`, { method: "PUT", body: JSON.stringify(payload) });
-  },
-  adminGetFanSponsors() {
-    return request("/api/admin/fans/sponsors");
-  },
-  adminCreateFanSponsor(payload: any) {
-    return request("/api/admin/fans/sponsors", { method: "POST", body: JSON.stringify(payload) });
-  },
-  adminGetFanCampaigns() {
-    return request("/api/admin/fans/campaigns");
-  },
-  adminCreateFanCampaign(payload: any) {
-    return request("/api/admin/fans/campaigns", { method: "POST", body: JSON.stringify(payload) });
-  },
-  adminGetFanCouponPools() {
-    return request("/api/admin/fans/coupon-pools");
-  },
-  adminCreateFanCouponPool(payload: any) {
-    return request("/api/admin/fans/coupon-pools", { method: "POST", body: JSON.stringify(payload) });
-  },
-  adminGetFanQuests() {
-    return request("/api/admin/fans/quests");
-  },
-  adminCreateFanQuest(payload: any) {
-    return request("/api/admin/fans/quests", { method: "POST", body: JSON.stringify(payload) });
-  },
-  adminGetFanAnalyticsSummary() {
-    return request("/api/admin/fans/analytics/summary");
-  },
-  adminGetFanRedemptions() {
-    return request("/api/admin/fans/redemptions");
-  },
-  adminGetFanLeads() {
-    return request("/api/admin/fans/leads");
-  },
-  adminGetFanAuditLogs() {
-    return request("/api/admin/fans/audit");
-  },
   adminGetActivityFeed(params?: { limit?: number; actorType?: string; entityType?: string }) {
     const query = new URLSearchParams();
     if (params?.limit) query.set("limit", String(params.limit));
     if (params?.actorType) query.set("actorType", params.actorType);
     if (params?.entityType) query.set("entityType", params.entityType);
     return request(`/activity?${query.toString()}`);
-  },
-  adminGetFanMatchdayMoments() {
-    return request("/api/admin/fans/moments");
-  },
-  adminCreateFanMatchdayMoment(payload: any) {
-    return request("/api/admin/fans/moments", { method: "POST", body: JSON.stringify(payload) });
-  },
-  adminUpdateFanMatchdayMoment(momentId: number, payload: any) {
-    return request(`/api/admin/fans/moments/${momentId}`, { method: "PUT", body: JSON.stringify(payload) });
-  },
-  adminGetDynamicRewardRules() {
-    return request("/api/admin/fans/dynamic-rewards");
-  },
-  adminCreateDynamicRewardRule(payload: any) {
-    return request("/api/admin/fans/dynamic-rewards", { method: "POST", body: JSON.stringify(payload) });
-  },
-  adminUpdateDynamicRewardRule(ruleId: number, payload: any) {
-    return request(`/api/admin/fans/dynamic-rewards/${ruleId}`, { method: "PUT", body: JSON.stringify(payload) });
   },
   // Trial Management APIs
   getTrialEvents(params?: { centerId?: number; status?: string; coachId?: number }) {

@@ -76,9 +76,6 @@ import FanGamesPage from "./pages/fan/FanGamesPage";
 import FanMatchdayPage from "./pages/fan/FanMatchdayPage";
 import FanProfilePage from "./pages/fan/FanProfilePage";
 import FanProgramsPage from "./pages/fan/FanProgramsPage";
-import FanClubManagementPage from "./pages/admin/fans/FanClubManagementPage";
-import FanClubContentPage from "./pages/admin/fans/FanClubContentPage";
-import AdminFanSettingsPage from "./pages/admin/fans/AdminFanSettingsPage";
 import ImportResultsPage from "./pages/admin/ImportResultsPage";
 import PaymentLogsPage from "./pages/admin/PaymentLogsPage";
 import FanClubJoinPage from "./pages/FanClubJoinPage";
@@ -385,10 +382,6 @@ const App: React.FC = () => {
           <Route path="students/import-results" element={<ImportResultsPage />} />
           <Route path="payment-logs" element={<PaymentLogsPage />} />
           <Route path="players/:id/profile" element={<PlayerProfilePage />} />
-          {/* Fan Club control plane */}
-          <Route path="fans" element={<FanClubManagementPage />} />
-          <Route path="fans/content" element={<FanClubContentPage />} />
-          <Route path="fans/settings" element={<AdminFanSettingsPage />} />
         </Route>
 
         {/* RealVerse Routes - All authenticated routes under /realverse */}
@@ -431,13 +424,6 @@ const App: React.FC = () => {
           path="/admin"
           element={<Navigate to="/realverse/admin/students" replace />}
         />
-        <Route path="/admin/fans" element={<Navigate to="/realverse/admin/fans" replace />} />
-        <Route path="/admin/fans/tiers" element={<Navigate to="/realverse/admin/fans/tiers" replace />} />
-        <Route path="/admin/fans/rewards" element={<Navigate to="/realverse/admin/fans/rewards" replace />} />
-        {/* <Route path="/admin/fans/games" element={<Navigate to="/realverse/admin/fans/games" replace />} /> */}
-        <Route path="/admin/fans/matchday" element={<Navigate to="/realverse/admin/fans/matchday" replace />} />
-        <Route path="/admin/fans/analytics" element={<Navigate to="/realverse/admin/fans/analytics" replace />} />
-        <Route path="/admin/fans/settings" element={<Navigate to="/realverse/admin/fans/settings" replace />} />
         <Route
           path="/admin/schedule"
           element={<Navigate to="/realverse/admin/schedule" replace />}

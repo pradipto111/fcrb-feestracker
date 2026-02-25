@@ -319,34 +319,6 @@ test.describe('RealVerse Admin - Complete Section Tests', () => {
     await expect(page.locator('body')).toBeVisible();
   });
 
-  test('Admin Fans - Fan management', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/admin/fans`);
-    await page.waitForLoadState('networkidle');
-    
-    await expect(page.locator('body')).toBeVisible();
-  });
-
-  test('Admin Fan Tiers - Tier management', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/admin/fans/tiers`);
-    await page.waitForLoadState('networkidle');
-    
-    await expect(page.locator('body')).toBeVisible();
-  });
-
-  test('Admin Fan Rewards - Rewards management', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/admin/fans/rewards`);
-    await page.waitForLoadState('networkidle');
-    
-    await expect(page.locator('body')).toBeVisible();
-  });
-
-  test('Admin Fan Analytics - Fan analytics', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/admin/fans/analytics`);
-    await page.waitForLoadState('networkidle');
-    
-    await expect(page.locator('body')).toBeVisible();
-  });
-
   test('Admin Season Planning - Season planning', async ({ page, baseURL }) => {
     await page.goto(`${baseURL || ''}/realverse/admin/season-planning`);
     await page.waitForLoadState('networkidle');
@@ -478,10 +450,6 @@ test.describe('RealVerse Navigation - All Sections', () => {
       '/realverse/admin/merch',
       '/realverse/admin/attendance',
       '/realverse/admin/schedule',
-      '/realverse/admin/fans',
-      '/realverse/admin/fans/tiers',
-      '/realverse/admin/fans/rewards',
-      '/realverse/admin/fans/analytics',
       '/realverse/admin/season-planning',
       '/realverse/admin/batch-review',
     ];

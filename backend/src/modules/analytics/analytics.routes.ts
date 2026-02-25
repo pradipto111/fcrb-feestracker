@@ -4,6 +4,14 @@ import { authRequired, requireRole } from "../../auth/auth.middleware";
 
 const router = Router();
 
+// Default date ranges to avoid unbounded full-table scans
+const DEFAULT_ATTENDANCE_DAYS = 365;
+const DEFAULT_SESSIONS_DAYS = 90;
+const DEFAULT_FINANCE_MONTHS = 12;
+const MAX_SESSIONS_TAKE = 500;
+const MAX_FIXTURES_TAKE = 500;
+const MAX_PAYMENTS_TAKE = 5000;
+
 // Helper: Get coach's center IDs
 async function getCoachCenterIds(coachId: number): Promise<number[]> {
   const links = await prisma.coachCenter.findMany({
@@ -127,19 +135,16 @@ router.get(
         },
       });
 
-      // Fee Collection % (This Month)
+      // Fee Collection % (This Month) - use aggregate instead of loading all students
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-      const studentsThisMonth = await prisma.student.findMany({
+      const expectedFeesAgg = await prisma.student.aggregate({
         where: studentFilter,
+        _sum: { monthlyFeeAmount: true },
       });
-
-      const expectedFees = studentsThisMonth.reduce(
-        (sum, s) => sum + s.monthlyFeeAmount,
-        0
-      );
+      const expectedFees = expectedFeesAgg._sum?.monthlyFeeAmount ?? 0;
 
       const collectedThisMonth = await prisma.payment.aggregate({
         where: {
@@ -155,21 +160,18 @@ router.get(
             100
           : 0;
 
-      // Wellness Average (Last 14 Days)
+      // Wellness Average (Last 14 Days) - use aggregate instead of loading all rows
       const fourteenDaysAgo = new Date();
       fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-      const wellnessChecks = await prisma.wellnessCheck.findMany({
-        where: {
-          checkDate: { gte: fourteenDaysAgo },
-        },
+      const wellnessAgg = await prisma.wellnessCheck.aggregate({
+        where: { checkDate: { gte: fourteenDaysAgo } },
+        _avg: { exertionLevel: true },
+        _count: true,
       });
 
       const avgWellness =
-        wellnessChecks.length > 0
-          ? Math.round(
-              wellnessChecks.reduce((sum, w) => sum + w.exertionLevel, 0) /
-                wellnessChecks.length
-            )
+        wellnessAgg._count > 0 && wellnessAgg._avg?.exertionLevel != null
+          ? Math.round(wellnessAgg._avg.exertionLevel)
           : 0;
 
       res.json({
@@ -190,7 +192,7 @@ router.get(
 
 /**
  * GET /analytics/admin/attendance
- * Attendance analytics over time
+ * Attendance analytics over time (bounded by date range, uses aggregations)
  */
 router.get(
   "/admin/attendance",
@@ -198,31 +200,54 @@ router.get(
   requireRole("ADMIN"),
   async (req, res) => {
     try {
-      const { centerId, groupBy = "week" } = req.query as {
+      const { centerId, groupBy = "week", days } = req.query as {
         centerId?: string;
         groupBy?: "week" | "month";
+        days?: string;
       };
 
-      // Get sessions with attendance
+      const daysBack = Math.min(Number(days) || DEFAULT_ATTENDANCE_DAYS, 730);
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
+
+      const sessionWhere = {
+        sessionDate: { gte: startDate },
+        ...(centerId ? { centerId: Number(centerId) } : {}),
+      };
+
+      // Lightweight: only session id + date for grouping
       const sessions = await prisma.session.findMany({
-        where: {
-          ...(centerId ? { centerId: Number(centerId) } : {}),
-        },
-        include: {
-          attendance: true,
-          center: true,
-        },
+        where: sessionWhere,
+        select: { id: true, sessionDate: true },
         orderBy: { sessionDate: "asc" },
       });
 
-      // Group by week or month
-      const grouped: Record<string, { scheduled: number; attended: number }> =
-        {};
+      const sessionIds = sessions.map((s) => s.id);
+      if (sessionIds.length === 0) {
+        return res.json([]);
+      }
 
+      // Aggregated counts per session (no loading full attendance rows)
+      const [scheduledBySession, presentBySession] = await Promise.all([
+        prisma.attendance.groupBy({
+          by: ["sessionId"],
+          where: { sessionId: { in: sessionIds } },
+          _count: { id: true },
+        }),
+        prisma.attendance.groupBy({
+          by: ["sessionId"],
+          where: { sessionId: { in: sessionIds }, status: "PRESENT" },
+          _count: { id: true },
+        }),
+      ]);
+
+      const scheduledMap = Object.fromEntries(scheduledBySession.map((r) => [r.sessionId, r._count.id]));
+      const presentMap = Object.fromEntries(presentBySession.map((r) => [r.sessionId, r._count.id]));
+
+      const grouped: Record<string, { scheduled: number; attended: number }> = {};
       sessions.forEach((session) => {
         const date = new Date(session.sessionDate);
         let key: string;
-
         if (groupBy === "week") {
           const weekStart = new Date(date);
           weekStart.setDate(date.getDate() - date.getDay());
@@ -230,16 +255,9 @@ router.get(
         } else {
           key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
         }
-
-        if (!grouped[key]) {
-          grouped[key] = { scheduled: 0, attended: 0 };
-        }
-
-        const activeStudents = session.attendance.length;
-        grouped[key].scheduled += activeStudents;
-        grouped[key].attended += session.attendance.filter(
-          (a) => a.status === "PRESENT"
-        ).length;
+        if (!grouped[key]) grouped[key] = { scheduled: 0, attended: 0 };
+        grouped[key].scheduled += scheduledMap[session.id] ?? 0;
+        grouped[key].attended += presentMap[session.id] ?? 0;
       });
 
       const data = Object.entries(grouped).map(([period, stats]) => ({
@@ -259,6 +277,7 @@ router.get(
 
 /**
  * GET /analytics/admin/attendance-by-centre
+ * Uses count aggregations per centre (no loading all sessions/attendance)
  */
 router.get(
   "/admin/attendance-by-centre",
@@ -266,26 +285,37 @@ router.get(
   requireRole("ADMIN"),
   async (req, res) => {
     try {
+      const { days } = req.query as { days?: string };
+      const daysBack = Math.min(Number(days) || DEFAULT_ATTENDANCE_DAYS, 730);
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
+
       const centers = await prisma.center.findMany({
         where: { isActive: true },
+        select: { id: true, name: true },
       });
 
       const results = await Promise.all(
         centers.map(async (center) => {
-          const sessions = await prisma.session.findMany({
-            where: { centerId: center.id },
-            include: { attendance: true },
-          });
-
-          let scheduled = 0;
-          let attended = 0;
-
-          sessions.forEach((session) => {
-            scheduled += session.attendance.length;
-            attended += session.attendance.filter(
-              (a) => a.status === "PRESENT"
-            ).length;
-          });
+          const [scheduled, attended] = await Promise.all([
+            prisma.attendance.count({
+              where: {
+                session: {
+                  centerId: center.id,
+                  sessionDate: { gte: startDate },
+                },
+              },
+            }),
+            prisma.attendance.count({
+              where: {
+                session: {
+                  centerId: center.id,
+                  sessionDate: { gte: startDate },
+                },
+                status: "PRESENT",
+              },
+            }),
+          ]);
 
           return {
             centreId: center.id,
@@ -307,7 +337,7 @@ router.get(
 
 /**
  * GET /analytics/admin/pipeline
- * Player pipeline & retention
+ * Player pipeline & retention (uses groupBy + count, no full student load)
  */
 router.get(
   "/admin/pipeline",
@@ -315,23 +345,30 @@ router.get(
   requireRole("ADMIN"),
   async (req, res) => {
     try {
-      const students = await prisma.student.findMany({
-        where: { status: "ACTIVE" },
-        include: {
-          progressRoadmap: true,
-        },
-      });
+      const [totalActive, roadmapLevels] = await Promise.all([
+        prisma.student.count({ where: { status: "ACTIVE" } }),
+        prisma.progressRoadmap.groupBy({
+          by: ["currentLevel"],
+          where: { student: { status: "ACTIVE" } },
+          _count: { currentLevel: true },
+        }),
+      ]);
 
       const pipeline: Record<string, number> = {};
-      students.forEach((student) => {
-        const level =
-          student.progressRoadmap?.currentLevel || "Youth League";
-        pipeline[level] = (pipeline[level] || 0) + 1;
+      roadmapLevels.forEach((r) => {
+        pipeline[r.currentLevel] = r._count.currentLevel;
       });
+
+      // Students without a roadmap (optional: count and add to "Youth League")
+      const withRoadmap = roadmapLevels.reduce((s, r) => s + r._count.currentLevel, 0);
+      if (withRoadmap < totalActive) {
+        const noRoadmap = totalActive - withRoadmap;
+        pipeline["Youth League"] = (pipeline["Youth League"] ?? 0) + noRoadmap;
+      }
 
       res.json({
         pipeline,
-        totalActive: students.length,
+        totalActive,
       });
     } catch (error: any) {
       console.error("Error fetching pipeline analytics:", error);
@@ -350,57 +387,49 @@ router.get(
   requireRole("ADMIN"),
   async (req, res) => {
     try {
-      const { months = "12" } = req.query as { months?: string };
-      const monthsCount = Number(months);
+      const { months = String(DEFAULT_FINANCE_MONTHS) } = req.query as { months?: string };
+      const monthsCount = Math.min(Number(months) || DEFAULT_FINANCE_MONTHS, 24);
 
       const now = new Date();
       const startDate = new Date(now);
       startDate.setMonth(startDate.getMonth() - monthsCount);
 
-      const payments = await prisma.payment.findMany({
-        where: {
-          paymentDate: { gte: startDate },
-        },
-        orderBy: { paymentDate: "asc" },
-      });
-
-      // Group by month
-      const monthly: Record<string, number> = {};
-      payments.forEach((payment) => {
-        const date = new Date(payment.paymentDate);
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-        monthly[key] = (monthly[key] || 0) + payment.amount;
-      });
-
-      const data = Object.entries(monthly).map(([month, amount]) => ({
-        month,
-        amount,
+      // Monthly trend via raw aggregation (no loading all payment rows)
+      const monthlyRows = await prisma.$queryRaw<{ month: Date; amount: bigint }[]>`
+        SELECT date_trunc('month', "paymentDate")::date AS month, SUM(amount)::bigint AS amount
+        FROM "Payment"
+        WHERE "paymentDate" >= ${startDate}
+        GROUP BY date_trunc('month', "paymentDate")
+        ORDER BY month ASC
+      `;
+      const data = monthlyRows.map((row) => ({
+        month: `${new Date(row.month).getFullYear()}-${String(new Date(row.month).getMonth() + 1).padStart(2, "0")}`,
+        amount: Number(row.amount),
       }));
 
-      // Outstanding calculation
-      const students = await prisma.student.findMany({
-        where: { status: "ACTIVE" },
-      });
-
-      const expectedMonthly = students.reduce(
-        (sum, s) => sum + s.monthlyFeeAmount,
-        0
-      );
-
-      const collectedThisMonth = await prisma.payment.aggregate({
-        where: {
-          paymentDate: {
-            gte: new Date(now.getFullYear(), now.getMonth(), 1),
+      const [expectedAgg, collectedThisMonth] = await Promise.all([
+        prisma.student.aggregate({
+          where: { status: "ACTIVE" },
+          _sum: { monthlyFeeAmount: true },
+        }),
+        prisma.payment.aggregate({
+          where: {
+            paymentDate: {
+              gte: new Date(now.getFullYear(), now.getMonth(), 1),
+            },
           },
-        },
-        _sum: { amount: true },
-      });
+          _sum: { amount: true },
+        }),
+      ]);
+
+      const expectedMonthly = expectedAgg._sum?.monthlyFeeAmount ?? 0;
+      const collected = collectedThisMonth._sum?.amount ?? 0;
 
       res.json({
         monthlyTrend: data,
         expectedMonthly,
-        collectedThisMonth: collectedThisMonth._sum.amount || 0,
-        outstanding: Math.max(0, expectedMonthly - (collectedThisMonth._sum.amount || 0)),
+        collectedThisMonth: collected,
+        outstanding: Math.max(0, expectedMonthly - collected),
       });
     } catch (error: any) {
       console.error("Error fetching finance analytics:", error);
@@ -411,7 +440,7 @@ router.get(
 
 /**
  * GET /analytics/admin/sessions
- * Session & load analytics
+ * Session & load analytics (date-bounded, limited take)
  */
 router.get(
   "/admin/sessions",
@@ -419,17 +448,21 @@ router.get(
   requireRole("ADMIN"),
   async (req, res) => {
     try {
-      const { centerId } = req.query as { centerId?: string };
+      const { centerId, days } = req.query as { centerId?: string; days?: string };
+      const daysBack = Math.min(Number(days) || DEFAULT_SESSIONS_DAYS, 365);
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
 
       const sessions = await prisma.session.findMany({
         where: {
+          sessionDate: { gte: startDate },
           ...(centerId ? { centerId: Number(centerId) } : {}),
         },
         include: {
           center: true,
         },
         orderBy: { sessionDate: "desc" },
-        take: 100,
+        take: MAX_SESSIONS_TAKE,
       });
 
       // Get wellness checks for these sessions
@@ -484,7 +517,7 @@ router.get(
 
 /**
  * GET /analytics/admin/matches
- * Match & selection analytics
+ * Match & selection analytics (date-bounded, aggregations)
  */
 router.get(
   "/admin/matches",
@@ -492,36 +525,38 @@ router.get(
   requireRole("ADMIN"),
   async (req, res) => {
     try {
-      const fixtures = await prisma.fixture.findMany({
-        include: {
-          players: true,
-        },
-        orderBy: { matchDate: "desc" },
-      });
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+      const [byCompetitionRows, selectedCounts, allPlayersInPeriod] = await Promise.all([
+        prisma.fixture.groupBy({
+          by: ["matchType"],
+          where: { matchDate: { gte: sixMonthsAgo } },
+          _count: { id: true },
+        }),
+        prisma.fixturePlayer.groupBy({
+          by: ["studentId"],
+          where: {
+            selectionStatus: "SELECTED",
+            fixture: { matchDate: { gte: sixMonthsAgo } },
+          },
+          _count: { id: true },
+        }),
+        prisma.fixturePlayer.groupBy({
+          by: ["studentId"],
+          where: { fixture: { matchDate: { gte: sixMonthsAgo } } },
+        }),
+      ]);
 
       const byCompetition: Record<string, number> = {};
-      const participationDistribution = {
-        "0": 0,
-        "1-5": 0,
-        "6-10": 0,
-        "10+": 0,
-      };
-
-      const playerMatchCounts: Record<number, number> = {};
-
-      fixtures.forEach((fixture) => {
-        const comp = fixture.matchType || "Other";
-        byCompetition[comp] = (byCompetition[comp] || 0) + 1;
-
-        fixture.players.forEach((fp) => {
-          if (fp.selectionStatus === "SELECTED") {
-            playerMatchCounts[fp.studentId] =
-              (playerMatchCounts[fp.studentId] || 0) + 1;
-          }
-        });
+      byCompetitionRows.forEach((r) => {
+        byCompetition[r.matchType || "Other"] = r._count.id;
       });
 
-      Object.values(playerMatchCounts).forEach((count) => {
+      const selectedMap = Object.fromEntries(selectedCounts.map((r) => [r.studentId, r._count.id]));
+      const participationDistribution = { "0": 0, "1-5": 0, "6-10": 0, "10+": 0 };
+      allPlayersInPeriod.forEach((r) => {
+        const count = selectedMap[r.studentId] ?? 0;
         if (count === 0) participationDistribution["0"]++;
         else if (count <= 5) participationDistribution["1-5"]++;
         else if (count <= 10) participationDistribution["6-10"]++;
@@ -548,7 +583,7 @@ router.get(
 
 /**
  * GET /analytics/coach/summary
- * Coach overview KPIs
+ * Coach overview KPIs (uses counts/aggregations, date-bounded)
  */
 router.get(
   "/coach/summary",
@@ -558,60 +593,62 @@ router.get(
     try {
       const coachId = req.user!.id;
       const centerIds = await getCoachCenterIds(coachId);
+      const daysBack = DEFAULT_ATTENDANCE_DAYS;
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
 
-      // Players under coach
-      const students = await prisma.student.findMany({
-        where: {
-          centerId: { in: centerIds },
-          status: "ACTIVE",
-        },
-      });
+      const [playersUnderCoach, totalScheduled, totalAttended, sessionsThisWeek, wellnessFlags] = await Promise.all([
+        prisma.student.count({
+          where: { centerId: { in: centerIds }, status: "ACTIVE" },
+        }),
+        prisma.attendance.count({
+          where: {
+            session: {
+              centerId: { in: centerIds },
+              coachId,
+              sessionDate: { gte: startDate },
+            },
+          },
+        }),
+        prisma.attendance.count({
+          where: {
+            session: {
+              centerId: { in: centerIds },
+              coachId,
+              sessionDate: { gte: startDate },
+            },
+            status: "PRESENT",
+          },
+        }),
+        (() => {
+          const weekStart = new Date();
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+          return prisma.session.count({
+            where: {
+              centerId: { in: centerIds },
+              coachId,
+              sessionDate: { gte: weekStart },
+            },
+          });
+        })(),
+        (() => {
+          const fourteenDaysAgo = new Date();
+          fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+          return prisma.wellnessCheck.count({
+            where: {
+              student: { centerId: { in: centerIds }, status: "ACTIVE" },
+              checkDate: { gte: fourteenDaysAgo },
+              exertionLevel: { gte: 4 },
+              energyLevel: "LOW",
+            },
+          });
+        })(),
+      ]);
 
-      // Avg attendance
-      const sessions = await prisma.session.findMany({
-        where: {
-          centerId: { in: centerIds },
-          coachId,
-        },
-        include: { attendance: true },
-      });
-
-      let scheduled = 0;
-      let attended = 0;
-      sessions.forEach((session) => {
-        scheduled += students.length;
-        attended += session.attendance.filter(
-          (a) => a.status === "PRESENT"
-        ).length;
-      });
-
-      const avgAttendance = calculateAttendanceRate(attended, scheduled);
-
-      // Sessions this week
-      const weekStart = new Date();
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-      const sessionsThisWeek = await prisma.session.count({
-        where: {
-          centerId: { in: centerIds },
-          coachId,
-          sessionDate: { gte: weekStart },
-        },
-      });
-
-      // Wellness flags (high exertion + low energy)
-      const fourteenDaysAgo = new Date();
-      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-      const wellnessFlags = await prisma.wellnessCheck.count({
-        where: {
-          studentId: { in: students.map((s) => s.id) },
-          checkDate: { gte: fourteenDaysAgo },
-          exertionLevel: { gte: 4 },
-          energyLevel: "LOW",
-        },
-      });
+      const avgAttendance = calculateAttendanceRate(totalAttended, totalScheduled);
 
       res.json({
-        playersUnderCoach: students.length,
+        playersUnderCoach,
         avgAttendance,
         sessionsThisWeek,
         wellnessFlags,
@@ -625,7 +662,7 @@ router.get(
 
 /**
  * GET /analytics/coach/player-engagement
- * Attendance by player (coach view)
+ * Attendance by player (coach view) - uses aggregations, date-bounded
  */
 router.get(
   "/coach/player-engagement",
@@ -635,49 +672,69 @@ router.get(
     try {
       const coachId = req.user!.id;
       const centerIds = await getCoachCenterIds(coachId);
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - DEFAULT_ATTENDANCE_DAYS);
 
-      const students = await prisma.student.findMany({
-        where: {
-          centerId: { in: centerIds },
-          status: "ACTIVE",
-        },
-      });
-
-      const sessions = await prisma.session.findMany({
+      const sessionIds = await prisma.session.findMany({
         where: {
           centerId: { in: centerIds },
           coachId,
+          sessionDate: { gte: startDate },
         },
-        include: { attendance: true },
+        select: { id: true },
+      }).then((rows) => rows.map((r) => r.id));
+
+      if (sessionIds.length === 0) {
+        const students = await prisma.student.findMany({
+          where: { centerId: { in: centerIds }, status: "ACTIVE" },
+          select: { id: true, fullName: true, programType: true },
+        });
+        return res.json(students.map((s) => ({
+          studentId: s.id,
+          studentName: s.fullName,
+          programType: s.programType,
+          sessionsAttended: 0,
+          sessionsScheduled: 0,
+          attendanceRate: 0,
+          label: getAttendanceLabel(0),
+        })));
+      }
+
+      const [students, scheduledByStudent, presentByStudent] = await Promise.all([
+        prisma.student.findMany({
+          where: { centerId: { in: centerIds }, status: "ACTIVE" },
+          select: { id: true, fullName: true, programType: true },
+        }),
+        prisma.attendance.groupBy({
+          by: ["studentId"],
+          where: { sessionId: { in: sessionIds } },
+          _count: { id: true },
+        }),
+        prisma.attendance.groupBy({
+          by: ["studentId"],
+          where: { sessionId: { in: sessionIds }, status: "PRESENT" },
+          _count: { id: true },
+        }),
+      ]);
+
+      const scheduledMap = Object.fromEntries(scheduledByStudent.map((r) => [r.studentId, r._count.id]));
+      const presentMap = Object.fromEntries(presentByStudent.map((r) => [r.studentId, r._count.id]));
+      const sessionCount = sessionIds.length;
+
+      const results = students.map((student) => {
+        const attended = presentMap[student.id] ?? 0;
+        const scheduled = scheduledMap[student.id] ?? 0;
+        const rate = calculateAttendanceRate(attended, sessionCount);
+        return {
+          studentId: student.id,
+          studentName: student.fullName,
+          programType: student.programType,
+          sessionsAttended: attended,
+          sessionsScheduled: sessionCount,
+          attendanceRate: rate,
+          label: getAttendanceLabel(rate),
+        };
       });
-
-      const results = await Promise.all(
-        students.map(async (student) => {
-          const studentSessions = sessions.filter((s) =>
-            s.attendance.some((a) => a.studentId === student.id)
-          );
-
-          let attended = 0;
-          sessions.forEach((session) => {
-            const att = session.attendance.find(
-              (a) => a.studentId === student.id
-            );
-            if (att && att.status === "PRESENT") attended++;
-          });
-
-          const rate = calculateAttendanceRate(attended, sessions.length);
-
-          return {
-            studentId: student.id,
-            studentName: student.fullName,
-            programType: student.programType,
-            sessionsAttended: attended,
-            sessionsScheduled: sessions.length,
-            attendanceRate: rate,
-            label: getAttendanceLabel(rate),
-          };
-        })
-      );
 
       res.json(results);
     } catch (error: any) {
@@ -689,7 +746,7 @@ router.get(
 
 /**
  * GET /analytics/coach/feedback-queue
- * Feedback queue based on analytics
+ * Feedback queue (date-bounded, uses counts/aggregations)
  */
 router.get(
   "/coach/feedback-queue",
@@ -699,81 +756,81 @@ router.get(
     try {
       const coachId = req.user!.id;
       const centerIds = await getCoachCenterIds(coachId);
+      const sixtyDaysAgo = new Date();
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
       const students = await prisma.student.findMany({
-        where: {
-          centerId: { in: centerIds },
-          status: "ACTIVE",
-        },
-        include: {
+        where: { centerId: { in: centerIds }, status: "ACTIVE" },
+        select: {
+          id: true,
+          fullName: true,
+          programType: true,
           monthlyFeedbacks: {
             orderBy: { createdAt: "desc" },
             take: 1,
-          },
-          attendance: {
-            include: {
-              session: true,
-            },
+            select: { publishedAt: true },
           },
         },
       });
 
-      const sixtyDaysAgo = new Date();
-      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+      const studentIds = students.map((s) => s.id);
+      const sessionIds = await prisma.session.findMany({
+        where: { centerId: { in: centerIds }, sessionDate: { gte: sixtyDaysAgo } },
+        select: { id: true },
+      }).then((rows) => rows.map((r) => r.id));
 
-      const queue = await Promise.all(
-        students.map(async (student) => {
+      const [presentByStudent, wellnessFlagsByStudent] = await Promise.all([
+        sessionIds.length > 0
+          ? prisma.attendance.groupBy({
+              by: ["studentId"],
+              where: {
+                sessionId: { in: sessionIds },
+                studentId: { in: studentIds },
+                status: "PRESENT",
+              },
+              _count: { id: true },
+            })
+          : [],
+        prisma.wellnessCheck.groupBy({
+          by: ["studentId"],
+          where: {
+            studentId: { in: studentIds },
+            checkDate: { gte: fourteenDaysAgo },
+            exertionLevel: { gte: 4 },
+            energyLevel: "LOW",
+          },
+          _count: { id: true },
+        }),
+      ]);
+
+      const presentMap = Object.fromEntries(presentByStudent.map((r) => [r.studentId, r._count.id]));
+      const wellnessMap = Object.fromEntries(wellnessFlagsByStudent.map((r) => [r.studentId, r._count.id]));
+      const sessionCount = sessionIds.length;
+
+      const queue = students
+        .map((student) => {
           const reasons: string[] = [];
-
-          // Check for no feedback in last 60 days
           const lastFeedback = student.monthlyFeedbacks[0];
           if (
-            !lastFeedback ||
-            !lastFeedback.publishedAt ||
+            !lastFeedback?.publishedAt ||
             new Date(lastFeedback.publishedAt) < sixtyDaysAgo
           ) {
             reasons.push("No feedback in last 60 days");
           }
 
-          // Check attendance
-          const sessions = await prisma.session.findMany({
-            where: {
-              centerId: { in: centerIds },
-            },
-            include: {
-              attendance: {
-                where: { studentId: student.id },
-              },
-            },
-          });
-
-          const attended = sessions.filter(
-            (s) => s.attendance[0]?.status === "PRESENT"
-          ).length;
-          const rate = calculateAttendanceRate(attended, sessions.length);
-
-          if (rate < 70) {
+          const attended = presentMap[student.id] ?? 0;
+          const rate = calculateAttendanceRate(attended, sessionCount);
+          if (rate < 70 && sessionCount > 0) {
             reasons.push(`Attendance ${rate}% (below 70%)`);
           }
 
-          // Check wellness flags
-          const fourteenDaysAgo = new Date();
-          fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-          const highLoadFlags = await prisma.wellnessCheck.count({
-            where: {
-              studentId: student.id,
-              checkDate: { gte: fourteenDaysAgo },
-              exertionLevel: { gte: 4 },
-              energyLevel: "LOW",
-            },
-          });
-
-          if (highLoadFlags >= 3) {
+          if ((wellnessMap[student.id] ?? 0) >= 3) {
             reasons.push("High load signals detected");
           }
 
           if (reasons.length === 0) return null;
-
           return {
             studentId: student.id,
             studentName: student.fullName,
@@ -783,9 +840,9 @@ router.get(
             attendanceRate: rate,
           };
         })
-      );
+        .filter((item): item is NonNullable<typeof item> => item !== null);
 
-      res.json(queue.filter((item) => item !== null));
+      res.json(queue);
     } catch (error: any) {
       console.error("Error fetching feedback queue:", error);
       res.status(500).json({ message: error.message || "Failed to fetch feedback queue" });
@@ -795,7 +852,7 @@ router.get(
 
 /**
  * GET /analytics/coach/wellness
- * Training load & wellness
+ * Training load & wellness (date-bounded, uses groupBy)
  */
 router.get(
   "/coach/wellness",
@@ -805,54 +862,50 @@ router.get(
     try {
       const coachId = req.user!.id;
       const centerIds = await getCoachCenterIds(coachId);
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - DEFAULT_SESSIONS_DAYS);
 
-      const students = await prisma.student.findMany({
-        where: {
-          centerId: { in: centerIds },
-          status: "ACTIVE",
-        },
-      });
-
-      const sessions = await prisma.session.findMany({
+      const sessionIds = await prisma.session.findMany({
         where: {
           centerId: { in: centerIds },
           coachId,
+          sessionDate: { gte: startDate },
         },
-      });
+        select: { id: true },
+      }).then((rows) => rows.map((r) => r.id));
 
-      const sessionIds = sessions.map((s) => s.id);
-      const wellnessChecks = await prisma.wellnessCheck.findMany({
-        where: {
-          sessionId: { in: sessionIds },
-          studentId: { in: students.map((s) => s.id) },
-        },
-        orderBy: { checkDate: "desc" },
-      });
+      if (sessionIds.length === 0) {
+        return res.json({ avgExertionBySession: [], flaggedSessions: 0 });
+      }
 
-      // Group by session
-      const sessionData: Record<number, number[]> = {};
-      wellnessChecks.forEach((check) => {
-        if (check.sessionId) {
-          if (!sessionData[check.sessionId]) {
-            sessionData[check.sessionId] = [];
-          }
-          sessionData[check.sessionId].push(check.exertionLevel);
-        }
-      });
+      const [avgBySession, flaggedSessions] = await Promise.all([
+        prisma.wellnessCheck.groupBy({
+          by: ["sessionId"],
+          where: {
+            sessionId: { in: sessionIds },
+          },
+          _avg: { exertionLevel: true },
+          _count: true,
+        }),
+        prisma.wellnessCheck.count({
+          where: {
+            sessionId: { in: sessionIds },
+            exertionLevel: { gte: 4 },
+            energyLevel: "LOW",
+          },
+        }),
+      ]);
 
-      const avgExertionBySession = Object.entries(sessionData).map(
-        ([sessionId, levels]) => ({
-          sessionId: Number(sessionId),
-          avgExertion:
-            levels.reduce((sum, l) => sum + l, 0) / levels.length,
-        })
-      );
+      const avgExertionBySession = avgBySession
+        .filter((r) => r.sessionId != null && r._avg?.exertionLevel != null)
+        .map((r) => ({
+          sessionId: r.sessionId!,
+          avgExertion: Math.round((r._avg!.exertionLevel ?? 0) * 10) / 10,
+        }));
 
       res.json({
         avgExertionBySession,
-        flaggedSessions: wellnessChecks.filter(
-          (w) => w.exertionLevel >= 4 && w.energyLevel === "LOW"
-        ).length,
+        flaggedSessions,
       });
     } catch (error: any) {
       console.error("Error fetching wellness analytics:", error);
@@ -867,7 +920,7 @@ router.get(
 
 /**
  * GET /analytics/player/summary
- * Player personal overview
+ * Player personal overview (uses counts, date-bounded)
  */
 router.get(
   "/player/summary",
@@ -876,50 +929,57 @@ router.get(
   async (req, res) => {
     try {
       const studentId = req.user!.id;
-
-      // Get all sessions student was scheduled for
-      const sessions = await prisma.session.findMany({
-        where: {
-          centerId: (await prisma.student.findUnique({ where: { id: studentId } }))?.centerId,
-        },
-        include: {
-          attendance: {
-            where: { studentId },
-          },
-        },
+      const student = await prisma.student.findUnique({
+        where: { id: studentId },
+        select: { centerId: true },
       });
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
 
-      const attended = sessions.filter(
-        (s) => s.attendance[0]?.status === "PRESENT"
-      ).length;
-      const rate = calculateAttendanceRate(attended, sessions.length);
-
-      // Sessions attended (30 days)
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - DEFAULT_ATTENDANCE_DAYS);
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const sessionsLast30Days = sessions.filter(
-        (s) =>
-          new Date(s.sessionDate) >= thirtyDaysAgo &&
-          s.attendance[0]?.status === "PRESENT"
-      ).length;
-
-      // Matches selected (season - last 6 months)
       const sixMonthsAgo = new Date();
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-      const matchesSelected = await prisma.fixturePlayer.count({
-        where: {
-          studentId,
-          selectionStatus: "SELECTED",
-          fixture: {
-            matchDate: { gte: sixMonthsAgo },
+
+      const [totalScheduled, totalAttended, attendedLast30Days, matchesSelected] = await Promise.all([
+        prisma.attendance.count({
+          where: {
+            studentId,
+            session: { centerId: student.centerId, sessionDate: { gte: startDate } },
           },
-        },
-      });
+        }),
+        prisma.attendance.count({
+          where: {
+            studentId,
+            status: "PRESENT",
+            session: { centerId: student.centerId, sessionDate: { gte: startDate } },
+          },
+        }),
+        prisma.attendance.count({
+          where: {
+            studentId,
+            status: "PRESENT",
+            session: { centerId: student.centerId, sessionDate: { gte: thirtyDaysAgo } },
+          },
+        }),
+        prisma.fixturePlayer.count({
+          where: {
+            studentId,
+            selectionStatus: "SELECTED",
+            fixture: { matchDate: { gte: sixMonthsAgo } },
+          },
+        }),
+      ]);
+
+      const rate = calculateAttendanceRate(totalAttended, totalScheduled);
 
       res.json({
         attendanceRate: rate,
         attendanceLabel: getAttendanceLabel(rate),
-        sessionsAttended30Days: sessionsLast30Days,
+        sessionsAttended30Days: attendedLast30Days,
         matchesSelected,
       });
     } catch (error: any) {
@@ -931,7 +991,7 @@ router.get(
 
 /**
  * GET /analytics/player/attendance
- * Player attendance over time
+ * Player attendance over time (date-bounded, minimal session load for streak)
  */
 router.get(
   "/player/attendance",
@@ -942,40 +1002,41 @@ router.get(
       const studentId = req.user!.id;
       const student = await prisma.student.findUnique({
         where: { id: studentId },
+        select: { centerId: true },
       });
 
       if (!student) {
         return res.status(404).json({ message: "Student not found" });
       }
 
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - DEFAULT_ATTENDANCE_DAYS);
+
       const sessions = await prisma.session.findMany({
-        where: { centerId: student.centerId },
-        include: {
+        where: {
+          centerId: student.centerId,
+          sessionDate: { gte: startDate },
+        },
+        select: {
+          id: true,
+          sessionDate: true,
           attendance: {
             where: { studentId },
+            select: { status: true },
           },
         },
         orderBy: { sessionDate: "asc" },
       });
 
-      // Group by week
-      const weekly: Record<string, { scheduled: number; attended: number }> =
-        {};
-
+      const weekly: Record<string, { scheduled: number; attended: number }> = {};
       sessions.forEach((session) => {
         const date = new Date(session.sessionDate);
         const weekStart = new Date(date);
         weekStart.setDate(date.getDate() - date.getDay());
         const key = weekStart.toISOString().split("T")[0];
-
-        if (!weekly[key]) {
-          weekly[key] = { scheduled: 0, attended: 0 };
-        }
-
+        if (!weekly[key]) weekly[key] = { scheduled: 0, attended: 0 };
         weekly[key].scheduled += 1;
-        if (session.attendance[0]?.status === "PRESENT") {
-          weekly[key].attended += 1;
-        }
+        if (session.attendance[0]?.status === "PRESENT") weekly[key].attended += 1;
       });
 
       const data = Object.entries(weekly).map(([week, stats]) => ({
@@ -985,7 +1046,6 @@ router.get(
         rate: calculateAttendanceRate(stats.attended, stats.scheduled),
       }));
 
-      // Calculate longest streak
       let longestStreak = 0;
       let currentStreak = 0;
       sessions.forEach((session) => {
@@ -1030,7 +1090,9 @@ router.get(
           studentId,
           checkDate: { gte: startDate },
         },
+        select: { checkDate: true, exertionLevel: true, energyLevel: true },
         orderBy: { checkDate: "asc" },
+        take: 200,
       });
 
       const data = wellnessChecks.map((check) => ({
@@ -1049,7 +1111,7 @@ router.get(
 
 /**
  * GET /analytics/player/matches
- * Player match exposure
+ * Player match exposure (date-bounded, limited take)
  */
 router.get(
   "/player/matches",
@@ -1058,22 +1120,37 @@ router.get(
   async (req, res) => {
     try {
       const studentId = req.user!.id;
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-      const fixtures = await prisma.fixture.findMany({
-        include: {
-          players: {
-            where: { studentId },
+      const [totalMatches, selectedMatches, recentFixtures] = await Promise.all([
+        prisma.fixturePlayer.count({
+          where: {
+            studentId,
+            fixture: { matchDate: { gte: sixMonthsAgo } },
           },
-        },
-        orderBy: { matchDate: "desc" },
-      });
+        }),
+        prisma.fixturePlayer.count({
+          where: {
+            studentId,
+            selectionStatus: "SELECTED",
+            fixture: { matchDate: { gte: sixMonthsAgo } },
+          },
+        }),
+        prisma.fixture.findMany({
+          where: { matchDate: { gte: sixMonthsAgo } },
+          include: {
+            players: {
+              where: { studentId },
+              select: { selectionStatus: true, selectionReason: true },
+            },
+          },
+          orderBy: { matchDate: "desc" },
+          take: 10,
+        }),
+      ]);
 
-      const totalMatches = fixtures.length;
-      const selectedMatches = fixtures.filter(
-        (f) => f.players[0]?.selectionStatus === "SELECTED"
-      ).length;
-
-      const recentMatches = fixtures.slice(0, 10).map((fixture) => ({
+      const recentMatches = recentFixtures.map((fixture) => ({
         matchDate: fixture.matchDate.toISOString().split("T")[0],
         opponent: fixture.opponent,
         competition: fixture.matchType,
@@ -1122,20 +1199,25 @@ router.get(
         return res.status(404).json({ message: "Student not found" });
       }
 
-      // Calculate attendance vs target (85%)
-      const sessions = await prisma.session.findMany({
-        where: { centerId: student.centerId },
-        include: {
-          attendance: {
-            where: { studentId },
+      // Attendance vs target (85%) - date-bounded counts
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - DEFAULT_ATTENDANCE_DAYS);
+      const [scheduled, attended] = await Promise.all([
+        prisma.attendance.count({
+          where: {
+            studentId,
+            session: { centerId: student.centerId, sessionDate: { gte: startDate } },
           },
-        },
-      });
-
-      const attended = sessions.filter(
-        (s) => s.attendance[0]?.status === "PRESENT"
-      ).length;
-      const attendanceRate = calculateAttendanceRate(attended, sessions.length);
+        }),
+        prisma.attendance.count({
+          where: {
+            studentId,
+            status: "PRESENT",
+            session: { centerId: student.centerId, sessionDate: { gte: startDate } },
+          },
+        }),
+      ]);
+      const attendanceRate = calculateAttendanceRate(attended, scheduled);
       const attendanceTarget = 85;
 
       // Feedback frequency
@@ -1449,99 +1531,69 @@ router.get(
       const { calculateCentreMetrics } = await import("../../services/analytics.service");
       const metrics = await calculateCentreMetrics(centreId, dateRange);
 
-      // Get program breakdown
-      const students = await prisma.student.findMany({
-        where: { centerId: centreId },
-        select: {
-          id: true,
-          fullName: true,
-          programType: true,
-          status: true,
-          monthlyFeeAmount: true,
-        },
-      });
-
-      const programBreakdown: Record<string, {
-        program: string;
-        activePlayers: number;
-        sessions: number;
-        attendanceRate: number;
-        revenue: number;
-      }> = {};
-
-      students.forEach((student) => {
-        const program = student.programType || "Unknown";
-        if (!programBreakdown[program]) {
-          programBreakdown[program] = {
-            program,
-            activePlayers: 0,
-            sessions: 0,
-            attendanceRate: 0,
-            revenue: 0,
-          };
-        }
-        if (student.status === "ACTIVE") {
-          programBreakdown[program].activePlayers += 1;
-        }
-      });
-
-      // Get sessions by program
-      const sessions = await prisma.session.findMany({
-        where: {
-          centerId: centreId,
-          sessionDate: {
-            gte: dateRange.from,
-            lte: dateRange.to,
+      // Program breakdown: use groupBy/counts instead of loading all students/sessions/attendance
+      const [programCounts, sessionIds, revenueByProgram] = await Promise.all([
+        prisma.student.groupBy({
+          by: ["programType"],
+          where: { centerId: centreId },
+          _count: { id: true },
+        }),
+        prisma.session.findMany({
+          where: {
+            centerId: centreId,
+            sessionDate: { gte: dateRange.from, lte: dateRange.to },
           },
-        },
-        include: {
-          attendance: {
-            include: {
-              student: true,
-            },
-          },
-        },
+          select: { id: true },
+          take: MAX_SESSIONS_TAKE,
+        }).then((rows) => rows.map((r) => r.id)),
+        prisma.$queryRaw<{ program_type: string | null; revenue: bigint }[]>`
+          SELECT s."programType" AS program_type, SUM(p.amount)::bigint AS revenue
+          FROM "Payment" p
+          INNER JOIN "Student" s ON p."studentId" = s.id
+          WHERE p."centerId" = ${centreId}
+            AND p."paymentDate" >= ${dateRange.from}
+            AND p."paymentDate" <= ${dateRange.to}
+          GROUP BY s."programType"
+        `,
+      ]);
+
+      const programBreakdown: Record<string, { program: string; activePlayers: number; sessions: number; attendanceRate: number; revenue: number }> = {};
+      programCounts.forEach((r) => {
+        const program = r.programType || "Unknown";
+        programBreakdown[program] = {
+          program,
+          activePlayers: r._count.id,
+          sessions: 0,
+          attendanceRate: 0,
+          revenue: 0,
+        };
+      });
+      revenueByProgram.forEach((r) => {
+        const program = r.program_type ?? "Unknown";
+        if (!programBreakdown[program]) programBreakdown[program] = { program, activePlayers: 0, sessions: 0, attendanceRate: 0, revenue: 0 };
+        programBreakdown[program].revenue = Number(r.revenue);
       });
 
-      sessions.forEach((session) => {
-        session.attendance.forEach((att) => {
-          const program = att.student.programType || "Unknown";
-          if (programBreakdown[program]) {
-            programBreakdown[program].sessions += 1;
-          }
+      if (sessionIds.length > 0) {
+        const attendanceRows = await prisma.attendance.findMany({
+          where: { sessionId: { in: sessionIds } },
+          select: { status: true, student: { select: { programType: true } } },
+          take: 5000,
         });
-      });
-
-      // Calculate attendance by program
-      Object.keys(programBreakdown).forEach((program) => {
-        const programAttendance = sessions.flatMap((s) =>
-          s.attendance.filter((a) => (a.student.programType || "Unknown") === program)
-        );
-        const present = programAttendance.filter((a) => a.status === "PRESENT").length;
-        programBreakdown[program].attendanceRate =
-          programAttendance.length > 0 ? Math.round((present / programAttendance.length) * 100) : 0;
-      });
-
-      // Get payments by program
-      const payments = await prisma.payment.findMany({
-        where: {
-          centerId: centreId,
-          paymentDate: {
-            gte: dateRange.from,
-            lte: dateRange.to,
-          },
-        },
-        include: {
-          student: true,
-        },
-      });
-
-      payments.forEach((payment) => {
-        const program = payment.student?.programType || "Unknown";
-        if (programBreakdown[program]) {
-          programBreakdown[program].revenue += payment.amount;
-        }
-      });
+        const programScheduled: Record<string, number> = {};
+        const programPresent: Record<string, number> = {};
+        attendanceRows.forEach((att) => {
+          const program = att.student?.programType || "Unknown";
+          programScheduled[program] = (programScheduled[program] ?? 0) + 1;
+          if (att.status === "PRESENT") programPresent[program] = (programPresent[program] ?? 0) + 1;
+        });
+        Object.keys(programBreakdown).forEach((program) => {
+          const scheduled = programScheduled[program] ?? 0;
+          const present = programPresent[program] ?? 0;
+          programBreakdown[program].sessions = scheduled;
+          programBreakdown[program].attendanceRate = scheduled > 0 ? Math.round((present / scheduled) * 100) : 0;
+        });
+      }
 
       // Get coach load
       const coachLoad = await prisma.session.groupBy({
@@ -1572,20 +1624,24 @@ router.get(
         })
       );
 
-      // Get outstanding fees
-      const activeStudents = students.filter((s) => s.status === "ACTIVE");
-      const expectedMonthly = activeStudents.reduce((sum, s) => sum + s.monthlyFeeAmount, 0);
-      const collectedThisMonth = await prisma.payment.aggregate({
-        where: {
-          centerId: centreId,
-          paymentDate: {
-            gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-            lte: new Date(),
+      // Get outstanding fees (aggregate)
+      const [expectedAgg, collectedThisMonth] = await Promise.all([
+        prisma.student.aggregate({
+          where: { centerId: centreId, status: "ACTIVE" },
+          _sum: { monthlyFeeAmount: true },
+        }),
+        prisma.payment.aggregate({
+          where: {
+            centerId: centreId,
+            paymentDate: {
+              gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+              lte: new Date(),
+            },
           },
-        },
-        _sum: { amount: true },
-      });
-
+          _sum: { amount: true },
+        }),
+      ]);
+      const expectedMonthly = expectedAgg._sum?.monthlyFeeAmount ?? 0;
       const outstandingDues = Math.max(0, expectedMonthly - (collectedThisMonth._sum?.amount || 0));
 
       // Get trials
@@ -1662,39 +1718,46 @@ router.get(
       const sessions = await prisma.session.findMany({
         where: {
           centerId: centreId,
-          sessionDate: {
-            gte: dateRange.from,
-            lte: dateRange.to,
-          },
+          sessionDate: { gte: dateRange.from, lte: dateRange.to },
         },
-        include: {
-          attendance: true,
-        },
+        select: { id: true, sessionDate: true },
         orderBy: { sessionDate: "asc" },
       });
 
+      const sessionIds = sessions.map((s) => s.id);
+      if (sessionIds.length === 0) {
+        return res.json([]);
+      }
+
+      const [scheduledBySession, presentBySession] = await Promise.all([
+        prisma.attendance.groupBy({
+          by: ["sessionId"],
+          where: { sessionId: { in: sessionIds } },
+          _count: { id: true },
+        }),
+        prisma.attendance.groupBy({
+          by: ["sessionId"],
+          where: { sessionId: { in: sessionIds }, status: "PRESENT" },
+          _count: { id: true },
+        }),
+      ]);
+
+      const scheduledMap = Object.fromEntries(scheduledBySession.map((r) => [r.sessionId, r._count.id]));
+      const presentMap = Object.fromEntries(presentBySession.map((r) => [r.sessionId, r._count.id]));
       const grouped: Record<string, { scheduled: number; present: number }> = {};
 
       sessions.forEach((session) => {
         const date = new Date(session.sessionDate);
         let key: string;
-
-        if (groupBy === "day") {
-          key = date.toISOString().split("T")[0];
-        } else if (groupBy === "week") {
+        if (groupBy === "day") key = date.toISOString().split("T")[0];
+        else if (groupBy === "week") {
           const weekStart = new Date(date);
           weekStart.setDate(date.getDate() - date.getDay());
           key = weekStart.toISOString().split("T")[0];
-        } else {
-          key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-        }
-
-        if (!grouped[key]) {
-          grouped[key] = { scheduled: 0, present: 0 };
-        }
-
-        grouped[key].scheduled += session.attendance.length;
-        grouped[key].present += session.attendance.filter((a) => a.status === "PRESENT").length;
+        } else key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        if (!grouped[key]) grouped[key] = { scheduled: 0, present: 0 };
+        grouped[key].scheduled += scheduledMap[session.id] ?? 0;
+        grouped[key].present += presentMap[session.id] ?? 0;
       });
 
       const data = Object.entries(grouped).map(([period, stats]) => ({
@@ -1729,88 +1792,60 @@ router.get(
         to: to ? new Date(to) : new Date(),
       };
 
-      const payments = await prisma.payment.findMany({
-        where: {
-          centerId: centreId,
-          paymentDate: {
-            gte: dateRange.from,
-            lte: dateRange.to,
+      // Monthly trend via raw aggregation (no full payment load)
+      const monthlyRows = await prisma.$queryRaw<{ month: Date; paid: bigint }[]>`
+        SELECT date_trunc('month', "paymentDate")::date AS month, SUM(amount)::bigint AS paid
+        FROM "Payment"
+        WHERE "centerId" = ${centreId}
+          AND "paymentDate" >= ${dateRange.from}
+          AND "paymentDate" <= ${dateRange.to}
+        GROUP BY date_trunc('month', "paymentDate")
+        ORDER BY month ASC
+      `;
+      const data = monthlyRows.map((row) => {
+        const paid = Number(row.paid);
+        return {
+          month: `${new Date(row.month).getFullYear()}-${String(new Date(row.month).getMonth() + 1).padStart(2, "0")}`,
+          paid,
+          pending: 0,
+          overdue: 0,
+          total: paid,
+        };
+      });
+
+      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const monthEnd = new Date();
+      const [students, paymentsThisMonth] = await Promise.all([
+        prisma.student.findMany({
+          where: { centerId: centreId, status: "ACTIVE" },
+          select: { id: true, fullName: true, programType: true, monthlyFeeAmount: true },
+        }),
+        prisma.payment.findMany({
+          where: {
+            centerId: centreId,
+            paymentDate: { gte: monthStart, lte: monthEnd },
           },
-        },
-        include: {
-          student: {
-            select: {
-              id: true,
-              fullName: true,
-              programType: true,
-            },
-          },
-        },
-        orderBy: { paymentDate: "asc" },
+          select: { studentId: true, amount: true },
+        }),
+      ]);
+
+      const paidByStudent: Record<number, number> = {};
+      paymentsThisMonth.forEach((p) => {
+        paidByStudent[p.studentId] = (paidByStudent[p.studentId] ?? 0) + p.amount;
       });
 
-      // Group by month
-      const monthly: Record<string, { paid: number; pending: number; overdue: number }> = {};
-
-      payments.forEach((payment) => {
-        const date = new Date(payment.paymentDate);
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-
-        if (!monthly[key]) {
-          monthly[key] = { paid: 0, pending: 0, overdue: 0 };
-        }
-
-        // All payments are considered paid since Payment model doesn't have status field
-        monthly[key].paid += payment.amount;
+      const outstandingByPlayer = students.map((student) => {
+        const paid = paidByStudent[student.id] ?? 0;
+        const outstanding = Math.max(0, student.monthlyFeeAmount - paid);
+        return {
+          playerId: student.id,
+          playerName: student.fullName,
+          programType: student.programType,
+          monthlyFee: student.monthlyFeeAmount,
+          paid,
+          outstanding,
+        };
       });
-
-      const data = Object.entries(monthly).map(([month, amounts]) => ({
-        month,
-        paid: amounts.paid,
-        pending: amounts.pending,
-        overdue: amounts.overdue,
-        total: amounts.paid + amounts.pending + amounts.overdue,
-      }));
-
-      // Outstanding by player
-      const students = await prisma.student.findMany({
-        where: {
-          centerId: centreId,
-          status: "ACTIVE",
-        },
-        select: {
-          id: true,
-          fullName: true,
-          programType: true,
-          monthlyFeeAmount: true,
-        },
-      });
-
-      const outstandingByPlayer = await Promise.all(
-        students.map(async (student) => {
-          const paidThisMonth = await prisma.payment.aggregate({
-            where: {
-              studentId: student.id,
-              paymentDate: {
-                gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-                lte: new Date(),
-              },
-            },
-            _sum: { amount: true },
-          });
-
-          const outstanding = Math.max(0, student.monthlyFeeAmount - (paidThisMonth._sum?.amount || 0));
-
-          return {
-            playerId: student.id,
-            playerName: student.fullName,
-            programType: student.programType,
-            monthlyFee: student.monthlyFeeAmount,
-            paid: paidThisMonth._sum?.amount || 0,
-            outstanding,
-          };
-        })
-      );
 
       res.json({
         monthlyTrend: data,
@@ -1848,6 +1883,7 @@ router.get(
           },
         },
         orderBy: { createdAt: "desc" },
+        take: 500,
       }) || [];
 
       const totalTrials = leads.length;

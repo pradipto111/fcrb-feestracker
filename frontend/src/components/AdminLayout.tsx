@@ -23,28 +23,6 @@ const AdminLayout: React.FC = () => {
     //   description: "System-wide audit feed",
     //   section: "Operations",
     // },
-    // Fan Club Section (Coming Soon)
-    {
-      path: "/realverse/admin/fans",
-      label: "Fan Club",
-      icon: "dashboard",
-      description: "Accounts, tiers & rewards · Coming Soon",
-      section: "Fan Club",
-    },
-    {
-      path: "/realverse/admin/fans/content",
-      label: "Content & Analytics",
-      icon: "matches",
-      description: "Matchday content & analytics · Coming Soon",
-      section: "Fan Club",
-    },
-    {
-      path: "/realverse/admin/fans/settings",
-      label: "Fan Club Settings",
-      icon: "settings",
-      description: "Feature toggles · Coming Soon",
-      section: "Fan Club",
-    },
     {
       path: "/realverse/admin/centres",
       label: "Centres",
