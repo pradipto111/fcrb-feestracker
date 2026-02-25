@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, healthCheck } from "../api/client";
+import { DISABLE_HEAVY_ANALYTICS } from "../config/featureFlags";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
@@ -213,7 +214,7 @@ const CentresManagementPage: React.FC = () => {
                 cursor: "pointer",
                 transition: "all 0.2s ease",
               }}
-              onClick={() => navigate(`/realverse/admin/centres/${centre.id}/analytics`)}
+              onClick={() => !DISABLE_HEAVY_ANALYTICS && navigate(`/realverse/admin/centres/${centre.id}/analytics`)}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-2px)";
                 e.currentTarget.style.boxShadow = shadows.lg;
@@ -317,10 +318,12 @@ const CentresManagementPage: React.FC = () => {
                 <Button
                   variant="primary"
                   size="sm"
+                  disabled={DISABLE_HEAVY_ANALYTICS}
+                  title={DISABLE_HEAVY_ANALYTICS ? "Temporarily unavailable" : undefined}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    navigate(`/realverse/admin/centres/${centre.id}/analytics`);
+                    if (!DISABLE_HEAVY_ANALYTICS) navigate(`/realverse/admin/centres/${centre.id}/analytics`);
                   }}
                 >
                   View Analytics

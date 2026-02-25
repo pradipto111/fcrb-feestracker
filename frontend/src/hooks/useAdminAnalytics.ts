@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "../api/client";
 import { DashboardSummary } from "../types/analytics";
+import { DISABLE_HEAVY_ANALYTICS } from "../config/featureFlags";
 
 const ADMIN_SUMMARY_CACHE_TTL_MS = 60000; // 1 min stale-while-revalidate
 
@@ -40,10 +41,10 @@ export function useAdminAnalytics(
   } = options;
 
   const cacheKey = adminSummaryCacheKey(centerId, includeInactive);
-  const cached = lastAdminSummary && lastAdminSummary.params === cacheKey && (Date.now() - lastAdminSummary.at) < ADMIN_SUMMARY_CACHE_TTL_MS;
+  const cached = !DISABLE_HEAVY_ANALYTICS && lastAdminSummary && lastAdminSummary.params === cacheKey && (Date.now() - lastAdminSummary.at) < ADMIN_SUMMARY_CACHE_TTL_MS;
 
   const [summary, setSummary] = useState<DashboardSummary | null>(() => (cached ? lastAdminSummary!.data : null));
-  const [loading, setLoading] = useState(!cached);
+  const [loading, setLoading] = useState(!DISABLE_HEAVY_ANALYTICS && !cached);
   const [error, setError] = useState<string | null>(null);
   const summaryRef = useRef<DashboardSummary | null>(null);
   
@@ -53,6 +54,12 @@ export function useAdminAnalytics(
   }, [summary]);
 
   const fetchSummary = useCallback(async () => {
+    if (DISABLE_HEAVY_ANALYTICS) {
+      setSummary(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
     try {
       setError(null);
       if (!summaryRef.current) setLoading(true);
@@ -109,6 +116,12 @@ export function useAdminAnalytics(
       }
     };
 
+    // If heavy analytics disabled, no-op
+    if (DISABLE_HEAVY_ANALYTICS) {
+      setLoading(false);
+      setSummary(null);
+      return;
+    }
     // If we had fresh cache, show it and revalidate in background without blocking UI
     if (cached && lastAdminSummary) {
       setSummary(lastAdminSummary.data);

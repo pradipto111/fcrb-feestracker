@@ -1,16 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { DISABLE_HEAVY_ANALYTICS } from "../config/featureFlags";
 
 const AdminDashboard: React.FC = () => {
   const [summary, setSummary] = useState<any>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (DISABLE_HEAVY_ANALYTICS) return;
     api
       .getDashboardSummary()
       .then(setSummary)
       .catch((err) => setError(err.message));
   }, []);
+
+  if (DISABLE_HEAVY_ANALYTICS) {
+    return (
+      <div>
+        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 24 }}>Admin Dashboard</h1>
+        <p style={{ color: "#666" }}>Dashboard summary temporarily disabled.</p>
+      </div>
+    );
+  }
 
   if (error) return <p style={{ color: "#e74c3c" }}>Error: {error}</p>;
   if (!summary) return <p>Loading...</p>;

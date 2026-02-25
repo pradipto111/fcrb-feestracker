@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api } from "../../../api/client";
+import { DISABLE_HEAVY_ANALYTICS } from "../../../config/featureFlags";
 import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { colors, typography, spacing, borderRadius } from "../../../theme/design-tokens";
@@ -99,14 +100,19 @@ const CentreAnalyticsPage: React.FC = () => {
   });
 
   useEffect(() => {
+    if (DISABLE_HEAVY_ANALYTICS) {
+      setLoading(false);
+      setAnalytics(null);
+      return;
+    }
     if (centreId) {
       loadAnalytics();
     }
   }, [centreId, dateRange]);
 
   const loadAnalytics = async () => {
-    if (!centreId) {
-      setError("Centre ID is required");
+    if (!centreId || DISABLE_HEAVY_ANALYTICS) {
+      if (!centreId) setError("Centre ID is required");
       setLoading(false);
       return;
     }
@@ -115,7 +121,6 @@ const CentreAnalyticsPage: React.FC = () => {
       setLoading(true);
       setError("");
 
-      // Use the new analytics endpoint
       const analyticsData = await api.getCentreAnalytics(Number(centreId), {
         from: dateRange.from.toISOString(),
         to: dateRange.to.toISOString(),
@@ -256,6 +261,21 @@ const CentreAnalyticsPage: React.FC = () => {
     await loadAnalytics();
     setShowFinanceModal(false);
   };
+
+  if (DISABLE_HEAVY_ANALYTICS) {
+    return (
+      <div style={{ padding: spacing.xl }}>
+        <Card variant="default" padding="lg">
+          <p style={{ color: colors.text.secondary, marginBottom: spacing.md }}>
+            Centre analytics are temporarily disabled to reduce server load. Please try again later.
+          </p>
+          <Button variant="secondary" onClick={() => navigate("/realverse/admin/centres")}>
+            Back to Centres
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

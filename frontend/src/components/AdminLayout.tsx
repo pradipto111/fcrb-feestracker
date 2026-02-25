@@ -15,28 +15,7 @@ const AdminLayout: React.FC = () => {
   const { user } = useAuth();
 
   const navItems = [
-    // Operations Section
-    // {
-    //   path: "/realverse/admin/activity",
-    //   label: "Activity",
-    //   icon: "sessions",
-    //   description: "System-wide audit feed",
-    //   section: "Operations",
-    // },
-    {
-      path: "/realverse/admin/centres",
-      label: "Centres",
-      icon: "centres",
-      description: "Manage training centres",
-      section: "Operations",
-    },
-    {
-      path: "/realverse/admin/staff",
-      label: "Staff",
-      icon: "staff",
-      description: "Coaches & administrators",
-      section: "Operations",
-    },
+    // Operations Section - Players and Payment Logs first for visibility
     {
       path: "/realverse/admin/students",
       label: "Players",
@@ -49,6 +28,20 @@ const AdminLayout: React.FC = () => {
       label: "Payment Logs",
       icon: "settings",
       description: "Track all payment & revenue updates",
+      section: "Operations",
+    },
+    {
+      path: "/realverse/admin/centres",
+      label: "Centres",
+      icon: "centres",
+      description: "Manage training centres",
+      section: "Operations",
+    },
+    {
+      path: "/realverse/admin/staff",
+      label: "Staff",
+      icon: "staff",
+      description: "Coaches & administrators",
       section: "Operations",
     },
     // {

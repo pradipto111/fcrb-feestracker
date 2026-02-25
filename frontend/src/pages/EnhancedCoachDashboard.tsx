@@ -11,6 +11,7 @@ import { glass } from "../theme/glass";
 import { pageVariants, cardVariants } from "../utils/motion";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { centresAssets, adminAssets, heroAssets, clubAssets } from "../config/assets";
+import { DISABLE_HEAVY_ANALYTICS } from "../config/featureFlags";
 import { FootballIcon, ClipboardIcon, CalendarIcon, ChartBarIcon, ChartLineIcon, UsersIcon } from "../components/icons/IconSet";
 
 const COACH_DASHBOARD_CACHE_TTL_MS = 60000; // 1 min for stale-while-revalidate
@@ -82,7 +83,22 @@ const EnhancedCoachDashboard: React.FC = () => {
   const loadData = async () => {
     try {
       setError(""); // Clear previous errors
-      
+      if (DISABLE_HEAVY_ANALYTICS) {
+        const studentsData = await api.getStudents().catch(err => {
+          console.error("Failed to load students:", err);
+          const cached = sessionStorage.getItem('coach-dashboard-students');
+          return cached ? JSON.parse(cached) : [];
+        });
+        if (studentsData && Array.isArray(studentsData)) {
+          setStudents(studentsData);
+          sessionStorage.setItem('coach-dashboard-students', JSON.stringify(studentsData));
+        }
+        setSummary(null);
+        setRevenueData([]);
+        setMonthlyData([]);
+        setIsInitialLoad(false);
+        return;
+      }
       const [summaryData, studentsData] = await Promise.all([
         api.getDashboardSummary().catch(err => {
           console.error("Failed to load dashboard summary:", err);
@@ -95,8 +111,6 @@ const EnhancedCoachDashboard: React.FC = () => {
           return cached ? JSON.parse(cached) : [];
         })
       ]);
-      
-      // Only update if we got valid data
       if (summaryData) {
         setSummary(summaryData);
         sessionStorage.setItem('coach-dashboard-summary', JSON.stringify(summaryData));
@@ -108,7 +122,6 @@ const EnhancedCoachDashboard: React.FC = () => {
       if ((summaryData || studentsData) !== undefined) {
         sessionStorage.setItem('coach-dashboard-cache-at', String(Date.now()));
       }
-      
       await loadRevenueData();
       await loadMonthlyData();
       setIsInitialLoad(false);
@@ -186,8 +199,8 @@ const EnhancedCoachDashboard: React.FC = () => {
           </Card>
         )}
 
-        {/* Loading State - Only show if no cached data */}
-        {!summary && !error && isInitialLoad && (
+        {/* Loading State - Only show if no cached data (when heavy analytics on, we still need students) */}
+        {!summary && !DISABLE_HEAVY_ANALYTICS && !error && isInitialLoad && (
           <div style={{ 
             padding: spacing['2xl'], 
             textAlign: "center", 
@@ -209,13 +222,12 @@ const EnhancedCoachDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Content - Only render if data is loaded */}
-        {summary && !error && (() => {
-          // Calculate stats
+        {/* Content - render when we have summary or when heavy analytics disabled (we still have students) */}
+        {(summary || DISABLE_HEAVY_ANALYTICS) && !error && (() => {
           const activeStudents = students.filter(s => s.status === "ACTIVE").length;
           const trialStudents = students.filter(s => s.status === "TRIAL").length;
           const totalPotentialRevenue = students.reduce((sum, s) => sum + s.monthlyFeeAmount, 0);
-          const totalExpected = summary.totalCollected + summary.approxOutstanding;
+          const totalExpected = summary ? summary.totalCollected + summary.approxOutstanding : 0;
 
           // Payment frequency breakdown
           const frequencyBreakdown = students.reduce((acc: any, student) => {
@@ -247,7 +259,7 @@ const EnhancedCoachDashboard: React.FC = () => {
           color: "white"
         }}>
           <div style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>Total Collected</div>
-          <div style={{ fontSize: 32, fontWeight: 700 }}>₹{summary.totalCollected.toLocaleString()}</div>
+          <div style={{ fontSize: 32, fontWeight: 700 }}>{summary ? `₹${summary.totalCollected.toLocaleString()}` : "—"}</div>
         </div>
 
         <div style={{
@@ -258,7 +270,7 @@ const EnhancedCoachDashboard: React.FC = () => {
           color: "white"
         }}>
           <div style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>Outstanding</div>
-          <div style={{ fontSize: 32, fontWeight: 700 }}>₹{summary.approxOutstanding.toLocaleString()}</div>
+          <div style={{ fontSize: 32, fontWeight: 700 }}>{summary ? `₹${summary.approxOutstanding.toLocaleString()}` : "—"}</div>
         </div>
 
         <div style={{
@@ -269,7 +281,7 @@ const EnhancedCoachDashboard: React.FC = () => {
           color: "white"
         }}>
           <div style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>Total Students</div>
-          <div style={{ fontSize: 32, fontWeight: 700 }}>{summary.studentCount}</div>
+          <div style={{ fontSize: 32, fontWeight: 700 }}>{summary ? summary.studentCount : students.length}</div>
           <div style={{ fontSize: 12, marginTop: 4, opacity: 0.8 }}>
             {activeStudents} Active, {trialStudents} Trial
           </div>
@@ -283,12 +295,19 @@ const EnhancedCoachDashboard: React.FC = () => {
           color: "white"
         }}>
           <div style={{ fontSize: 14, marginBottom: 8, opacity: 0.9 }}>Total Expected</div>
-          <div style={{ fontSize: 32, fontWeight: 700 }}>₹{totalExpected.toLocaleString()}</div>
+          <div style={{ fontSize: 32, fontWeight: 700 }}>{summary ? `₹${totalExpected.toLocaleString()}` : "—"}</div>
           <div style={{ fontSize: 12, marginTop: 4, opacity: 0.8 }}>Collected + Outstanding</div>
         </div>
       </div>
 
-      {/* CHART 1: Revenue Collections */}
+      {/* CHART 1: Revenue Collections - hidden when heavy analytics disabled */}
+      {DISABLE_HEAVY_ANALYTICS ? (
+        <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg }}>
+          <p style={{ textAlign: "center", margin: 0, color: colors.text.muted }}>
+            Analytics temporarily disabled to reduce server load.
+          </p>
+        </Card>
+      ) : (
       <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md }}>
           <div>
@@ -309,7 +328,6 @@ const EnhancedCoachDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Filters */}
         <div style={{ 
           display: "grid", 
           gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", 
@@ -482,6 +500,7 @@ const EnhancedCoachDashboard: React.FC = () => {
           </div>
         )}
       </Card>
+      )}
 
 
       {/* Detailed Stats Section */}

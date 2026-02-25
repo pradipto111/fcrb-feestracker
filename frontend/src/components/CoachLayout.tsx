@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api/client";
+import { DISABLE_HEAVY_ANALYTICS } from "../config/featureFlags";
 import RoleLayout, { IconDashboard, IconMatches, IconPlayers, IconSessions, IconFeed } from "./shared/RoleLayout";
 
 const CoachLayout: React.FC = () => {
@@ -8,11 +9,13 @@ const CoachLayout: React.FC = () => {
   const [coachData, setCoachData] = useState<any>(null);
 
   useEffect(() => {
+    if (DISABLE_HEAVY_ANALYTICS) {
+      setCoachData(null);
+      return;
+    }
     const loadCoachData = async () => {
       try {
-        // Try to get coach profile - adjust API call as needed
         const data = await api.getDashboardSummary().catch((err: any) => {
-          // Silently handle backend unavailability
           if (err?.message && !err.message.includes("Cannot reach the backend")) {
             console.error("Failed to load coach data:", err);
           }

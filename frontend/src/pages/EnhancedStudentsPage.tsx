@@ -17,6 +17,7 @@ import { StatusChip } from "../components/ui/StatusChip";
 import { pageVariants, cardVariants, primaryButtonWhileHover, primaryButtonWhileTap } from "../utils/motion";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { adminAssets, academyAssets, galleryAssets } from "../config/assets";
+import { DISABLE_HEAVY_ANALYTICS } from "../config/featureFlags";
 import { PlusIcon, CloseIcon, ErrorIcon, SuccessIcon, SearchIcon, BuildingIcon, ChartBarIcon, ChartLineIcon, EditIcon, TrashIcon, MoneyIcon } from "../components/icons/IconSet";
 import { KPICard } from "../components/ui/KPICard";
 import { useAdminAnalytics } from "../hooks/useAdminAnalytics";
@@ -597,7 +598,7 @@ const EnhancedStudentsPage: React.FC = () => {
             <motion.div custom={0} variants={cardVariants} initial="initial" animate="animate">
               <KPICard
                 title="Total Revenue"
-                value={`₹${totalRevenue.toLocaleString()}`}
+                value={DISABLE_HEAVY_ANALYTICS ? "—" : `₹${totalRevenue.toLocaleString()}`}
                 subtitle="All-time collections"
                 variant="primary"
               />
@@ -606,7 +607,7 @@ const EnhancedStudentsPage: React.FC = () => {
             <motion.div custom={1} variants={cardVariants} initial="initial" animate="animate">
               <KPICard
                 title="Outstanding"
-                value={`₹${outstanding.toLocaleString()}`}
+                value={DISABLE_HEAVY_ANALYTICS ? "—" : `₹${outstanding.toLocaleString()}`}
                 subtitle="Pending collections"
                 variant="warning"
               />
@@ -624,7 +625,7 @@ const EnhancedStudentsPage: React.FC = () => {
             <motion.div custom={3} variants={cardVariants} initial="initial" animate="animate">
               <KPICard
                 title="Total Expected"
-                value={`₹${totalExpected.toLocaleString()}`}
+                value={DISABLE_HEAVY_ANALYTICS ? "—" : `₹${totalExpected.toLocaleString()}`}
                 subtitle="Collected + Outstanding"
                 variant="success"
               />
