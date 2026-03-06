@@ -84,8 +84,8 @@ const PostApprovalPage: React.FC = () => {
             style={{
               color: colors.primary.light,
               textDecoration: "none",
-              fontWeight: typography.fontWeight.semibold,
               ...typography.body,
+              fontWeight: typography.fontWeight.semibold,
             }}
           >
             🔗 {post.mediaUrl}

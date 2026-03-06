@@ -18,7 +18,6 @@
 
 3. **public-pages-comprehensive.spec.ts** - All public pages
    - Landing, About, Teams pages
-   - Shop and product pages
    - Brochure pages
    - Programs pages (all variants)
    - Fan Club pages
@@ -78,8 +77,6 @@
 - ✅ Landing page
 - ✅ About page
 - ✅ Teams page
-- ✅ Shop pages (list + detail)
-- ✅ Cart page
 - ✅ Brochure pages (interactive + classic)
 - ✅ RealVerse Experience page
 - ✅ Programs pages (overview + 4 variants)

@@ -152,10 +152,11 @@ const CoachDrillContentPage: React.FC = () => {
         videoData.videoUrl = formData.videoUrl;
         videoData.platform = formData.platform;
       } else {
+        const uploadedFile = formData.file;
         videoData.fileData = formData.filePreview;
-        videoData.fileName = formData.file.name;
-        videoData.mimeType = formData.file.type;
-        videoData.fileSize = formData.file.size;
+        videoData.fileName = uploadedFile!.name;
+        videoData.mimeType = uploadedFile!.type;
+        videoData.fileSize = uploadedFile!.size;
       }
 
       await api.createVideo(videoData);

@@ -7,7 +7,6 @@ import RoleLayout, {
   IconPlayers,
   IconMatches,
   IconSessions,
-  IconShop,
   IconSettings,
 } from "./shared/RoleLayout";
 
@@ -18,16 +17,23 @@ const AdminLayout: React.FC = () => {
     // Operations Section - Players and Payment Logs first for visibility
     {
       path: "/realverse/admin/students",
-      label: "Players",
+      label: "Students",
       icon: "players",
-      description: "All players & students",
+      description: "Add and manage students",
       section: "Operations",
     },
     {
-      path: "/realverse/admin/payment-logs",
-      label: "Payment Logs",
+      path: "/realverse/admin/revenue",
+      label: "Revenue",
       icon: "settings",
-      description: "Track all payment & revenue updates",
+      description: "Revenue metrics and collections trend",
+      section: "Operations",
+    },
+    {
+      path: "/realverse/admin/logs",
+      label: "Logs",
+      icon: "settings",
+      description: "Payment activity logs and audit history",
       section: "Operations",
     },
     {
@@ -67,27 +73,6 @@ const AdminLayout: React.FC = () => {
       section: "Football Ops",
     },
     // System Section
-    {
-      path: "/realverse/admin/merch",
-      label: "Merch / Shop",
-      icon: "shop",
-      description: "Merchandise management",
-      section: "System",
-    },
-    {
-      path: "/realverse/admin/leads",
-      label: "Leads",
-      icon: "players",
-      description: "Website leads & checkout attempts",
-      section: "System",
-    },
-    {
-      path: "/realverse/admin/settings",
-      label: "Settings",
-      icon: "settings",
-      description: "System configuration & footer management",
-      section: "System",
-    },
     // {
     //   path: "/realverse/admin/batch-review",
     //   label: "Batch Review",
@@ -146,8 +131,6 @@ const AdminLayout: React.FC = () => {
         return <IconMatches />;
       case "sessions":
         return <IconSessions />;
-      case "shop":
-        return <IconShop />;
       case "settings":
         return <IconSettings />;
       default:

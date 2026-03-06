@@ -225,7 +225,7 @@ const CoachTrainingCalendarPage: React.FC = () => {
             style={{
               padding: spacing.sm,
               borderRadius: borderRadius.button,
-              border: `1px solid ${colors.border.default}`,
+              border: `1px solid ${colors.border.medium}`,
               background: glass.card.background,
               color: colors.text.primary,
             }}
@@ -241,7 +241,7 @@ const CoachTrainingCalendarPage: React.FC = () => {
             style={{
               padding: spacing.sm,
               borderRadius: borderRadius.button,
-              border: `1px solid ${colors.border.default}`,
+              border: `1px solid ${colors.border.medium}`,
               background: glass.card.background,
               color: colors.text.primary,
             }}
@@ -260,7 +260,7 @@ const CoachTrainingCalendarPage: React.FC = () => {
             style={{
               padding: spacing.sm,
               borderRadius: borderRadius.button,
-              border: `1px solid ${colors.border.default}`,
+              border: `1px solid ${colors.border.medium}`,
               background: glass.card.background,
               color: colors.text.primary,
               width: "100px",
@@ -321,7 +321,7 @@ const CoachTrainingCalendarPage: React.FC = () => {
                 style={{
                   minHeight: "120px",
                   padding: spacing.xs,
-                  border: `1px solid ${colors.border.default}`,
+                  border: `1px solid ${colors.border.medium}`,
                   borderRadius: borderRadius.sm,
                   background: isCurrentMonth ? glass.card.background : "rgba(255,255,255,0.02)",
                   opacity: isCurrentMonth ? 1 : 0.4,
@@ -332,7 +332,7 @@ const CoachTrainingCalendarPage: React.FC = () => {
                   style={{
                     fontSize: "0.875rem",
                     fontWeight: isToday ? 700 : 500,
-                    color: isToday ? colors.accent.primary : colors.text.primary,
+                    color: isToday ? colors.accent.main : colors.text.primary,
                     marginBottom: spacing.xs,
                   }}
                 >
@@ -465,7 +465,7 @@ const SessionCreateModal: React.FC<{
                   width: "100%",
                   padding: spacing.sm,
                   borderRadius: borderRadius.button,
-                  border: `1px solid ${colors.border.default}`,
+                  border: `1px solid ${colors.border.medium}`,
                   background: glass.card.background,
                   color: colors.text.primary,
                 }}
@@ -484,7 +484,7 @@ const SessionCreateModal: React.FC<{
                   width: "100%",
                   padding: spacing.sm,
                   borderRadius: borderRadius.button,
-                  border: `1px solid ${colors.border.default}`,
+                  border: `1px solid ${colors.border.medium}`,
                   background: glass.card.background,
                   color: colors.text.primary,
                 }}
@@ -502,7 +502,7 @@ const SessionCreateModal: React.FC<{
                   width: "100%",
                   padding: spacing.sm,
                   borderRadius: borderRadius.button,
-                  border: `1px solid ${colors.border.default}`,
+                  border: `1px solid ${colors.border.medium}`,
                   background: glass.card.background,
                   color: colors.text.primary,
                 }}
@@ -529,7 +529,7 @@ const SessionCreateModal: React.FC<{
                     width: "100%",
                     padding: spacing.sm,
                     borderRadius: borderRadius.button,
-                    border: `1px solid ${colors.border.default}`,
+                    border: `1px solid ${colors.border.medium}`,
                     background: glass.card.background,
                     color: colors.text.primary,
                   }}
@@ -551,7 +551,7 @@ const SessionCreateModal: React.FC<{
                     width: "100%",
                     padding: spacing.sm,
                     borderRadius: borderRadius.button,
-                    border: `1px solid ${colors.border.default}`,
+                    border: `1px solid ${colors.border.medium}`,
                     background: glass.card.background,
                     color: colors.text.primary,
                   }}
@@ -571,7 +571,7 @@ const SessionCreateModal: React.FC<{
                     width: "100%",
                     padding: spacing.sm,
                     borderRadius: borderRadius.button,
-                    border: `1px solid ${colors.border.default}`,
+                    border: `1px solid ${colors.border.medium}`,
                     background: glass.card.background,
                     color: colors.text.primary,
                   }}
@@ -591,7 +591,7 @@ const SessionCreateModal: React.FC<{
                   width: "100%",
                   padding: spacing.sm,
                   borderRadius: borderRadius.button,
-                  border: `1px solid ${colors.border.default}`,
+                  border: `1px solid ${colors.border.medium}`,
                   background: glass.card.background,
                   color: colors.text.primary,
                 }}
@@ -690,7 +690,7 @@ const SessionDetailsModal: React.FC<{
                   width: "100%",
                   padding: spacing.sm,
                   borderRadius: borderRadius.button,
-                  border: `1px solid ${colors.border.default}`,
+                  border: `1px solid ${colors.border.medium}`,
                   background: glass.card.background,
                   color: colors.text.primary,
                   marginBottom: spacing.sm,

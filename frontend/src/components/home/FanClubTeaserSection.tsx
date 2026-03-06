@@ -6,6 +6,7 @@
 
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import type { Variants } from "framer-motion";
 import { colors, typography, spacing, borderRadius, shadows } from "../../theme/design-tokens";
 import { heroCTAStyles, heroTypography } from "../../theme/hero-design-patterns";
 import { FAN_CLUB_TIERS, SPONSOR_BENEFITS } from "../../data/fanclubBenefits";
@@ -14,8 +15,9 @@ import { SponsorLogoWall } from "./SponsorLogoWall";
 
 export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
   const reduce = useReducedMotion();
+  const EASE_PREMIUM: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -26,7 +28,7 @@ export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 24, filter: "blur(8px)" },
     show: {
       opacity: 1,
@@ -34,7 +36,7 @@ export const FanClubTeaserSection: React.FC<{ isMobile: boolean }> = ({ isMobile
       filter: "blur(0px)",
       transition: {
         duration: 0.65,
-        ease: [0.22, 1, 0.36, 1],
+        ease: EASE_PREMIUM,
       },
     },
   };

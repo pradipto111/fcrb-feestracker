@@ -54,10 +54,10 @@
 
 ### Public Routes (8)
 1. `/` - Landing page
-2. `/shop` - Shop listing
-3. `/shop/:slug` - Product detail
-4. `/cart` - Shopping cart
-5. `/checkout` - Checkout
+2. `/programs` - Programs overview
+3. `/teams` - Teams page
+4. `/brochure` - Brochure page
+5. `/realverse/join` - Join entry
 6. `/order-confirmation/:orderNumber` - Order confirmation
 7. `/brochure` - Interactive brochure
 8. `/brochure/classic` - Classic brochure

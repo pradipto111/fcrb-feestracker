@@ -17,7 +17,6 @@ import postsRoutes from "./modules/posts/posts.routes";
 import commentsRoutes from "./modules/posts/comments.routes";
 import leaderboardRoutes from "./modules/leaderboard/leaderboard.routes";
 import leadsRoutes from "./modules/leads/leads.routes";
-import shopRoutes from "./modules/shop/shop.routes";
 import adminRoutes from "./modules/admin/admin.routes";
 import crmAuthRoutes from "./modules/crm/crm-auth.routes";
 import crmUsersRoutes from "./modules/crm/crm-users.routes";
@@ -42,7 +41,6 @@ import fanRoutes from "./modules/fan/fan.routes";
 import legacyRoutes from "./modules/legacy/legacy.routes";
 import footerRoutes from "./modules/footer/footer.routes";
 import activityRoutes from "./modules/activity/activity.routes";
-import prisma from "./db/prisma";
 
 // Global error handlers to prevent crashes
 process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
@@ -75,11 +73,18 @@ app.use((req, res, next) => {
 
 // Add request timeout middleware to prevent hanging requests
 app.use((req, res, next) => {
+  const isLoginRequest = req.path === "/auth/login";
   // Set timeout for all requests to 25 seconds (less than client timeout of 30s)
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
       console.error(`[${(req as any).requestId}] Request timeout after 25s: ${req.method} ${req.path}`);
-      res.status(504).json({ message: "Request timeout. The server is taking too long to respond." });
+      if (isLoginRequest) {
+        res.status(503).json({
+          message: "Login is temporarily unavailable because the database is slow or unreachable. Please try again in a moment.",
+        });
+      } else {
+        res.status(504).json({ message: "Request timeout. The server is taking too long to respond." });
+      }
     }
   }, 25000);
   
@@ -120,7 +125,6 @@ app.use("/posts", postsRoutes);
 app.use("/comments", commentsRoutes);
 app.use("/leaderboard", leaderboardRoutes);
 app.use("/leads", leadsRoutes);
-app.use("/shop", shopRoutes);
 app.use("/admin", adminRoutes);
 // CRM (Sales/BD)
 app.use("/crm/auth", crmAuthRoutes);
@@ -155,39 +159,10 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(500).json({ message: err.message || "Internal server error" });
 });
 
-// Seed products on startup (only if products table is empty)
-async function initializeShop() {
-  try {
-    // Check if product table exists and has data
-    if (!prisma.product) {
-      console.warn("⚠️  Product model not available. Please run: npx prisma generate");
-      return;
-    }
-    
-    const productCount = await prisma.product.count();
-    if (productCount === 0) {
-      const { seedProducts } = await import("./modules/shop/seed-products");
-      await seedProducts();
-    } else {
-      console.log(`✅ Shop initialized with ${productCount} products`);
-    }
-  } catch (error: any) {
-    // Silently handle table not existing - it's optional
-    if (error.code === 'P2021' || error.message?.includes('does not exist')) {
-      console.warn("⚠️  Product table not found. Run: npx prisma db push");
-    } else if (error.code === 'P2010') {
-      console.warn("⚠️  Database query failed. Ensure migrations are applied.");
-    } else {
-      console.error("Failed to initialize shop:", error.message || error);
-    }
-  }
-}
-
 // Start server
 app.listen(PORT, "0.0.0.0", async () => {
   console.log(`✅ Backend listening on http://localhost:${PORT}`);
   console.log(`✅ Backend also accessible on http://0.0.0.0:${PORT}`);
-  await initializeShop();
 }).on("error", (err: any) => {
   if (err.code === "EADDRINUSE") {
     console.error(`❌ Port ${PORT} is already in use. Please stop the other process or change the PORT in .env`);

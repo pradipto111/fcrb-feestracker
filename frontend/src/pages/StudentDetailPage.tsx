@@ -5,8 +5,6 @@ import { api } from "../api/client";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { KPICard } from "../components/ui/KPICard";
-import PlayerMetricsView from "../components/PlayerMetricsView";
-import CreateMetricSnapshotModal from "../components/CreateMetricSnapshotModal";
 import { useAuth } from "../context/AuthContext";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 import { pageVariants, cardVariants } from "../utils/motion";
@@ -32,22 +30,12 @@ const StudentDetailPage: React.FC = () => {
   const [upiRef, setUpiRef] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [showMetricModal, setShowMetricModal] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [churnedDate, setChurnedDate] = useState("");
   const [updatingChurned, setUpdatingChurned] = useState(false);
   const [editingCredentials, setEditingCredentials] = useState(false);
   const [studentEmail, setStudentEmail] = useState("");
   const [studentPassword, setStudentPassword] = useState("");
   const [updatingCredentials, setUpdatingCredentials] = useState(false);
-  
-  // Check if user can create/edit metrics (COACH or ADMIN)
-  const canEditMetrics = user?.role === "COACH" || user?.role === "ADMIN";
-  
-  // Function to refresh metrics view
-  const handleMetricsRefresh = () => {
-    setRefreshKey(prev => prev + 1);
-  };
 
   const load = () => {
     api
@@ -79,10 +67,12 @@ const StudentDetailPage: React.FC = () => {
     loadData();
     
     // Refresh data when page becomes visible (with debounce)
-    let refreshTimeout: NodeJS.Timeout;
+    let refreshTimeout: ReturnType<typeof setTimeout> | undefined;
     const handleVisibilityChange = () => {
       if (!document.hidden && mounted) {
-        clearTimeout(refreshTimeout);
+        if (refreshTimeout !== undefined) {
+          clearTimeout(refreshTimeout);
+        }
         refreshTimeout = setTimeout(() => {
           if (mounted) {
             load();
@@ -94,7 +84,9 @@ const StudentDetailPage: React.FC = () => {
     
     return () => {
       mounted = false;
-      clearTimeout(refreshTimeout);
+      if (refreshTimeout !== undefined) {
+        clearTimeout(refreshTimeout);
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [studentId]);
@@ -1144,39 +1136,6 @@ const StudentDetailPage: React.FC = () => {
             )}
           </Card>
         </motion.div>
-      )}
-
-      {/* Player Analytics Section */}
-      <motion.div variants={cardVariants} style={{ marginBottom: spacing.xl }}>
-        <Card variant="default" padding="lg">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
-            <h2 style={{ ...typography.h2, color: colors.text.primary }}>
-              Player Analytics
-            </h2>
-            {canEditMetrics && (
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button variant="primary" onClick={() => setShowMetricModal(true)}>
-                  + Create Assessment
-                </Button>
-              </motion.div>
-            )}
-          </div>
-          <PlayerMetricsView key={refreshKey} studentId={studentId} isOwnView={false} />
-        </Card>
-      </motion.div>
-
-      {/* Create Metric Snapshot Modal */}
-      {canEditMetrics && data?.student && (
-        <CreateMetricSnapshotModal
-          studentId={studentId}
-          studentName={data.student.fullName}
-          isOpen={showMetricModal}
-          onClose={() => setShowMetricModal(false)}
-          onSuccess={handleMetricsRefresh}
-        />
       )}
 
       {/* Payment History Table */}

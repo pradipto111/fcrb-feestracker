@@ -5,7 +5,8 @@ import { colors, typography, spacing, borderRadius } from "../../theme/design-to
 interface AnalyticsCardProps {
   title: string;
   subtitle?: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  value?: React.ReactNode;
   action?: React.ReactNode;
   fullWidth?: boolean;
 }
@@ -14,6 +15,7 @@ export const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
   title,
   subtitle,
   children,
+  value,
   action,
   fullWidth = false,
 }) => {
@@ -57,7 +59,19 @@ export const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
         </div>
         {action && <div>{action}</div>}
       </div>
-      <div>{children}</div>
+      <div>
+        {children ?? (
+          <p
+            style={{
+              ...typography.h2,
+              color: colors.text.primary,
+              margin: 0,
+            }}
+          >
+            {value}
+          </p>
+        )}
+      </div>
     </Card>
   );
 };

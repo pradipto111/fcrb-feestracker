@@ -209,8 +209,8 @@ test.describe('RealVerse Coach - Complete Section Tests', () => {
     await loginAs(page, 'coach', baseURL);
   });
 
-  test('Coach Dashboard - All features', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/coach`);
+  test('Coach Students - All features', async ({ page, baseURL }) => {
+    await page.goto(`${baseURL || ''}/realverse/coach/students`);
     await page.waitForLoadState('networkidle');
     
     await expect(page.locator('body')).toBeVisible();
@@ -428,7 +428,7 @@ test.describe('RealVerse Navigation - All Sections', () => {
     await loginAs(page, 'coach', baseURL);
     
     const coachRoutes = [
-      '/realverse/coach',
+      '/realverse/coach/students',
       '/realverse/coach/analytics',
       '/realverse/coach/schedule',
       '/realverse/coach/fan-club-analytics',

@@ -50,7 +50,7 @@ const FooterConfigPage: React.FC = () => {
     } catch (err: any) {
       setError(err.message || "Failed to load footer configuration");
       // Initialize with default sections if none exist
-      if (err.status === 404 || !data) {
+      if (err.status === 404) {
         setSections(getDefaultSections());
       }
     } finally {
@@ -76,7 +76,6 @@ const FooterConfigPage: React.FC = () => {
         isActive: true,
         links: [
           { label: "Programmes Overview", url: "/programs", displayOrder: 0, isActive: true },
-          // { label: "Shop", url: "/shop", displayOrder: 1, isActive: true }, // Disabled in UI, backend code preserved
         ],
       },
     ];
@@ -203,8 +202,8 @@ const FooterConfigPage: React.FC = () => {
           style={{
             padding: spacing.md,
             marginBottom: spacing.md,
-            background: colors.error.light,
-            color: colors.error.main,
+            background: colors.danger.light,
+            color: colors.danger.main,
             borderRadius: borderRadius.md,
           }}
         >
@@ -272,7 +271,7 @@ const FooterConfigPage: React.FC = () => {
                 <Button
                   onClick={() => handleRemoveSection(sectionIndex)}
                   variant="secondary"
-                  style={{ background: colors.error.light, color: colors.error.main }}
+                  style={{ background: colors.danger.light, color: colors.danger.main }}
                 >
                   Remove
                 </Button>
@@ -313,7 +312,7 @@ const FooterConfigPage: React.FC = () => {
                     }
                   />
                   <Input
-                    placeholder="URL (e.g., /about, /shop, https://...)"
+                    placeholder="URL (e.g., /about, /programs, https://...)"
                     value={link.url}
                     onChange={(e) =>
                       handleUpdateLink(sectionIndex, linkIndex, "url", e.target.value)
@@ -333,7 +332,7 @@ const FooterConfigPage: React.FC = () => {
                     onClick={() => handleRemoveLink(sectionIndex, linkIndex)}
                     variant="secondary"
                     size="sm"
-                    style={{ background: colors.error.light, color: colors.error.main }}
+                    style={{ background: colors.danger.light, color: colors.danger.main }}
                   >
                     Remove
                   </Button>

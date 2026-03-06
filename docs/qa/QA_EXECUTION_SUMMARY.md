@@ -65,7 +65,7 @@ This document summarizes the comprehensive end-to-end QA testing performed acros
 - ✅ Merchandise Management (Create/Edit/Delete)
 - ✅ Season Planning (Navigation)
 - ✅ Load Dashboard
-- ⏳ Shop & Checkout (Pending)
+- ⏳ Public Navigation & Conversion (Pending)
 - ⏳ Trial Management (Pending)
 - ⏳ Attendance Management (Pending)
 - ⏳ Player Profile (Pending)
@@ -84,18 +84,18 @@ This document summarizes the comprehensive end-to-end QA testing performed acros
 - ⏳ Create Season Plan (Form exists, backend pending)
 - ⏳ Create Trial Report (Pending)
 - ⏳ Mark Attendance (Pending)
-- ⏳ Shop Checkout (Pending)
+- ⏳ Public Conversion Flow (Pending)
 
 ---
 
 ## Areas Requiring Further Testing
 
 ### High Priority
-1. **Shop & Checkout Flow**
+1. **Public Navigation & Conversion Flow**
    - Add to cart
    - Update quantities
    - Remove items
-   - Checkout process
+   - Join conversion process
    - Payment integration
    - Order confirmation
 
@@ -164,7 +164,7 @@ This document summarizes the comprehensive end-to-end QA testing performed acros
 ### Immediate Actions
 1. ✅ Continue testing remaining sections
 2. ✅ Implement backend API for season plan creation
-3. ⏳ Test shop/checkout flow thoroughly
+3. ⏳ Test public conversion flow thoroughly
 4. ⏳ Test trial management complete flow
 
 ### Short-term Improvements
@@ -197,7 +197,7 @@ This document summarizes the comprehensive end-to-end QA testing performed acros
 1. ✅ Document all findings
 2. ✅ Fix critical bugs
 3. ⏳ Continue comprehensive testing
-4. ⏳ Test shop/checkout flow
+4. ⏳ Test public conversion flow
 5. ⏳ Test trial management
 6. ⏳ Test attendance management
 7. ⏳ Create final QA report

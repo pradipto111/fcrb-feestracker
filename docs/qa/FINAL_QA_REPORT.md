@@ -87,7 +87,7 @@ A comprehensive end-to-end QA test was performed across the entire RealVerse pla
 - Error handling
 
 ### Areas Pending Further Testing ⏳
-- Shop & Checkout Flow
+- Public Navigation & Conversion Flow
 - Trial Management Complete Flow
 - Attendance Management Operations
 - Player Profile Snapshot Creation
@@ -121,7 +121,7 @@ A comprehensive end-to-end QA test was performed across the entire RealVerse pla
 2. ✅ **Completed:** Add missing routes
 3. ✅ **Completed:** Improve form validation
 4. ⏳ **Pending:** Implement backend API for season plan creation
-5. ⏳ **Pending:** Test shop/checkout flow thoroughly
+5. ⏳ **Pending:** Test public conversion flow thoroughly
 
 ### Short-term Improvements
 1. Add more comprehensive error messages
@@ -183,7 +183,7 @@ The platform is ready for continued development and further testing of remaining
 ## Next Steps
 
 1. ✅ Complete comprehensive QA testing
-2. ⏳ Test shop/checkout flow
+2. ⏳ Test public conversion flow
 3. ⏳ Test trial management complete flow
 4. ⏳ Test attendance management operations
 5. ⏳ Implement backend API for season plan creation

@@ -16,7 +16,7 @@ This checklist validates the **Fan Club** role end-to-end without breaking exist
 
 - [ ] Header CTA **“Your benefits for backing FC Real Bengaluru”** routes to `/fan-club/benefits`.
 - [ ] `/fan-club/benefits` loads without auth and renders tiers + sponsor preview with **locked/blurred** rewards.
-- [ ] Existing public routes (Shop/checkout) still work.
+- [ ] Existing public routes (programs/brochure) still work.
 
 ## Admin Control Plane (Fan Club)
 
@@ -79,7 +79,7 @@ Checks:
 
 ## Non-regression
 
-- [ ] Shop checkout still works (cart → checkout → confirmation).
+- [ ] Public enquiry flow still works (fan join → confirmation state).
 - [ ] Existing Admin tools unaffected (centres, staff, payments, sessions).
 - [ ] No console-spam: API debug logging only when `localStorage.debugApi` enabled.
 

@@ -1,8 +1,16 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { SmoothScroll } from "./components/SmoothScroll";
 import { PageTransition } from "./components/PageTransition";
+import Layout from "./components/Layout";
+import LoginPage from "./pages/LoginPage";
+import StudentLayout from "./components/StudentLayout";
+import CoachLayout from "./components/CoachLayout";
+import AdminLayout from "./components/AdminLayout";
+import FanLayout from "./components/FanLayout";
+import CrmLayout from "./components/CrmLayout";
+import NotFound from "./pages/NotFound";
 
 // Component to handle legacy route redirects with params
 const LegacyRedirect: React.FC<{ to: string }> = ({ to }) => {
@@ -11,83 +19,67 @@ const LegacyRedirect: React.FC<{ to: string }> = ({ to }) => {
   const paramValue = params[paramKey];
   return <Navigate to={`${to}/${paramValue}`} replace />;
 };
-import Layout from "./components/Layout";
-import LandingPage from "./pages/LandingPage";
-import LoginPage from "./pages/LoginPage";
-import EnhancedCoachDashboard from "./pages/EnhancedCoachDashboard";
-import StudentLayout from "./components/StudentLayout";
-import CoachLayout from "./components/CoachLayout";
-import AdminLayout from "./components/AdminLayout";
-import FanLayout from "./components/FanLayout";
-import StudentDashboardOverview from "./pages/student/StudentDashboardOverview";
-import StudentDevelopmentPage from "./pages/student/StudentDevelopmentPage";
-import StudentWellnessReportsPage from "./pages/student/StudentWellnessReportsPage";
-import StudentMatchesPage from "./pages/student/StudentMatchesPage";
-import StudentFanclubBenefitsPage from "./pages/student/StudentFanclubBenefitsPage";
-import EnhancedStudentsPage from "./pages/EnhancedStudentsPage";
-import StudentDetailPage from "./pages/StudentDetailPage";
-import CenterDetailPage from "./pages/CenterDetailPage";
-import AttendanceManagementPage from "./pages/AttendanceManagementPage";
-import StudentAttendancePage from "./pages/StudentAttendancePage";
-import StudentFixturesPage from "./pages/StudentFixturesPage";
-import DrillsManagementPage from "./pages/DrillsManagementPage";
-import DrillsPage from "./pages/DrillsPage";
-import FeedPage from "./pages/FeedPage";
-import PostCreationPage from "./pages/PostCreationPage";
-import PostApprovalPage from "./pages/PostApprovalPage";
-import VotingPage from "./pages/VotingPage";
-import LeadsPage from "./pages/LeadsPage";
-import MerchandiseListPage from "./pages/MerchandiseListPage";
-import MerchandiseFormPage from "./pages/MerchandiseFormPage";
-import CentresManagementPage from "./pages/CentresManagementPage";
-import CentreFormPage from "./pages/CentreFormPage";
-import CentreAnalyticsPage from "./pages/admin/centres/CentreAnalyticsPage";
-import ShopPage from "./pages/ShopPage";
-import ProductDetailPage from "./pages/ProductDetailPage";
-import CartPage from "./pages/CartPage";
-import CheckoutPage from "./pages/CheckoutPage";
-import OrderConfirmationPage from "./pages/OrderConfirmationPage";
-import BrochurePage from "./pages/BrochurePage";
-import InteractiveBrochurePage from "./pages/InteractiveBrochurePage";
-import RealVerseExperiencePage from "./pages/RealVerseExperiencePage";
-import AboutPage from "./pages/AboutPage";
-import TeamsPage from "./pages/TeamsPage";
-import AdminStaffPage from "./pages/AdminStaffPage";
-import AdminSettingsPage from "./pages/AdminSettingsPage";
-import FooterConfigPage from "./pages/admin/FooterConfigPage";
-import PlayerAnalyticsPage from "./pages/PlayerAnalyticsPage";
-import PlayerProfilePage from "./pages/PlayerProfilePage";
-import PlayerComparisonPage from "./pages/PlayerComparisonPage";
-import TrialBoardPage from "./pages/TrialBoardPage";
-import TrialReportFormPage from "./pages/TrialReportFormPage";
-import TrialistDetailPage from "./pages/TrialistDetailPage";
-import ParentDevelopmentReportPage from "./pages/ParentDevelopmentReportPage";
-import ManageParentReportsPage from "./pages/ManageParentReportsPage";
-import PlayerLoadDashboardPage from "./pages/PlayerLoadDashboardPage";
-import ProgramsOverviewPage from "./pages/ProgramsOverviewPage";
-import ElitePathwayProgramPage from "./pages/ElitePathwayProgramPage";
-import SeniorCompetitiveProgramPage from "./pages/SeniorCompetitiveProgramPage";
-import WomenPerformancePathwayPage from "./pages/WomenPerformancePathwayPage";
-import FoundationYouthProgramPage from "./pages/FoundationYouthProgramPage";
-import ScheduleManagementPage from "./pages/ScheduleManagementPage";
-import FanDashboardOverview from "./pages/fan/FanDashboardOverview";
-import FanBenefitsPage from "./pages/fan/FanBenefitsPage";
-import FanGamesPage from "./pages/fan/FanGamesPage";
-import FanMatchdayPage from "./pages/fan/FanMatchdayPage";
-import FanProfilePage from "./pages/fan/FanProfilePage";
-import FanProgramsPage from "./pages/fan/FanProgramsPage";
-import ImportResultsPage from "./pages/admin/ImportResultsPage";
-import PaymentLogsPage from "./pages/admin/PaymentLogsPage";
-import FanClubJoinPage from "./pages/FanClubJoinPage";
-import CrmLayout from "./components/CrmLayout";
-import CrmDashboardPage from "./pages/crm/CrmDashboardPage";
-import CrmImportPage from "./pages/crm/CrmImportPage";
-import CoachTrainingCalendarPage from "./pages/CoachTrainingCalendarPage";
-import StudentTrainingCalendarPage from "./pages/StudentTrainingCalendarPage";
-import CoachDrillContentPage from "./pages/coach/CoachDrillContentPage";
-import CoachPostApprovalPage from "./pages/coach/CoachPostApprovalPage";
-import CoachPostCreationPage from "./pages/coach/CoachPostCreationPage";
-import NotFound from "./pages/NotFound";
+
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const StudentDashboardOverview = lazy(() => import("./pages/student/StudentDashboardOverview"));
+const StudentDevelopmentPage = lazy(() => import("./pages/student/StudentDevelopmentPage"));
+const StudentWellnessReportsPage = lazy(() => import("./pages/student/StudentWellnessReportsPage"));
+const StudentMatchesPage = lazy(() => import("./pages/student/StudentMatchesPage"));
+const StudentFanclubBenefitsPage = lazy(() => import("./pages/student/StudentFanclubBenefitsPage"));
+const EnhancedStudentsPage = lazy(() => import("./pages/EnhancedStudentsPage"));
+const StudentDetailPage = lazy(() => import("./pages/StudentDetailPage"));
+const CenterDetailPage = lazy(() => import("./pages/CenterDetailPage"));
+const AttendanceManagementPage = lazy(() => import("./pages/AttendanceManagementPage"));
+const StudentAttendancePage = lazy(() => import("./pages/StudentAttendancePage"));
+const StudentFixturesPage = lazy(() => import("./pages/StudentFixturesPage"));
+const DrillsManagementPage = lazy(() => import("./pages/DrillsManagementPage"));
+const DrillsPage = lazy(() => import("./pages/DrillsPage"));
+const FeedPage = lazy(() => import("./pages/FeedPage"));
+const PostCreationPage = lazy(() => import("./pages/PostCreationPage"));
+const PostApprovalPage = lazy(() => import("./pages/PostApprovalPage"));
+const VotingPage = lazy(() => import("./pages/VotingPage"));
+const CentresManagementPage = lazy(() => import("./pages/CentresManagementPage"));
+const CentreFormPage = lazy(() => import("./pages/CentreFormPage"));
+const CentreAnalyticsPage = lazy(() => import("./pages/admin/centres/CentreAnalyticsPage"));
+const BrochurePage = lazy(() => import("./pages/BrochurePage"));
+const InteractiveBrochurePage = lazy(() => import("./pages/InteractiveBrochurePage"));
+const RealVerseExperiencePage = lazy(() => import("./pages/RealVerseExperiencePage"));
+const AboutPage = lazy(() => import("./pages/AboutPage"));
+const TeamsPage = lazy(() => import("./pages/TeamsPage"));
+const AdminStaffPage = lazy(() => import("./pages/AdminStaffPage"));
+const FooterConfigPage = lazy(() => import("./pages/admin/FooterConfigPage"));
+const PlayerAnalyticsPage = lazy(() => import("./pages/PlayerAnalyticsPage"));
+const PlayerProfilePage = lazy(() => import("./pages/PlayerProfilePage"));
+const PlayerComparisonPage = lazy(() => import("./pages/PlayerComparisonPage"));
+const TrialBoardPage = lazy(() => import("./pages/TrialBoardPage"));
+const TrialReportFormPage = lazy(() => import("./pages/TrialReportFormPage"));
+const TrialistDetailPage = lazy(() => import("./pages/TrialistDetailPage"));
+const ParentDevelopmentReportPage = lazy(() => import("./pages/ParentDevelopmentReportPage"));
+const ManageParentReportsPage = lazy(() => import("./pages/ManageParentReportsPage"));
+const PlayerLoadDashboardPage = lazy(() => import("./pages/PlayerLoadDashboardPage"));
+const ProgramsOverviewPage = lazy(() => import("./pages/ProgramsOverviewPage"));
+const ElitePathwayProgramPage = lazy(() => import("./pages/ElitePathwayProgramPage"));
+const SeniorCompetitiveProgramPage = lazy(() => import("./pages/SeniorCompetitiveProgramPage"));
+const WomenPerformancePathwayPage = lazy(() => import("./pages/WomenPerformancePathwayPage"));
+const FoundationYouthProgramPage = lazy(() => import("./pages/FoundationYouthProgramPage"));
+const ScheduleManagementPage = lazy(() => import("./pages/ScheduleManagementPage"));
+const FanDashboardOverview = lazy(() => import("./pages/fan/FanDashboardOverview"));
+const FanBenefitsPage = lazy(() => import("./pages/fan/FanBenefitsPage"));
+const FanGamesPage = lazy(() => import("./pages/fan/FanGamesPage"));
+const FanMatchdayPage = lazy(() => import("./pages/fan/FanMatchdayPage"));
+const FanProfilePage = lazy(() => import("./pages/fan/FanProfilePage"));
+const FanProgramsPage = lazy(() => import("./pages/fan/FanProgramsPage"));
+const ImportResultsPage = lazy(() => import("./pages/admin/ImportResultsPage"));
+const PaymentLogsPage = lazy(() => import("./pages/admin/PaymentLogsPage"));
+const AdminRevenuePage = lazy(() => import("./pages/admin/AdminRevenuePage"));
+const FanClubJoinPage = lazy(() => import("./pages/FanClubJoinPage"));
+const CrmDashboardPage = lazy(() => import("./pages/crm/CrmDashboardPage"));
+const CrmImportPage = lazy(() => import("./pages/crm/CrmImportPage"));
+const CoachTrainingCalendarPage = lazy(() => import("./pages/CoachTrainingCalendarPage"));
+const StudentTrainingCalendarPage = lazy(() => import("./pages/StudentTrainingCalendarPage"));
+const CoachDrillContentPage = lazy(() => import("./pages/coach/CoachDrillContentPage"));
+const CoachPostApprovalPage = lazy(() => import("./pages/coach/CoachPostApprovalPage"));
+const CoachPostCreationPage = lazy(() => import("./pages/coach/CoachPostCreationPage"));
 
 // Simple loading spinner component for auth restoration
 const AuthLoadingSpinner: React.FC = () => {
@@ -172,7 +164,7 @@ const DashboardSelector: React.FC = () => {
   }
   if (user.role === "ADMIN") return <Navigate to="/realverse/admin/students" replace />;
   if (user.role === "STUDENT") return <Navigate to="/realverse/student" replace />;
-  if (user.role === "COACH") return <Navigate to="/realverse/coach" replace />;
+  if (user.role === "COACH") return <Navigate to="/realverse/coach/students" replace />;
   if (user.role === "FAN") return <Navigate to="/realverse/fan" replace />;
   if (user.role === "CRM") return <Navigate to="/realverse/crm" replace />;
   return null;
@@ -188,18 +180,12 @@ const App: React.FC = () => {
         }}
       >
         <PageTransition>
-          <Routes>
+          <Suspense fallback={<AuthLoadingSpinner />}>
+            <Routes>
         {/* Public Landing Page */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/teams" element={<TeamsPage />} />
-        
-        {/* Shop Pages - Disabled in UI, backend code preserved */}
-        {/* <Route path="/shop" element={<ShopPage />} /> */}
-        {/* <Route path="/shop/:slug" element={<ProductDetailPage />} /> */}
-        {/* <Route path="/cart" element={<CartPage />} /> */}
-        {/* <Route path="/checkout" element={<CheckoutPage />} /> */}
-        {/* <Route path="/order-confirmation/:orderNumber" element={<OrderConfirmationPage />} /> */}
         
         {/* RealVerse Join Entry Page - Redirected to Brochure */}
         <Route path="/realverse/join" element={<Navigate to="/brochure" replace />} />
@@ -352,7 +338,7 @@ const App: React.FC = () => {
             </PrivateRoute>
           }
         >
-          <Route index element={<EnhancedCoachDashboard />} />
+          <Route index element={<Navigate to="/realverse/coach/students" replace />} />
           <Route path="training-calendar" element={<CoachTrainingCalendarPage />} />
           <Route path="schedule" element={<ScheduleManagementPage />} />
           <Route path="students" element={<EnhancedStudentsPage />} />
@@ -374,13 +360,14 @@ const App: React.FC = () => {
         >
           <Route index element={<Navigate to="/realverse/admin/students" replace />} />
           <Route path="staff" element={<AdminStaffPage />} />
-          <Route path="settings" element={<AdminSettingsPage />} />
           <Route path="footer" element={<FooterConfigPage />} />
           <Route path="attendance" element={<AttendanceManagementPage />} />
           <Route path="schedule" element={<ScheduleManagementPage />} />
           <Route path="students" element={<EnhancedStudentsPage />} />
+          <Route path="revenue" element={<AdminRevenuePage />} />
           <Route path="students/import-results" element={<ImportResultsPage />} />
-          <Route path="payment-logs" element={<PaymentLogsPage />} />
+          <Route path="logs" element={<PaymentLogsPage />} />
+          <Route path="payment-logs" element={<Navigate to="/realverse/admin/logs" replace />} />
           <Route path="players/:id/profile" element={<PlayerProfilePage />} />
         </Route>
 
@@ -389,10 +376,26 @@ const App: React.FC = () => {
           path="/realverse/students"
           element={<Navigate to="/realverse/admin/students" replace />}
         />
+        <Route
+          path="/realverse/revenue"
+          element={<Navigate to="/realverse/admin/revenue" replace />}
+        />
+        <Route
+          path="/realverse/logs"
+          element={<Navigate to="/realverse/admin/logs" replace />}
+        />
         {/* Legacy route redirect */}
         <Route
           path="/students"
           element={<Navigate to="/realverse/students" replace />}
+        />
+        <Route
+          path="/revenue"
+          element={<Navigate to="/realverse/revenue" replace />}
+        />
+        <Route
+          path="/logs"
+          element={<Navigate to="/realverse/logs" replace />}
         />
         <Route
           path="/realverse/students/:id"
@@ -409,18 +412,6 @@ const App: React.FC = () => {
           element={<LegacyRedirect to="/realverse/students" />}
         />
         <Route
-          path="/realverse/admin/leads"
-          element={
-            <PrivateRoute>
-              <RequireRole roles={["ADMIN"]}>
-                <AdminLayout />
-              </RequireRole>
-            </PrivateRoute>
-          }
-        >
-          <Route index element={<LeadsPage />} />
-        </Route>
-        <Route
           path="/admin"
           element={<Navigate to="/realverse/admin/students" replace />}
         />
@@ -428,36 +419,6 @@ const App: React.FC = () => {
           path="/admin/schedule"
           element={<Navigate to="/realverse/admin/schedule" replace />}
         />
-        <Route
-          path="/realverse/admin/merch"
-          element={
-            <PrivateRoute>
-              <AdminLayout />
-            </PrivateRoute>
-          }
-        >
-          <Route index element={<MerchandiseListPage />} />
-        </Route>
-        <Route
-          path="/realverse/admin/merch/new"
-          element={
-            <PrivateRoute>
-              <AdminLayout />
-            </PrivateRoute>
-          }
-        >
-          <Route index element={<MerchandiseFormPage />} />
-        </Route>
-        <Route
-          path="/realverse/admin/merch/:id/edit"
-          element={
-            <PrivateRoute>
-              <AdminLayout />
-            </PrivateRoute>
-          }
-        >
-          <Route index element={<MerchandiseFormPage />} />
-        </Route>
         <Route
           path="/realverse/admin/centres"
           element={
@@ -711,7 +672,8 @@ const App: React.FC = () => {
           path="*"
           element={<NotFound />}
         />
-          </Routes>
+            </Routes>
+          </Suspense>
         </PageTransition>
       </BrowserRouter>
     </SmoothScroll>

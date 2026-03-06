@@ -12,7 +12,6 @@ This comprehensive test suite ensures all sections of the website, including Rea
 - Checks mobile menu functionality
 - Tests responsive layouts for:
   - Landing page
-  - Shop page
   - Brochure page
   - Programs pages
   - RealVerse Experience page
@@ -64,8 +63,6 @@ This comprehensive test suite ensures all sections of the website, including Rea
 - Landing page
 - About page
 - Teams page
-- Shop pages (list and detail)
-- Cart page
 - Brochure pages (interactive and classic)
 - RealVerse Experience page
 - Programs pages (all variants)

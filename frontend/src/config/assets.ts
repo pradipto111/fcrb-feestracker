@@ -166,21 +166,6 @@ export const brochureAssets = {
 };
 
 // ============================================
-// SHOP ASSETS
-// ============================================
-export const shopAssets = {
-  jerseys: [
-    `${BASE_URL}/2025/01/DSC1122-1024x683.jpg`,
-  ],
-  trainingTees: [
-    `${BASE_URL}/2025/01/DSC0335-1024x683.jpg`,
-  ],
-  miscMerch: [
-    `${BASE_URL}/2025/01/DSC1940-1024x683.jpg`,
-  ],
-};
-
-// ============================================
 // NEWS ASSETS
 // ============================================
 export const newsAssets = {

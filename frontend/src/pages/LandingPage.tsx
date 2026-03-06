@@ -40,7 +40,6 @@ import {
   galleryAssets, 
   academyAssets, 
   centresAssets, 
-  shopAssets, 
   brochureAssets, 
   newsAssets,
   miscAssets,
@@ -2593,7 +2592,6 @@ const LandingPage: React.FC = () => {
   const [recentResults, setRecentResults] = useState<PublicFixture[]>([]);
   const [fixturesLoading, setFixturesLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"fixtures" | "results">("fixtures");
-  const [products, setProducts] = useState<any[]>([]);
   const [centres, setCentres] = useState<Centre[]>([]);
   const [centresLoading, setCentresLoading] = useState(true);
   const [footerSections, setFooterSections] = useState<any[]>([]);
@@ -2606,7 +2604,6 @@ const LandingPage: React.FC = () => {
   // integratedFallbackRef removed (background is now handled by the Story Weave wrapper)
   const heroVideoRef = useRef<HTMLIFrameElement>(null);
   const overlayVideoRef = useRef<HTMLIFrameElement>(null);
-  const productsFetchedRef = useRef(false);
   const centresFetchedRef = useRef(false);
 
   // =========================================================
@@ -2694,21 +2691,6 @@ const LandingPage: React.FC = () => {
         }
       }, 300);
     }
-  }, []);
-
-  // Fetch featured products
-  useEffect(() => {
-    if (productsFetchedRef.current) return; // prevent dev double fetch
-    productsFetchedRef.current = true;
-    const loadProducts = async () => {
-      try {
-        const data = await api.getProducts();
-        setProducts(data); // Show all products for homepage marquee (marquee may cap if list is huge)
-      } catch (error) {
-        console.error("Failed to load products:", error);
-      }
-    };
-    loadProducts();
   }, []);
 
   // Fetch centres
@@ -3873,7 +3855,7 @@ const LandingPage: React.FC = () => {
                     fontWeight: typography.fontWeight.bold,
                   }}
                 >
-                  <span style={{ display: "inline-flex", alignItems: "center", fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.bold, lineHeight: 1, color: typography.body.color }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.bold, lineHeight: 1, color: colors.text.primary }}>
                     To know more About Us
                   </span>
                   <ArrowRightIcon size={18} color={colors.text.onPrimary} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
@@ -5399,7 +5381,7 @@ const LandingPage: React.FC = () => {
       {/* Scroll Indicator - Transition between Fan Club and Content Stream */}
       <ScrollIndicator delay={0.2} />
 
-      {/* Unified Content Stream: Shop + Matches + News + Gallery */}
+      {/* Unified Content Stream: Matches + News + Gallery */}
       <InfinitySection
         id="content-stream"
         bridge={true}
@@ -5509,7 +5491,7 @@ const LandingPage: React.FC = () => {
                   overflow: "hidden",
                 }}
               >
-                <SupportCelebrateBelongSection isMobile={isMobile} products={products} latestResult={latestResult} compact={true} />
+                <SupportCelebrateBelongSection isMobile={isMobile} latestResult={latestResult} compact={true} />
                   </motion.div>
 
               {/* Section 2: Club Calendar */}

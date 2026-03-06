@@ -250,7 +250,7 @@ const FanDashboardOverview: React.FC = () => {
                             transition: "all 0.2s ease",
                           }}
                         >
-                          <span style={{ display: "inline-flex", alignItems: "center", lineHeight: 1, ...typography.body, fontWeight: typography.fontWeight.semibold }}>{a.label}</span>
+                          <span style={{ display: "inline-flex", alignItems: "center", ...typography.body, lineHeight: 1, fontWeight: typography.fontWeight.semibold }}>{a.label}</span>
                           <ArrowRightIcon size={16} color={colors.text.secondary} style={{ display: "flex", alignItems: "center", flexShrink: 0 }} />
                         </div>
                       </motion.div>
@@ -594,9 +594,9 @@ const FanDashboardOverview: React.FC = () => {
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: spacing.md }}>
                 {[
-                  { title: "Fan Loyalty Track", desc: "Daily ritual actions → tier progression" },
-                  { title: "Matchday Track", desc: "Predictions, streaks, weekly unlocks" },
-                  { title: "Knowledge Track", desc: "Quizzes, trivia, club IQ boosts" },
+                  { title: "Fan Loyalty Track", desc: "Daily ritual actions → tier progression", icon: "🏆" },
+                  { title: "Matchday Track", desc: "Predictions, streaks, weekly unlocks", icon: "⏱️" },
+                  { title: "Knowledge Track", desc: "Quizzes, trivia, club IQ boosts", icon: "🧠" },
                 ].map((t) => (
                   <div key={t.title} style={{ borderRadius: borderRadius.card, border: `1px solid ${colors.accent.main}40`, background: colors.surface.card, padding: spacing.cardPadding, boxShadow: shadows.card }}>
                     <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, marginBottom: spacing['8'] }}>

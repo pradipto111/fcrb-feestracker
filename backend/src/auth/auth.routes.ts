@@ -1,6 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { Prisma } from "@prisma/client";
 import prisma from "../db/prisma";
 import { JWT_SECRET } from "../config";
 
@@ -58,6 +59,47 @@ router.post("/register-admin", async (req, res) => {
 });
 
 const LOGIN_DB_TIMEOUT_MS = 15000; // Fail fast so client gets 503 instead of hanging (e.g. cold DB on Render)
+const LOGIN_UNAVAILABLE_MESSAGE =
+  "Login is temporarily unavailable because the database is slow or unreachable. Please try again in a moment.";
+type FanUserLike = {
+  id: string;
+  passwordHash: string;
+  status: string;
+};
+type FanProfileLike = {
+  fullName: string | null;
+};
+type CrmUserLike = {
+  id: string;
+  passwordHash: string;
+  fullName: string;
+  role: string;
+  status: string;
+};
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, code: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      const err = new Error(code);
+      reject(err);
+    }, timeoutMs);
+    promise
+      .then((value) => {
+        clearTimeout(timeout);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timeout);
+        reject(error);
+      });
+  });
+}
+
+function isDatabaseUnavailableError(error: any): boolean {
+  if (error instanceof Prisma.PrismaClientInitializationError) return true;
+  const msg = String(error?.message || "");
+  return /(can't reach database|database server|authentication failed|connect_timeout|econnrefused|p1000|p1001|timed out)/i.test(msg);
+}
 
 /**
  * POST /auth/login
@@ -78,7 +120,11 @@ router.post("/login", async (req, res) => {
 
   const runLogin = async () => {
   // Try to find coach/admin first
-  const coach = await prisma.coach.findUnique({ where: { email } });
+  const coach = await withTimeout(
+    prisma.coach.findUnique({ where: { email } }),
+    LOGIN_DB_TIMEOUT_MS,
+    "LOGIN_DB_QUERY_TIMEOUT"
+  );
   if (coach) {
     // Allow both ADMIN and COACH to log in as staff (so "Admin dashboard" login works for coach accounts too)
     const staffRoles: Array<string> = ["ADMIN", "COACH"];
@@ -101,17 +147,30 @@ router.post("/login", async (req, res) => {
   }
 
   // Try to find fan user (Fan Club)
-  const fan = await (prisma as any).fanUser?.findUnique({ where: { email } });
+  const prismaAny = prisma as any;
+  const fanQuery: Promise<FanUserLike | null> =
+    prismaAny.fanUser?.findUnique({ where: { email } }) ?? Promise.resolve(null);
+  const fan = await withTimeout<FanUserLike | null>(
+    fanQuery,
+    LOGIN_DB_TIMEOUT_MS,
+    "LOGIN_DB_QUERY_TIMEOUT"
+  );
   if (fan) {
     if (role && role !== "FAN") return res.status(403).json({ message: "Access denied" });
     if (fan.status === "SUSPENDED") return res.status(403).json({ message: "Account suspended" });
     const ok = await bcrypt.compare(password, fan.passwordHash);
     if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 
-    const profile = await (prisma as any).fanProfile?.findUnique({
-      where: { userId: fan.id },
-      select: { fullName: true },
-    });
+    const fanProfileQuery: Promise<FanProfileLike | null> =
+      prismaAny.fanProfile?.findUnique({
+        where: { userId: fan.id },
+        select: { fullName: true },
+      }) ?? Promise.resolve(null);
+    const profile = await withTimeout<FanProfileLike | null>(
+      fanProfileQuery,
+      LOGIN_DB_TIMEOUT_MS,
+      "LOGIN_DB_QUERY_TIMEOUT"
+    );
 
     const token = jwt.sign(
       { id: fan.id, role: "FAN" },
@@ -126,7 +185,11 @@ router.post("/login", async (req, res) => {
   }
 
   // Try to find student
-  const student = await prisma.student.findUnique({ where: { email } });
+  const student = await withTimeout(
+    prisma.student.findUnique({ where: { email } }),
+    LOGIN_DB_TIMEOUT_MS,
+    "LOGIN_DB_QUERY_TIMEOUT"
+  );
   if (student && student.passwordHash) {
     if (role && role !== "STUDENT") return res.status(403).json({ message: "Access denied" });
     const ok = await bcrypt.compare(password, student.passwordHash);
@@ -145,7 +208,13 @@ router.post("/login", async (req, res) => {
   }
 
   // Try CRM user (unified login – single flow, no role selection)
-  const crmUser = await (prisma as any).crmUser?.findUnique({ where: { email } });
+  const crmUserQuery: Promise<CrmUserLike | null> =
+    prismaAny.crmUser?.findUnique({ where: { email } }) ?? Promise.resolve(null);
+  const crmUser = await withTimeout<CrmUserLike | null>(
+    crmUserQuery,
+    LOGIN_DB_TIMEOUT_MS,
+    "LOGIN_DB_QUERY_TIMEOUT"
+  );
   if (crmUser) {
     if (role && role !== "CRM") return res.status(403).json({ message: "Access denied" });
     if (crmUser.status === "DISABLED") return res.status(403).json({ message: "Account disabled" });
@@ -168,12 +237,17 @@ router.post("/login", async (req, res) => {
   try {
     await Promise.race([runLogin(), timeoutPromise]);
   } catch (err: any) {
-    if (err.message === "LOGIN_TIMEOUT") {
+    if (res.headersSent) return;
+    if (err.message === "LOGIN_TIMEOUT" || err.message === "LOGIN_DB_QUERY_TIMEOUT") {
       return res.status(503).json({
-        message: "Login timed out. The database may be slow or waking up. Please try again in a moment.",
+        message: LOGIN_UNAVAILABLE_MESSAGE,
       });
     }
-    throw err;
+    if (isDatabaseUnavailableError(err)) {
+      return res.status(503).json({ message: LOGIN_UNAVAILABLE_MESSAGE });
+    }
+    console.error("[auth/login] Unexpected error:", err);
+    return res.status(500).json({ message: "Login failed due to an unexpected server error." });
   }
 });
 

@@ -16,6 +16,238 @@ async function getCoachCenterIds(coachId: number) {
   return links.map((l) => l.centerId);
 }
 
+function startOfDay(date: Date): Date {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
+function endOfDay(date: Date): Date {
+  const copy = new Date(date);
+  copy.setHours(23, 59, 59, 999);
+  return copy;
+}
+
+function startOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0);
+}
+
+function endOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+}
+
+function addMonths(date: Date, delta: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + delta, date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds());
+}
+
+function parseCsvNumbers(input?: string): number[] {
+  if (!input) return [];
+  return input
+    .split(",")
+    .map((v) => Number(v.trim()))
+    .filter((v) => Number.isFinite(v) && v > 0);
+}
+
+function parseCsvStrings(input?: string): string[] {
+  if (!input) return [];
+  return input
+    .split(",")
+    .map((v) => decodeURIComponent(v.trim()))
+    .filter(Boolean);
+}
+
+function getMonthKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function getMonthLabel(date: Date): string {
+  return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
+function getMonthStarts(from: Date, to: Date): Date[] {
+  const start = startOfMonth(from);
+  const end = startOfMonth(to);
+  const months: Date[] = [];
+  const cursor = new Date(start);
+  while (cursor <= end) {
+    months.push(new Date(cursor));
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return months;
+}
+
+function getFinancialYearRange(anchor: Date): { from: Date; to: Date } {
+  const year = anchor.getFullYear();
+  const month = anchor.getMonth();
+  if (month >= 3) {
+    return {
+      from: new Date(year, 3, 1, 0, 0, 0, 0),
+      to: new Date(year + 1, 2, 31, 23, 59, 59, 999),
+    };
+  }
+  return {
+    from: new Date(year - 1, 3, 1, 0, 0, 0, 0),
+    to: new Date(year, 2, 31, 23, 59, 59, 999),
+  };
+}
+
+function resolveDateRange(
+  presetRaw: string | undefined,
+  now: Date,
+  customFrom?: string,
+  customTo?: string
+): { preset: string; from: Date; to: Date } {
+  const preset = (presetRaw || "last_12_months").toLowerCase();
+  if (preset === "this_month") {
+    return { preset, from: startOfMonth(now), to: endOfMonth(now) };
+  }
+  if (preset === "last_3_months") {
+    return { preset, from: startOfMonth(new Date(now.getFullYear(), now.getMonth() - 2, 1)), to: endOfMonth(now) };
+  }
+  if (preset === "last_6_months") {
+    return { preset, from: startOfMonth(new Date(now.getFullYear(), now.getMonth() - 5, 1)), to: endOfMonth(now) };
+  }
+  if (preset === "this_financial_year") {
+    const fy = getFinancialYearRange(now);
+    return { preset, from: fy.from, to: fy.to };
+  }
+  if (preset === "last_financial_year") {
+    const thisFy = getFinancialYearRange(now);
+    const prevAnchor = new Date(thisFy.from.getFullYear() - 1, 3, 1);
+    const prevFy = getFinancialYearRange(prevAnchor);
+    return { preset, from: prevFy.from, to: prevFy.to };
+  }
+  if (preset === "custom_range" || preset === "custom") {
+    const from = customFrom ? startOfDay(new Date(customFrom)) : startOfMonth(new Date(now.getFullYear(), now.getMonth() - 11, 1));
+    const to = customTo ? endOfDay(new Date(customTo)) : endOfMonth(now);
+    return { preset: "custom_range", from: from <= to ? from : to, to: to >= from ? to : from };
+  }
+  return { preset: "last_12_months", from: startOfMonth(new Date(now.getFullYear(), now.getMonth() - 11, 1)), to: endOfMonth(now) };
+}
+
+function monthlyEquivalent(feeAmount: number, paymentFrequency: number): number {
+  const frequency = Math.max(1, Number(paymentFrequency || 1));
+  return feeAmount / frequency;
+}
+
+function round2(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function intersectsMonth(joiningDate: Date | null, churnedDate: Date | null, monthStart: Date, monthEnd: Date): boolean {
+  const activeFrom = joiningDate ? startOfDay(joiningDate) : new Date(0);
+  const activeTo = churnedDate ? endOfDay(churnedDate) : new Date(8640000000000000);
+  return activeFrom <= monthEnd && activeTo >= monthStart;
+}
+
+type RevenueFilterMeta = {
+  centers: Array<{ id: number; name: string }>;
+  programmes: string[];
+  statuses: string[];
+  paymentFrequencies: number[];
+  dateBounds: {
+    min: string | null;
+    max: string | null;
+  };
+};
+
+function asDateOnly(value: Date | null | undefined): string | null {
+  if (!value) return null;
+  return value.toISOString().slice(0, 10);
+}
+
+function minDate(values: Array<Date | null | undefined>): Date | null {
+  const valid = values.filter((value): value is Date => value instanceof Date);
+  if (valid.length === 0) return null;
+  return new Date(Math.min(...valid.map((value) => value.getTime())));
+}
+
+function maxDate(values: Array<Date | null | undefined>): Date | null {
+  const valid = values.filter((value): value is Date => value instanceof Date);
+  if (valid.length === 0) return null;
+  return new Date(Math.max(...valid.map((value) => value.getTime())));
+}
+
+async function getRevenueFilterMeta(role: string, allowedCenterIds?: number[]): Promise<RevenueFilterMeta> {
+  const studentScopeWhere: any = {};
+  const paymentScopeWhere: any = {};
+  if (role === "COACH") {
+    studentScopeWhere.centerId = { in: allowedCenterIds || [] };
+    paymentScopeWhere.centerId = { in: allowedCenterIds || [] };
+  }
+
+  const [centersMeta, programmeMetaRows, statusMetaRows, frequencyMetaRows, studentDateAggregate, paymentDateAggregate] = await Promise.all([
+    prisma.center.findMany({
+      where: role === "COACH" ? { id: { in: allowedCenterIds || [] }, isActive: true } : { isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.student.findMany({
+      where: { ...studentScopeWhere, programType: { not: null } },
+      select: { programType: true },
+      distinct: ["programType"],
+      orderBy: { programType: "asc" },
+    }),
+    prisma.student.findMany({
+      where: studentScopeWhere,
+      select: { status: true },
+      distinct: ["status"],
+    }),
+    prisma.student.findMany({
+      where: studentScopeWhere,
+      select: { paymentFrequency: true },
+      distinct: ["paymentFrequency"],
+      orderBy: { paymentFrequency: "asc" },
+    }),
+    prisma.student.aggregate({
+      where: studentScopeWhere,
+      _min: { joiningDate: true, createdAt: true },
+      _max: { churnedDate: true, updatedAt: true, createdAt: true },
+    }),
+    prisma.payment.aggregate({
+      where: paymentScopeWhere,
+      _min: { paymentDate: true },
+      _max: { paymentDate: true },
+    }),
+  ]);
+
+  const minBound = minDate([
+    studentDateAggregate._min.joiningDate,
+    studentDateAggregate._min.createdAt,
+    paymentDateAggregate._min.paymentDate,
+  ]);
+  const maxBound = maxDate([
+    studentDateAggregate._max.churnedDate,
+    studentDateAggregate._max.updatedAt,
+    studentDateAggregate._max.createdAt,
+    paymentDateAggregate._max.paymentDate,
+  ]);
+
+  const statuses = Array.from(new Set(["ACTIVE", "INACTIVE", "TRIAL", ...statusMetaRows.map((row) => String(row.status || "").toUpperCase())]))
+    .filter(Boolean)
+    .sort();
+  const paymentFrequencies = Array.from(
+    new Set(
+      frequencyMetaRows
+        .map((row) => Number(row.paymentFrequency))
+        .filter((value) => Number.isFinite(value) && value > 0)
+    )
+  ).sort((a, b) => a - b);
+
+  return {
+    centers: centersMeta,
+    programmes: programmeMetaRows
+      .map((row) => row.programType)
+      .filter((value): value is string => Boolean(value)),
+    statuses,
+    paymentFrequencies,
+    dateBounds: {
+      min: asDateOnly(minBound),
+      max: asDateOnly(maxBound),
+    },
+  };
+}
+
 /**
  * GET /dashboard/summary?from=YYYY-MM-DD&to=YYYY-MM-DD&centerId=optional&includeInactive=optional
  * Canonical endpoint for dashboard summary data
@@ -454,6 +686,390 @@ router.get("/monthly-collections", authRequired, dashboardCache(async (req, res)
 }));
 
 /**
+ * GET /dashboard/revenue-filter-options
+ * Metadata-only endpoint used to populate Revenue Dashboard filters.
+ */
+router.get("/revenue-filter-options", authRequired, dashboardCache(async (req, res) => {
+  const { id: userId, role } = req.user!;
+
+  let allowedCenterIds: number[] | undefined;
+  if (role === "COACH") {
+    allowedCenterIds = await getCoachCenterIds(userId);
+  }
+
+  const filtersMeta = await getRevenueFilterMeta(role, allowedCenterIds);
+  res.json(filtersMeta);
+}));
+
+/**
+ * GET /dashboard/revenue-analytics
+ * Full revenue analytics payload for admin revenue dashboard.
+ */
+router.get("/revenue-analytics", authRequired, dashboardCache(async (req, res) => {
+  const { id: userId, role } = req.user!;
+  const {
+    centerIds,
+    programmes,
+    statuses,
+    paymentFrequency,
+    datePreset,
+    dateFrom,
+    dateTo,
+  } = req.query as {
+    centerIds?: string;
+    programmes?: string;
+    statuses?: string;
+    paymentFrequency?: string;
+    datePreset?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  };
+
+  const now = getSystemDate();
+  const resolved = resolveDateRange(datePreset, now, dateFrom, dateTo);
+  const monthStarts = getMonthStarts(resolved.from, resolved.to);
+  const monthCount = Math.max(1, monthStarts.length);
+
+  let allowedCenterIds: number[] | undefined;
+  if (role === "COACH") {
+    allowedCenterIds = await getCoachCenterIds(userId);
+  }
+
+  const requestedCenterIds = parseCsvNumbers(centerIds);
+  const requestedProgrammes = parseCsvStrings(programmes);
+  const requestedStatuses = parseCsvStrings(statuses).map((s) => s.toUpperCase());
+  const requestedFrequency = paymentFrequency && paymentFrequency !== "all" ? Number(paymentFrequency) : undefined;
+
+  const studentWhere: any = {};
+  if (requestedCenterIds.length > 0) {
+    studentWhere.centerId = { in: requestedCenterIds };
+  }
+  if (allowedCenterIds) {
+    if (studentWhere.centerId?.in) {
+      studentWhere.centerId = { in: studentWhere.centerId.in.filter((id: number) => allowedCenterIds!.includes(id)) };
+    } else {
+      studentWhere.centerId = { in: allowedCenterIds };
+    }
+  }
+  if (requestedProgrammes.length > 0) {
+    studentWhere.programType = { in: requestedProgrammes };
+  }
+  if (requestedStatuses.length > 0) {
+    studentWhere.status = { in: requestedStatuses };
+  }
+  if (requestedFrequency !== undefined && Number.isFinite(requestedFrequency)) {
+    studentWhere.paymentFrequency = requestedFrequency;
+  }
+
+  const [filtersMeta, students] = await Promise.all([
+    getRevenueFilterMeta(role, allowedCenterIds),
+    prisma.student.findMany({
+      where: studentWhere,
+      include: {
+        center: { select: { id: true, name: true } },
+      },
+      orderBy: { fullName: "asc" },
+      take: 10000,
+    }),
+  ]);
+
+  const studentIds = students.map((s) => s.id);
+  const inRangePaymentsWhere: any = {
+    paymentDate: { gte: resolved.from, lte: resolved.to },
+  };
+  if (studentIds.length > 0) {
+    inRangePaymentsWhere.studentId = { in: studentIds };
+  } else {
+    inRangePaymentsWhere.studentId = -1;
+  }
+
+  const previousTo = new Date(resolved.from.getTime() - 1);
+  const previousFrom = addMonths(resolved.from, -monthCount);
+  const previousPaymentsWhere: any = {
+    paymentDate: { gte: previousFrom, lte: previousTo },
+  };
+  if (studentIds.length > 0) {
+    previousPaymentsWhere.studentId = { in: studentIds };
+  } else {
+    previousPaymentsWhere.studentId = -1;
+  }
+
+  const [paymentsInRange, previousPayments, lastPaymentsByStudent] = await Promise.all([
+    prisma.payment.findMany({
+      where: inRangePaymentsWhere,
+      select: { studentId: true, amount: true, paymentDate: true },
+      orderBy: { paymentDate: "asc" },
+      take: 100000,
+    }),
+    prisma.payment.findMany({
+      where: previousPaymentsWhere,
+      select: { amount: true },
+      take: 100000,
+    }),
+    studentIds.length > 0
+      ? prisma.payment.groupBy({
+          by: ["studentId"],
+          where: { studentId: { in: studentIds } },
+          _max: { paymentDate: true },
+        })
+      : Promise.resolve([] as any[]),
+  ]);
+
+  const totalCollected = paymentsInRange.reduce((sum, p) => sum + p.amount, 0);
+  const previousCollected = previousPayments.reduce((sum, p) => sum + p.amount, 0);
+  const totalRevenueDeltaPct = previousCollected > 0 ? ((totalCollected - previousCollected) / previousCollected) * 100 : 0;
+
+  const paidByStudent = new Map<number, number>();
+  const paidByMonth = new Map<string, number>();
+  const paidByStudentMonth = new Map<string, number>();
+  const payingPlayersByMonth = new Map<string, Set<number>>();
+  for (const payment of paymentsInRange) {
+    const monthKey = getMonthKey(payment.paymentDate);
+    paidByStudent.set(payment.studentId, (paidByStudent.get(payment.studentId) || 0) + payment.amount);
+    paidByMonth.set(monthKey, (paidByMonth.get(monthKey) || 0) + payment.amount);
+    paidByStudentMonth.set(`${payment.studentId}:${monthKey}`, (paidByStudentMonth.get(`${payment.studentId}:${monthKey}`) || 0) + payment.amount);
+    if (!payingPlayersByMonth.has(monthKey)) payingPlayersByMonth.set(monthKey, new Set<number>());
+    payingPlayersByMonth.get(monthKey)!.add(payment.studentId);
+  }
+
+  const lastPaymentByStudent = new Map<number, Date>();
+  for (const row of lastPaymentsByStudent) {
+    if (row._max.paymentDate) {
+      lastPaymentByStudent.set(row.studentId, row._max.paymentDate);
+    }
+  }
+
+  const expectedByMonth = new Map<string, number>();
+  const playerRows: Array<{
+    id: number;
+    fullName: string;
+    centerId: number;
+    centerName: string;
+    programme: string;
+    monthlyFeeAmount: number;
+    paymentFrequency: number;
+    status: string;
+    monthsInPeriod: number;
+    expected: number;
+    paid: number;
+    outstanding: number;
+    collectionPct: number;
+    lastPaymentDate: string | null;
+    isActive: boolean;
+  }> = [];
+
+  for (const student of students) {
+    const frequency = Math.max(1, student.paymentFrequency || 1);
+    const monthlyEq = monthlyEquivalent(student.monthlyFeeAmount || 0, frequency);
+    let activeMonthCount = 0;
+    let expectedForStudent = 0;
+
+    for (const monthStart of monthStarts) {
+      const monthEnd = endOfMonth(monthStart);
+      const isActiveInMonth = student.status === "ACTIVE" && intersectsMonth(student.joiningDate, (student as any).churnedDate, monthStart, monthEnd);
+      if (isActiveInMonth) {
+        activeMonthCount += 1;
+        expectedForStudent += monthlyEq;
+        const key = getMonthKey(monthStart);
+        expectedByMonth.set(key, (expectedByMonth.get(key) || 0) + monthlyEq);
+      }
+    }
+
+    const paid = paidByStudent.get(student.id) || 0;
+    const expected = round2(expectedForStudent);
+    const outstanding = Math.max(0, round2(expected - paid));
+    const collectionPct = expected > 0 ? round2((paid / expected) * 100) : 0;
+
+    playerRows.push({
+      id: student.id,
+      fullName: student.fullName,
+      centerId: student.centerId,
+      centerName: student.center?.name || "Unknown",
+      programme: student.programType || "Unassigned",
+      monthlyFeeAmount: student.monthlyFeeAmount || 0,
+      paymentFrequency: frequency,
+      status: student.status,
+      monthsInPeriod: activeMonthCount,
+      expected,
+      paid,
+      outstanding,
+      collectionPct,
+      lastPaymentDate: lastPaymentByStudent.get(student.id)?.toISOString() || null,
+      isActive: student.status === "ACTIVE",
+    });
+  }
+
+  const totalExpected = round2(playerRows.reduce((sum, row) => sum + row.expected, 0));
+  const totalOutstanding = Math.max(0, round2(totalExpected - totalCollected));
+  const collectionRate = totalExpected > 0 ? round2((totalCollected / totalExpected) * 100) : 0;
+  const fullyPaidPlayers = playerRows.filter((row) => row.expected > 0 && row.outstanding <= 0).length;
+  const pendingPlayers = playerRows.filter((row) => row.outstanding > 0).length;
+  const activePlayers = playerRows.filter((row) => row.isActive).length;
+  const avgMonthlyCollection = round2(totalCollected / monthCount);
+
+  let peakMonth = { month: "-", monthKey: "", collected: 0 };
+  const monthlyTrend = monthStarts.map((monthStart) => {
+    const monthKey = getMonthKey(monthStart);
+    const collected = paidByMonth.get(monthKey) || 0;
+    const expected = round2(expectedByMonth.get(monthKey) || 0);
+    const collectionPct = expected > 0 ? round2((collected / expected) * 100) : 0;
+    const payingPlayers = payingPlayersByMonth.get(monthKey)?.size || 0;
+    if (collected > peakMonth.collected) {
+      peakMonth = { month: getMonthLabel(monthStart), monthKey, collected };
+    }
+    return {
+      month: getMonthLabel(monthStart),
+      monthKey,
+      collected,
+      expected,
+      collectionPct,
+      payingPlayers,
+    };
+  });
+
+  const centerMap = new Map<string, { centerId: number; centerName: string; players: number; expected: number; collected: number; outstanding: number }>();
+  const programmeMap = new Map<string, { programme: string; players: number; totalMonthlyFee: number; expected: number; collected: number; outstanding: number }>();
+  for (const row of playerRows) {
+    const centerKey = `${row.centerId}:${row.centerName}`;
+    if (!centerMap.has(centerKey)) {
+      centerMap.set(centerKey, { centerId: row.centerId, centerName: row.centerName, players: 0, expected: 0, collected: 0, outstanding: 0 });
+    }
+    const centerAgg = centerMap.get(centerKey)!;
+    centerAgg.players += 1;
+    centerAgg.expected += row.expected;
+    centerAgg.collected += row.paid;
+    centerAgg.outstanding += row.outstanding;
+
+    const programmeKey = row.programme || "Unassigned";
+    if (!programmeMap.has(programmeKey)) {
+      programmeMap.set(programmeKey, { programme: programmeKey, players: 0, totalMonthlyFee: 0, expected: 0, collected: 0, outstanding: 0 });
+    }
+    const programmeAgg = programmeMap.get(programmeKey)!;
+    programmeAgg.players += 1;
+    programmeAgg.totalMonthlyFee += row.monthlyFeeAmount;
+    programmeAgg.expected += row.expected;
+    programmeAgg.collected += row.paid;
+    programmeAgg.outstanding += row.outstanding;
+  }
+
+  const centerTable = Array.from(centerMap.values()).map((row) => ({
+    centerId: row.centerId,
+    centerName: row.centerName,
+    players: row.players,
+    expected: round2(row.expected),
+    collected: round2(row.collected),
+    outstanding: round2(row.outstanding),
+    collectionPct: row.expected > 0 ? round2((row.collected / row.expected) * 100) : 0,
+  }));
+
+  const centreMonthlyBreakdown = monthStarts.map((monthStart) => {
+    const monthKey = getMonthKey(monthStart);
+    const centres = centerTable.map((center) => {
+      const centerStudents = playerRows.filter((row) => row.centerId === center.centerId);
+      const collected = centerStudents.reduce((sum, row) => sum + (paidByStudentMonth.get(`${row.id}:${monthKey}`) || 0), 0);
+      return {
+        centerId: center.centerId,
+        centerName: center.centerName,
+        collected,
+      };
+    });
+    return {
+      month: getMonthLabel(monthStart),
+      monthKey,
+      centres,
+    };
+  });
+
+  const programmeBreakdown = Array.from(programmeMap.values())
+    .map((row) => ({
+      programme: row.programme,
+      players: row.players,
+      monthlyFee: row.players > 0 ? round2(row.totalMonthlyFee / row.players) : 0,
+      totalExpected: round2(row.expected),
+      totalCollected: round2(row.collected),
+      outstanding: round2(row.outstanding),
+      collectionPct: row.expected > 0 ? round2((row.collected / row.expected) * 100) : 0,
+    }))
+    .sort((a, b) => b.totalCollected - a.totalCollected);
+
+  const topProgramme = programmeBreakdown[0] || null;
+  const revenuePerPlayer = activePlayers > 0 ? round2(totalCollected / activePlayers) : 0;
+
+  const currentMonthStart = startOfMonth(resolved.to);
+  const currentMonthEnd = endOfMonth(resolved.to);
+  const newThisMonth = students.filter((s) =>
+    s.status === "ACTIVE" &&
+    s.joiningDate &&
+    new Date(s.joiningDate) >= currentMonthStart &&
+    new Date(s.joiningDate) <= currentMonthEnd
+  ).length;
+  const droppedThisMonth = students.filter((s) =>
+    (s as any).churnedDate &&
+    new Date((s as any).churnedDate) >= currentMonthStart &&
+    new Date((s as any).churnedDate) <= currentMonthEnd
+  ).length;
+
+  const outstandingPlayers = [...playerRows]
+    .filter((row) => row.outstanding > 0)
+    .sort((a, b) => b.outstanding - a.outstanding)
+    .map((row) => ({
+      playerId: row.id,
+      playerName: row.fullName,
+      center: row.centerName,
+      programme: row.programme,
+      amountDue: round2(row.outstanding),
+      lastPaymentDate: row.lastPaymentDate,
+    }));
+
+  res.json({
+    filtersMeta,
+    applied: {
+      centerIds: requestedCenterIds,
+      programmes: requestedProgrammes,
+      statuses: requestedStatuses,
+      paymentFrequency: requestedFrequency || "all",
+      datePreset: resolved.preset,
+      dateFrom: resolved.from.toISOString(),
+      dateTo: resolved.to.toISOString(),
+    },
+    period: {
+      months: monthCount,
+      from: resolved.from.toISOString(),
+      to: resolved.to.toISOString(),
+      previousFrom: previousFrom.toISOString(),
+      previousTo: previousTo.toISOString(),
+    },
+    summary: {
+      totalRevenue: round2(totalCollected),
+      previousPeriodRevenue: round2(previousCollected),
+      revenueChangePct: round2(totalRevenueDeltaPct),
+      averageMonthlyCollection: avgMonthlyCollection,
+      peakMonth,
+      collectionRate,
+      fullyPaidPlayers,
+      totalPlayersConsidered: playerRows.length,
+      activePlayers,
+      activePlayersDeltaThisMonth: { new: newThisMonth, dropped: droppedThisMonth },
+      outstandingDues: totalOutstanding,
+      pendingPlayers,
+      revenuePerPlayer,
+      topProgramme: topProgramme
+        ? { name: topProgramme.programme, monthlyFee: topProgramme.monthlyFee }
+        : null,
+    },
+    tabs: {
+      monthlyTrend,
+      centerMonthlyBreakdown: centreMonthlyBreakdown,
+      centerTable,
+      programmeBreakdown,
+      playerDetails: playerRows,
+      outstandingPlayers,
+    },
+    updatedAt: new Date().toISOString(),
+  });
+}));
+
+/**
  * GET /dashboard/payment-mode-breakdown
  * Get payment breakdown by payment mode
  */
@@ -584,105 +1200,6 @@ router.get("/fan-club-revenue", authRequired, async (req, res) => {
 });
 
 /**
- * GET /dashboard/shop-revenue
- * Get shop/order revenue analytics
- */
-router.get("/shop-revenue", authRequired, async (req, res) => {
-  try {
-    const { months } = req.query as { months?: string };
-    const numMonths = Math.min(Math.max(parseInt(months || "12"), 1), 24);
-
-    // Get date range
-    const now = getSystemDate();
-    const startDate = new Date(now.getFullYear(), now.getMonth() - numMonths, 1);
-
-    // Get all orders
-    const orders = await prisma.order.findMany({
-      where: {
-        createdAt: { gte: startDate }
-      },
-      include: {
-        items: {
-          include: {
-            product: {
-              select: { name: true, category: true }
-            }
-          }
-        }
-      },
-      orderBy: { createdAt: "asc" }
-    });
-
-    // Calculate totals
-    const paidOrders = orders.filter(o => o.status === "PAID");
-    const totalRevenue = paidOrders.reduce((sum, o) => sum + o.total, 0);
-    const totalOrders = orders.length;
-    const paidOrdersCount = paidOrders.length;
-    const pendingOrders = orders.filter(o => o.status === "PENDING_PAYMENT");
-    const pendingRevenue = pendingOrders.reduce((sum, o) => sum + o.total, 0);
-
-    // Group by month
-    const monthlyRevenue: { [key: string]: number } = {};
-    const monthlyOrders: { [key: string]: number } = {};
-    
-    paidOrders.forEach(order => {
-      const date = new Date(order.createdAt);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      monthlyRevenue[monthKey] = (monthlyRevenue[monthKey] || 0) + order.total;
-      monthlyOrders[monthKey] = (monthlyOrders[monthKey] || 0) + 1;
-    });
-
-    // Generate month array
-    const monthsArray = [];
-    for (let i = numMonths - 1; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      
-      monthsArray.push({
-        month: monthName,
-        monthKey: monthKey,
-        revenue: monthlyRevenue[monthKey] || 0,
-        orders: monthlyOrders[monthKey] || 0
-      });
-    }
-
-    // Product category breakdown
-    const categoryRevenue: { [key: string]: number } = {};
-    paidOrders.forEach(order => {
-      order.items.forEach(item => {
-        const category = item.product?.category || "Uncategorized";
-        categoryRevenue[category] = (categoryRevenue[category] || 0) + item.totalPrice;
-      });
-    });
-
-    const categoryBreakdown = Object.entries(categoryRevenue).map(([category, revenue]) => ({
-      category,
-      revenue,
-      percentage: totalRevenue > 0 ? (revenue / totalRevenue) * 100 : 0
-    })).sort((a, b) => b.revenue - a.revenue);
-
-    // Average order value
-    const avgOrderValue = paidOrdersCount > 0 ? Math.round(totalRevenue / paidOrdersCount) : 0;
-
-    res.json({
-      totalRevenue,
-      totalOrders,
-      paidOrdersCount,
-      pendingOrdersCount: pendingOrders.length,
-      pendingRevenue,
-      avgOrderValue,
-      monthlyTrend: monthsArray,
-      categoryBreakdown,
-      conversionRate: totalOrders > 0 ? (paidOrdersCount / totalOrders) * 100 : 0
-    });
-  } catch (error: any) {
-    console.error("Error fetching shop revenue:", error);
-    res.status(500).json({ message: error.message || "Failed to fetch shop revenue" });
-  }
-});
-
-/**
  * GET /dashboard/comprehensive-finance
  * Get comprehensive financial overview including all revenue streams
  */
@@ -751,14 +1268,8 @@ router.get("/comprehensive-finance", authRequired, async (req, res) => {
     const fanYearlyRevenue = fanProfiles.reduce((sum: number, p: any) => 
       sum + (p.tier?.yearlyPriceINR || 0), 0);
 
-    // Get shop revenue
-    const paidOrders = await prisma.order.findMany({
-      where: { status: "PAID" }
-    });
-    const shopRevenue = paidOrders.reduce((sum, o) => sum + o.total, 0);
-
     // Total revenue
-    const totalRevenue = (studentSummary._sum.amount || 0) + fanMonthlyRevenue + shopRevenue;
+    const totalRevenue = (studentSummary._sum.amount || 0) + fanMonthlyRevenue;
 
     res.json({
       studentFinance: {
@@ -774,16 +1285,10 @@ router.get("/comprehensive-finance", authRequired, async (req, res) => {
         projectedMonthlyRevenue: fanMonthlyRevenue,
         projectedYearlyRevenue: fanYearlyRevenue
       },
-      shopFinance: {
-        totalRevenue: shopRevenue,
-        totalOrders: paidOrders.length,
-        avgOrderValue: paidOrders.length > 0 ? Math.round(shopRevenue / paidOrders.length) : 0
-      },
       totalRevenue,
       revenueBreakdown: {
         student: studentSummary._sum.amount || 0,
-        fanClub: fanMonthlyRevenue,
-        shop: shopRevenue
+        fanClub: fanMonthlyRevenue
       }
     });
   } catch (error: any) {

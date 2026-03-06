@@ -143,6 +143,7 @@ const AttendanceManagementPage: React.FC = () => {
       setError("");
       const result = await api.createSession({
         centerId: Number(sessionForm.centerId),
+        title: `Training Session - ${sessionForm.sessionDate}`,
         sessionDate: sessionForm.sessionDate,
         startTime: sessionForm.startTime,
         endTime: sessionForm.endTime,
@@ -285,6 +286,7 @@ const AttendanceManagementPage: React.FC = () => {
       setLoading(true);
       setError("");
       const sessions = monthlySessionsForm.sessionDates.map(s => ({
+        title: `Training Session - ${s.date}`,
         sessionDate: s.date,
         startTime: s.startTime,
         endTime: s.endTime,
@@ -1264,7 +1266,7 @@ const AttendanceManagementPage: React.FC = () => {
                 gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr 1fr",
                 gap: spacing.md,
                 padding: spacing.sm,
-                background: colors.surface.hover,
+                background: colors.surface.elevated,
                 borderRadius: borderRadius.md,
                 marginBottom: spacing.sm,
                 fontSize: typography.fontSize.xs,
@@ -1297,7 +1299,7 @@ const AttendanceManagementPage: React.FC = () => {
                       color: colors.text.primary,
                       transition: "background 0.2s ease",
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = colors.surface.hover}
+                    onMouseEnter={(e) => e.currentTarget.style.background = colors.surface.elevated}
                     onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                   >
                     <div style={{ fontWeight: typography.fontWeight.semibold }}>{student.studentName}</div>

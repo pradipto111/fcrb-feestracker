@@ -48,7 +48,7 @@
 - [ ] **All student pages** (attendance, fixtures, drills, feed, leaderboard)
 - [ ] **All admin pages** (staff, payments, settings, analytics)
 - [ ] **All coach pages** (analytics, feedback, wellness)
-- [ ] **Public pages** (LandingPage, ShopPage, BrochurePage) - Ensure infinity flow works
+- [ ] **Public pages** (LandingPage, ProgramsOverviewPage, BrochurePage) - Ensure infinity flow works
 
 ### 2. Forms Standardization
 - [ ] **CreateMetricSnapshotModal** - Use FormSection and FormField

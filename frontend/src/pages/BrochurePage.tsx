@@ -164,7 +164,7 @@ const BrochurePage: React.FC = () => {
             }}
           >
             <img
-              src={clubAssets.crest}
+              src={clubAssets.logo.crestCropped}
               alt="FC Real Bengaluru"
               className="logo-transparent-dark"
               style={{

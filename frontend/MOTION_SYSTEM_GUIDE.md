@@ -90,7 +90,7 @@ Wraps routes for smooth fade/slide transitions between pages.
 
 ## Usage Patterns
 
-### Public Pages (Home, Shop, Brochure, etc.)
+### Public Pages (Home, Programs, Brochure, etc.)
 
 ```tsx
 import { useHomepageAnimation } from '../hooks/useHomepageAnimation';
@@ -173,7 +173,6 @@ return (
 
 ### ✅ Completed
 - **LandingPage**: Full motion system with parallax hero, staggered sections
-- **ShopPage**: Enhanced product grid with hover effects
 - **App.tsx**: Smooth scroll and page transitions integrated
 
 ### 📋 To Apply (Follow Same Pattern)

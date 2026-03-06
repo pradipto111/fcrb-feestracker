@@ -237,7 +237,7 @@ const WellnessCheck: React.FC = () => {
                   border: `1px solid ${colors.surface.soft}`,
                   background: colors.surface.section,
                   color: colors.text.primary,
-                  fontFamily: typography.fontFamily.body,
+                  fontFamily: typography.fontFamily.primary,
                   fontSize: typography.fontSize.base,
                 }}
               />

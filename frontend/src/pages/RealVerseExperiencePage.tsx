@@ -115,7 +115,7 @@ const DashboardPreview: React.FC<{ previewType: string }> = ({ previewType }) =>
                     background: idx <= 2 ? colors.primary.main : `rgba(255, 255, 255, 0.1)`,
                     color: idx <= 2 ? colors.text.onPrimary : colors.text.secondary,
                     ...typography.body,
-                    fontWeight: idx === 2 ? typography.fontWeight.bold : typography.fontWeight.regular,
+                    fontWeight: idx === 2 ? typography.fontWeight.bold : typography.fontWeight.normal,
                     border: idx === 2 ? `2px solid ${colors.accent.main}` : `1px solid rgba(255, 255, 255, 0.2)`,
                   }}
                 >
@@ -419,7 +419,7 @@ const DashboardPreview: React.FC<{ previewType: string }> = ({ previewType }) =>
                   <div style={{ ...typography.h4, color: colors.text.primary, minWidth: "40px" }}>
                     {player.badge}
                   </div>
-                  <div style={{ flex: 1, ...typography.body, color: colors.text.primary, fontWeight: player.highlight ? typography.fontWeight.bold : typography.fontWeight.regular }}>
+                  <div style={{ flex: 1, ...typography.body, color: colors.text.primary, fontWeight: player.highlight ? typography.fontWeight.bold : typography.fontWeight.normal }}>
                     {player.name}
                   </div>
                   <div style={{ ...typography.body, color: colors.accent.main, fontWeight: typography.fontWeight.bold }}>
@@ -1541,7 +1541,7 @@ const RealVerseExperiencePage: React.FC = () => {
                           borderRadius: borderRadius.md,
                           color: colors.text.primary,
                           fontSize: typography.fontSize.base,
-                          fontFamily: typography.fontFamily.body,
+                          fontFamily: typography.fontFamily.primary,
                           resize: "vertical",
                         }}
                       />

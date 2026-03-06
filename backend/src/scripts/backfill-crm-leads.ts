@@ -6,7 +6,7 @@ async function main() {
     throw new Error("CRM models not available in Prisma client. Run prisma migrate + prisma generate first.");
   }
 
-  const counts: Record<string, number> = { WEBSITE: 0, LEGACY: 0, CHECKOUT: 0, FAN: 0 };
+  const counts: Record<string, number> = { WEBSITE: 0, LEGACY: 0, FAN: 0 };
 
   // Website leads
   const website = (await (prisma as any).websiteLead?.findMany({})) as any[];
@@ -39,23 +39,6 @@ async function main() {
       statusHint: l.status,
     });
     counts.LEGACY += 1;
-  }
-
-  // Checkout leads
-  const checkout = (await prisma.checkoutLead.findMany({})) as any[];
-  for (const l of checkout || []) {
-    await upsertCrmLead({
-      sourceType: "CHECKOUT",
-      sourceId: l.id,
-      primaryName: l.customerName || "Guest",
-      phone: l.phone,
-      email: l.email,
-      preferredCentre: null,
-      programmeInterest: null,
-      statusHint: l.status,
-      convertedOrderId: l.convertedOrderId || null,
-    });
-    counts.CHECKOUT += 1;
   }
 
   // Fan conversion leads

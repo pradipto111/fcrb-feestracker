@@ -35,14 +35,14 @@ const DraggableLeadCard: React.FC<DraggableLeadCardProps> = ({
   isHot,
   lastActivityTime,
 }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: lead.id,
   });
 
   const style: React.CSSProperties = {
     transform: CSS.Translate.toString(transform),
     // No transition while dragging so the placeholder follows the cursor smoothly
-    transition: isDragging ? "none" : transition,
+    transition: isDragging ? "none" : undefined,
     opacity: isDragging ? 0.4 : 1,
     visibility: isDragging ? "hidden" : "visible",
     touchAction: "none",

@@ -116,22 +116,22 @@ test.describe('Public Pages - Responsive Design', () => {
     }
   });
 
-  test('Shop page - Product grid responsive', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/shop`);
+  test('Programs page - Grid responsive', async ({ page, baseURL }) => {
+    await page.goto(`${baseURL || ''}/programs`);
     await page.waitForLoadState('networkidle');
     
     await checkViewportFit(page);
     
-    // Check product grid adapts to viewport
-    const productGrid = page.locator('[class*="grid"], [class*="products"]').first();
-    if (await productGrid.isVisible({ timeout: 3000 }).catch(() => false)) {
-      const gridStyle = await productGrid.evaluate((el: HTMLElement) => {
+    // Check program grid adapts to viewport
+    const programGrid = page.locator('[class*="grid"], [class*="program"]').first();
+    if (await programGrid.isVisible({ timeout: 3000 }).catch(() => false)) {
+      const gridStyle = await programGrid.evaluate((el: HTMLElement) => {
         return window.getComputedStyle(el).display;
       });
       expect(['grid', 'flex']).toContain(gridStyle);
     }
     
-    await page.screenshot({ path: 'test-results/shop-responsive.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/programs-responsive.png', fullPage: true });
   });
 
   test('Brochure page - All sections accessible', async ({ page, baseURL }) => {
@@ -307,8 +307,8 @@ test.describe('RealVerse Coach Section - Responsive', () => {
     await loginAs(page, 'coach', baseURL);
   });
 
-  test('Coach Dashboard - Responsive', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/coach`);
+  test('Coach Students - Responsive', async ({ page, baseURL }) => {
+    await page.goto(`${baseURL || ''}/realverse/coach/students`);
     await page.waitForLoadState('networkidle');
     
     await checkViewportFit(page);
@@ -383,14 +383,14 @@ test.describe('RealVerse Admin Section - Responsive', () => {
     await page.screenshot({ path: 'test-results/admin-centres-responsive.png', fullPage: true });
   });
 
-  test('Admin Merchandise - Responsive product management', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/admin/merch`);
+  test('Admin Revenue - Responsive analytics', async ({ page, baseURL }) => {
+    await page.goto(`${baseURL || ''}/realverse/admin/revenue`);
     await page.waitForLoadState('networkidle');
     
     await checkViewportFit(page);
     await checkTextReadability(page);
     
-    await page.screenshot({ path: 'test-results/admin-merch-responsive.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/admin-revenue-responsive.png', fullPage: true });
   });
 });
 

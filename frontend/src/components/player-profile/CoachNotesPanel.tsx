@@ -305,7 +305,7 @@ export const CoachNotesPanel: React.FC<CoachNotesPanelProps> = ({
                         <div
                           key={tag}
                           style={{
-                            padding: `${spacing.xs / 2} ${spacing.xs}`,
+                            padding: `${spacing.xs} ${spacing.xs}`,
                             background: colors.accent.soft,
                             borderRadius: borderRadius.sm,
                             ...typography.caption,
@@ -322,7 +322,7 @@ export const CoachNotesPanel: React.FC<CoachNotesPanelProps> = ({
                 {note.isVisibleToPlayer && (
                   <div
                     style={{
-                      padding: `${spacing.xs / 2} ${spacing.xs}`,
+                      padding: `${spacing.xs} ${spacing.xs}`,
                       background: colors.success.soft,
                       borderRadius: borderRadius.sm,
                       ...typography.caption,

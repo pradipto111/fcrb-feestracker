@@ -185,7 +185,7 @@ const StudentDashboardOverview: React.FC = () => {
                   View your training sessions and track attendance
                 </p>
                 {attendanceRate !== undefined && (
-                  <p style={{ ...typography.body, color: colors.text.primary, fontSize: typography.fontSize.md, fontWeight: 600, marginBottom: spacing.xs }}>
+                  <p style={{ ...typography.body, color: colors.text.primary, fontSize: typography.fontSize.base, fontWeight: 600, marginBottom: spacing.xs }}>
                     {attendanceRate}% Attendance
                   </p>
                 )}

@@ -17,8 +17,6 @@ interface SeedOptions {
   sessions?: number;
   attendance?: number;
   drills?: number;
-  products?: number;
-  orders?: number;
   invoices?: number;
   clearExisting?: boolean;
 }
@@ -29,8 +27,6 @@ const DEFAULT_OPTIONS: Required<SeedOptions> = {
   sessions: 20,
   attendance: 50,
   drills: 10,
-  products: 5,
-  orders: 3,
   invoices: 2,
   clearExisting: false,
 };
@@ -343,42 +339,6 @@ async function seedDrills(options: Required<SeedOptions>) {
   }
   
   console.log(`✅ Created ${options.drills} drills`);
-}
-
-async function seedProducts(options: Required<SeedOptions>) {
-  console.log(`🛍️ Seeding ${options.products} products...`);
-  
-  for (let i = 0; i < options.products; i++) {
-    const slug = `test-product-${i + 1}`;
-    await prisma.product.upsert({
-      where: { slug },
-      update: {
-        name: `Test Product ${i + 1}`,
-        description: `Description for product ${i + 1}`,
-        price: (500 + (i * 100)) * 100, // Price in paise
-        stock: i % 2 === 0 ? 10 : 0, // Some out of stock
-        isActive: true,
-        images: i === 0 ? [] : [`https://example.com/product${i}.jpg`], // First product has no images
-        sizes: ['S', 'M', 'L', 'XL'],
-        tags: ['test', 'qa'],
-        category: i % 2 === 0 ? 'Jersey' : 'Accessories',
-      },
-      create: {
-        name: `Test Product ${i + 1}`,
-        slug,
-        description: `Description for product ${i + 1}`,
-        price: (500 + (i * 100)) * 100, // Price in paise
-        stock: i % 2 === 0 ? 10 : 0, // Some out of stock
-        isActive: true,
-        images: i === 0 ? [] : [`https://example.com/product${i}.jpg`], // First product has no images
-        sizes: ['S', 'M', 'L', 'XL'],
-        tags: ['test', 'qa'],
-        category: i % 2 === 0 ? 'Jersey' : 'Accessories',
-      },
-    });
-  }
-  
-  console.log(`✅ Created ${options.products} products`);
 }
 
 async function seedFixtures() {
@@ -702,7 +662,6 @@ async function main() {
     await seedAttendance(options, students, sessions);
     await seedPayments(options, students);
     await seedDrills(options);
-    await seedProducts(options);
     await seedFixtures();
     await seedFanClubDemo();
     
@@ -734,7 +693,6 @@ async function main() {
     console.log(`   - Attendance records: ~${options.attendance}`);
     console.log(`   - Payment records: ${options.students * options.invoices}`);
     console.log(`   - Drills: ${options.drills}`);
-    console.log(`   - Products: ${options.products}`);
     console.log('\n✅ QA seed completed successfully!');
     console.log('\nTest credentials:');
     console.log('  Student: student@test.com / test123');

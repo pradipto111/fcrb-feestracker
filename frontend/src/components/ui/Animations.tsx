@@ -1,5 +1,5 @@
 import React from 'react';
-import { keyframes } from '@emotion/react';
+const keyframes = (strings: TemplateStringsArray) => strings.join('');
 
 // Animation keyframes
 export const fadeIn = keyframes`

@@ -47,7 +47,7 @@ class ErrorBoundary extends Component<Props, State> {
     });
 
     // In production, send to error tracking service
-    if (process.env.NODE_ENV === 'production') {
+    if (import.meta.env.PROD) {
       // Example: sendToErrorTracking(error, errorInfo);
     }
   }
@@ -83,7 +83,7 @@ class ErrorBoundary extends Component<Props, State> {
               We're sorry, but something unexpected happened. Please try refreshing the page.
             </p>
             
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <details style={{ marginTop: spacing.md, marginBottom: spacing.md }}>
                 <summary style={{ ...typography.caption, color: colors.text.muted, cursor: 'pointer' }}>
                   Error Details (Development Only)

@@ -100,7 +100,7 @@ echo "=========================="
 print_info "Creating .env file..."
 
 cat > "$PROJECT_ROOT/backend/.env" << 'EOF'
-DATABASE_URL="postgresql://pradiptom@localhost:5432/fees_tracker"
+DATABASE_URL="postgresql://pradiptom@localhost:5431/fees_tracker"
 JWT_SECRET="supersecretjwtkey_change_this_in_production"
 PORT=4000
 EOF

@@ -22,10 +22,10 @@
 ## Overview
 
 This test plan covers comprehensive end-to-end testing of the RealVerse application including:
-- Public website (landing, shop, brochure)
+- Public website (landing, programs, brochure)
 - RealVerse internal app (student/coach/admin dashboards)
 - Admin dashboard (management, analytics)
-- Shop & checkout flow
+- Public conversion flow
 - Trials & scouting system
 - Season planning & load prediction
 
@@ -71,12 +71,8 @@ cd backend && npm run build
 
 | Route | Purpose | CTAs | Expected Action | Role Required |
 |-------|---------|------|----------------|---------------|
-| `/` | Landing page | "Join RealVerse", "View Brochure", "Shop" | Navigate to respective pages | Public |
-| `/shop` | Shop listing | Product cards, "Add to Cart", Filters | Add items, filter products | Public |
-| `/shop/:slug` | Product detail | "Add to Cart", "Buy Now" | Add to cart or checkout | Public |
-| `/cart` | Shopping cart | "Checkout", "Remove", "Update Qty" | Proceed to checkout, modify cart | Public |
-| `/checkout` | Checkout form | "Place Order", "Back to Cart" | Submit order, return to cart | Public |
-| `/order-confirmation/:orderNumber` | Order confirmation | "Continue Shopping", "View Order" | Navigate to shop or order details | Public |
+| `/` | Landing page | "Join RealVerse", "View Brochure", "Programs" | Navigate to respective pages | Public |
+| `/programs` | Programs listing | Program cards, "Explore Programmes" | Navigate to program detail routes | Public |
 | `/brochure` | Interactive brochure | "Join Now", "Download PDF" | Navigate to join or download | Public |
 | `/brochure/classic` | Classic brochure | "Join Now", "Download PDF" | Navigate to join or download | Public |
 
@@ -131,7 +127,7 @@ cd backend && npm run build
 | `/realverse/admin/centres` | Centres management | "Add Centre", "Edit", "Delete", "View Map" | Manage centres | ADMIN |
 | `/realverse/admin/centres/:id` | Centre detail | "Edit", "Analytics", "Students" | View centre details | ADMIN |
 | `/realverse/admin/centres/new` | Create centre | "Save", "Cancel" | Create new centre | ADMIN |
-| `/realverse/admin/merch` | Merchandise management | "Add Product", "Edit", "Delete" | Manage shop products | ADMIN |
+| `/realverse/admin/revenue` | Revenue analytics | Filters, exports, trend views | Review platform revenue analytics | ADMIN |
 | `/realverse/admin/merch/new` | Create product | "Save", "Upload Images", "Cancel" | Create product | ADMIN |
 | `/realverse/admin/leads` | Website leads | "View", "Export", "Mark Contacted" | Manage leads | ADMIN |
 | `/realverse/trials/events` | Trial events | "Create Event", "Add Trialist", "View Board" | Manage trials | ADMIN |
@@ -160,10 +156,10 @@ cd backend && npm run build
 - **Expected:** All metrics display, charts render, timeline shows history
 - **API Calls:** `GET /api/player-metrics/snapshots/my`, `GET /api/player-metrics/readiness/my`
 
-#### 4. Shop Browsing (if accessible)
-- **Steps:** Navigate to shop → Browse products → Add to cart → View cart
-- **Expected:** Products load, cart updates, checkout accessible
-- **API Calls:** `GET /api/merchandise`, `POST /api/cart/add`
+#### 4. Programs Browsing
+- **Steps:** Navigate to programs → Browse programme cards → open programme detail
+- **Expected:** Programme pages load and CTA navigation works
+- **API Calls:** `GET /api/centers/public`, `GET /api/fixtures/public`
 
 ### Coach Role Flows
 
@@ -189,10 +185,10 @@ cd backend && npm run build
 - **Expected:** Centres list loads, CRUD works, map reflects changes
 - **API Calls:** `GET /api/centres`, `POST /api/centres`, `PUT /api/centres/:id`
 
-#### 2. Merchandise Management
-- **Steps:** View products → Create product → Upload images → Verify shop listing
-- **Expected:** Product created, images upload, shop shows new product
-- **API Calls:** `POST /api/merchandise`, `GET /api/merchandise`
+#### 2. Revenue Management
+- **Steps:** Open revenue dashboard → apply filters → verify trend cards/charts
+- **Expected:** Revenue widgets update and no errors are shown
+- **API Calls:** `GET /api/dashboard/revenue-analytics`
 
 #### 3. Trial Management
 - **Steps:** Create event → Add trialists → Create reports → Make decisions
@@ -208,20 +204,17 @@ cd backend && npm run build
 #### Scenario 1: Minimal (5 students)
 - 5 students across 2 centres
 - 10 sessions, 20 attendance records
-- 5 drills, 2 products
-- 1 order
+- 5 drills
 
 #### Scenario 2: Standard (10 students)
 - 10 students across 3 centres
 - 20 sessions, 50 attendance records
-- 10 drills, 5 products
-- 3 orders
+- 10 drills
 
 #### Scenario 3: Large (20 students)
 - 20 students across 4 centres
 - 40 sessions, 100 attendance records
-- 20 drills, 10 products
-- 10 orders
+- 20 drills
 
 #### Edge Cases to Include
 - Students with missing optional fields
@@ -232,9 +225,9 @@ cd backend && npm run build
 - Overdue fees (>30 days)
 - Partial payments
 - Inactive/archived students
-- Products with no images
-- Products with multiple variants
-- Orders in various states (pending, completed, cancelled)
+- Missing optional profile fields
+- Mixed payment frequencies
+- Active and churned student combinations
 
 ---
 
@@ -319,7 +312,7 @@ cd backend && npm run build
 3. **Phase 2:** Role-Based E2E Testing (Day 2-3)
 4. **Phase 3:** Data Seed Testing (Day 3-4)
 5. **Phase 4:** Edge Cases & Negative Testing (Day 4-5)
-6. **Phase 5:** Shop/Payment Flow (Day 5)
+6. **Phase 5:** Public Conversion Flow (Day 5)
 7. **Phase 6:** Centres Map & CRUD (Day 5-6)
 8. **Phase 7:** Bug Fix Loop (Day 6-7)
 9. **Phase 8:** Final Report (Day 7)

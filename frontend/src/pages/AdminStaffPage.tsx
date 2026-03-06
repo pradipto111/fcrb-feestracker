@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { api } from "../api/client";
@@ -19,16 +19,99 @@ type CrmUserRow = {
   createdAt: string;
 };
 
+const ADMIN_STAFF_CACHE_PREFIX = "rv-admin-staff";
+const ADMIN_STAFF_CACHE_VERSION = 1;
+const ADMIN_STAFF_COACHES_CACHE_KEY = `${ADMIN_STAFF_CACHE_PREFIX}:coaches-centers`;
+const ADMIN_STAFF_CRM_USERS_CACHE_KEY = `${ADMIN_STAFF_CACHE_PREFIX}:crm-users`;
+
+type AdminStaffCoachesCacheEntry = {
+  coaches: any[];
+  centers: any[];
+  cachedAt: number;
+  cacheVersion: number;
+};
+
+type AdminStaffCrmUsersCacheEntry = {
+  crmUsers: CrmUserRow[];
+  cachedAt: number;
+  cacheVersion: number;
+};
+
+function readAdminStaffCoachesCache(): AdminStaffCoachesCacheEntry | null {
+  try {
+    const raw = sessionStorage.getItem(ADMIN_STAFF_COACHES_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as AdminStaffCoachesCacheEntry;
+    if (
+      parsed.cacheVersion !== ADMIN_STAFF_CACHE_VERSION ||
+      !Array.isArray(parsed.coaches) ||
+      !Array.isArray(parsed.centers)
+    ) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeAdminStaffCoachesCache(payload: Omit<AdminStaffCoachesCacheEntry, "cacheVersion">): void {
+  try {
+    sessionStorage.setItem(
+      ADMIN_STAFF_COACHES_CACHE_KEY,
+      JSON.stringify({
+        ...payload,
+        cacheVersion: ADMIN_STAFF_CACHE_VERSION,
+      })
+    );
+  } catch {
+    // Ignore storage write failures.
+  }
+}
+
+function readAdminStaffCrmUsersCache(): AdminStaffCrmUsersCacheEntry | null {
+  try {
+    const raw = sessionStorage.getItem(ADMIN_STAFF_CRM_USERS_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as AdminStaffCrmUsersCacheEntry;
+    if (parsed.cacheVersion !== ADMIN_STAFF_CACHE_VERSION || !Array.isArray(parsed.crmUsers)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeAdminStaffCrmUsersCache(payload: Omit<AdminStaffCrmUsersCacheEntry, "cacheVersion">): void {
+  try {
+    sessionStorage.setItem(
+      ADMIN_STAFF_CRM_USERS_CACHE_KEY,
+      JSON.stringify({
+        ...payload,
+        cacheVersion: ADMIN_STAFF_CACHE_VERSION,
+      })
+    );
+  } catch {
+    // Ignore storage write failures.
+  }
+}
+
 const AdminStaffPage: React.FC = () => {
   const { user } = useAuth();
+  const initialCoachesCacheRef = useRef<AdminStaffCoachesCacheEntry | null>(readAdminStaffCoachesCache());
+  const initialCrmUsersCacheRef = useRef<AdminStaffCrmUsersCacheEntry | null>(readAdminStaffCrmUsersCache());
   const [activeTab, setActiveTab] = useState<"coaches" | "crm-users">("coaches");
   
   // Coaches state
-  const [coaches, setCoaches] = useState<any[]>([]);
-  const [centers, setCenters] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [coaches, setCoaches] = useState<any[]>(() => initialCoachesCacheRef.current?.coaches ?? []);
+  const [centers, setCenters] = useState<any[]>(() => initialCoachesCacheRef.current?.centers ?? []);
+  const [loading, setLoading] = useState(!initialCoachesCacheRef.current);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [coachesLastUpdated, setCoachesLastUpdated] = useState<number | null>(
+    initialCoachesCacheRef.current?.cachedAt ?? null
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -40,9 +123,12 @@ const AdminStaffPage: React.FC = () => {
   });
 
   // CRM Users state
-  const [crmUsers, setCrmUsers] = useState<CrmUserRow[]>([]);
+  const [crmUsers, setCrmUsers] = useState<CrmUserRow[]>(() => initialCrmUsersCacheRef.current?.crmUsers ?? []);
   const [crmLoading, setCrmLoading] = useState(false);
   const [crmError, setCrmError] = useState("");
+  const [crmLastUpdated, setCrmLastUpdated] = useState<number | null>(
+    initialCrmUsersCacheRef.current?.cachedAt ?? null
+  );
   const [crmForm, setCrmForm] = useState({ 
     fullName: "", 
     email: "", 
@@ -56,13 +142,26 @@ const AdminStaffPage: React.FC = () => {
   }
 
   useEffect(() => {
-    loadData();
-    if (activeTab === "crm-users") {
-      loadCrmUsers();
+    if (activeTab === "coaches") {
+      loadData();
+      return;
     }
+    loadCrmUsers();
   }, [activeTab]);
 
-  const loadData = async () => {
+  const loadData = async (options?: { force?: boolean }) => {
+    const force = options?.force === true;
+    if (!force) {
+      const cached = readAdminStaffCoachesCache();
+      if (cached) {
+        setCoaches(cached.coaches);
+        setCenters(cached.centers);
+        setCoachesLastUpdated(cached.cachedAt);
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       setLoading(true);
       setError(""); // Clear previous errors
@@ -76,8 +175,17 @@ const AdminStaffPage: React.FC = () => {
           return [];
         }),
       ]);
-      setCoaches(Array.isArray(coachesData) ? coachesData : []);
-      setCenters(Array.isArray(centersData) ? centersData : []);
+      const nextCoaches = Array.isArray(coachesData) ? coachesData : [];
+      const nextCenters = Array.isArray(centersData) ? centersData : [];
+      setCoaches(nextCoaches);
+      setCenters(nextCenters);
+      const now = Date.now();
+      setCoachesLastUpdated(now);
+      writeAdminStaffCoachesCache({
+        coaches: nextCoaches,
+        centers: nextCenters,
+        cachedAt: now,
+      });
     } catch (err: any) {
       console.error("Error loading staff data:", err);
       setError(err.message || "Failed to load staff data");
@@ -86,12 +194,30 @@ const AdminStaffPage: React.FC = () => {
     }
   };
 
-  const loadCrmUsers = async () => {
+  const loadCrmUsers = async (options?: { force?: boolean }) => {
+    const force = options?.force === true;
+    if (!force) {
+      const cached = readAdminStaffCrmUsersCache();
+      if (cached) {
+        setCrmUsers(cached.crmUsers);
+        setCrmLastUpdated(cached.cachedAt);
+        setCrmLoading(false);
+        return;
+      }
+    }
+
     setCrmLoading(true);
     setCrmError("");
     try {
       const data = await api.crmListUsers();
-      setCrmUsers(Array.isArray(data) ? data : []);
+      const nextUsers = Array.isArray(data) ? data : [];
+      setCrmUsers(nextUsers);
+      const now = Date.now();
+      setCrmLastUpdated(now);
+      writeAdminStaffCrmUsersCache({
+        crmUsers: nextUsers,
+        cachedAt: now,
+      });
     } catch (e: any) {
       setCrmError(e.message || "Failed to load CRM users");
     } finally {
@@ -124,7 +250,7 @@ const AdminStaffPage: React.FC = () => {
         centerIds: [],
       });
       setShowForm(false);
-      loadData();
+      await loadData({ force: true });
       setTimeout(() => setSuccess(""), 5000);
     } catch (err: any) {
       setError(err.message || "Failed to create coach");
@@ -136,7 +262,7 @@ const AdminStaffPage: React.FC = () => {
       setCrmError("");
       await api.adminCreateCrmUser(crmForm);
       setCrmForm({ fullName: "", email: "", password: "", role: "AGENT" });
-      await loadCrmUsers();
+      await loadCrmUsers({ force: true });
       setSuccess("CRM user created successfully!");
       setTimeout(() => setSuccess(""), 5000);
     } catch (e: any) {
@@ -148,7 +274,7 @@ const AdminStaffPage: React.FC = () => {
     try {
       const next = u.status === "ACTIVE" ? "DISABLED" : "ACTIVE";
       await api.adminSetCrmUserStatus(u.id, next);
-      await loadCrmUsers();
+      await loadCrmUsers({ force: true });
       setSuccess(`CRM user ${next === "ACTIVE" ? "enabled" : "disabled"} successfully!`);
       setTimeout(() => setSuccess(""), 5000);
     } catch (e: any) {
@@ -172,6 +298,16 @@ const AdminStaffPage: React.FC = () => {
     coach.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     coach.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const formatUpdatedAt = (value: number | null): string => {
+    if (!value) return "Not fetched yet";
+    return new Date(value).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   if (loading && activeTab === "coaches") {
     return (
@@ -317,6 +453,18 @@ const AdminStaffPage: React.FC = () => {
               >
                 {showForm ? "Cancel" : "+ Add Coach"}
               </Button>
+              <Button
+                variant="secondary"
+                onClick={() => loadData({ force: true })}
+                style={{
+                  width: "100%",
+                }}
+              >
+                Fetch Latest
+              </Button>
+            </div>
+            <div style={{ ...typography.caption, color: colors.text.muted }}>
+              Last updated: {formatUpdatedAt(coachesLastUpdated)}
             </div>
           </div>
 
@@ -621,9 +769,12 @@ const AdminStaffPage: React.FC = () => {
             <h3 style={{ ...typography.h3, color: colors.text.primary, margin: 0 }}>
               CRM Accounts ({crmUsers.length})
             </h3>
-            <Button variant="secondary" onClick={loadCrmUsers}>
-              Refresh
+            <Button variant="secondary" onClick={() => loadCrmUsers({ force: true })}>
+              Fetch Latest
             </Button>
+          </div>
+          <div style={{ ...typography.caption, color: colors.text.muted, marginBottom: spacing.md }}>
+            Last updated: {formatUpdatedAt(crmLastUpdated)}
           </div>
 
           <div style={{ display: "grid", gap: spacing.md }}>

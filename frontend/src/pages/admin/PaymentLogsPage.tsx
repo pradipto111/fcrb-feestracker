@@ -4,19 +4,76 @@ import { api } from "../../api/client";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { PageHeader } from "../../components/ui/PageHeader";
 import { DataTableCard } from "../../components/ui/DataTableCard";
 import { Section } from "../../components/ui/Section";
-import { useAuth } from "../../context/AuthContext";
-import { colors, typography, spacing, borderRadius, shadows } from "../../theme/design-tokens";
+import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
 import { pageVariants, cardVariants } from "../../utils/motion";
-import { SearchIcon, ChartBarIcon, FilterIcon } from "../../components/icons/IconSet";
+import { ChartBarIcon, FilterIcon } from "../../components/icons/IconSet";
+
+const PAYMENT_LOGS_CACHE_PREFIX = "rv-payment-logs";
+const PAYMENT_LOGS_CACHE_TTL_MS = 2 * 60 * 1000;
+const PAYMENT_LOGS_CACHE_VERSION = 1;
+
+type PaymentLogsCacheEntry = {
+  logs: any[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  cachedAt: number;
+  ttlMs: number;
+  cacheVersion: number;
+};
+
+function getPaymentLogsCacheKey(params: {
+  page: number;
+  limit: number;
+  actorType?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}): string {
+  return `${PAYMENT_LOGS_CACHE_PREFIX}:${params.page}:${params.limit}:${params.actorType || "all"}:${params.dateFrom || "na"}:${params.dateTo || "na"}`;
+}
+
+function readPaymentLogsCache(key: string): PaymentLogsCacheEntry | null {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PaymentLogsCacheEntry;
+    if (parsed.cacheVersion !== PAYMENT_LOGS_CACHE_VERSION || !Array.isArray(parsed.logs)) {
+      return null;
+    }
+    if (Date.now() - parsed.cachedAt > parsed.ttlMs) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writePaymentLogsCache(key: string, payload: Omit<PaymentLogsCacheEntry, "cacheVersion" | "ttlMs">): void {
+  try {
+    sessionStorage.setItem(
+      key,
+      JSON.stringify({
+        ...payload,
+        cacheVersion: PAYMENT_LOGS_CACHE_VERSION,
+        ttlMs: PAYMENT_LOGS_CACHE_TTL_MS,
+      })
+    );
+  } catch {
+    // Ignore storage issues.
+  }
+}
 
 const PaymentLogsPage: React.FC = () => {
-  const { user } = useAuth();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 50,
@@ -30,6 +87,24 @@ const PaymentLogsPage: React.FC = () => {
   const [dateTo, setDateTo] = useState("");
 
   useEffect(() => {
+    const cacheKey = getPaymentLogsCacheKey({
+      page: pagination.page,
+      limit: pagination.limit,
+      actorType: actorTypeFilter,
+      dateFrom,
+      dateTo,
+    });
+    const cached = readPaymentLogsCache(cacheKey);
+    if (cached) {
+      setLogs(cached.logs);
+      setPagination(prev => ({
+        ...prev,
+        total: cached.pagination.total,
+        totalPages: cached.pagination.totalPages,
+      }));
+      setLastUpdated(cached.cachedAt);
+      setLoading(false);
+    }
     loadLogs();
   }, [pagination.page, actorTypeFilter, dateFrom, dateTo]);
 
@@ -37,7 +112,9 @@ const PaymentLogsPage: React.FC = () => {
     try {
       setLoading(true);
       setError("");
-      
+      // #region agent log
+      fetch("http://127.0.0.1:7242/ingest/265bcb14-462a-43bf-9004-045e0f654b8f", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location: "PaymentLogsPage.tsx:loadLogs", message: "loadLogs called", data: {}, timestamp: Date.now(), hypothesisId: "D" }) }).catch(() => {});
+      // #endregion
       const params: any = {
         page: pagination.page,
         limit: pagination.limit
@@ -56,18 +133,54 @@ const PaymentLogsPage: React.FC = () => {
       }
       
       const data = await api.getPaymentLogs(params);
+      // #region agent log
+      fetch("http://127.0.0.1:7242/ingest/265bcb14-462a-43bf-9004-045e0f654b8f", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location: "PaymentLogsPage.tsx:loadLogs", message: "getPaymentLogs result", data: { logsLength: data?.logs?.length, total: data?.pagination?.total }, timestamp: Date.now(), hypothesisId: "C" }) }).catch(() => {});
+      // #endregion
       setLogs(data.logs || []);
-      setPagination(prev => ({
-        ...prev,
+      const nextPagination = {
+        page: pagination.page,
+        limit: pagination.limit,
         total: data.pagination?.total || 0,
         totalPages: data.pagination?.totalPages || 0
+      };
+      setPagination(prev => ({
+        ...prev,
+        total: nextPagination.total,
+        totalPages: nextPagination.totalPages
       }));
+      const now = Date.now();
+      setLastUpdated(now);
+      const cacheKey = getPaymentLogsCacheKey({
+        page: pagination.page,
+        limit: pagination.limit,
+        actorType: actorTypeFilter,
+        dateFrom,
+        dateTo,
+      });
+      writePaymentLogsCache(cacheKey, {
+        logs: data.logs || [],
+        pagination: nextPagination,
+        cachedAt: now,
+      });
     } catch (err: any) {
+      // #region agent log
+      fetch("http://127.0.0.1:7242/ingest/265bcb14-462a-43bf-9004-045e0f654b8f", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location: "PaymentLogsPage.tsx:loadLogs", message: "loadLogs error", data: { errMessage: err?.message }, timestamp: Date.now(), hypothesisId: "B" }) }).catch(() => {});
+      // #endregion
       console.error("Error loading payment logs:", err);
       setError(err.message || "Failed to load payment logs");
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatUpdatedAt = (value: number | null): string => {
+    if (!value) return "Not fetched yet";
+    return new Date(value).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -173,7 +286,7 @@ const PaymentLogsPage: React.FC = () => {
             }}
             variants={cardVariants}
           >
-            RealVerse • Payment Logs
+            RealVerse • Admin Logs
           </motion.p>
           <motion.h1
             style={{
@@ -185,7 +298,7 @@ const PaymentLogsPage: React.FC = () => {
           >
             Payment Activity Logs
             <span style={{ display: "block", color: colors.accent.main, fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.normal, marginTop: spacing.xs }}>
-              Track all payment & revenue updates by Admin, Coach, and CRM users
+              Track payment activity updates by Admin, Coach, and CRM users
             </span>
           </motion.h1>
         </div>
@@ -297,6 +410,15 @@ const PaymentLogsPage: React.FC = () => {
           </div>
         </div>
       </Section>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md }}>
+        <p style={{ margin: 0, ...typography.caption, color: colors.text.muted }}>
+          Last updated: {formatUpdatedAt(lastUpdated)}
+        </p>
+        <Button variant="secondary" size="sm" onClick={loadLogs} disabled={loading}>
+          {loading ? "Fetching..." : "Fetch Latest"}
+        </Button>
+      </div>
 
       {error && (
         <Card variant="default" padding="md" style={{ 

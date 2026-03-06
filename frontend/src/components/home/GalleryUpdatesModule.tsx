@@ -28,6 +28,7 @@ const RADIUS_PILL = 999;
 const BORDER_1 = "1px solid rgba(255,255,255,0.10)";
 const GLOW_BLUE = "0 0 0 1px rgba(0,190,255,0.18), 0 12px 40px rgba(0,0,0,0.45)";
 const MAX_WIDTH = 1200;
+const EASE_MODULE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 type UpdateCategory = "All" | "News" | "Achievements" | "Academy";
 
@@ -113,7 +114,7 @@ export const GalleryUpdatesModule: React.FC = () => {
       hidden: reduce ? { opacity: 0, y: 4 } : { opacity: 0, y: 18, filter: "blur(6px)" },
       show: reduce
         ? { opacity: 1, y: 0, transition: { duration: 0.35 } }
-        : { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
+        : { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.6, ease: EASE_MODULE } },
     };
     const stagger = {
       show: { transition: { staggerChildren: 0.08, delayChildren: 0.06 } },
@@ -122,7 +123,7 @@ export const GalleryUpdatesModule: React.FC = () => {
       hidden: reduce ? { opacity: 0 } : { opacity: 0, y: 10 },
       show: reduce
         ? { opacity: 1, transition: { duration: 0.25 } }
-        : { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] } },
+        : { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE_MODULE } },
     };
     const hoverLift = {
       rest: { y: 0, boxShadow: "none" },

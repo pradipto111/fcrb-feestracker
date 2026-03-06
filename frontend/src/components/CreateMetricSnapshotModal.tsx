@@ -118,7 +118,7 @@ const CreateMetricSnapshotModal: React.FC<CreateMetricSnapshotModalProps> = ({
         .filter(([_, data]) => data && data.value !== undefined && data.value !== null && !isNaN(data.value))
         .map(([key, data]) => ({
           metricKey: key,
-          value: Number(data.value), // Backend expects 'value', not 'valueNumber'
+          valueNumber: Number(data.value),
           comment: data.comment || undefined,
         }));
 
@@ -152,7 +152,7 @@ const CreateMetricSnapshotModal: React.FC<CreateMetricSnapshotModalProps> = ({
         .filter(([_, value]) => value !== undefined && value !== null)
         .map(([key, value]) => ({
           traitKey: key,
-          value: value, // Backend expects 'value', not 'score'
+          score: Number(value),
         }));
 
       await api.createPlayerMetricSnapshot({
@@ -400,7 +400,7 @@ const CreateMetricSnapshotModal: React.FC<CreateMetricSnapshotModalProps> = ({
                       borderRadius: borderRadius.md,
                       color: colors.text.primary,
                       fontSize: typography.fontSize.base,
-                      fontFamily: typography.fontFamily.body,
+                      fontFamily: typography.fontFamily.primary,
                       resize: "vertical",
                     }}
                   />

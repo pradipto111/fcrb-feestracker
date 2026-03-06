@@ -324,7 +324,9 @@ const PlayerProfilePage: React.FC = () => {
               variant="secondary"
               size="md"
               onClick={() => navigate(`/realverse/parent-reports/manage/${studentId}`)}
-            />
+            >
+              Parent Reports
+            </Button>
             <Button
               variant="secondary"
               size="sm"

@@ -51,7 +51,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters }) => {
               borderRadius: borderRadius.md,
               fontSize: typography.fontSize.sm,
               cursor: "pointer",
-              background: colors.surface.main,
+              background: colors.surface.card,
               color: colors.text.primary,
             }}
           >

@@ -168,7 +168,7 @@ cd /Users/pradiptom/fcrb
 
 4. Add this content:
    ```env
-   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/fees_tracker?schema=public"
+   DATABASE_URL="postgresql://postgres:postgres@localhost:5431/fees_tracker?schema=public"
    JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
    PORT=4000
    ```
@@ -451,7 +451,7 @@ npm install
 
 **backend/.env:**
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/fees_tracker?schema=public"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5431/fees_tracker?schema=public"
 JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
 PORT=4000
 ```

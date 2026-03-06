@@ -218,7 +218,7 @@ export const TopPerformanceStrip: React.FC<TopPerformanceStripProps> = ({
     );
   }
 
-  const metrics = [
+  const metrics: MetricCardProps[] = [
     {
       label: "Conversions Today",
       value: analytics?.conversionsToday ?? 0,

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api/client";
 import { DISABLE_HEAVY_ANALYTICS } from "../config/featureFlags";
-import RoleLayout, { IconDashboard, IconMatches, IconPlayers, IconSessions, IconFeed } from "./shared/RoleLayout";
+import RoleLayout, { IconMatches, IconPlayers, IconSessions, IconFeed } from "./shared/RoleLayout";
 
 const CoachLayout: React.FC = () => {
   const { user } = useAuth();
@@ -30,12 +30,6 @@ const CoachLayout: React.FC = () => {
   }, []);
 
   const navItems = [
-    {
-      path: "/realverse/coach",
-      label: "Dashboard",
-      icon: "dashboard",
-      description: "Overview & quick stats",
-    },
     {
       path: "/realverse/coach/training-calendar",
       label: "Training Calendar",
@@ -82,8 +76,6 @@ const CoachLayout: React.FC = () => {
 
   const getIcon = (iconName: string) => {
     switch (iconName) {
-      case "dashboard":
-        return <IconDashboard />;
       case "matches":
         return <IconMatches />;
       case "players":

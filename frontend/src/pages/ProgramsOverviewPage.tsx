@@ -1014,8 +1014,6 @@ const ProgramsOverviewPage: React.FC = () => {
                     boxShadow: shadows.cardHover,
                   }}
                   style={{
-                    position: "relative",
-                    overflow: "hidden",
                     minHeight: isMobile ? 200 : 240,
                     borderRadius: borderRadius["2xl"],
                     ...glass.card,
@@ -1166,8 +1164,6 @@ const ProgramsOverviewPage: React.FC = () => {
                   }}
                   style={{
                     borderRadius: borderRadius.xl,
-                    position: "relative",
-                    overflow: "hidden",
                     ...glass.card,
                     padding: spacing.lg,
                     display: "flex",
@@ -1307,7 +1303,6 @@ const ProgramsOverviewPage: React.FC = () => {
                 <Link to={program.link} style={{ textDecoration: "none", display: "block", height: "100%" }}>
                   <motion.div
                     style={{
-                      position: "relative",
                       ...glass.card,
                       ...(encodedBackgroundImage
                         ? {

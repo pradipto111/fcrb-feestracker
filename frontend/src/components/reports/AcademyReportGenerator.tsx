@@ -38,7 +38,7 @@ export const AcademyReportGenerator: React.FC<AcademyReportGeneratorProps> = ({
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background: ${colors.surface.main};
+        background: ${colors.surface.card};
         padding: ${spacing.xl};
         border-radius: 8px;
         z-index: 10000;
@@ -52,7 +52,7 @@ export const AcademyReportGenerator: React.FC<AcademyReportGeneratorProps> = ({
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
-      });
+      } as any);
 
       // Remove loading message
       document.body.removeChild(loadingMsg);

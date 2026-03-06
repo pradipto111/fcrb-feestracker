@@ -3,7 +3,7 @@ import { typography, spacing, colors } from '../../theme/design-tokens';
 import '../../styles/animations.css';
 
 interface PageHeaderProps {
-  title: string;
+  title: React.ReactNode;
   subtitle?: string;
   actions?: React.ReactNode;
   children?: React.ReactNode;

@@ -73,7 +73,7 @@ See [TEST_DATA_SEED.md](./TEST_DATA_SEED.md) for seed script documentation.
 - **Phase 2:** ⏳ Role-Based E2E Testing - Pending
 - **Phase 3:** ⏳ Data Seed Testing - Pending
 - **Phase 4:** ⏳ Edge Cases & Negative Testing - Pending
-- **Phase 5:** ⏳ Shop/Payment Flow - Pending
+- **Phase 5:** ⏳ Public Navigation Flow - Pending
 - **Phase 6:** ⏳ Centres Map & CRUD - Pending
 - **Phase 7:** ⏳ Bug Fix Loop - Pending
 - **Phase 8:** ⏳ Final Report - Pending

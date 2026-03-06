@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { Card } from "../components/ui/Card";
 import { KPICard } from "../components/ui/KPICard";
@@ -15,31 +14,68 @@ import { DISABLE_HEAVY_ANALYTICS } from "../config/featureFlags";
 import { FootballIcon, ClipboardIcon, CalendarIcon, ChartBarIcon, ChartLineIcon, UsersIcon } from "../components/icons/IconSet";
 
 const COACH_DASHBOARD_CACHE_TTL_MS = 60000; // 1 min for stale-while-revalidate
+const COACH_DASHBOARD_CACHE_VERSION = 1;
+const COACH_SUMMARY_KEY = "rv-coach-dashboard-summary";
+const COACH_STUDENTS_KEY = "rv-coach-dashboard-students";
+const COACH_REVENUE_KEY = "rv-coach-dashboard-revenue";
+const COACH_MONTHLY_KEY = "rv-coach-dashboard-monthly";
+const COACH_CACHE_AT_KEY = "rv-coach-dashboard-cache-at";
 
 function getCoachDashboardCacheFresh(): boolean {
   try {
-    const at = sessionStorage.getItem('coach-dashboard-cache-at');
+    const at = sessionStorage.getItem(COACH_CACHE_AT_KEY);
     return at ? (Date.now() - parseInt(at, 10)) < COACH_DASHBOARD_CACHE_TTL_MS : false;
   } catch {
     return false;
   }
 }
 
+function readCoachCache<T>(key: string, fallback: T): T {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as { data: T; cacheVersion: number };
+    if (parsed.cacheVersion !== COACH_DASHBOARD_CACHE_VERSION) return fallback;
+    return parsed.data;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeCoachCache<T>(key: string, data: T): void {
+  try {
+    sessionStorage.setItem(
+      key,
+      JSON.stringify({
+        data,
+        cacheVersion: COACH_DASHBOARD_CACHE_VERSION,
+      })
+    );
+  } catch {
+    // Ignore cache write issues.
+  }
+}
+
 const EnhancedCoachDashboard: React.FC = () => {
-  const navigate = useNavigate();
-  const cacheFresh = getCoachDashboardCacheFresh();
   const [summary, setSummary] = useState<any>(() => {
-    const cached = sessionStorage.getItem('coach-dashboard-summary');
-    return cached ? JSON.parse(cached) : null;
+    return readCoachCache(COACH_SUMMARY_KEY, null);
   });
   const [students, setStudents] = useState<any[]>(() => {
-    const cached = sessionStorage.getItem('coach-dashboard-students');
-    return cached ? JSON.parse(cached) : [];
+    return readCoachCache(COACH_STUDENTS_KEY, []);
   });
-  const [revenueData, setRevenueData] = useState<any[]>([]);
-  const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [revenueData, setRevenueData] = useState<any[]>(() => readCoachCache(COACH_REVENUE_KEY, []));
+  const [monthlyData, setMonthlyData] = useState<any[]>(() => readCoachCache(COACH_MONTHLY_KEY, []));
   const [error, setError] = useState("");
-  const [isInitialLoad, setIsInitialLoad] = useState(!cacheFresh);
+  const [isInitialLoad, setIsInitialLoad] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(() => {
+    try {
+      const at = sessionStorage.getItem(COACH_CACHE_AT_KEY);
+      return at ? parseInt(at, 10) : null;
+    } catch {
+      return null;
+    }
+  });
   
   // Revenue Chart filters
   const [revenueMonths, setRevenueMonths] = useState(12);
@@ -48,79 +84,63 @@ const EnhancedCoachDashboard: React.FC = () => {
   // Monthly Chart filters - no time period, shows all months
   const [monthlyPaymentMode, setMonthlyPaymentMode] = useState("all");
 
-  useEffect(() => {
-    let mounted = true;
-    
-    const load = async () => {
-      if (mounted) {
-        await loadData();
-      }
-    };
-    
-    load();
-    
-    // Refresh data when page becomes visible (with debounce)
-    let refreshTimeout: NodeJS.Timeout;
-    const handleVisibilityChange = () => {
-      if (!document.hidden && mounted) {
-        clearTimeout(refreshTimeout);
-        refreshTimeout = setTimeout(() => {
-          if (mounted) {
-            loadData();
-          }
-        }, 500);
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      mounted = false;
-      clearTimeout(refreshTimeout);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
+  const formatUpdatedAt = (value: number | null): string => {
+    if (!value) return "Not fetched yet";
+    return new Date(value).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   const loadData = async () => {
     try {
       setError(""); // Clear previous errors
+      setIsRefreshing(true);
       if (DISABLE_HEAVY_ANALYTICS) {
         const studentsData = await api.getStudents().catch(err => {
           console.error("Failed to load students:", err);
-          const cached = sessionStorage.getItem('coach-dashboard-students');
-          return cached ? JSON.parse(cached) : [];
+          return readCoachCache(COACH_STUDENTS_KEY, []);
         });
         if (studentsData && Array.isArray(studentsData)) {
           setStudents(studentsData);
-          sessionStorage.setItem('coach-dashboard-students', JSON.stringify(studentsData));
+          writeCoachCache(COACH_STUDENTS_KEY, studentsData);
         }
         setSummary(null);
         setRevenueData([]);
         setMonthlyData([]);
+        writeCoachCache(COACH_SUMMARY_KEY, null);
+        writeCoachCache(COACH_REVENUE_KEY, []);
+        writeCoachCache(COACH_MONTHLY_KEY, []);
+        const now = Date.now();
+        setLastUpdated(now);
+        sessionStorage.setItem(COACH_CACHE_AT_KEY, String(now));
         setIsInitialLoad(false);
         return;
       }
       const [summaryData, studentsData] = await Promise.all([
         api.getDashboardSummary().catch(err => {
           console.error("Failed to load dashboard summary:", err);
-          const cached = sessionStorage.getItem('coach-dashboard-summary');
-          return cached ? JSON.parse(cached) : { totalCollected: 0, studentCount: 0, approxOutstanding: 0 };
+          return readCoachCache(COACH_SUMMARY_KEY, { totalCollected: 0, studentCount: 0, approxOutstanding: 0 });
         }),
         api.getStudents().catch(err => {
           console.error("Failed to load students:", err);
-          const cached = sessionStorage.getItem('coach-dashboard-students');
-          return cached ? JSON.parse(cached) : [];
+          return readCoachCache(COACH_STUDENTS_KEY, []);
         })
       ]);
       if (summaryData) {
         setSummary(summaryData);
-        sessionStorage.setItem('coach-dashboard-summary', JSON.stringify(summaryData));
+        writeCoachCache(COACH_SUMMARY_KEY, summaryData);
       }
       if (studentsData && Array.isArray(studentsData)) {
         setStudents(studentsData);
-        sessionStorage.setItem('coach-dashboard-students', JSON.stringify(studentsData));
+        writeCoachCache(COACH_STUDENTS_KEY, studentsData);
       }
       if ((summaryData || studentsData) !== undefined) {
-        sessionStorage.setItem('coach-dashboard-cache-at', String(Date.now()));
+        const now = Date.now();
+        setLastUpdated(now);
+        sessionStorage.setItem(COACH_CACHE_AT_KEY, String(now));
       }
       await loadRevenueData();
       await loadMonthlyData();
@@ -132,6 +152,8 @@ const EnhancedCoachDashboard: React.FC = () => {
         setError(err.message || "Failed to load dashboard data");
       }
       setIsInitialLoad(false);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -143,6 +165,7 @@ const EnhancedCoachDashboard: React.FC = () => {
       });
       if (revenueCollections && Array.isArray(revenueCollections)) {
         setRevenueData(revenueCollections);
+        writeCoachCache(COACH_REVENUE_KEY, revenueCollections);
       }
     } catch (err: any) {
       console.error("Failed to load revenue data:", err);
@@ -157,6 +180,7 @@ const EnhancedCoachDashboard: React.FC = () => {
       });
       if (monthlyCollections && Array.isArray(monthlyCollections)) {
         setMonthlyData(monthlyCollections);
+        writeCoachCache(COACH_MONTHLY_KEY, monthlyCollections);
       }
     } catch (err: any) {
       console.error("Failed to load monthly data:", err);
@@ -198,6 +222,15 @@ const EnhancedCoachDashboard: React.FC = () => {
             <p style={{ margin: 0, color: colors.danger.main }}>Error: {error}</p>
           </Card>
         )}
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md }}>
+          <p style={{ margin: 0, ...typography.caption, color: colors.text.muted }}>
+            Last updated: {formatUpdatedAt(lastUpdated)}
+          </p>
+          <Button variant="secondary" size="sm" onClick={loadData} disabled={isRefreshing}>
+            {isRefreshing ? "Fetching..." : "Fetch Latest"}
+          </Button>
+        </div>
 
         {/* Loading State - Only show if no cached data (when heavy analytics on, we still need students) */}
         {!summary && !DISABLE_HEAVY_ANALYTICS && !error && isInitialLoad && (

@@ -92,7 +92,7 @@ export const PositionSuitabilityGrid: React.FC<PositionSuitabilityGridProps> = (
                         ...typography.caption,
                         fontSize: typography.fontSize.xs,
                         color: colors.text.muted,
-                        marginTop: spacing.xs / 2,
+                        marginTop: spacing.xs,
                       }}
                     >
                       {position.comment}

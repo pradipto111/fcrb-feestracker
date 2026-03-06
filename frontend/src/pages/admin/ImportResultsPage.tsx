@@ -110,13 +110,13 @@ const ImportResultsPage: React.FC = () => {
               background: 'rgba(255, 255, 255, 0.05)',
               borderBottom: '2px solid rgba(255, 255, 255, 0.1)'
             }}>
-              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.label }}>Name</th>
-              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.label }}>Email</th>
-              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.label }}>Phone</th>
-              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.label }}>Programme</th>
-              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.label }}>Status</th>
-              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.label }}>Monthly Fee</th>
-              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.label }}>Actions</th>
+              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.caption }}>Name</th>
+              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.caption }}>Email</th>
+              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.caption }}>Phone</th>
+              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.caption }}>Programme</th>
+              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.caption }}>Status</th>
+              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.caption }}>Monthly Fee</th>
+              <th style={{ padding: spacing.md, textAlign: 'left', ...typography.caption }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -202,7 +202,7 @@ const ImportResultsPage: React.FC = () => {
             padding: `${spacing.md} ${spacing.xl}`,
             background: 'transparent',
             color: colors.text.secondary,
-            border: `1px solid ${colors.border}`,
+            border: `1px solid ${colors.border.medium}`,
             borderRadius: 8,
             cursor: 'pointer',
             fontWeight: 600,

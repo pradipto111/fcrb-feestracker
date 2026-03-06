@@ -14,6 +14,7 @@ import type { Player } from "../types/teams";
 
 const sectionIds = ["senior", "women", "development", "academy", "staff"] as const;
 type SectionId = (typeof sectionIds)[number];
+const EASE_PREMIUM: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -86,7 +87,7 @@ const TeamsPage: React.FC = () => {
     initial: { opacity: 0, y: 18, filter: "blur(6px)" },
     whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
     viewport: { once: true, amount: 0.2 },
-    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.55, ease: EASE_PREMIUM },
   };
 
   const renderPlayerGrid = (players: Player[]) => (
@@ -143,7 +144,7 @@ const TeamsPage: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.7, ease: EASE_PREMIUM }}
             style={{ maxWidth: "780px" }}
           >
             <div

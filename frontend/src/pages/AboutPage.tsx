@@ -42,6 +42,7 @@ import { SPONSOR_BENEFITS } from "../data/fanclubBenefits";
 import { clubInfo } from "../data/club";
 
 const MOBILE_BREAKPOINT = 768;
+const EASE_PREMIUM: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 const AboutPage: React.FC = () => {
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
@@ -61,7 +62,7 @@ const AboutPage: React.FC = () => {
     initial: { opacity: 0, y: 20, filter: "blur(6px)" },
     whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
     viewport: { once: true, amount: 0.2 },
-    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.55, ease: EASE_PREMIUM },
   };
 
   // Section wrapper with background asset treatment
@@ -305,7 +306,6 @@ const AboutPage: React.FC = () => {
           <div
             style={{
               borderRadius: borderRadius["2xl"],
-              border: "1px solid rgba(255,255,255,0.10)",
               ...glass.panel,
               padding: isMobile ? spacing.lg : spacing["2xl"],
               position: "relative",
@@ -883,7 +883,7 @@ const AboutPage: React.FC = () => {
           initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.55, ease: EASE_PREMIUM }}
           style={{ width: "100%", marginTop: "auto", marginBottom: 0, paddingBottom: 0 }}
         >
           <div

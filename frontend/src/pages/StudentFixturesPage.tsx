@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { api } from "../api/client";
 import { Card } from "../components/ui/Card";
+import { Section } from "../components/ui/Section";
 import { colors, typography, spacing, borderRadius } from "../theme/design-tokens";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { matchAssets } from "../config/assets";

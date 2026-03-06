@@ -49,4 +49,19 @@ lerna-debug.log*
 temp/
 tmp/
 
+# Monorepo explicit dependencies/build outputs
+/backend/node_modules/
+/frontend/node_modules/
+/backend/dist/
+/frontend/dist/
+
+# Prisma generated artifacts
+**/.prisma/
+/.prisma/
+/backend/.prisma-client/
+
+# Cursor local runtime artifacts
+.cursor/debug.log
+.cursor/worktrees.json
+
 

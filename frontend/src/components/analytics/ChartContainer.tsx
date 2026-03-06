@@ -3,6 +3,7 @@ import { colors, typography, spacing } from "../../theme/design-tokens";
 
 interface ChartContainerProps {
   children: React.ReactNode;
+  title?: string;
   height?: number;
   emptyMessage?: string;
   isEmpty?: boolean;
@@ -10,6 +11,7 @@ interface ChartContainerProps {
 
 export const ChartContainer: React.FC<ChartContainerProps> = ({
   children,
+  title,
   height = 300,
   emptyMessage = "No data available",
   isEmpty = false,
@@ -34,12 +36,25 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
   return (
     <div
       style={{
-        height,
         width: "100%",
         padding: spacing.md,
       }}
     >
-      {children}
+      {title && (
+        <h4
+          style={{
+            ...typography.h4,
+            color: colors.text.primary,
+            marginTop: 0,
+            marginBottom: spacing.md,
+          }}
+        >
+          {title}
+        </h4>
+      )}
+      <div style={{ height }}>
+        {children}
+      </div>
     </div>
   );
 };

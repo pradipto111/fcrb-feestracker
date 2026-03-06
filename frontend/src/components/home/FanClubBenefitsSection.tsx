@@ -264,7 +264,7 @@ export const FanClubBenefitsSection: React.FC<{ isMobile: boolean }> = ({ isMobi
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, minmax(0, 1fr))", gap: spacing.lg, alignItems: "stretch" }}>
         {SPONSOR_BENEFITS.map((s) => (
-          <SponsorRewardsCardWithLocks key={s.id} sponsor={s} isMobile={isMobile} previewTier={previewTier} />
+          <SponsorRewardsCardWithLocks key={s.id} sponsor={s} isMobile={isMobile} previewTier={previewTier} onJoinFanClub={onJoinFanClub} />
         ))}
       </div>
 
@@ -348,10 +348,12 @@ const SponsorRewardsCardWithLocks = ({
   sponsor,
   isMobile,
   previewTier,
+  onJoinFanClub,
 }: {
   sponsor: SponsorBenefit;
   isMobile: boolean;
   previewTier: "rookie" | "regular" | "inner";
+  onJoinFanClub: () => void;
 }) => {
   const reduce = useReducedMotion();
   const tooltip = "Coming soon — Fan Club unlocks perks";

@@ -390,44 +390,6 @@ const PublicHeader: React.FC = () => {
             Explore RealVerse
           </Link>
 
-          {/* Shop - Disabled in UI, backend code preserved */}
-          {/* <button
-            onClick={() => {
-              navigate("/shop");
-              setIsMobileMenuOpen(false);
-            }}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.sm,
-              fontWeight: typography.fontWeight.medium,
-              color: location.pathname === "/shop" ? colors.text.primary : colors.text.secondary,
-              background: location.pathname === "/shop" ? "rgba(255, 255, 255, 0.05)" : "transparent",
-              border: "none",
-              padding: `${spacing.xs} ${spacing.sm}`,
-              borderRadius: borderRadius.md,
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "36px",
-              minHeight: "36px",
-            }}
-            onMouseEnter={(e) => {
-              if (location.pathname !== "/shop") {
-                e.currentTarget.style.color = colors.text.primary;
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (location.pathname !== "/shop") {
-                e.currentTarget.style.color = colors.text.secondary;
-                e.currentTarget.style.background = "transparent";
-              }
-            }}
-          >
-            Shop
-          </button> */}
         </nav>
 
         {/* CTAs - Ordered by importance: Secondary actions → Primary action */}
@@ -698,29 +660,6 @@ const PublicHeader: React.FC = () => {
           >
             Explore RealVerse
           </Link>
-
-          {/* Shop - Disabled in UI, backend code preserved */}
-          {/* <button
-            onClick={() => {
-              navigate("/shop");
-              setIsMobileMenuOpen(false);
-            }}
-            style={{
-              ...typography.body,
-              fontSize: typography.fontSize.base,
-              fontWeight: typography.fontWeight.medium,
-              color: colors.text.secondary,
-              background: "transparent",
-              border: "none",
-              padding: spacing.md,
-              borderRadius: borderRadius.md,
-              textAlign: "left",
-              width: "100%",
-              cursor: "pointer",
-            }}
-          >
-            Shop
-          </button> */}
 
           {/* Login - Secondary */}
           <Link

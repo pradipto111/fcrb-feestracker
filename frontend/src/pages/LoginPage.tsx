@@ -10,6 +10,20 @@ import { realverseAssets, galleryAssets } from "../config/assets";
 
 const MOBILE_BREAKPOINT = 768;
 
+function toUserFriendlyLoginError(message: string): string {
+  if (/invalid credentials/i.test(message)) return "Invalid email or password.";
+  if (/temporarily unavailable|database|still starting|unreachable/i.test(message)) {
+    return "Sign-in is temporarily unavailable while the server database is waking up. Please try again shortly.";
+  }
+  if (/timed out|timeout/i.test(message)) {
+    return "Sign-in timed out. Please retry in a few seconds.";
+  }
+  if (/cannot reach the backend|failed to fetch|may not be running/i.test(message)) {
+    return "Cannot reach the sign-in server. If you are running locally, start backend with: cd backend && npm run dev";
+  }
+  return message || "Login failed";
+}
+
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -49,7 +63,7 @@ const LoginPage: React.FC = () => {
       await login(email, password);
       navigate("/realverse");
     } catch (err: any) {
-      setError(err.message || "Login failed");
+      setError(toUserFriendlyLoginError(err?.message || ""));
     } finally {
       setLoading(false);
     }

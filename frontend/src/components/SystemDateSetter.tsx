@@ -94,7 +94,7 @@ export const SystemDateSetter = () => {
   return (
     <div style={{
       backgroundColor: isCustomDate ? colors.warning.soft : "rgba(255, 255, 255, 0.1)",
-      border: `1px solid ${isCustomDate ? colors.warning.outline : "rgba(255, 255, 255, 0.2)"}`,
+      border: `1px solid ${isCustomDate ? colors.warning.main : "rgba(255, 255, 255, 0.2)"}`,
       borderRadius: borderRadius.lg,
       padding: spacing.sm,
       fontSize: typography.fontSize.xs,
@@ -146,9 +146,9 @@ export const SystemDateSetter = () => {
       <div style={{ display: "flex", gap: spacing.xs }}>
         <Button
           onClick={handleSetDate}
-          variant="success"
+          variant="primary"
           size="sm"
-          style={{ flex: 1 }}
+          style={{ flex: 1, background: colors.success.main }}
           title="Set system date and refresh dashboards"
         >
           Set

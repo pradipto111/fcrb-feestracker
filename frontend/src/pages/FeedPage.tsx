@@ -155,8 +155,8 @@ const FeedPage: React.FC = () => {
               style={{
                 color: colors.primary.light,
                 textDecoration: "none",
-                fontWeight: typography.fontWeight.semibold,
                 ...typography.body,
+                fontWeight: typography.fontWeight.semibold,
               }}
             >
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
@@ -478,7 +478,7 @@ const FeedPage: React.FC = () => {
                                 Save
                               </Button>
                               <Button
-                                variant="ghost"
+                                variant="utility"
                                 size="sm"
                                 onClick={() => {
                                   setEditingComment(null);

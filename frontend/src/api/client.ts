@@ -1,6 +1,7 @@
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 let token: string | null = localStorage.getItem("token");
+type RequestOptions = RequestInit & { timeout?: number };
 
 export function setToken(t: string | null) {
   token = t;
@@ -8,20 +9,51 @@ export function setToken(t: string | null) {
   else localStorage.removeItem("token");
 }
 
+const SESSION_CACHE_PREFIXES_TO_INVALIDATE = [
+  "rv-admin-summary",
+  "rv-admin-players-page",
+  "rv-admin-staff",
+  "rv-coach-dashboard",
+  "rv-payment-logs",
+];
+
+export function invalidateDashboardSessionCaches(): void {
+  try {
+    const keysToDelete: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i += 1) {
+      const key = sessionStorage.key(i);
+      if (!key) continue;
+      if (SESSION_CACHE_PREFIXES_TO_INVALIDATE.some(prefix => key.startsWith(prefix))) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach(key => sessionStorage.removeItem(key));
+  } catch {
+    // Ignore sessionStorage access issues.
+  }
+}
+
 async function request(
   path: string,
-  options: RequestInit = {}
+  options: RequestOptions = {}
 ): Promise<any> {
   try {
     // Get fresh token from localStorage on each request
     const currentToken = localStorage.getItem("token");
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    };
-    if (currentToken) headers["Authorization"] = `Bearer ${currentToken}`;
+    const headers = new Headers(options.headers || {});
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
+    if (currentToken) {
+      headers.set("Authorization", `Bearer ${currentToken}`);
+    }
 
     const url = `${API_BASE}${path}`;
+    // #region agent log
+    if (path.includes("/payments/logs")) {
+      fetch("http://127.0.0.1:7242/ingest/265bcb14-462a-43bf-9004-045e0f654b8f", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location: "client.ts:request", message: "payments/logs request", data: { apiBase: API_BASE, path, hasAuth: !!currentToken }, timestamp: Date.now(), hypothesisId: "A" }) }).catch(() => {});
+    }
+    // #endregion
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const payloadSize = options.body ? new Blob([options.body as string]).size : 0;
     
@@ -36,9 +68,10 @@ async function request(
     }
 
     const controller = new AbortController();
+    const { timeout, ...fetchOptions } = options;
     // Use shorter timeout for dashboard/analytics queries to prevent infinite loading
     // Default: 30 seconds, but can be overridden via options
-    const timeoutMs = (options as any).timeout || 30000;
+    const timeoutMs = timeout || 30000;
     const requestStartTime = Date.now();
     const timeoutId = setTimeout(() => {
       controller.abort();
@@ -50,7 +83,7 @@ async function request(
     let res: Response;
     try {
       res = await fetch(url, {
-        ...options,
+        ...fetchOptions,
         headers,
         mode: 'cors',
         credentials: 'omit',
@@ -101,6 +134,11 @@ async function request(
       if (res.status !== 404) {
         console.error(`[${requestId}] API Error: ${res.status} ${path} - ${errorMessage}`);
       }
+      // #region agent log
+      if (path.includes("/payments/logs")) {
+        fetch("http://127.0.0.1:7242/ingest/265bcb14-462a-43bf-9004-045e0f654b8f", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location: "client.ts:request", message: "payments/logs error response", data: { status: res.status, errorMessage }, timestamp: Date.now(), hypothesisId: "B" }) }).catch(() => {});
+      }
+      // #endregion
       const error = new Error(errorMessage);
       (error as any).status = res.status;
       (error as any).requestId = requestId;
@@ -110,6 +148,11 @@ async function request(
     const contentType = res.headers.get("Content-Type") || "";
     if (contentType.includes("application/json")) {
       const jsonData = await res.json();
+      // #region agent log
+      if (path.includes("/payments/logs")) {
+        fetch("http://127.0.0.1:7242/ingest/265bcb14-462a-43bf-9004-045e0f654b8f", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location: "client.ts:request", message: "payments/logs success", data: { logsCount: jsonData?.logs?.length, total: jsonData?.pagination?.total }, timestamp: Date.now(), hypothesisId: "C" }) }).catch(() => {});
+      }
+      // #endregion
       return jsonData;
     }
     return null;
@@ -149,6 +192,34 @@ export function healthCheck(timeoutMs = 5000): Promise<{ status: string }> {
   return request("/", { timeout: timeoutMs });
 }
 
+export type RevenueAnalyticsQuery = {
+  centerIds?: number[];
+  programmes?: string[];
+  statuses?: string[];
+  paymentFrequency?: number | "all";
+  datePreset?:
+    | "this_month"
+    | "last_3_months"
+    | "last_6_months"
+    | "last_12_months"
+    | "this_financial_year"
+    | "last_financial_year"
+    | "custom_range";
+  dateFrom?: string;
+  dateTo?: string;
+};
+
+export type RevenueFilterOptions = {
+  centers: Array<{ id: number; name: string }>;
+  programmes: string[];
+  statuses: string[];
+  paymentFrequencies: number[];
+  dateBounds: {
+    min: string | null;
+    max: string | null;
+  };
+};
+
 /** When backend is on Render, use longer timeout for login and retry once on timeout (handles cold start + dead connection after sign-out). */
 const isRenderBackend = () => /\.onrender\.com/i.test(import.meta.env.VITE_API_URL || "");
 
@@ -168,6 +239,14 @@ export const api = {
     try {
       return await request("/auth/login", opts);
     } catch (err: any) {
+      const status = err?.status;
+      const message = String(err?.message || "");
+      if (status === 503 && /(database|temporarily unavailable|slow|unreachable|waking up)/i.test(message)) {
+        throw new Error("Login is temporarily unavailable because the server database is still starting or unreachable. Please try again in a moment.");
+      }
+      if (status === 504) {
+        throw new Error("Login request timed out on the server. Please retry in a few seconds.");
+      }
       // After sign-out, browser may reuse a dead connection; retry once with fresh request
       if ((err.isTimeout || err.name === "TimeoutError") && isRenderBackend()) {
         return request("/auth/login", opts);
@@ -201,13 +280,26 @@ export const api = {
     if (params?.paymentMode) query.set("paymentMode", params.paymentMode);
     return request(`/dashboard/monthly-collections?${query.toString()}`);
   },
+  getRevenueAnalytics(params?: RevenueAnalyticsQuery) {
+    const query = new URLSearchParams();
+    if (params?.centerIds && params.centerIds.length > 0) query.set("centerIds", params.centerIds.join(","));
+    if (params?.programmes && params.programmes.length > 0) {
+      query.set("programmes", params.programmes.map((item) => encodeURIComponent(item)).join(","));
+    }
+    if (params?.statuses && params.statuses.length > 0) query.set("statuses", params.statuses.join(","));
+    if (params?.paymentFrequency && params.paymentFrequency !== "all") {
+      query.set("paymentFrequency", String(params.paymentFrequency));
+    }
+    if (params?.datePreset) query.set("datePreset", params.datePreset);
+    if (params?.dateFrom) query.set("dateFrom", params.dateFrom);
+    if (params?.dateTo) query.set("dateTo", params.dateTo);
+    return request(`/dashboard/revenue-analytics?${query.toString()}`);
+  },
+  getRevenueFilterOptions() {
+    return request("/dashboard/revenue-filter-options");
+  },
   getFanClubRevenue() {
     return request("/dashboard/fan-club-revenue");
-  },
-  getShopRevenue(params?: { months?: number }) {
-    const query = new URLSearchParams();
-    if (params?.months) query.set("months", params.months.toString());
-    return request(`/dashboard/shop-revenue?${query.toString()}`);
   },
   getComprehensiveFinance(params?: { centerId?: string }) {
     const query = new URLSearchParams();
@@ -222,18 +314,27 @@ export const api = {
     const query = params.toString();
     return request(`/students${query ? `?${query}` : ""}`);
   },
+  getStudentsByCenter(centerId: number) {
+    return request(`/students?centerId=${centerId}`);
+  },
   getStudent(id: number) {
     return request(`/students/${id}`);
   },
   deleteStudent(id: number) {
     return request(`/students/${id}`, {
       method: "DELETE"
+    }).then((result) => {
+      invalidateDashboardSessionCaches();
+      return result;
     });
   },
   createPayment(data: any) {
     return request("/payments", {
       method: "POST",
       body: JSON.stringify(data)
+    }).then((result) => {
+      invalidateDashboardSessionCaches();
+      return result;
     });
   },
   getPaymentLogs(params?: { page?: number; limit?: number; actorType?: string; dateFrom?: string; dateTo?: string }) {
@@ -337,12 +438,18 @@ export const api = {
     return request("/students", {
       method: "POST",
       body: JSON.stringify(data)
+    }).then((result) => {
+      invalidateDashboardSessionCaches();
+      return result;
     });
   },
   updateStudent(id: number, data: any) {
     return request(`/students/${id}`, {
       method: "PUT",
       body: JSON.stringify(data)
+    }).then((result) => {
+      invalidateDashboardSessionCaches();
+      return result;
     });
   },
   bulkImportStudents(data: { students: any[] }) {
@@ -365,6 +472,9 @@ export const api = {
     return request("/coaches", {
       method: "POST",
       body: JSON.stringify(data)
+    }).then((result) => {
+      invalidateDashboardSessionCaches();
+      return result;
     });
   },
   // System date management
@@ -965,13 +1075,22 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
     return request("/crm/analytics/agents");
   },
   adminCreateCrmUser(payload: { fullName: string; email: string; password: string; role?: "AGENT" }) {
-    return request("/crm/users", { method: "POST", body: JSON.stringify(payload) });
+    return request("/crm/users", { method: "POST", body: JSON.stringify(payload) }).then((result) => {
+      invalidateDashboardSessionCaches();
+      return result;
+    });
   },
   adminSetCrmUserStatus(userId: number, status: "ACTIVE" | "DISABLED") {
-    return request(`/crm/users/${userId}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
+    return request(`/crm/users/${userId}/status`, { method: "PATCH", body: JSON.stringify({ status }) }).then((result) => {
+      invalidateDashboardSessionCaches();
+      return result;
+    });
   },
   adminResetCrmUserPassword(userId: number, password: string) {
-    return request(`/crm/users/${userId}/reset-password`, { method: "POST", body: JSON.stringify({ password }) });
+    return request(`/crm/users/${userId}/reset-password`, { method: "POST", body: JSON.stringify({ password }) }).then((result) => {
+      invalidateDashboardSessionCaches();
+      return result;
+    });
   },
   // Legacy Leads endpoints
   createLegacyLead(data: {
@@ -1002,27 +1121,6 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
     if (params?.search) query.set("search", params.search);
     return request(`/legacy?${query.toString()}`);
   },
-  // Checkout Leads endpoints
-  getCheckoutLeads(params?: { status?: string; fromDate?: string; toDate?: string }) {
-    const query = new URLSearchParams();
-    if (params?.status) query.set("status", params.status);
-    if (params?.fromDate) query.set("fromDate", params.fromDate);
-    if (params?.toDate) query.set("toDate", params.toDate);
-    return request(`/shop/checkout-leads?${query.toString()}`);
-  },
-  getCheckoutLead(id: number) {
-    return request(`/shop/checkout-leads/${id}`);
-  },
-  updateCheckoutLead(id: number, data: {
-    status?: string;
-    assignedTo?: number | null;
-    internalNotes?: string | null;
-  }) {
-    return request(`/shop/checkout-leads/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data)
-    });
-  },
   getLegacyLead(id: number) {
     return request(`/legacy/${id}`);
   },
@@ -1042,101 +1140,16 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
     if (params?.toDate) query.set("toDate", params.toDate);
     
     const currentToken = localStorage.getItem("token");
-    const headers: HeadersInit = {};
-    if (currentToken) headers["Authorization"] = `Bearer ${currentToken}`;
+    const headers = new Headers();
+    if (currentToken) {
+      headers.set("Authorization", `Bearer ${currentToken}`);
+    }
     
     const url = `${API_BASE}/legacy/export/csv?${query.toString()}`;
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error(`Export failed: ${res.statusText}`);
     return await res.blob();
   },
-  // Shop endpoints
-  getProducts() {
-    return request("/shop/products");
-  },
-  getProduct(slug: string) {
-    return request(`/shop/products/${slug}`);
-  },
-  createOrder(data: {
-    items: Array<{ productId: number; quantity: number; variant?: string; size?: string }>;
-    customerName: string;
-    phone: string;
-    email: string;
-    shippingAddress: any;
-  }) {
-    return request("/shop/orders/create", {
-      method: "POST",
-      body: JSON.stringify(data)
-    });
-  },
-  verifyPayment(orderId: number, data: { paymentId: string; signature: string; razorpayOrderId: string }) {
-    return request(`/shop/orders/${orderId}/verify`, {
-      method: "POST",
-      body: JSON.stringify(data)
-    });
-  },
-  getOrder(orderNumber: string) {
-    return request(`/shop/orders/${orderNumber}`);
-  },
-  // Admin merchandise endpoints
-  getAdminProducts(params?: { category?: string; search?: string }) {
-    const query = new URLSearchParams();
-    if (params?.category) query.set("category", params.category);
-    if (params?.search) query.set("search", params.search);
-    return request(`/admin/merch?${query.toString()}`);
-  },
-  getAdminProduct(id: number) {
-    return request(`/admin/merch/${id}`);
-  },
-  createProduct(data: {
-    name: string;
-    slug: string;
-    description?: string;
-    images: string[];
-    price: number;
-    currency?: string;
-    sizes?: string[];
-    variants?: any;
-    stock?: number | null;
-    category?: string;
-    tags?: string[];
-    displayOrder?: number;
-    isActive?: boolean;
-  }) {
-    return request("/admin/merch", {
-      method: "POST",
-      body: JSON.stringify(data)
-    });
-  },
-  updateProduct(id: number, data: {
-    name?: string;
-    slug?: string;
-    description?: string;
-    images?: string[];
-    price?: number;
-    currency?: string;
-    sizes?: string[];
-    variants?: any;
-    stock?: number | null;
-    category?: string;
-    tags?: string[];
-    displayOrder?: number;
-    isActive?: boolean;
-  }) {
-    return request(`/admin/merch/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data)
-    });
-  },
-  deleteProduct(id: number) {
-    return request(`/admin/merch/${id}`, {
-      method: "DELETE"
-    });
-  },
-  getProductCategories() {
-    return request("/admin/merch/categories");
-  },
-
   // Analytics APIs
   // Admin Analytics
   getAdminAnalyticsSummary(params?: { centerId?: string; startDate?: string; endDate?: string }) {
@@ -1227,13 +1240,6 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
   getFanClubAnalytics() {
     return request("/fan-admin/analytics/summary");
   },
-  // Shop Analytics
-  getShopAnalytics(params?: { from?: string; to?: string }) {
-    const query = new URLSearchParams();
-    if (params?.from) query.set("from", params.from);
-    if (params?.to) query.set("to", params.to);
-    return request(`/admin/shop/analytics?${query.toString()}`);
-  },
   getCentreAttendanceBreakdown(centreId: number, params?: { from?: string; to?: string; groupBy?: string }) {
     const query = new URLSearchParams();
     if (params?.from) query.set("from", params.from);
@@ -1286,6 +1292,20 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
     const query = new URLSearchParams();
     if (limit) query.set("limit", limit.toString());
     return request(`/player-metrics/notes/my?${query.toString()}`);
+  },
+  getStudentCoachNotes(studentId: number) {
+    return request(`/player-metrics/notes/student/${studentId}`);
+  },
+  createCoachNote(payload: {
+    studentId: number;
+    content: string;
+    tags?: string[];
+    isVisibleToPlayer?: boolean;
+  }) {
+    return request("/player-metrics/notes", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
   // Admin/Coach endpoints for viewing student metrics
   getStudentMetricSnapshot(studentId: number) {

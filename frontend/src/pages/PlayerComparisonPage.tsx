@@ -207,7 +207,7 @@ const PlayerComparisonPage: React.FC = () => {
                     width: '100%',
                     padding: spacing.sm,
                     background: colors.surface.elevated,
-                    border: `1px solid ${colors.border.default}`,
+                    border: `1px solid ${colors.border.medium}`,
                     borderRadius: borderRadius.md,
                     color: colors.text.primary,
                     fontSize: typography.fontSize.sm,
@@ -240,7 +240,7 @@ const PlayerComparisonPage: React.FC = () => {
                       width: '100%',
                       padding: spacing.sm,
                       background: colors.surface.elevated,
-                      border: `1px solid ${colors.border.default}`,
+                      border: `1px solid ${colors.border.medium}`,
                       borderRadius: borderRadius.md,
                       color: colors.text.primary,
                       fontSize: typography.fontSize.sm,
@@ -261,7 +261,7 @@ const PlayerComparisonPage: React.FC = () => {
                       width: '100%',
                       padding: spacing.sm,
                       background: colors.surface.elevated,
-                      border: `1px solid ${colors.border.default}`,
+                      border: `1px solid ${colors.border.medium}`,
                       borderRadius: borderRadius.md,
                       color: colors.text.primary,
                       fontSize: typography.fontSize.sm,
@@ -281,7 +281,7 @@ const PlayerComparisonPage: React.FC = () => {
                     width: '100%',
                     padding: spacing.sm,
                     background: colors.surface.elevated,
-                    border: `1px solid ${colors.border.default}`,
+                    border: `1px solid ${colors.border.medium}`,
                     borderRadius: borderRadius.md,
                     color: colors.text.primary,
                     fontSize: typography.fontSize.sm,
@@ -306,7 +306,7 @@ const PlayerComparisonPage: React.FC = () => {
                       width: '100%',
                       padding: spacing.sm,
                       background: colors.surface.elevated,
-                      border: `1px solid ${colors.border.default}`,
+                      border: `1px solid ${colors.border.medium}`,
                       borderRadius: borderRadius.md,
                       color: colors.text.primary,
                       fontSize: typography.fontSize.sm,
@@ -330,7 +330,7 @@ const PlayerComparisonPage: React.FC = () => {
                       width: '100%',
                       padding: spacing.sm,
                       background: colors.surface.elevated,
-                      border: `1px solid ${colors.border.default}`,
+                      border: `1px solid ${colors.border.medium}`,
                       borderRadius: borderRadius.md,
                       color: colors.text.primary,
                       fontSize: typography.fontSize.sm,
@@ -355,7 +355,7 @@ const PlayerComparisonPage: React.FC = () => {
                     width: '100%',
                     padding: spacing.sm,
                     background: colors.surface.elevated,
-                    border: `1px solid ${colors.border.default}`,
+                    border: `1px solid ${colors.border.medium}`,
                     borderRadius: borderRadius.md,
                     color: colors.text.primary,
                     fontSize: typography.fontSize.sm,
@@ -469,7 +469,7 @@ const PlayerComparisonPage: React.FC = () => {
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ borderBottom: `1px solid ${colors.border.default}` }}>
+                    <tr style={{ borderBottom: `1px solid ${colors.border.medium}` }}>
                       <th style={{ ...typography.caption, color: colors.text.muted, textAlign: 'left', padding: spacing.sm }}>
                         Metric
                       </th>
@@ -482,7 +482,7 @@ const PlayerComparisonPage: React.FC = () => {
                   </thead>
                   <tbody>
                     {comparison.players[0].metrics.slice(0, 20).map((metric) => (
-                      <tr key={metric.metricKey} style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
+                      <tr key={metric.metricKey} style={{ borderBottom: `1px solid ${colors.border.light}` }}>
                         <td style={{ padding: spacing.sm, color: colors.text.primary, fontSize: typography.fontSize.sm }}>
                           {metric.displayName}
                         </td>
@@ -508,7 +508,7 @@ const PlayerComparisonPage: React.FC = () => {
                                     style={{
                                       width: `${value}%`,
                                       height: '100%',
-                                      background: isBest ? colors.primary.main : colors.border.default,
+                                      background: isBest ? colors.primary.main : colors.border.medium,
                                       transition: 'all 0.3s',
                                     }}
                                   />

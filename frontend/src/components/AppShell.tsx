@@ -13,8 +13,6 @@ import {
   SuccessIcon, 
   TrophyIcon, 
   GearIcon, 
-  ClipboardIcon, 
-  ShoppingBagIcon, 
   LocationIcon 
 } from "../components/icons/IconSet";
 import "../styles/animations.css";
@@ -57,8 +55,6 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
     { path: '/realverse/feed', label: 'Feed', Icon: CameraIcon, roles: ['ADMIN', 'COACH', 'STUDENT'] },
     { path: '/realverse/feed/approve', label: 'Approve Posts', Icon: SuccessIcon, roles: ['ADMIN', 'COACH'] },
     { path: '/realverse/admin/students', label: 'Admin', Icon: GearIcon, roles: ['ADMIN'] },
-    { path: '/realverse/admin/leads', label: 'Leads', Icon: ClipboardIcon, roles: ['ADMIN'] },
-    { path: '/realverse/admin/merch', label: 'Merchandise', Icon: ShoppingBagIcon, roles: ['ADMIN'] },
     { path: '/realverse/admin/centres', label: 'Centres', Icon: LocationIcon, roles: ['ADMIN'] },
   ];
 

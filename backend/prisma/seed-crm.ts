@@ -106,7 +106,7 @@ async function main() {
   // Step 3: Create Diverse CRM Leads
   console.log("\nCreating CRM leads...");
   const leads = [];
-  const sourceTypes: CrmLeadSourceType[] = ["WEBSITE", "LEGACY", "CHECKOUT", "FAN", "MANUAL"];
+  const sourceTypes: CrmLeadSourceType[] = ["WEBSITE", "LEGACY", "FAN", "MANUAL"];
   const stages: CrmLeadStage[] = ["NEW", "CONTACTED", "FOLLOW_UP", "WILL_JOIN", "JOINED", "UNINTERESTED_NO_RESPONSE"];
   
   // Create 50 leads with diverse attributes

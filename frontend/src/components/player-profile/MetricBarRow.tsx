@@ -95,7 +95,7 @@ export const MetricBarRow: React.FC<MetricBarRowProps> = ({
             fontSize: typography.fontSize.sm,
             fontWeight: typography.fontWeight.medium,
             color: colors.text.primary,
-            marginBottom: spacing.xs / 2,
+            marginBottom: spacing.xs,
           }}
         >
           {name}

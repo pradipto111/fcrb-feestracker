@@ -122,7 +122,7 @@ export const SnapshotTimeline: React.FC<SnapshotTimelineProps> = ({
                 <div
                   style={{
                     position: 'absolute',
-                    left: spacing.md - 6,
+                    left: "10px",
                     top: spacing.md,
                     width: '12px',
                     height: '12px',

@@ -2,13 +2,11 @@ import React from "react";
 import { borderRadius, shadows, spacing } from "../../theme/design-tokens";
 import { glass } from "../../theme/glass";
 
-interface CardProps {
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   variant?: 'default' | 'elevated' | 'glass' | 'outlined';
   padding?: "none" | "sm" | "md" | "lg" | "xl";
   style?: React.CSSProperties;
-  className?: string;
-  onClick?: (e?: React.MouseEvent) => void;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -18,6 +16,9 @@ export const Card: React.FC<CardProps> = ({
   style,
   className,
   onClick,
+  onMouseEnter,
+  onMouseLeave,
+  ...restProps
 }) => {
   const paddingMap = {
     none: '0',
@@ -72,6 +73,7 @@ export const Card: React.FC<CardProps> = ({
 
   return (
     <div
+      {...restProps}
       className={className}
       style={{
         ...cardStyle,
@@ -83,8 +85,14 @@ export const Card: React.FC<CardProps> = ({
           : {}),
       }}
       onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={(event) => {
+        setIsHovered(true);
+        onMouseEnter?.(event);
+      }}
+      onMouseLeave={(event) => {
+        setIsHovered(false);
+        onMouseLeave?.(event);
+      }}
     >
       {showOverlay && <div aria-hidden="true" style={overlayStyle} />}
       <div style={{ position: "relative", zIndex: 1 }}>{children}</div>

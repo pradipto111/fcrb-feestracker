@@ -3,13 +3,23 @@ import { api } from "../api/client";
 import { DashboardSummary } from "../types/analytics";
 import { DISABLE_HEAVY_ANALYTICS } from "../config/featureFlags";
 
-const ADMIN_SUMMARY_CACHE_TTL_MS = 60000; // 1 min stale-while-revalidate
+const ADMIN_SUMMARY_CACHE_TTL_MS = 60000;
+const ADMIN_SUMMARY_CACHE_VERSION = 1;
+const ADMIN_SUMMARY_CACHE_PREFIX = "rv-admin-summary";
+
+type AdminSummaryCacheEntry = {
+  data: DashboardSummary;
+  cachedAt: number;
+  ttlMs: number;
+  cacheVersion: number;
+};
 
 interface UseAdminAnalyticsOptions {
   centerId?: string;
   includeInactive?: boolean;
   autoRefresh?: boolean;
   refreshInterval?: number;
+  fetchOnMount?: boolean;
 }
 
 interface UseAdminAnalyticsReturn {
@@ -17,6 +27,7 @@ interface UseAdminAnalyticsReturn {
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
+  lastUpdated: number | null;
 }
 
 /** Module-level cache for admin summary (keyed by centerId + includeInactive) for instant load on navigate back */
@@ -24,6 +35,48 @@ let lastAdminSummary: { params: string; data: DashboardSummary; at: number } | n
 
 function adminSummaryCacheKey(centerId?: string, includeInactive?: boolean): string {
   return `${centerId ?? ""}:${includeInactive ?? true}`;
+}
+
+function getAdminSummarySessionKey(cacheKey: string): string {
+  return `${ADMIN_SUMMARY_CACHE_PREFIX}:${cacheKey}`;
+}
+
+function readAdminSummarySessionCache(
+  key: string
+): { data: DashboardSummary; cachedAt: number } | null {
+  try {
+    const raw = sessionStorage.getItem(getAdminSummarySessionKey(key));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as AdminSummaryCacheEntry;
+    if (
+      parsed.cacheVersion !== ADMIN_SUMMARY_CACHE_VERSION ||
+      !parsed.data ||
+      typeof parsed.cachedAt !== "number"
+    ) {
+      return null;
+    }
+    const age = Date.now() - parsed.cachedAt;
+    if (age > parsed.ttlMs) {
+      return null;
+    }
+    return { data: parsed.data, cachedAt: parsed.cachedAt };
+  } catch {
+    return null;
+  }
+}
+
+function writeAdminSummarySessionCache(key: string, data: DashboardSummary): void {
+  try {
+    const payload: AdminSummaryCacheEntry = {
+      data,
+      cachedAt: Date.now(),
+      ttlMs: ADMIN_SUMMARY_CACHE_TTL_MS,
+      cacheVersion: ADMIN_SUMMARY_CACHE_VERSION,
+    };
+    sessionStorage.setItem(getAdminSummarySessionKey(key), JSON.stringify(payload));
+  } catch {
+    // ignore storage quota/access errors
+  }
 }
 
 /**
@@ -38,14 +91,27 @@ export function useAdminAnalytics(
     includeInactive = true, // Default to true for admin (shows all students)
     autoRefresh = false,
     refreshInterval = 30000, // 30 seconds default
+    fetchOnMount = false,
   } = options;
 
   const cacheKey = adminSummaryCacheKey(centerId, includeInactive);
-  const cached = !DISABLE_HEAVY_ANALYTICS && lastAdminSummary && lastAdminSummary.params === cacheKey && (Date.now() - lastAdminSummary.at) < ADMIN_SUMMARY_CACHE_TTL_MS;
+  const inMemoryCached =
+    !DISABLE_HEAVY_ANALYTICS &&
+    lastAdminSummary &&
+    lastAdminSummary.params === cacheKey &&
+    Date.now() - lastAdminSummary.at < ADMIN_SUMMARY_CACHE_TTL_MS
+      ? { data: lastAdminSummary.data, cachedAt: lastAdminSummary.at }
+      : null;
+  const sessionCached =
+    !DISABLE_HEAVY_ANALYTICS && !inMemoryCached
+      ? readAdminSummarySessionCache(cacheKey)
+      : null;
+  const initialCached = inMemoryCached ?? sessionCached;
 
-  const [summary, setSummary] = useState<DashboardSummary | null>(() => (cached ? lastAdminSummary!.data : null));
-  const [loading, setLoading] = useState(!DISABLE_HEAVY_ANALYTICS && !cached);
+  const [summary, setSummary] = useState<DashboardSummary | null>(() => initialCached?.data ?? null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(() => initialCached?.cachedAt ?? null);
   const summaryRef = useRef<DashboardSummary | null>(null);
   
   // Update ref when summary changes
@@ -75,7 +141,10 @@ export function useAdminAnalytics(
 
       if (data) {
         setSummary(data);
-        lastAdminSummary = { params: cacheKey, data, at: Date.now() };
+        const now = Date.now();
+        setLastUpdated(now);
+        lastAdminSummary = { params: cacheKey, data, at: now };
+        writeAdminSummarySessionCache(cacheKey, data);
       } else {
         // Set default values if no data returned
         setSummary({
@@ -108,7 +177,7 @@ export function useAdminAnalytics(
 
   useEffect(() => {
     let mounted = true;
-    let refreshTimeout: NodeJS.Timeout;
+    let refreshTimeout: ReturnType<typeof setTimeout> | undefined;
 
     const load = async () => {
       if (mounted) {
@@ -120,15 +189,19 @@ export function useAdminAnalytics(
     if (DISABLE_HEAVY_ANALYTICS) {
       setLoading(false);
       setSummary(null);
+      setLastUpdated(null);
       return;
     }
-    // If we had fresh cache, show it and revalidate in background without blocking UI
-    if (cached && lastAdminSummary) {
-      setSummary(lastAdminSummary.data);
-      setLoading(false);
+    const cached = readAdminSummarySessionCache(cacheKey);
+    if (cached) {
+      setSummary(cached.data);
+      setLastUpdated(cached.cachedAt);
     }
-    // Initial load (or revalidate)
-    load();
+
+    // Initial load is opt-in to avoid login-time CPU spikes.
+    if (fetchOnMount) {
+      load();
+    }
 
     // Auto-refresh if enabled
     if (autoRefresh && mounted) {
@@ -151,7 +224,7 @@ export function useAdminAnalytics(
         clearTimeout(refreshTimeout);
       }
     };
-  }, [fetchSummary, autoRefresh, refreshInterval]);
+  }, [fetchSummary, autoRefresh, refreshInterval, fetchOnMount, cacheKey]);
 
   const refresh = useCallback(async () => {
     await fetchSummary();
@@ -162,5 +235,6 @@ export function useAdminAnalytics(
     loading,
     error,
     refresh,
+    lastUpdated,
   };
 }

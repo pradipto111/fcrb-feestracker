@@ -43,10 +43,10 @@ Route was missing from App.tsx routing configuration.
 
 ### Public Routes
 - ✅ `/` - Landing page
-- ✅ `/shop` - Shop listing
-- ✅ `/shop/:slug` - Product detail
-- ✅ `/cart` - Shopping cart
-- ✅ `/checkout` - Checkout
+- ✅ `/programs` - Programs overview
+- ✅ `/brochure` - Brochure page
+- ✅ `/teams` - Teams page
+- ✅ `/realverse/join` - Join entry
 - ✅ `/order-confirmation/:orderNumber` - Order confirmation
 - ✅ `/brochure` - Interactive brochure
 - ✅ `/brochure/classic` - Classic brochure

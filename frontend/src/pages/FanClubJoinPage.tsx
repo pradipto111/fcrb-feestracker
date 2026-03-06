@@ -68,8 +68,8 @@ const RewardTile = ({ text, accent, accent2 }: { text: string; accent: string; a
         flex: "0 0 auto",
         width: 320,
         borderRadius: borderRadius.card,
-        border: "1px solid rgba(255,255,255,0.10)",
         ...glass.card,
+        border: "1px solid rgba(255,255,255,0.10)",
         boxShadow: shadows.card,
         overflow: "hidden",
         position: "relative",
@@ -129,8 +129,8 @@ const SponsorRewardsCardWithLocks = ({
       whileHover={!reduce ? { y: -4 } : undefined}
       style={{
         borderRadius: borderRadius.card,
-        border: `1px solid ${sponsor.accent}40`,
         ...glass.card,
+        border: `1px solid ${sponsor.accent}40`,
         boxShadow: shadows.card,
         overflow: "hidden",
         position: "relative",
@@ -814,7 +814,7 @@ const FanClubJoinPage: React.FC = () => {
                             ? `linear-gradient(135deg, ${colors.accent.main} 0%, #FFB82E 100%)`
                             : "rgba(255,255,255,0.08)",
                           border: pkg.highlight ? "none" : "1px solid rgba(255,255,255,0.15)",
-                          color: pkg.highlight ? colors.brand.charcoal : colors.text.primary,
+                          color: pkg.highlight ? colors.brand.softGrey : colors.text.primary,
                           ...typography.body,
                           fontWeight: typography.fontWeight.semibold,
                           cursor: "pointer",
@@ -829,7 +829,7 @@ const FanClubJoinPage: React.FC = () => {
                         <span style={{ display: "flex", alignItems: "center", gap: spacing.xs, lineHeight: 1 }}>
                           <span>Select Package</span>
                           <span style={{ display: "flex", alignItems: "center" }}>
-                            <ArrowRightIcon size={14} color={pkg.highlight ? colors.brand.charcoal : colors.text.primary} />
+                            <ArrowRightIcon size={14} color={pkg.highlight ? colors.brand.softGrey : colors.text.primary} />
                           </span>
                         </span>
                       </motion.button>

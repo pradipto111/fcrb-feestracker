@@ -294,7 +294,7 @@ Inputs with special characters, emojis, or SQL injection attempts should be hand
 - ✅ Attendance Management
 - ✅ Season Planning
 - ✅ Trial Management
-- ⏳ Shop & Checkout (Pending)
+- ⏳ Public Navigation & Conversion (Pending)
 - ⏳ Player Profile (Pending)
 - ⏳ Drills Management (Pending)
 

@@ -61,63 +61,6 @@ test.describe('Public Pages - Complete Coverage', () => {
     expect(teamCount).toBeGreaterThanOrEqual(0);
   });
 
-  test('Shop Page - Products display', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/shop`);
-    await page.waitForLoadState('networkidle');
-    
-    await expect(page.locator('body')).toBeVisible();
-    
-    // Check for products
-    const products = page.locator('[class*="product"], [class*="item"], [class*="card"]');
-    const productCount = await products.count();
-    
-    expect(productCount).toBeGreaterThanOrEqual(0);
-  });
-
-  test('Product Detail Page - Product information', async ({ page, baseURL }) => {
-    // First go to shop to get a product link
-    await page.goto(`${baseURL || ''}/shop`);
-    await page.waitForLoadState('networkidle');
-    
-    // Try to find a product link
-    const productLinks = page.locator('a[href*="/shop/"]');
-    const linkCount = await productLinks.count();
-    
-    if (linkCount > 0) {
-      const firstLink = productLinks.first();
-      const href = await firstLink.getAttribute('href');
-      
-      if (href) {
-        await page.goto(`${baseURL || ''}${href}`);
-        await page.waitForLoadState('networkidle');
-        
-        await expect(page.locator('body')).toBeVisible();
-        
-        // Check for product details
-        const productDetails = page.locator('[class*="product"], [class*="detail"]');
-        const detailCount = await productDetails.count();
-        
-        expect(detailCount).toBeGreaterThanOrEqual(0);
-      }
-    } else {
-      // If no products, just check page structure
-      await expect(page.locator('body')).toBeVisible();
-    }
-  });
-
-  test('Cart Page - Cart functionality', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/cart`);
-    await page.waitForLoadState('networkidle');
-    
-    await expect(page.locator('body')).toBeVisible();
-    
-    // Check for cart content (might be empty)
-    const cart = page.locator('[class*="cart"], [class*="checkout"]');
-    const cartCount = await cart.count();
-    
-    expect(cartCount).toBeGreaterThanOrEqual(0);
-  });
-
   test('Brochure Page - All sections', async ({ page, baseURL }) => {
     await page.goto(`${baseURL || ''}/brochure`);
     await page.waitForLoadState('networkidle');
@@ -286,7 +229,6 @@ test.describe('Public Pages - Performance', () => {
       '/',
       '/about',
       '/teams',
-      '/shop',
       '/brochure',
       '/programs',
       '/realverse/experience',
@@ -310,7 +252,6 @@ test.describe('Public Pages - Performance', () => {
     const pages = [
       '/',
       '/about',
-      '/shop',
       '/brochure',
     ];
     
@@ -336,8 +277,8 @@ test.describe('Public Pages - Error Handling', () => {
     await expect(page.locator('body')).toBeVisible();
   });
 
-  test('Invalid product slugs handled gracefully', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/shop/invalid-product-slug-12345`);
+  test('Invalid programme routes handled gracefully', async ({ page, baseURL }) => {
+    await page.goto(`${baseURL || ''}/programs/invalid-route-12345`);
     await page.waitForLoadState('networkidle');
     
     // Should show error or redirect, but not crash

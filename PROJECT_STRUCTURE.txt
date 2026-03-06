@@ -16,7 +16,7 @@ fcrb-feestracker/
 │   ├── CENTRES_MIGRATION_GUIDE.md         # Centres migration guide
 │   ├── FIX_DATABASE_ERRORS.md              # Database error fixes
 │   ├── MIGRATION_INSTRUCTIONS.md          # Migration instructions
-│   ├── MERCHANDISE_IMPLEMENTATION.md      # Shop implementation docs
+│   ├── REVENUE_DASHBOARD_IMPLEMENTATION.md # Revenue dashboard implementation docs
 │   ├── REALVERSE_UI_REDESIGN.md           # UI redesign documentation
 │   ├── UNIFIED_THEME_REFACTOR.md          # Theme refactor docs
 │   ├── UI_IMPROVEMENTS_SUMMARY.md         # UI improvements summary
@@ -82,7 +82,7 @@ fcrb-feestracker/
 │       │           │   └── migration.sql
 │       │           ├── 20251207193816_add_leaderboard_voting_system/
 │       │           │   └── migration.sql
-│       │           ├── 20251209225649_add_leads_and_shop/
+│       │           ├── 20251209225649_add_leads/
 │       │           │   └── migration.sql
 │       │           └── migration_lock.toml
 │       │
@@ -129,9 +129,8 @@ fcrb-feestracker/
 │       │           ├── posts/
 │       │           │   ├── posts.routes.ts       # Social feed posts
 │       │           │   └── comments.routes.ts    # Post comments
-│       │           ├── shop/
-│       │           │   ├── shop.routes.ts        # Public shop API
-│       │           │   └── seed-products.ts      # Product seed script
+│       │           ├── fan/
+│       │           │   └── fan.routes.ts         # Fan club public API
 │       │           ├── students/
 │       │           │   ├── students.routes.ts            # Student CRUD
 │       │           │   └── student-dashboard.routes.ts    # Student dashboard API
@@ -175,7 +174,7 @@ fcrb-feestracker/
 │       │       ├── 🔄 STATE MANAGEMENT
 │       │       │   └── context/
 │       │       │       ├── AuthContext.tsx        # Authentication state
-│       │       │       └── CartContext.tsx        # Shopping cart state
+│       │       │       └── AuthContext.tsx        # Authentication state
 │       │       │
 │       │       ├── 🎨 THEME & STYLING
 │       │       │   ├── theme/
@@ -215,11 +214,11 @@ fcrb-feestracker/
 │       │       │       │   ├── LandingPage.tsx           # Homepage / landing page
 │       │       │       │   ├── BrochurePage.tsx          # Club brochure page (PDF-ready)
 │       │       │       │   ├── RealVerseJoinPage.tsx    # RealVerse entry page
-│       │       │       │   ├── ShopPage.tsx              # Shop listing page
-│       │       │       │   ├── ProductDetailPage.tsx     # Product detail page
-│       │       │       │   ├── CartPage.tsx              # Shopping cart page
-│       │       │       │   ├── CheckoutPage.tsx          # Checkout page
-│       │       │       │   └── OrderConfirmationPage.tsx # Order confirmation
+│       │       │       │   ├── ProgramsOverviewPage.tsx   # Programs overview
+│       │       │       │   ├── ElitePathwayProgramPage.tsx# EPP program page
+│       │       │       │   ├── SeniorCompetitiveProgramPage.tsx # SCP program page
+│       │       │       │   ├── WomenPerformancePathwayPage.tsx  # WPP program page
+│       │       │       │   └── FoundationYouthProgramPage.tsx   # FYDP program page
 │       │       │       │
 │       │       │       ├── 🔐 AUTHENTICATION
 │       │       │       │   └── LoginPage.tsx             # RealVerse login page
@@ -393,8 +392,8 @@ AUTHENTICATION
 
 PUBLIC ENDPOINTS (No Auth Required)
   GET    /centers/public          # Get active centres for homepage map
-  GET    /shop/products           # Get active products
-  GET    /shop/products/:slug     # Get product by slug
+  GET    /programs                # Programmes overview
+  GET    /brochure                # Interactive brochure
   POST   /leads                   # Create website lead
 
 AUTHENTICATED ENDPOINTS (Auth Required)
@@ -445,9 +444,9 @@ AUTHENTICATED ENDPOINTS (Auth Required)
   DELETE /admin/merch/:id         # Delete product (admin only)
   PUT    /admin/merch/:id/toggle-active # Toggle product active status (admin only)
 
-  POST   /shop/orders/create      # Create order (public, but requires cart)
-  POST   /shop/orders/:orderId/verify # Verify payment (public)
-  GET    /shop/orders/:orderNumber # Get order details (public)
+  POST   /leads                   # Create website lead
+  GET    /legacy                  # Legacy leads listing
+  GET    /fan/tiers               # Fan tiers (public)
 
   GET    /dashboard               # Get dashboard summary (admin/coach)
   GET    /student/dashboard       # Get student dashboard data
@@ -465,10 +464,10 @@ Base URL: http://localhost:5173 (Vite dev server)
 PUBLIC ROUTES
   /                              # Landing page (homepage)
   /brochure                      # Club brochure page (with PDF download)
-  /shop                          # Shop listing
-  /shop/:slug                    # Product detail page
-  /cart                          # Shopping cart
-  /checkout                      # Checkout page
+  /programs                      # Programs overview
+  /programs/epp                  # EPP program page
+  /programs/scp                  # SCP program page
+  /realverse/join                # Join entry page
   /order-confirmation/:orderNumber # Order confirmation
   /realverse/join                # RealVerse Academy entry page
   /realverse/login               # RealVerse login page
@@ -502,7 +501,7 @@ KEY FEATURES
 ✅ Club Brochure System (12-section brochure with PDF export)
 ✅ RealVerse Academy entry flow
 ✅ Website Leads system
-✅ Shopping cart & checkout with Razorpay
+✅ Public lead conversion and brochure flow
 ✅ Admin merchandise management
 ✅ Admin centres management
 ✅ Student/Coach/Admin dashboards
@@ -531,7 +530,7 @@ Frontend:
   - Vite
   - React Router DOM
   - Framer Motion
-  - Context API (Auth, Cart)
+  - Context API (Auth)
   - jsPDF (PDF generation)
   - html2canvas (PDF export)
 

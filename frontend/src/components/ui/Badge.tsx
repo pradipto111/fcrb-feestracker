@@ -33,7 +33,7 @@ export const Badge: React.FC<BadgeProps> = ({
     warning: {
       background: colors.warning.soft,
       color: colors.warning.dark,
-      border: `1px solid ${colors.warning.outline}`,
+      border: `1px solid ${colors.warning.main}`,
     },
     danger: {
       background: colors.danger.soft,
@@ -43,7 +43,7 @@ export const Badge: React.FC<BadgeProps> = ({
     info: {
       background: colors.info.soft,
       color: colors.info.main,
-      border: `1px solid ${colors.info.outline}`,
+      border: `1px solid ${colors.info.main}`,
     },
     neutral: {
       background: colors.surface.soft,

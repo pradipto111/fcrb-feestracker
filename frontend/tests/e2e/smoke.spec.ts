@@ -66,8 +66,8 @@ test.describe('Public Routes', () => {
     await expect(page).toHaveTitle(/RealVerse|FC Real Bengaluru/i);
   });
 
-  test('Shop page loads', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/shop`);
+  test('Programs page loads', async ({ page, baseURL }) => {
+    await page.goto(`${baseURL || ''}/programs`);
     await page.waitForLoadState('networkidle');
     await expect(page.locator('body')).toBeVisible();
   });
@@ -136,8 +136,8 @@ test.describe('Coach Role - Navigation', () => {
     await loginAs(page, 'coach', baseURL);
   });
 
-  test('Dashboard loads', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/coach`);
+  test('Students page loads', async ({ page, baseURL }) => {
+    await page.goto(`${baseURL || ''}/realverse/coach/students`);
     await page.waitForLoadState('networkidle');
     await expect(page.locator('body')).toBeVisible();
   });
@@ -172,8 +172,8 @@ test.describe('Admin Role - Navigation', () => {
     await expect(page.locator('body')).toBeVisible();
   });
 
-  test('Merchandise management loads', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/admin/merch`);
+  test('Revenue page loads', async ({ page, baseURL }) => {
+    await page.goto(`${baseURL || ''}/realverse/admin/revenue`);
     await page.waitForLoadState('networkidle');
     await expect(page.locator('body')).toBeVisible();
   });

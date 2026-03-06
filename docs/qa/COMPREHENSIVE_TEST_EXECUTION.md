@@ -169,7 +169,7 @@
 - [ ] Add tags
 - [ ] Submit form
 - [ ] Verify product created
-- [ ] Navigate to shop page
+- [ ] Navigate to programs page
 - [ ] Verify new product appears
 - [ ] Click "Edit" on a product
 - [ ] Modify data
@@ -194,32 +194,26 @@
 
 ---
 
-## Section 4: Shop & Checkout Flow
+## Section 4: Public Conversion Flow
 
 ### Test Cases
 
-#### TC-014: Shop Browsing
-- [ ] Navigate to `/shop`
-- [ ] Verify products display
-- [ ] Click on a product
-- [ ] Verify product detail page loads
-- [ ] Click "Add to Cart"
-- [ ] Verify item added to cart
-- [ ] Navigate to cart
-- [ ] Verify item in cart
-- [ ] Update quantity
-- [ ] Remove item
-- [ ] Verify cart updates
+#### TC-014: Programs Browsing
+- [ ] Navigate to `/programs`
+- [ ] Verify programme cards display
+- [ ] Click on a programme
+- [ ] Verify programme detail page loads
+- [ ] Verify CTA navigation works
 
 **Status:** ⏳ Pending
 
-#### TC-015: Checkout Flow
-- [ ] Add items to cart
-- [ ] Navigate to checkout
-- [ ] Fill shipping details
-- [ ] Submit order
-- [ ] Verify order confirmation
-- [ ] Verify order appears in admin orders list
+#### TC-015: Join/Lead Conversion Flow
+- [ ] Open `/brochure`
+- [ ] Click primary join CTA
+- [ ] Fill lead/join form details
+- [ ] Submit form
+- [ ] Verify confirmation state
+- [ ] Verify lead appears in admin lead views
 
 **Status:** ⏳ Pending
 

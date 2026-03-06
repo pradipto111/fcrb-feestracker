@@ -38,7 +38,7 @@ async function resolveOwnerId(settings: any) {
 
 /**
  * POST /crm/leads
- * body: { primaryName, sourceType?, sourceId?, phone?, email?, city?, preferredCentre?, programmeInterest?, stage?, status?, priority?, score?, ownerId?, tags?, customFields?, convertedStudentId?, convertedFanId?, convertedOrderId? }
+ * body: { primaryName, sourceType?, sourceId?, phone?, email?, city?, preferredCentre?, programmeInterest?, stage?, status?, priority?, score?, ownerId?, tags?, customFields?, convertedStudentId?, convertedFanId? }
  */
 router.post("/", async (req, res) => {
   try {
@@ -66,7 +66,6 @@ router.post("/", async (req, res) => {
       customFields,
       convertedStudentId,
       convertedFanId,
-      convertedOrderId,
     } = req.body as any;
 
     if (!primaryName) return res.status(400).json({ message: "primaryName is required" });
@@ -138,7 +137,6 @@ router.post("/", async (req, res) => {
           customFields: customFields ?? null,
           convertedStudentId: convertedStudentId ? Number(convertedStudentId) : null,
           convertedFanId: convertedFanId ? Number(convertedFanId) : null,
-          convertedOrderId: convertedOrderId ? Number(convertedOrderId) : null,
         },
         include: {
           owner: { select: { id: true, fullName: true, email: true, role: true, status: true } },

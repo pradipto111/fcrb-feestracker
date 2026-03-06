@@ -9,6 +9,7 @@ import type { ClubEventDTO, ClubEventStatus, ClubEventType, HomeAway } from "../
 
 type FilterKey = "ALL" | ClubEventType;
 const IST = "Asia/Kolkata";
+const MODULE_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
@@ -140,7 +141,7 @@ const EnhancedScheduleManagementPage: React.FC = () => {
       initial: reduce ? { opacity: 0, y: 4 } : { opacity: 0, y: 14, filter: "blur(6px)" },
       animate: reduce
         ? { opacity: 1, y: 0, transition: { duration: 0.25 } }
-        : { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] } },
+        : { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.45, ease: MODULE_EASE } },
     }),
     [reduce]
   );

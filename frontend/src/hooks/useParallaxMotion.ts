@@ -86,7 +86,6 @@ export function useHeroParallax(options: ParallaxOptions = {}) {
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ['start start', 'end start'],
-    layoutEffect: false, // Use layoutEffect: false to avoid positioning warnings
   });
 
   const y = useTransform(scrollYProgress, [0, 1], [0, speed * 100]);

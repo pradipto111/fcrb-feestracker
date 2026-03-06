@@ -393,7 +393,7 @@ const InteractiveBrochurePage: React.FC = () => {
                       width: "100%",
                       padding: spacing.md,
                       background: colors.surface.card,
-                      border: `2px solid ${errors.age ? colors.error.main : "rgba(255, 255, 255, 0.1)"}`,
+                      border: `2px solid ${errors.age ? colors.danger.main : "rgba(255, 255, 255, 0.1)"}`,
                       borderRadius: borderRadius.lg,
                       color: colors.text.primary,
                       fontSize: typography.fontSize.lg,
@@ -402,7 +402,7 @@ const InteractiveBrochurePage: React.FC = () => {
                     placeholder="Enter age (5-50)"
                   />
                   {errors.age && (
-                    <p style={{ color: colors.error.main, marginTop: spacing.xs, fontSize: typography.fontSize.sm }}>
+                    <p style={{ color: colors.danger.main, marginTop: spacing.xs, fontSize: typography.fontSize.sm }}>
                       {errors.age}
                     </p>
                   )}
@@ -692,7 +692,7 @@ const InteractiveBrochurePage: React.FC = () => {
                         width: "100%",
                         padding: spacing.md,
                         background: colors.surface.card,
-                        border: `2px solid ${errors.playerName ? colors.error.main : "rgba(255, 255, 255, 0.1)"}`,
+                        border: `2px solid ${errors.playerName ? colors.danger.main : "rgba(255, 255, 255, 0.1)"}`,
                         borderRadius: borderRadius.lg,
                         color: colors.text.primary,
                         fontSize: typography.fontSize.base,
@@ -700,7 +700,7 @@ const InteractiveBrochurePage: React.FC = () => {
                       placeholder="Enter player's full name"
                     />
                     {errors.playerName && (
-                      <p style={{ color: colors.error.main, marginTop: spacing.xs, fontSize: typography.fontSize.sm }}>
+                      <p style={{ color: colors.danger.main, marginTop: spacing.xs, fontSize: typography.fontSize.sm }}>
                         {errors.playerName}
                       </p>
                     )}
@@ -726,7 +726,7 @@ const InteractiveBrochurePage: React.FC = () => {
                         width: "100%",
                         padding: spacing.md,
                         background: colors.surface.card,
-                        border: `2px solid ${errors.guardianName ? colors.error.main : "rgba(255, 255, 255, 0.1)"}`,
+                        border: `2px solid ${errors.guardianName ? colors.danger.main : "rgba(255, 255, 255, 0.1)"}`,
                         borderRadius: borderRadius.lg,
                         color: colors.text.primary,
                         fontSize: typography.fontSize.base,
@@ -734,7 +734,7 @@ const InteractiveBrochurePage: React.FC = () => {
                       placeholder="Enter guardian/parent name"
                     />
                     {errors.guardianName && (
-                      <p style={{ color: colors.error.main, marginTop: spacing.xs, fontSize: typography.fontSize.sm }}>
+                      <p style={{ color: colors.danger.main, marginTop: spacing.xs, fontSize: typography.fontSize.sm }}>
                         {errors.guardianName}
                       </p>
                     )}
@@ -890,7 +890,7 @@ const InteractiveBrochurePage: React.FC = () => {
                         width: "100%",
                         padding: spacing.md,
                         background: colors.surface.card,
-                        border: `2px solid ${errors.phone ? colors.error.main : "rgba(255, 255, 255, 0.1)"}`,
+                        border: `2px solid ${errors.phone ? colors.danger.main : "rgba(255, 255, 255, 0.1)"}`,
                         borderRadius: borderRadius.lg,
                         color: colors.text.primary,
                         fontSize: typography.fontSize.base,
@@ -899,7 +899,7 @@ const InteractiveBrochurePage: React.FC = () => {
                       maxLength={10}
                     />
                     {errors.phone && (
-                      <p style={{ color: colors.error.main, marginTop: spacing.xs, fontSize: typography.fontSize.sm }}>
+                      <p style={{ color: colors.danger.main, marginTop: spacing.xs, fontSize: typography.fontSize.sm }}>
                         {errors.phone}
                       </p>
                     )}
@@ -925,7 +925,7 @@ const InteractiveBrochurePage: React.FC = () => {
                         width: "100%",
                         padding: spacing.md,
                         background: colors.surface.card,
-                        border: `2px solid ${errors.email ? colors.error.main : "rgba(255, 255, 255, 0.1)"}`,
+                        border: `2px solid ${errors.email ? colors.danger.main : "rgba(255, 255, 255, 0.1)"}`,
                         borderRadius: borderRadius.lg,
                         color: colors.text.primary,
                         fontSize: typography.fontSize.base,
@@ -933,7 +933,7 @@ const InteractiveBrochurePage: React.FC = () => {
                       placeholder="your.email@example.com"
                     />
                     {errors.email && (
-                      <p style={{ color: colors.error.main, marginTop: spacing.xs, fontSize: typography.fontSize.sm }}>
+                      <p style={{ color: colors.danger.main, marginTop: spacing.xs, fontSize: typography.fontSize.sm }}>
                         {errors.email}
                       </p>
                     )}
@@ -1176,12 +1176,12 @@ const InteractiveBrochurePage: React.FC = () => {
                 {errors.submit && (
                   <div
                     style={{
-                      background: colors.error.main + "20",
-                      border: `1px solid ${colors.error.main}`,
+                      background: colors.danger.main + "20",
+                      border: `1px solid ${colors.danger.main}`,
                       borderRadius: borderRadius.lg,
                       padding: spacing.md,
                       marginBottom: spacing.lg,
-                      color: colors.error.main,
+                      color: colors.danger.main,
                     }}
                   >
                     {errors.submit}
@@ -1625,7 +1625,7 @@ const InteractiveBrochurePage: React.FC = () => {
         isOpen={activeModal === "pathway"}
         onClose={() => setActiveModal(null)}
         title="Merit-Based Pathway"
-        image={heroAssets.teamCelebration}
+        image={clubAssets.teamCelebration}
       >
         <div>
           <p style={{ ...typography.body, color: colors.text.secondary, marginBottom: spacing.lg }}>
@@ -1755,7 +1755,7 @@ const InteractiveBrochurePage: React.FC = () => {
         isOpen={activeModal === "values"}
         onClose={() => setActiveModal(null)}
         title="Values Beyond Football"
-        image={heroAssets.teamCelebration}
+        image={clubAssets.teamCelebration}
       >
         <div>
           <p style={{ ...typography.body, color: colors.text.secondary, marginBottom: spacing.lg }}>

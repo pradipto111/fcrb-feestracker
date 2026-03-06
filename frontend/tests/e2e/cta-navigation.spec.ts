@@ -87,7 +87,7 @@ test.describe('Coach CTAs', () => {
   });
 
   test('Quick action cards navigate correctly', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/coach`);
+    await page.goto(`${baseURL || ''}/realverse/coach/students`);
     await page.waitForLoadState('networkidle');
 
     // Wait for dashboard content
@@ -104,7 +104,7 @@ test.describe('Coach CTAs', () => {
   });
 
   test('Season Planning CTA works', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL || ''}/realverse/coach`);
+    await page.goto(`${baseURL || ''}/realverse/coach/students`);
     await page.waitForLoadState('networkidle');
 
     const seasonPlanningBtn = page.locator('text=Season Planning, text=Open Planner, [href*="season"]').first();

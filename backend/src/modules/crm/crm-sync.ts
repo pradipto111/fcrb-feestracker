@@ -13,7 +13,7 @@ export function mapLeadStatusToCrm(input: { status?: string | null }) {
 }
 
 export async function upsertCrmLead(params: {
-  sourceType: "WEBSITE" | "LEGACY" | "CHECKOUT" | "FAN";
+  sourceType: "WEBSITE" | "LEGACY" | "FAN";
   sourceId: number;
   primaryName: string;
   phone?: string | null;
@@ -23,7 +23,6 @@ export async function upsertCrmLead(params: {
   statusHint?: string | null;
   convertedStudentId?: number | null;
   convertedFanId?: number | null;
-  convertedOrderId?: number | null;
 }) {
   try {
     if (!(prisma as any).crmLead) return null;
@@ -42,7 +41,6 @@ export async function upsertCrmLead(params: {
       status: mapped.status,
       convertedStudentId: params.convertedStudentId || null,
       convertedFanId: params.convertedFanId || null,
-      convertedOrderId: params.convertedOrderId || null,
       updatedAt: new Date(),
     };
 

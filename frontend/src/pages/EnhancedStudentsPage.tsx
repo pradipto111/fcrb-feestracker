@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { api } from "../api/client";
@@ -14,33 +14,87 @@ import { useAuth } from "../context/AuthContext";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
 import { Table } from "../components/ui/Table";
 import { StatusChip } from "../components/ui/StatusChip";
-import { pageVariants, cardVariants, primaryButtonWhileHover, primaryButtonWhileTap } from "../utils/motion";
-import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
-import { adminAssets, academyAssets, galleryAssets } from "../config/assets";
-import { DISABLE_HEAVY_ANALYTICS } from "../config/featureFlags";
+import { pageVariants, primaryButtonWhileHover, primaryButtonWhileTap } from "../utils/motion";
+import { academyAssets, galleryAssets } from "../config/assets";
 import { PlusIcon, CloseIcon, ErrorIcon, SuccessIcon, SearchIcon, BuildingIcon, ChartBarIcon, ChartLineIcon, EditIcon, TrashIcon, MoneyIcon } from "../components/icons/IconSet";
-import { KPICard } from "../components/ui/KPICard";
 import { useAdminAnalytics } from "../hooks/useAdminAnalytics";
+
+const ADMIN_PLAYERS_CACHE_KEY = "rv-admin-players-page:v1";
+const ADMIN_PLAYERS_CACHE_TTL_MS = 5 * 60 * 1000;
+
+type AdminPlayersCache = {
+  students: any[];
+  centers: any[];
+  studentPayments: { [key: number]: { totalPaid: number; outstanding: number } };
+  cachedAt: number;
+  ttlMs: number;
+  cacheVersion: number;
+};
+
+function readAdminPlayersCache(): AdminPlayersCache | null {
+  try {
+    const raw = sessionStorage.getItem(ADMIN_PLAYERS_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as AdminPlayersCache;
+    if (parsed.cacheVersion !== 1 || !Array.isArray(parsed.students) || !Array.isArray(parsed.centers)) {
+      return null;
+    }
+    if (Date.now() - parsed.cachedAt > parsed.ttlMs) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeAdminPlayersCache(payload: Omit<AdminPlayersCache, "cacheVersion" | "ttlMs">): void {
+  try {
+    const cachePayload: AdminPlayersCache = {
+      ...payload,
+      ttlMs: ADMIN_PLAYERS_CACHE_TTL_MS,
+      cacheVersion: 1,
+    };
+    sessionStorage.setItem(ADMIN_PLAYERS_CACHE_KEY, JSON.stringify(cachePayload));
+  } catch {
+    // Ignore cache write issues.
+  }
+}
 
 const EnhancedStudentsPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const initialCacheRef = useRef<AdminPlayersCache | null>(readAdminPlayersCache());
+  const initialCache = initialCacheRef.current;
   
   // Use centralized analytics hook - single source of truth
-  const { summary: dashboardSummary, loading: summaryLoading, error: summaryError, refresh: refreshSummary } = useAdminAnalytics({
+  const {
+    summary: dashboardSummary,
+    loading: summaryLoading,
+    refresh: refreshSummary,
+    lastUpdated: summaryLastUpdated,
+  } = useAdminAnalytics({
     includeInactive: true, // Admin sees all students
     autoRefresh: false,
+    fetchOnMount: false,
   });
   
   const [students, setStudents] = useState<any[]>([]);
-  const [centers, setCenters] = useState<any[]>([]);
+  const [centers, setCenters] = useState<any[]>(() => initialCache?.centers ?? []);
   const [filteredStudents, setFilteredStudents] = useState<any[]>([]);
   const [studentPayments, setStudentPayments] = useState<{ [key: number]: { totalPaid: number; outstanding: number } }>({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [centerFilter, setCenterFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [programFilter, setProgramFilter] = useState("");
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
+  const [appliedCenterFilter, setAppliedCenterFilter] = useState("");
+  const [appliedStatusFilter, setAppliedStatusFilter] = useState("");
+  const [appliedProgramFilter, setAppliedProgramFilter] = useState("");
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [playersLastUpdated, setPlayersLastUpdated] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [editingStudent, setEditingStudent] = useState<any>(null);
@@ -68,42 +122,13 @@ const EnhancedStudentsPage: React.FC = () => {
   });
 
   useEffect(() => {
-    let mounted = true;
-    
-    const load = async () => {
-      if (mounted) {
-        await loadData();
-      }
-    };
-    
-    load();
-    
-    // Refresh data when page becomes visible (with debounce)
-    let refreshTimeout: NodeJS.Timeout;
-    const handleVisibilityChange = () => {
-      if (!document.hidden && mounted) {
-        clearTimeout(refreshTimeout);
-        refreshTimeout = setTimeout(() => {
-          if (mounted) {
-            refreshSummary();
-            loadData();
-          }
-        }, 500); // Debounce to prevent multiple rapid calls
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      mounted = false;
-      clearTimeout(refreshTimeout);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [refreshSummary]);
-
-  useEffect(() => {
+    if (!hasAppliedFilters) {
+      setFilteredStudents([]);
+      return;
+    }
     filterStudents();
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [students, searchTerm, centerFilter, statusFilter, programFilter]);
+    setCurrentPage(1);
+  }, [students, appliedSearchTerm, appliedCenterFilter, appliedStatusFilter, appliedProgramFilter, hasAppliedFilters]);
 
   // Calculate outstanding amount for a student
   const calculateOutstanding = (student: any, totalPaid: number): number => {
@@ -134,16 +159,28 @@ const EnhancedStudentsPage: React.FC = () => {
     return Math.max(0, expectedAmount - totalPaid);
   };
 
-  const loadData = async () => {
+  const loadData = async (criteria?: {
+    searchTerm: string;
+    centerFilter: string;
+    statusFilter: string;
+    programFilter: string;
+  }) => {
     try {
       setError(""); // Clear previous errors
       setLoading(true);
+      const activeCriteria = criteria ?? {
+        searchTerm: appliedSearchTerm,
+        centerFilter: appliedCenterFilter,
+        statusFilter: appliedStatusFilter,
+        programFilter: appliedProgramFilter,
+      };
+      const query = activeCriteria.searchTerm.trim() || undefined;
+      const centerId = activeCriteria.centerFilter || undefined;
       
       const [studentsData, centersData] = await Promise.all([
-        api.getStudents(undefined, undefined, true).catch(err => {
+        api.getStudents(query, centerId, true).catch(err => {
           console.error("Failed to load students with payments:", err);
-          // Try to load without payments if the first call fails
-          return api.getStudents().catch(err2 => {
+          return api.getStudents(query, centerId).catch(err2 => {
             console.error("Failed to load students without payments:", err2);
             return [];
           });
@@ -184,6 +221,14 @@ const EnhancedStudentsPage: React.FC = () => {
       });
       
       setStudentPayments(paymentsMap);
+      const now = Date.now();
+      setPlayersLastUpdated(now);
+      writeAdminPlayersCache({
+        students: enrichedStudents,
+        centers: centersData || [],
+        studentPayments: paymentsMap,
+        cachedAt: now,
+      });
     } catch (err: any) {
       console.error("Error in loadData:", err);
       setError(err.message || "Failed to load students data");
@@ -196,12 +241,41 @@ const EnhancedStudentsPage: React.FC = () => {
     }
   };
 
+  const handleFetchLatest = async () => {
+    if (!hasAppliedFilters) {
+      setError("Apply at least one filter before fetching student data.");
+      return;
+    }
+    const criteria = {
+      searchTerm: appliedSearchTerm,
+      centerFilter: appliedCenterFilter,
+      statusFilter: appliedStatusFilter,
+      programFilter: appliedProgramFilter,
+    };
+    setIsRefreshing(true);
+    try {
+      await Promise.all([loadData(criteria), refreshSummary()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const formatUpdatedAt = (value: number | null): string => {
+    if (!value) return "Not fetched yet";
+    return new Date(value).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const filterStudents = () => {
     let filtered = [...students];
 
     // Search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
+    if (appliedSearchTerm) {
+      const term = appliedSearchTerm.toLowerCase();
       filtered = filtered.filter(s =>
         s.fullName.toLowerCase().includes(term) ||
         s.centerName.toLowerCase().includes(term) ||
@@ -211,21 +285,68 @@ const EnhancedStudentsPage: React.FC = () => {
     }
 
     // Center filter
-    if (centerFilter) {
-      filtered = filtered.filter(s => s.centerId === parseInt(centerFilter));
+    if (appliedCenterFilter) {
+      filtered = filtered.filter(s => s.centerId === parseInt(appliedCenterFilter));
     }
 
     // Status filter
-    if (statusFilter) {
-      filtered = filtered.filter(s => s.status === statusFilter);
+    if (appliedStatusFilter) {
+      filtered = filtered.filter(s => s.status === appliedStatusFilter);
     }
 
     // Programme filter
-    if (programFilter) {
-      filtered = filtered.filter(s => s.programType === programFilter);
+    if (appliedProgramFilter) {
+      filtered = filtered.filter(s => s.programType === appliedProgramFilter);
     }
 
     setFilteredStudents(filtered);
+  };
+
+  const hasDraftFilters =
+    Boolean(searchTerm.trim()) ||
+    Boolean(centerFilter) ||
+    Boolean(statusFilter) ||
+    Boolean(programFilter);
+
+  const handleApplyFilters = async () => {
+    if (!hasDraftFilters) {
+      setError("Select at least one filter before applying.");
+      return;
+    }
+    setError("");
+    const criteria = {
+      searchTerm: searchTerm.trim(),
+      centerFilter,
+      statusFilter,
+      programFilter,
+    };
+    setAppliedSearchTerm(criteria.searchTerm);
+    setAppliedCenterFilter(criteria.centerFilter);
+    setAppliedStatusFilter(criteria.statusFilter);
+    setAppliedProgramFilter(criteria.programFilter);
+    setHasAppliedFilters(true);
+    setCurrentPage(1);
+    setIsRefreshing(true);
+    try {
+      await Promise.all([loadData(criteria), refreshSummary()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setCenterFilter("");
+    setStatusFilter("");
+    setProgramFilter("");
+    setAppliedSearchTerm("");
+    setAppliedCenterFilter("");
+    setAppliedStatusFilter("");
+    setAppliedProgramFilter("");
+    setHasAppliedFilters(false);
+    setFilteredStudents([]);
+    setCurrentPage(1);
+    setError("");
   };
 
   const handleDeleteClick = (student: any) => {
@@ -251,7 +372,9 @@ const EnhancedStudentsPage: React.FC = () => {
       setSuccess(`Student "${deletingStudent.fullName}" and all related data deleted successfully`);
       setShowDeleteConfirm(false);
       setDeletingStudent(null);
-      await loadData(); // Reload the list
+      if (hasAppliedFilters) {
+        await handleFetchLatest();
+      }
     } catch (err: any) {
       setError(err.message || "Failed to delete student");
     } finally {
@@ -348,7 +471,9 @@ const EnhancedStudentsPage: React.FC = () => {
       });
       setShowCreateModal(false);
       setError("");
-      loadData();
+      if (hasAppliedFilters) {
+        await handleFetchLatest();
+      }
       setTimeout(() => setSuccess(""), 5000);
     } catch (err: any) {
       let errorMessage = "Failed to create student";
@@ -434,7 +559,9 @@ const EnhancedStudentsPage: React.FC = () => {
       setShowEditModal(false);
       setEditingStudent(null);
       setError("");
-      loadData();
+      if (hasAppliedFilters) {
+        await handleFetchLatest();
+      }
     } catch (err: any) {
       let errorMessage = "Failed to update student";
       
@@ -461,34 +588,12 @@ const EnhancedStudentsPage: React.FC = () => {
   const programs = ["EPP", "SCP", "WPP", "FYDP"];
   const statuses = ["ACTIVE", "TRIAL", "INACTIVE"];
 
-  const {
-    sectionVariants,
-    headingVariants,
-    getStaggeredCard,
-  } = useHomepageAnimation();
-
   // Pagination calculations
   const totalPages = Math.ceil((filteredStudents || []).length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedStudents = (filteredStudents || []).slice(startIndex, endIndex);
 
-  // Calculate KPIs - use filteredStudents safely for filtered view
-  const activePlayers = (filteredStudents || []).filter(s => s.status === "ACTIVE").length;
-  const trialPlayers = (filteredStudents || []).filter(s => s.status === "TRIAL").length;
-  const totalPlayers = (filteredStudents || []).length;
-  const newThisMonth = (filteredStudents || []).filter(s => {
-    if (!s.joiningDate) return false;
-    const joining = new Date(s.joiningDate);
-    const now = new Date();
-    return joining.getMonth() === now.getMonth() && joining.getFullYear() === now.getFullYear();
-  }).length;
-
-  // Use dashboard summary for consistent data with admin dashboard
-  const totalStudentsFromSummary = dashboardSummary?.studentCount || students.length;
-  const totalRevenue = dashboardSummary?.totalCollected || 0;
-  const outstanding = dashboardSummary?.approxOutstanding || 0;
-  const totalExpected = totalRevenue + outstanding;
   const activeStudentsFromData = students.filter(s => s.status === "ACTIVE").length;
 
   return (
@@ -512,196 +617,21 @@ const EnhancedStudentsPage: React.FC = () => {
         <span className="rv-star rv-star--delay4" />
       </div>
 
-      {/* BANNER SECTION */}
-      <motion.section
-        style={{
-          position: "relative",
-          overflow: "hidden",
-          marginBottom: spacing["2xl"],
-          borderRadius: borderRadius.xl,
-        }}
-        variants={sectionVariants}
-        initial="offscreen"
-        whileInView="onscreen"
-        viewport={{ once: true, amount: 0.4 }}
-      >
-        {/* Background image */}
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundImage: `url(${adminAssets.dashboardBanner})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            opacity: 0.2,
-            filter: "blur(10px)",
-          }}
-        />
-        {/* Gradient overlay */}
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: `linear-gradient(135deg, rgba(4, 61, 208, 0.7) 0%, rgba(255, 169, 0, 0.5) 100%)`,
-          }}
-        />
-        {/* Banner content */}
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1,
-            padding: spacing["2xl"],
-            display: "flex",
-            flexDirection: "column",
-            gap: spacing.lg,
-          }}
-        >
-          <motion.p
-            style={{
-              ...typography.overline,
-              color: colors.accent.main,
-              letterSpacing: "0.1em",
-            }}
-            variants={headingVariants}
-          >
-            RealVerse • Players Management
-          </motion.p>
-          <motion.h1
-            style={{
-              ...typography.h1,
-              color: colors.text.onPrimary,
-              margin: 0,
-            }}
-            variants={headingVariants}
-          >
-            All Academy Players
-            <span style={{ display: "block", color: colors.accent.main, fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.normal, marginTop: spacing.xs }}>
-              Manage and track players across all centres
-            </span>
-          </motion.h1>
-          
-          {/* KPI Cards Row - Matching Dashboard */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: spacing.lg,
-              marginTop: spacing.md,
-            }}
-          >
-            <motion.div custom={0} variants={cardVariants} initial="initial" animate="animate">
-              <KPICard
-                title="Total Revenue"
-                value={DISABLE_HEAVY_ANALYTICS ? "—" : `₹${totalRevenue.toLocaleString()}`}
-                subtitle="All-time collections"
-                variant="primary"
-              />
-            </motion.div>
-
-            <motion.div custom={1} variants={cardVariants} initial="initial" animate="animate">
-              <KPICard
-                title="Outstanding"
-                value={DISABLE_HEAVY_ANALYTICS ? "—" : `₹${outstanding.toLocaleString()}`}
-                subtitle="Pending collections"
-                variant="warning"
-              />
-            </motion.div>
-
-            <motion.div custom={2} variants={cardVariants} initial="initial" animate="animate">
-              <KPICard
-                title="Total Students"
-                value={totalStudentsFromSummary.toString()}
-                subtitle={`${activeStudentsFromData} Active across ${centers.length} centers`}
-                variant="info"
-              />
-            </motion.div>
-
-            <motion.div custom={3} variants={cardVariants} initial="initial" animate="animate">
-              <KPICard
-                title="Total Expected"
-                value={DISABLE_HEAVY_ANALYTICS ? "—" : `₹${totalExpected.toLocaleString()}`}
-                subtitle="Collected + Outstanding"
-                variant="success"
-              />
-            </motion.div>
-          </div>
-          
-          {/* Payment Logs CTA */}
-          {user?.role === "ADMIN" && (
-            <motion.div 
-              custom={4} 
-              variants={cardVariants} 
-              initial="initial" 
-              animate="animate"
-              style={{ marginTop: spacing.lg }}
-            >
-              <Card 
-                variant="default" 
-                padding="md"
-                style={{
-                  background: `linear-gradient(135deg, ${colors.primary.main}20 0%, ${colors.accent.main}20 100%)`,
-                  border: `1px solid ${colors.primary.main}40`,
-                  cursor: "pointer",
-                  transition: "all 0.2s ease"
-                }}
-                onClick={() => navigate("/realverse/admin/payment-logs")}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = shadows.lg;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = shadows.md;
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div>
-                    <h3 style={{ 
-                      ...typography.h3, 
-                      margin: 0, 
-                      marginBottom: spacing.xs,
-                      color: colors.text.primary
-                    }}>
-                      Payment Logs
-                    </h3>
-                    <p style={{ 
-                      ...typography.body, 
-                      margin: 0, 
-                      color: colors.text.muted,
-                      fontSize: typography.fontSize.sm
-                    }}>
-                      Track all payment & revenue updates by Admin, Coach, and CRM users
-                    </p>
-                  </div>
-                  <Button
-                    variant="primary"
-                    size="md"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate("/realverse/admin/payment-logs");
-                    }}
-                  >
-                    View Logs
-                  </Button>
-                </div>
-              </Card>
-            </motion.div>
-          )}
-        </div>
-      </motion.section>
-
       <Section
         title="Players"
         description="Manage and view all academy players"
         variant="default"
         style={{ marginBottom: spacing.xl }}
       >
+        <p
+          style={{
+            margin: `0 0 ${spacing.sm} 0`,
+            ...typography.caption,
+            color: colors.text.muted,
+          }}
+        >
+          add and apply filters to display students
+        </p>
         {/* Filters - Collapsible for Hick's Law */}
         <div className="rv-filter-bar" style={{ marginBottom: spacing.lg }}>
           <div className="rv-filter-field">
@@ -827,9 +757,28 @@ const EnhancedStudentsPage: React.FC = () => {
               ))}
             </select>
           </div>
+
+          <div className="rv-filter-field" style={{ display: "flex", alignItems: "flex-end", gap: spacing.sm }}>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleApplyFilters}
+              disabled={!hasDraftFilters || isRefreshing || loading || summaryLoading}
+            >
+              {isRefreshing || loading || summaryLoading ? "Fetching..." : "Apply Filters"}
+            </Button>
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={clearAllFilters}
+              disabled={!hasDraftFilters && !hasAppliedFilters}
+            >
+              Clear Filters
+            </Button>
+          </div>
         </div>
 
-        {(searchTerm || centerFilter || statusFilter || programFilter) && (
+        {hasAppliedFilters && (
           <div style={{ marginBottom: spacing.md, display: "flex", gap: spacing.sm, alignItems: "center" }}>
             <span style={{ ...typography.caption, color: colors.text.muted }}>
               Showing {filteredStudents.length} of {students.length} players
@@ -837,12 +786,7 @@ const EnhancedStudentsPage: React.FC = () => {
             <Button
               variant="utility"
               size="sm"
-              onClick={() => {
-                setSearchTerm("");
-                setCenterFilter("");
-                setStatusFilter("");
-                setProgramFilter("");
-              }}
+              onClick={clearAllFilters}
             >
               Clear Filters
             </Button>
@@ -873,22 +817,19 @@ const EnhancedStudentsPage: React.FC = () => {
         <DataTableCard
           title="All Players"
           description={
-            filteredStudents.length !== students.length
-              ? `Showing ${filteredStudents.length} of ${students.length} players`
-              : `${students.length} player${students.length !== 1 ? 's' : ''} found`
+            !hasAppliedFilters
+              ? "Apply at least one filter to fetch student data."
+              : filteredStudents.length !== students.length
+                ? `Showing ${filteredStudents.length} of ${students.length} players`
+                : `${students.length} player${students.length !== 1 ? 's' : ''} found`
           }
           filters={
             <div style={{ display: "flex", gap: spacing.sm, alignItems: "center" }}>
-              {(searchTerm || centerFilter || statusFilter || programFilter) && (
+              {hasAppliedFilters && (
                 <Button
                   variant="utility"
                   size="sm"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setCenterFilter("");
-                    setStatusFilter("");
-                    setProgramFilter("");
-                  }}
+                  onClick={clearAllFilters}
                 >
                   Clear Filters
                 </Button>
@@ -897,6 +838,9 @@ const EnhancedStudentsPage: React.FC = () => {
           }
           actions={
             <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
+              <span style={{ ...typography.caption, color: colors.text.muted, alignSelf: "center" }}>
+                Last updated: {formatUpdatedAt(summaryLastUpdated || playersLastUpdated)}
+              </span>
               {user?.role === "ADMIN" && (
                 <Button
                   variant="primary"
@@ -909,13 +853,14 @@ const EnhancedStudentsPage: React.FC = () => {
               <Button
                 variant="secondary"
                 size="md"
-                onClick={loadData}
+                onClick={handleFetchLatest}
+                disabled={!hasAppliedFilters || isRefreshing || summaryLoading || loading}
               >
-                🔄 Refresh
+                {isRefreshing || summaryLoading || loading ? "Fetching..." : "Fetch Latest"}
               </Button>
             </div>
           }
-          isEmpty={filteredStudents.length === 0}
+          isEmpty={!hasAppliedFilters || filteredStudents.length === 0}
           emptyState={
             <div style={{ 
               padding: spacing['2xl'], 
@@ -923,9 +868,13 @@ const EnhancedStudentsPage: React.FC = () => {
               color: colors.text.muted,
             }}>
               <p style={{ ...typography.body, marginBottom: spacing.sm }}>
-                {students.length === 0 ? "No players yet" : "No players match the filters"}
+                {!hasAppliedFilters
+                  ? "Choose at least one filter and click Apply Filters to load students."
+                  : students.length === 0
+                    ? "No players match the selected criteria"
+                    : "No players match the applied filters"}
               </p>
-              {students.length === 0 && user?.role === "ADMIN" && (
+              {hasAppliedFilters && students.length === 0 && user?.role === "ADMIN" && (
                 <Button
                   variant="primary"
                   size="md"
