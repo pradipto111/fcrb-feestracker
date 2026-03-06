@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { colors, typography, spacing, borderRadius, shadows } from "../../theme/design-tokens";
 
 const MOBILE_BREAKPOINT = 768;
+const TABLET_BREAKPOINT = 1024;
 
 interface NavItem {
   path: string;
@@ -119,8 +120,10 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
+  const [viewportWidth, setViewportWidth] = useState(typeof window !== "undefined" ? window.innerWidth : TABLET_BREAKPOINT + 1);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth <= MOBILE_BREAKPOINT);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isTablet = viewportWidth > MOBILE_BREAKPOINT && viewportWidth <= TABLET_BREAKPOINT;
 
   const handleLogout = () => {
     logout();
@@ -129,8 +132,9 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-      if (window.innerWidth >= MOBILE_BREAKPOINT) {
+      setViewportWidth(window.innerWidth);
+      setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT);
+      if (window.innerWidth > MOBILE_BREAKPOINT) {
         setMobileMenuOpen(false);
       }
     };
@@ -204,7 +208,7 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
           </div>
 
           {mobileMenuOpen && (
-            <div style={{ marginTop: spacing.md, display: "flex", flexDirection: "column", gap: spacing.xs }}>
+            <div style={{ marginTop: spacing.md, display: "flex", flexDirection: "column", gap: spacing.xs, maxHeight: "60vh", overflowY: "auto" }}>
               {navItems.map((item) => {
                 const active = isActive(item.path);
                 return (
@@ -279,7 +283,7 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
           )}
         </div>
 
-        <div style={{ flex: 1, padding: spacing.lg }}>
+        <div style={{ flex: 1, padding: spacing.md }}>
           <Outlet />
         </div>
       </div>
@@ -301,7 +305,7 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
       {/* Sidebar */}
       <aside
         style={{
-          width: "280px",
+          width: isTablet ? "220px" : "280px",
           background: role === "FAN" ? "linear-gradient(180deg, rgba(6,12,28,0.98) 0%, rgba(8,14,34,0.94) 100%)" : colors.surface.section,
           borderRight: role === "FAN" ? `1px solid rgba(255,255,255,0.10)` : `1px solid ${colors.surface.soft}`,
           padding: spacing.lg,
@@ -517,7 +521,7 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
       {/* Main Content */}
       <main style={{ 
         flex: 1, 
-        padding: spacing.xl, 
+        padding: isTablet ? spacing.lg : spacing.xl, 
         overflowY: "auto", 
         overflowX: "hidden",
         background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,

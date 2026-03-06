@@ -49,7 +49,7 @@ const IncentiveBadge = ({ tag, accent }: { tag: IncentiveTag; accent: string }) 
         ...typography.caption,
         fontSize: typography.fontSize.xs,
         letterSpacing: "0.12em",
-        whiteSpace: "nowrap",
+        whiteSpace: "normal",
       }}
     >
       <Icon size={14} color={accent} />
@@ -66,7 +66,7 @@ const RewardTile = ({ text, accent, accent2 }: { text: string; accent: string; a
       style={{
         scrollSnapAlign: "start",
         flex: "0 0 auto",
-        width: 320,
+        width: "min(320px, 100%)",
         borderRadius: borderRadius.card,
         ...glass.card,
         border: "1px solid rgba(255,255,255,0.10)",
@@ -350,6 +350,7 @@ const FanClubJoinPage: React.FC = () => {
   const { addItem } = useCart();
   const reduceMotion = useReducedMotion();
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
+  const [isTablet, setIsTablet] = useState(typeof window !== "undefined" && window.innerWidth <= 1024);
   const [packages, setPackages] = useState<PackageTier[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState<FanClubTierId | null>(null);
@@ -358,7 +359,11 @@ const FanClubJoinPage: React.FC = () => {
 
   useEffect(() => {
     document.title = "Join the Fan Club • FC Real Bengaluru";
-    const checkMobile = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    const checkMobile = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < MOBILE_BREAKPOINT);
+      setIsTablet(width <= 1024);
+    };
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
@@ -437,8 +442,9 @@ const FanClubJoinPage: React.FC = () => {
     setTimeout(() => setComingSoonMessage(null), 4000);
   };
 
-  const sectionPaddingVertical = isMobile ? spacing["3xl"] : spacing["4xl"];
-  const sectionPaddingHorizontal = isMobile ? spacing.lg : spacing.xl;
+  const isCompactLayout = isMobile || isTablet;
+  const sectionPaddingVertical = isCompactLayout ? spacing["3xl"] : spacing["4xl"];
+  const sectionPaddingHorizontal = isCompactLayout ? spacing.lg : spacing.xl;
   const maxWidth = "1400px";
 
   // Get all unique benefits for comparison
@@ -469,6 +475,7 @@ const FanClubJoinPage: React.FC = () => {
   return (
     <div
       data-realverse-page
+      data-public-page="true"
       style={{
         minHeight: "100vh",
         position: "relative",
@@ -721,7 +728,7 @@ const FanClubJoinPage: React.FC = () => {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))",
+                  gridTemplateColumns: isCompactLayout ? "1fr" : "repeat(3, minmax(0, 1fr))",
                   gap: spacing.lg,
                   marginBottom: spacing.xl,
                 }}
@@ -1034,7 +1041,7 @@ const FanClubJoinPage: React.FC = () => {
               </div>
 
               {/* Sponsor Cards with Rewards */}
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, minmax(0, 1fr))", gap: spacing.lg, alignItems: "stretch" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isCompactLayout ? "1fr" : "repeat(2, minmax(0, 1fr))", gap: spacing.lg, alignItems: "stretch" }}>
                 {SPONSOR_BENEFITS.map((s) => (
                   <SponsorRewardsCardWithLocks key={s.id} sponsor={s} isMobile={isMobile} previewTier={previewTier} />
                 ))}

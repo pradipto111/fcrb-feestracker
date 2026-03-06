@@ -112,9 +112,6 @@ const PaymentLogsPage: React.FC = () => {
     try {
       setLoading(true);
       setError("");
-      // #region agent log
-      fetch("http://127.0.0.1:7242/ingest/265bcb14-462a-43bf-9004-045e0f654b8f", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location: "PaymentLogsPage.tsx:loadLogs", message: "loadLogs called", data: {}, timestamp: Date.now(), hypothesisId: "D" }) }).catch(() => {});
-      // #endregion
       const params: any = {
         page: pagination.page,
         limit: pagination.limit
@@ -133,9 +130,6 @@ const PaymentLogsPage: React.FC = () => {
       }
       
       const data = await api.getPaymentLogs(params);
-      // #region agent log
-      fetch("http://127.0.0.1:7242/ingest/265bcb14-462a-43bf-9004-045e0f654b8f", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location: "PaymentLogsPage.tsx:loadLogs", message: "getPaymentLogs result", data: { logsLength: data?.logs?.length, total: data?.pagination?.total }, timestamp: Date.now(), hypothesisId: "C" }) }).catch(() => {});
-      // #endregion
       setLogs(data.logs || []);
       const nextPagination = {
         page: pagination.page,
@@ -163,9 +157,6 @@ const PaymentLogsPage: React.FC = () => {
         cachedAt: now,
       });
     } catch (err: any) {
-      // #region agent log
-      fetch("http://127.0.0.1:7242/ingest/265bcb14-462a-43bf-9004-045e0f654b8f", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location: "PaymentLogsPage.tsx:loadLogs", message: "loadLogs error", data: { errMessage: err?.message }, timestamp: Date.now(), hypothesisId: "B" }) }).catch(() => {});
-      // #endregion
       console.error("Error loading payment logs:", err);
       setError(err.message || "Failed to load payment logs");
     } finally {

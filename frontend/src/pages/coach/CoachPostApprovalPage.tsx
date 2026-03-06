@@ -12,12 +12,22 @@ import { galleryAssets } from "../../config/assets";
 
 const CoachPostApprovalPage: React.FC = () => {
   const navigate = useNavigate();
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
   const [pendingPosts, setPendingPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     loadPendingPosts();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const loadPendingPosts = async () => {
@@ -182,7 +192,7 @@ const CoachPostApprovalPage: React.FC = () => {
       </motion.section>
 
       {/* Action buttons */}
-      <div style={{ display: "flex", gap: spacing.md, marginBottom: spacing.lg }}>
+      <div className="rv-action-row" style={{ marginBottom: spacing.lg }}>
         <Button
           variant="primary"
           onClick={() => navigate("/realverse/coach/feed/create")}
@@ -325,11 +335,12 @@ const CoachPostApprovalPage: React.FC = () => {
                 display: "flex", 
                 gap: spacing.md,
                 background: "rgba(255, 255, 255, 0.02)",
+                flexWrap: "wrap",
               }}>
                 <Button
                   variant="primary"
                   onClick={() => handleApproval(post.id, "APPROVED")}
-                  style={{ flex: 1 }}
+                  style={{ flex: 1, minWidth: isMobile ? "100%" : 180 }}
                 >
                   ✅ Approve
                 </Button>
@@ -340,7 +351,7 @@ const CoachPostApprovalPage: React.FC = () => {
                       handleApproval(post.id, "REJECTED");
                     }
                   }}
-                  style={{ flex: 1 }}
+                  style={{ flex: 1, minWidth: isMobile ? "100%" : 180 }}
                 >
                   ❌ Reject
                 </Button>

@@ -28,6 +28,10 @@ interface FooterSection {
 
 const FooterConfigPage: React.FC = () => {
   const { user } = useAuth();
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
   const [sections, setSections] = useState<FooterSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,6 +44,12 @@ const FooterConfigPage: React.FC = () => {
 
   useEffect(() => {
     loadFooterConfig();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const loadFooterConfig = async () => {
@@ -225,7 +235,7 @@ const FooterConfigPage: React.FC = () => {
         </div>
       )}
 
-      <div style={{ marginBottom: spacing.lg }}>
+      <div className="rv-action-row" style={{ marginBottom: spacing.lg }}>
         <Button onClick={handleAddSection} variant="secondary">
           + Add Section
         </Button>
@@ -233,7 +243,7 @@ const FooterConfigPage: React.FC = () => {
           onClick={handleSave}
           variant="primary"
           disabled={saving}
-          style={{ marginLeft: spacing.sm }}
+          style={{ marginLeft: isMobile ? 0 : spacing.sm }}
         >
           {saving ? "Saving..." : "Save Configuration"}
         </Button>
@@ -246,7 +256,7 @@ const FooterConfigPage: React.FC = () => {
           style={{ marginBottom: spacing.lg }}
         >
           <Card variant="default" padding="lg">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: spacing.md }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: spacing.md, gap: spacing.md, flexWrap: "wrap" }}>
               <div style={{ flex: 1, marginRight: spacing.md }}>
                 <Input
                   label="Section Title"
@@ -295,7 +305,7 @@ const FooterConfigPage: React.FC = () => {
                   key={linkIndex}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "2fr 2fr auto auto auto",
+                    gridTemplateColumns: isMobile ? "1fr" : "2fr 2fr auto auto auto",
                     gap: spacing.sm,
                     alignItems: "center",
                     marginBottom: spacing.sm,

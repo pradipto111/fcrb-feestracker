@@ -11,6 +11,10 @@ import { colors, typography, spacing, borderRadius } from "../../theme/design-to
 const CoachPostCreationPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
   const [centers, setCenters] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -26,6 +30,12 @@ const CoachPostCreationPage: React.FC = () => {
 
   useEffect(() => {
     loadCenters();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const loadCenters = async () => {
@@ -100,7 +110,7 @@ const CoachPostCreationPage: React.FC = () => {
       />
 
       {/* Action buttons */}
-      <div style={{ display: "flex", gap: spacing.md, marginBottom: spacing.lg }}>
+      <div className="rv-action-row" style={{ marginBottom: spacing.lg }}>
         <Button
           variant="secondary"
           onClick={() => navigate("/realverse/coach/feed/approve")}
@@ -376,7 +386,7 @@ const CoachPostCreationPage: React.FC = () => {
             </div>
           )}
 
-          <div style={{ display: "flex", gap: spacing.md }}>
+          <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: spacing.md }}>
             <Button
               type="submit"
               variant="primary"

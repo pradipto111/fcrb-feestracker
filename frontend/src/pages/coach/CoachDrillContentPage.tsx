@@ -13,6 +13,10 @@ import { DataTableCard } from "../../components/ui/DataTableCard";
 
 const CoachDrillContentPage: React.FC = () => {
   const { user } = useAuth();
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
   const [videos, setVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -45,6 +49,12 @@ const CoachDrillContentPage: React.FC = () => {
 
   useEffect(() => {
     loadVideos();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const loadVideos = async () => {
@@ -484,7 +494,7 @@ const CoachDrillContentPage: React.FC = () => {
           ) : (
             <div style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
               gap: spacing.lg,
             }}>
               {videos.map((video) => (
@@ -671,7 +681,7 @@ const CoachDrillContentPage: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             zIndex: 99999,
-            padding: spacing.xl,
+            padding: isMobile ? spacing.md : spacing.xl,
             overflowY: "auto",
           }}
           onClick={() => {

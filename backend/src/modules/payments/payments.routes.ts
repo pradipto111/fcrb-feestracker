@@ -171,10 +171,6 @@ router.post("/deduct-fees", authRequired, async (req, res) => {
  * Admin-only: Get payment activity logs
  */
 router.get("/logs", authRequired, requireRole("ADMIN"), async (req, res) => {
-  // #region agent log
-  const _user = (req as any).user;
-  fetch("http://127.0.0.1:7242/ingest/265bcb14-462a-43bf-9004-045e0f654b8f", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location: "payments.routes.ts:GET /logs", message: "payment logs handler entry", data: { role: _user?.role }, timestamp: Date.now(), hypothesisId: "B" }) }).catch(() => {});
-  // #endregion
   try {
     const { page = 1, limit = 50, actorType, dateFrom, dateTo } = req.query as {
       page?: string;
@@ -219,10 +215,6 @@ router.get("/logs", authRequired, requireRole("ADMIN"), async (req, res) => {
       }),
       (prisma as any).systemActivityLog.count({ where })
     ]);
-
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/265bcb14-462a-43bf-9004-045e0f654b8f", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location: "payments.routes.ts:GET /logs", message: "payment logs query result", data: { logsLength: logs?.length, total }, timestamp: Date.now(), hypothesisId: "C" }) }).catch(() => {});
-    // #endregion
 
     // Enrich logs with actor names
     const enrichedLogs = await Promise.all(
@@ -302,9 +294,6 @@ router.get("/logs", authRequired, requireRole("ADMIN"), async (req, res) => {
       }
     });
   } catch (error: any) {
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/265bcb14-462a-43bf-9004-045e0f654b8f", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location: "payments.routes.ts:GET /logs", message: "payment logs handler error", data: { errorMessage: error?.message }, timestamp: Date.now(), hypothesisId: "C" }) }).catch(() => {});
-    // #endregion
     console.error("Error fetching payment logs:", error);
     res.status(500).json({ message: error.message || "Failed to fetch payment logs" });
   }

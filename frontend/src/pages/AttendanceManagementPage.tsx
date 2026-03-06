@@ -15,6 +15,11 @@ import { CalendarIcon, PlusIcon, ClipboardIcon, VoteIcon } from "../components/i
 const AttendanceManagementPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
+  const isTablet = viewportWidth > 768 && viewportWidth <= 1024;
   const [centers, setCenters] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
@@ -54,6 +59,12 @@ const AttendanceManagementPage: React.FC = () => {
 
   useEffect(() => {
     loadCenters();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
@@ -475,7 +486,7 @@ const AttendanceManagementPage: React.FC = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(auto-fit, minmax(200px, 1fr))",
               gap: spacing.md,
               marginTop: spacing.md,
             }}
@@ -553,7 +564,7 @@ const AttendanceManagementPage: React.FC = () => {
       {/* Filters */}
       <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg,
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+        gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(200px, 1fr))",
         gap: 16
       }}>
         <div>
@@ -679,7 +690,7 @@ const AttendanceManagementPage: React.FC = () => {
                   }}
                 />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, marginBottom: 16 }}>
                 <div>
                   <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
                     Start Time *
@@ -784,7 +795,7 @@ const AttendanceManagementPage: React.FC = () => {
               color: colors.text.primary,
             }}>Create Monthly Sessions</h2>
             <form onSubmit={handleCreateMonthlySessions}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 20 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : isTablet ? "1fr 1fr" : "1fr 1fr 1fr", gap: 16, marginBottom: 20 }}>
                 <div>
                   <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
                     Center *
@@ -845,7 +856,7 @@ const AttendanceManagementPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, marginBottom: 20 }}>
                 <div>
                   <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
                     Default Start Time
@@ -1054,7 +1065,7 @@ const AttendanceManagementPage: React.FC = () => {
                           ✕ Remove
                         </button>
                       </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 12 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr 1fr", gap: 12 }}>
                         <div>
                           <label style={{ display: "block", marginBottom: 4, fontSize: 12, fontWeight: 600 }}>
                             Date *
@@ -1263,7 +1274,7 @@ const AttendanceManagementPage: React.FC = () => {
             }}>
               <div style={{ 
                 display: "grid", 
-                gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr 1fr",
+                gridTemplateColumns: isMobile ? "1fr 1fr" : isTablet ? "1.5fr 1fr 1fr 1fr" : "2fr 1fr 1fr 1fr 1fr 1fr 1fr",
                 gap: spacing.md,
                 padding: spacing.sm,
                 background: colors.surface.elevated,
@@ -1291,7 +1302,7 @@ const AttendanceManagementPage: React.FC = () => {
                     key={student.studentId}
                     style={{ 
                       display: "grid", 
-                      gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr 1fr",
+                      gridTemplateColumns: isMobile ? "1fr 1fr" : isTablet ? "1.5fr 1fr 1fr 1fr" : "2fr 1fr 1fr 1fr 1fr 1fr 1fr",
                       gap: spacing.md,
                       padding: spacing.sm,
                       borderBottom: `1px solid ${colors.border.light}`,

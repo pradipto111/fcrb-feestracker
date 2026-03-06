@@ -4,6 +4,9 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../api/client";
 import { colors, typography, spacing, borderRadius, shadows } from "../theme/design-tokens";
 
+const MOBILE_BREAKPOINT = 768;
+const TABLET_BREAKPOINT = 1024;
+
 interface NavItem {
   path: string;
   label: string;
@@ -101,9 +104,11 @@ const StudentLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= MOBILE_BREAKPOINT);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [studentData, setStudentData] = useState<any>(null);
+  const isTablet = viewportWidth > MOBILE_BREAKPOINT && viewportWidth <= TABLET_BREAKPOINT;
 
   const handleLogout = () => {
     logout();
@@ -112,8 +117,9 @@ const StudentLayout: React.FC = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-      if (window.innerWidth > 768) {
+      setViewportWidth(window.innerWidth);
+      setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT);
+      if (window.innerWidth > MOBILE_BREAKPOINT) {
         setMobileMenuOpen(false);
       }
     };
@@ -296,6 +302,8 @@ const StudentLayout: React.FC = () => {
                 display: "flex",
                 flexDirection: "column",
                 gap: spacing.xs,
+                maxHeight: "60vh",
+                overflowY: "auto",
               }}
             >
               {/* Analytics CTA for Mobile */}
@@ -507,7 +515,7 @@ const StudentLayout: React.FC = () => {
         </div>
 
         {/* Mobile Content */}
-        <div style={{ flex: 1, padding: spacing.lg }}>
+        <div style={{ flex: 1, padding: spacing.md }}>
           <div style={{ width: "100%", maxWidth: 1400, margin: "0 auto" }}>
             <Outlet />
           </div>
@@ -522,7 +530,7 @@ const StudentLayout: React.FC = () => {
       {/* Sidebar */}
       <aside
         style={{
-          width: "280px",
+          width: isTablet ? "220px" : "280px",
           background: colors.surface.section,
           borderRight: `1px solid ${colors.surface.soft}`,
           padding: spacing.lg,
@@ -1233,7 +1241,7 @@ const StudentLayout: React.FC = () => {
       <main
         style={{
           flex: 1,
-          padding: spacing.xl,
+          padding: isTablet ? spacing.lg : spacing.xl,
           overflowY: "auto",
           overflowX: "hidden",
           background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,

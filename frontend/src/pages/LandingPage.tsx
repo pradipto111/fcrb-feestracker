@@ -149,7 +149,7 @@ const StoryNavDock: React.FC<{
             ...typography.caption,
             letterSpacing: "0.16em",
             fontSize: typography.fontSize.xs,
-            whiteSpace: "nowrap",
+            whiteSpace: isMobile ? "normal" : "nowrap",
           }}
         >
           <span>
@@ -508,7 +508,7 @@ const ClubCalendar: React.FC<{
                   color: colors.text.secondary,
                   ...typography.caption,
                   letterSpacing: "0.08em",
-                  whiteSpace: "nowrap",
+                  whiteSpace: "normal",
                 }}
               >
                 {primaryEvent ? primaryEvent.competition : "SCHEDULE"}
@@ -688,7 +688,7 @@ const ClubCalendar: React.FC<{
                 background: "rgba(255,169,0,0.08)",
                 ...typography.caption,
                 color: colors.text.secondary,
-                whiteSpace: "nowrap",
+                whiteSpace: "normal",
               }}
             >
               Milestone ahead — keep building
@@ -1716,7 +1716,7 @@ export const TrophyCabinet: React.FC<{
                 zIndex: 2,
                 alignItems: "stretch",
                 justifyContent: "center",
-                flexWrap: "nowrap",
+                flexWrap: isMobile ? "wrap" : "nowrap",
               }}>
                 {achievements.map((achievement, idx) => {
                   const Icon = achievement.kind === "trophy" ? TrophyIcon : MedalIcon;
@@ -2321,7 +2321,7 @@ export const TabbedPanel: React.FC<{
                       color: isActive ? colors.text.primary : colors.text.secondary,
                       fontSize: typography.fontSize.sm,
                       fontWeight: isActive ? typography.fontWeight.semibold : typography.fontWeight.medium,
-                      whiteSpace: "nowrap",
+                      whiteSpace: isMobile ? "normal" : "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                     }}
@@ -2441,7 +2441,7 @@ export const TabbedPanel: React.FC<{
                         fontSize: typography.fontSize.xs,
                         letterSpacing: "0.18em",
                         opacity: 0.9,
-                        whiteSpace: "nowrap",
+                        whiteSpace: isMobile ? "normal" : "nowrap",
                       }}
                     >
                       TIMELINE
@@ -2596,7 +2596,10 @@ const LandingPage: React.FC = () => {
   const [centresLoading, setCentresLoading] = useState(true);
   const [footerSections, setFooterSections] = useState<any[]>([]);
   const MOBILE_BREAKPOINT = 768;
-  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
+  const TABLET_BREAKPOINT = 1024;
+  const [viewportWidth, setViewportWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1280);
+  const isMobile = viewportWidth < MOBILE_BREAKPOINT;
+  const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth <= TABLET_BREAKPOINT;
   // NOTE: Trophy Cabinet is intentionally NOT rendered in the Hero.
   const heroRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -2634,7 +2637,7 @@ const LandingPage: React.FC = () => {
 
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    const handleResize = () => setViewportWidth(window.innerWidth);
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -2750,6 +2753,7 @@ const LandingPage: React.FC = () => {
   return (
     <div
       data-realverse-page
+      data-public-page="true"
       style={{
         position: "relative",
         background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,
@@ -2963,8 +2967,8 @@ const LandingPage: React.FC = () => {
             position: "absolute",
             top: "15%",
             left: "50%",
-            width: "800px",
-            height: "600px",
+            width: isMobile ? "88vw" : isTablet ? "72vw" : "800px",
+            height: isMobile ? "48vw" : isTablet ? "52vw" : "600px",
             background: "radial-gradient(ellipse, rgba(245,179,0,0.08) 0%, transparent 70%)",
             borderRadius: "50%",
             filter: "blur(80px)",
@@ -2988,7 +2992,7 @@ const LandingPage: React.FC = () => {
             maxWidth: "1400px",
             width: "100%",
             margin: "0 auto",
-            padding: `0 ${spacing.xl}`,
+            padding: isMobile ? `0 ${spacing.md}` : isTablet ? `0 ${spacing.lg}` : `0 ${spacing.xl}`,
             position: "relative",
             zIndex: 10,
             display: "grid",
@@ -4785,7 +4789,8 @@ const LandingPage: React.FC = () => {
                               fontWeight: typography.fontWeight.bold,
                               letterSpacing: "0.02em",
                               lineHeight: 1.2,
-                              whiteSpace: "nowrap",
+                              whiteSpace: isMobile || isTablet ? "normal" : "nowrap",
+                              textAlign: "center",
                             };
 
                             const content = (
@@ -4949,7 +4954,7 @@ const LandingPage: React.FC = () => {
                       gap: spacing.sm,
                       color: colors.text.secondary,
                       fontSize: typography.fontSize.sm,
-                      whiteSpace: "nowrap",
+                      whiteSpace: isMobile ? "normal" : "nowrap",
                     }}
                     aria-label="Coaching and RealVerse combine to drive performance and promotions"
                   >

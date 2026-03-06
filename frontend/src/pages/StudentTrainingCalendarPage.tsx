@@ -32,6 +32,10 @@ interface TrainingSession {
 
 const StudentTrainingCalendarPage: React.FC = () => {
   const { user } = useAuth();
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +45,12 @@ const StudentTrainingCalendarPage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const loadData = async () => {
     try {
@@ -134,7 +144,7 @@ const StudentTrainingCalendarPage: React.FC = () => {
 
       {/* Attendance Metrics */}
       {metrics && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: spacing.md, marginBottom: spacing.lg }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: spacing.md, marginBottom: spacing.lg }}>
           <KPICard
             title="Total Sessions"
             value={metrics.summary.totalSessions}
@@ -164,7 +174,7 @@ const StudentTrainingCalendarPage: React.FC = () => {
 
       {/* Controls */}
       <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg }}>
-        <div style={{ display: "flex", gap: spacing.md, flexWrap: "wrap", alignItems: "center" }}>
+        <div className="rv-action-row">
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(Number(e.target.value))}
@@ -212,6 +222,8 @@ const StudentTrainingCalendarPage: React.FC = () => {
 
       {/* Calendar */}
       <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg }}>
+        <div className="rv-table-wrap">
+          <div style={{ minWidth: isMobile ? 700 : 0 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: spacing.sm }}>
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
             <div
@@ -237,7 +249,7 @@ const StudentTrainingCalendarPage: React.FC = () => {
               <div
                 key={idx}
                 style={{
-                  minHeight: "120px",
+                  minHeight: isMobile ? "96px" : "120px",
                   padding: spacing.xs,
                   border: `1px solid rgba(255, 255, 255, 0.2)`,
                   borderRadius: borderRadius.sm,
@@ -279,6 +291,8 @@ const StudentTrainingCalendarPage: React.FC = () => {
               </div>
             );
           })}
+        </div>
+          </div>
         </div>
       </Card>
 

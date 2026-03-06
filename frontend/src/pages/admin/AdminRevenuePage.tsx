@@ -120,6 +120,11 @@ function toQuery(filters: RevenueDraftFilters): RevenueAnalyticsQuery {
 
 const AdminRevenuePage: React.FC = () => {
   const navigate = useNavigate();
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
+  const isTablet = viewportWidth > 768 && viewportWidth <= 1024;
   const [searchParams, setSearchParams] = useSearchParams();
   const [draft, setDraft] = useState<RevenueDraftFilters>(DEFAULT_FILTERS);
   const [applied, setApplied] = useState<RevenueDraftFilters>(DEFAULT_FILTERS);
@@ -135,6 +140,12 @@ const AdminRevenuePage: React.FC = () => {
   const [sortBy, setSortBy] = useState("outstanding");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const loadRevenue = async (filters: RevenueDraftFilters) => {
     setLoading(true);
@@ -590,7 +601,7 @@ const AdminRevenuePage: React.FC = () => {
             title="Revenue Analytics"
             description="Apply filters to refresh data"
             actions={
-              <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
+            <div className="rv-action-row">
                 {([
                   ["trend", "Revenue Trend"],
                   ["center", "Center-wise Breakdown"],
@@ -606,7 +617,7 @@ const AdminRevenuePage: React.FC = () => {
             isEmpty={false}
           >
             {activeTab === "trend" && (
-              <div style={{ minWidth: 720 }}>
+              <div className="rv-table-wrap">
                 <div style={{ height: 320 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={tabs.monthlyTrend || []}>
@@ -646,7 +657,7 @@ const AdminRevenuePage: React.FC = () => {
                   </Button>
                 </div>
                 {centerView === "chart" ? (
-                  <div style={{ height: 320, minWidth: 720 }}>
+                  <div className="rv-table-wrap" style={{ height: 320 }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={centerChartData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -661,6 +672,7 @@ const AdminRevenuePage: React.FC = () => {
                     </ResponsiveContainer>
                   </div>
                 ) : (
+                  <div className="rv-table-wrap">
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
                       <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
@@ -685,12 +697,13 @@ const AdminRevenuePage: React.FC = () => {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 )}
               </div>
             )}
 
             {activeTab === "programme" && (
-              <div style={{ minWidth: 680 }}>
+              <div className="rv-table-wrap">
                 <div style={{ height: 300 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -738,7 +751,7 @@ const AdminRevenuePage: React.FC = () => {
 
             {activeTab === "players" && (
               <div>
-                <div style={{ display: "flex", gap: spacing.sm, marginBottom: spacing.md, flexWrap: "wrap" }}>
+                <div className="rv-action-row" style={{ marginBottom: spacing.md }}>
                   <input
                     type="text"
                     placeholder="Search by player name"
@@ -760,7 +773,8 @@ const AdminRevenuePage: React.FC = () => {
                     Download CSV
                   </Button>
                 </div>
-                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1100 }}>
+                <div className="rv-table-wrap">
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? 960 : isTablet ? 1040 : 1100 }}>
                   <thead>
                     <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
                       {[
@@ -833,7 +847,8 @@ const AdminRevenuePage: React.FC = () => {
                     ))}
                   </tbody>
                 </table>
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: spacing.md }}>
+                </div>
+                <div className="rv-action-row" style={{ justifyContent: "space-between", marginTop: spacing.md }}>
                   <span style={{ ...typography.caption, color: colors.text.muted }}>
                     Showing {(page - 1) * 25 + 1}-{Math.min(page * 25, filteredRows.length)} of {filteredRows.length}
                   </span>
@@ -887,6 +902,7 @@ const AdminRevenuePage: React.FC = () => {
                 Close
               </Button>
             </div>
+            <div className="rv-table-wrap">
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
@@ -911,6 +927,7 @@ const AdminRevenuePage: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            </div>
           </Card>
         </div>
       )}

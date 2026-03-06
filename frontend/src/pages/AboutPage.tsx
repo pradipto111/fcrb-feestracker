@@ -42,10 +42,12 @@ import { SPONSOR_BENEFITS } from "../data/fanclubBenefits";
 import { clubInfo } from "../data/club";
 
 const MOBILE_BREAKPOINT = 768;
+const TABLET_BREAKPOINT = 1024;
 const EASE_PREMIUM: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 const AboutPage: React.FC = () => {
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
+  const [isTablet, setIsTablet] = useState(typeof window !== "undefined" && window.innerWidth <= TABLET_BREAKPOINT);
   const [expandedFounder, setExpandedFounder] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,7 +55,11 @@ const AboutPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    const onResize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < MOBILE_BREAKPOINT);
+      setIsTablet(width <= TABLET_BREAKPOINT);
+    };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
@@ -80,7 +86,7 @@ const AboutPage: React.FC = () => {
         style={{
           position: "relative",
           minHeight: "100vh",
-          padding: isMobile ? `${spacing["4xl"]} ${spacing.lg}` : `${spacing["4xl"]} ${spacing.xl}`,
+          padding: isMobile || isTablet ? `${spacing["4xl"]} ${spacing.lg}` : `${spacing["4xl"]} ${spacing.xl}`,
           paddingTop: isMobile ? "120px" : "140px",
           overflow: "hidden",
         }}
@@ -176,6 +182,7 @@ const AboutPage: React.FC = () => {
   return (
     <div
       data-realverse-page
+      data-public-page="true"
       style={{
         minHeight: "100vh",
         background: colors.club.deep,
@@ -330,7 +337,7 @@ const AboutPage: React.FC = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))",
+              gridTemplateColumns: isMobile || isTablet ? "1fr" : "repeat(3, minmax(0, 1fr))",
               gap: spacing.lg,
             }}
           >
@@ -640,7 +647,7 @@ const AboutPage: React.FC = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))",
+              gridTemplateColumns: isMobile || isTablet ? "1fr" : "repeat(3, minmax(0, 1fr))",
               gap: spacing.lg,
               marginTop: spacing.xl,
             }}
@@ -922,7 +929,7 @@ const AboutPage: React.FC = () => {
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr 1.2fr",
+                    gridTemplateColumns: isMobile || isTablet ? "1fr" : "1.2fr 1fr 1fr 1.2fr",
                     gap: isMobile ? 20 : 24,
                     alignItems: "flex-start",
                   }}

@@ -64,6 +64,11 @@ function writeAdminPlayersCache(payload: Omit<AdminPlayersCache, "cacheVersion" 
 const EnhancedStudentsPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
+  const isTablet = viewportWidth > 768 && viewportWidth <= 1024;
   const initialCacheRef = useRef<AdminPlayersCache | null>(readAdminPlayersCache());
   const initialCache = initialCacheRef.current;
   
@@ -120,6 +125,12 @@ const EnhancedStudentsPage: React.FC = () => {
     paymentFrequency: "1",
     status: "ACTIVE"
   });
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (!hasAppliedFilters) {
@@ -779,7 +790,7 @@ const EnhancedStudentsPage: React.FC = () => {
         </div>
 
         {hasAppliedFilters && (
-          <div style={{ marginBottom: spacing.md, display: "flex", gap: spacing.sm, alignItems: "center" }}>
+          <div className="rv-action-row" style={{ marginBottom: spacing.md }}>
             <span style={{ ...typography.caption, color: colors.text.muted }}>
               Showing {filteredStudents.length} of {students.length} players
             </span>
@@ -837,7 +848,7 @@ const EnhancedStudentsPage: React.FC = () => {
             </div>
           }
           actions={
-            <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
+            <div className="rv-action-row">
               <span style={{ ...typography.caption, color: colors.text.muted, alignSelf: "center" }}>
                 Last updated: {formatUpdatedAt(summaryLastUpdated || playersLastUpdated)}
               </span>
@@ -886,7 +897,8 @@ const EnhancedStudentsPage: React.FC = () => {
             </div>
           }
         >
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div className="rv-table-wrap">
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? 760 : 0 }}>
           <thead>
             <tr style={{ 
               background: "rgba(255, 255, 255, 0.05)", 
@@ -1075,6 +1087,7 @@ const EnhancedStudentsPage: React.FC = () => {
             ))}
           </tbody>
         </table>
+        </div>
         </DataTableCard>
         
         {/* Pagination Controls */}
@@ -1199,7 +1212,7 @@ const EnhancedStudentsPage: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             zIndex: 99999,
-            padding: spacing.xl,
+            padding: isMobile ? spacing.md : spacing.xl,
             overflowY: "auto",
             overscrollBehavior: "contain"
           }}
@@ -1215,7 +1228,7 @@ const EnhancedStudentsPage: React.FC = () => {
             style={{
               position: "relative",
               width: "100%",
-              maxWidth: "900px",
+              maxWidth: isTablet ? "760px" : "900px",
               margin: "auto",
               display: "flex",
               alignItems: "center",
@@ -1232,7 +1245,7 @@ const EnhancedStudentsPage: React.FC = () => {
               boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)"
             }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: spacing.md, marginBottom: spacing.lg, flexWrap: "wrap" }}>
                 <h2 style={{ 
                   ...typography.h2,
                   margin: 0,
@@ -1304,7 +1317,7 @@ const EnhancedStudentsPage: React.FC = () => {
                 </Card>
               )}
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
                 <div>
                   <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Full Name *</label>
                   <input
@@ -1345,7 +1358,7 @@ const EnhancedStudentsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
                 <div>
                   <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Phone Number</label>
                   <input
@@ -1384,7 +1397,7 @@ const EnhancedStudentsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
                 <div>
                   <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Parent Phone Number</label>
                   <input
@@ -1424,7 +1437,7 @@ const EnhancedStudentsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
                 <div>
                   <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Email (for login)</label>
                   <input
@@ -1467,7 +1480,7 @@ const EnhancedStudentsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : isTablet ? "1fr 1fr" : "1fr 1fr 1fr", gap: 16 }}>
                 <div>
                   <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Center *</label>
                   <select
@@ -1540,7 +1553,7 @@ const EnhancedStudentsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
                 <div>
                   <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Monthly Fee (₹) *</label>
                   <input
@@ -1592,7 +1605,7 @@ const EnhancedStudentsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 12, marginTop: 16 }}>
                 <button
                   type="submit"
                   style={{
@@ -1666,7 +1679,7 @@ const EnhancedStudentsPage: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             zIndex: 99999,
-            padding: spacing.xl,
+            padding: isMobile ? spacing.md : spacing.xl,
             overflowY: "auto",
             overscrollBehavior: "contain"
           }}
@@ -1753,11 +1766,7 @@ const EnhancedStudentsPage: React.FC = () => {
                 </ul>
               </div>
             </div>
-            <div style={{ 
-              display: "flex", 
-              gap: spacing.md, 
-              justifyContent: "flex-end" 
-            }}>
+            <div style={{ display: "flex", gap: spacing.md, justifyContent: "flex-end", flexWrap: "wrap" }}>
               <Button
                 variant="secondary"
                 size="md"
@@ -1796,7 +1805,7 @@ const EnhancedStudentsPage: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             zIndex: 99999,
-            padding: spacing.xl,
+            padding: isMobile ? spacing.md : spacing.xl,
             overflowY: "auto",
             overscrollBehavior: "contain"
           }}
@@ -1813,7 +1822,7 @@ const EnhancedStudentsPage: React.FC = () => {
             style={{
               position: "relative",
               width: "100%",
-              maxWidth: "900px",
+              maxWidth: isTablet ? "760px" : "900px",
               margin: "auto",
               display: "flex",
               alignItems: "center",
@@ -1830,7 +1839,7 @@ const EnhancedStudentsPage: React.FC = () => {
               boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)"
             }}
             >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: spacing.md, marginBottom: spacing.lg, flexWrap: "wrap" }}>
               <h2 style={{ 
                 ...typography.h2,
                 margin: 0,
@@ -1907,7 +1916,7 @@ const EnhancedStudentsPage: React.FC = () => {
                     />
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
                     <div>
                       <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Monthly Fee (₹) *</label>
                       <input
@@ -1968,7 +1977,7 @@ const EnhancedStudentsPage: React.FC = () => {
               ) : (
                 // Admin view: All fields
                 <>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
                     <div>
                       <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Full Name *</label>
                       <input
@@ -2009,7 +2018,7 @@ const EnhancedStudentsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
                     <div>
                       <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Phone Number</label>
                       <input
@@ -2048,7 +2057,7 @@ const EnhancedStudentsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
                     <div>
                       <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Parent Phone Number</label>
                       <input
@@ -2088,7 +2097,7 @@ const EnhancedStudentsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
                     <div>
                       <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Email (for login)</label>
                       <input
@@ -2131,7 +2140,7 @@ const EnhancedStudentsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : isTablet ? "1fr 1fr" : "1fr 1fr 1fr", gap: 16 }}>
                     <div>
                       <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Center *</label>
                       <select
@@ -2221,7 +2230,7 @@ const EnhancedStudentsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
                     <div>
                       <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: colors.text.primary }}>Monthly Fee (₹) *</label>
                       <input
@@ -2281,7 +2290,7 @@ const EnhancedStudentsPage: React.FC = () => {
                 </>
               )}
 
-              <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 12, marginTop: 16 }}>
                 <button
                   type="submit"
                   style={{

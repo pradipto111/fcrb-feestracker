@@ -8,6 +8,10 @@ import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import { matchAssets } from "../config/assets";
 
 const StudentFixturesPage: React.FC = () => {
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
   const [myFixtures, setMyFixtures] = useState<any[]>([]);
   const [allFixtures, setAllFixtures] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -16,6 +20,12 @@ const StudentFixturesPage: React.FC = () => {
 
   useEffect(() => {
     loadFixtures();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const loadFixtures = async () => {
@@ -81,6 +91,7 @@ const StudentFixturesPage: React.FC = () => {
         marginBottom: spacing.lg,
         display: "flex",
         gap: spacing.sm,
+        flexWrap: "wrap",
       }}>
         <button
           onClick={() => setShowMyFixtures(true)}
@@ -169,7 +180,9 @@ const StudentFixturesPage: React.FC = () => {
                       color: "white",
                       borderRadius: borderRadius.full,
                       fontSize: typography.fontSize.xs,
-                      fontWeight: typography.fontWeight.semibold
+                      fontWeight: typography.fontWeight.semibold,
+                      maxWidth: isMobile ? "70%" : undefined,
+                      textAlign: "center",
                     }}>
                       YOU ARE SELECTED
                     </div>
@@ -348,9 +361,9 @@ const StudentFixturesPage: React.FC = () => {
                       background: isSelected ? `${colors.primary.soft}20` : undefined
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: spacing.md }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: spacing.md, gap: spacing.md, flexWrap: "wrap" }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: spacing.md, marginBottom: spacing.sm }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: spacing.md, marginBottom: spacing.sm, flexWrap: "wrap" }}>
                           <div style={{ 
                             fontSize: typography.fontSize.lg, 
                             fontWeight: typography.fontWeight.bold,

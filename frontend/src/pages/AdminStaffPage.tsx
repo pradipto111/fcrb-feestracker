@@ -99,6 +99,10 @@ function writeAdminStaffCrmUsersCache(payload: Omit<AdminStaffCrmUsersCacheEntry
 
 const AdminStaffPage: React.FC = () => {
   const { user } = useAuth();
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
   const initialCoachesCacheRef = useRef<AdminStaffCoachesCacheEntry | null>(readAdminStaffCoachesCache());
   const initialCrmUsersCacheRef = useRef<AdminStaffCrmUsersCacheEntry | null>(readAdminStaffCrmUsersCache());
   const [activeTab, setActiveTab] = useState<"coaches" | "crm-users">("coaches");
@@ -148,6 +152,12 @@ const AdminStaffPage: React.FC = () => {
     }
     loadCrmUsers();
   }, [activeTab]);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const loadData = async (options?: { force?: boolean }) => {
     const force = options?.force === true;
@@ -378,12 +388,14 @@ const AdminStaffPage: React.FC = () => {
           gap: spacing.sm,
           marginBottom: spacing.lg,
           borderBottom: `2px solid ${colors.surface.card}`,
+          flexWrap: "wrap",
         }}
       >
         <button
           onClick={() => setActiveTab("coaches")}
           style={{
             padding: `${spacing.md} ${spacing.xl}`,
+            minWidth: isMobile ? "100%" : undefined,
             background: "none",
             border: "none",
             borderBottom: activeTab === "coaches" ? `3px solid ${colors.accent.main}` : "none",
@@ -401,6 +413,7 @@ const AdminStaffPage: React.FC = () => {
           onClick={() => setActiveTab("crm-users")}
           style={{
             padding: `${spacing.md} ${spacing.xl}`,
+            minWidth: isMobile ? "100%" : undefined,
             background: "none",
             border: "none",
             borderBottom: activeTab === "crm-users" ? `3px solid ${colors.accent.main}` : "none",
@@ -582,16 +595,12 @@ const AdminStaffPage: React.FC = () => {
               <h3 style={{ ...typography.h3, marginBottom: spacing.md }}>
                 Coaches ({filteredCoaches.length})
               </h3>
-              <div
-                style={{
-                  overflowX: "auto",
-                }}
-              >
+              <div className="rv-table-wrap">
                 <table
                   style={{
                     width: "100%",
                     borderCollapse: "collapse",
-                    minWidth: "600px",
+                    minWidth: isMobile ? "680px" : "600px",
                   }}
                 >
                   <thead>

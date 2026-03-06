@@ -196,7 +196,7 @@ export const GalleryUpdatesModule: React.FC = () => {
                   ...heroTypography.subheading,
                   color: colors.text.secondary,
                   marginTop: 6,
-                  whiteSpace: "nowrap",
+                  whiteSpace: isMobile ? "normal" : "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   maxWidth: "65ch",
@@ -703,7 +703,7 @@ export const GalleryUpdatesModule: React.FC = () => {
                               color: colors.text.primary,
                               fontWeight: typography.fontWeight.semibold,
                               fontSize: typography.fontSize.sm,
-                              whiteSpace: "nowrap",
+                              whiteSpace: isMobile ? "normal" : "nowrap",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                             }}
@@ -711,7 +711,7 @@ export const GalleryUpdatesModule: React.FC = () => {
                             {u.title}
                           </div>
                         </div>
-                        <div style={{ ...typography.caption, color: colors.text.muted, whiteSpace: "nowrap" }}>
+                        <div style={{ ...typography.caption, color: colors.text.muted, whiteSpace: isMobile ? "normal" : "nowrap" }}>
                           {formatDateShort(u.date)}
                         </div>
                       </motion.button>

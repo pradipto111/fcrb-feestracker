@@ -37,6 +37,10 @@ interface Session {
 
 const CoachTrainingCalendarPage: React.FC = () => {
   const { user } = useAuth();
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
   const [sessions, setSessions] = useState<Session[]>([]);
   const [centers, setCenters] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
@@ -52,6 +56,12 @@ const CoachTrainingCalendarPage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [selectedCenterId, selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const loadData = async () => {
     try {
@@ -218,7 +228,7 @@ const CoachTrainingCalendarPage: React.FC = () => {
 
       {/* Controls */}
       <Card variant="default" padding="lg" style={{ marginBottom: spacing.lg }}>
-        <div style={{ display: "flex", gap: spacing.md, flexWrap: "wrap", alignItems: "center" }}>
+        <div className="rv-action-row">
           <select
             value={selectedCenterId || ""}
             onChange={(e) => setSelectedCenterId(Number(e.target.value))}
@@ -267,7 +277,7 @@ const CoachTrainingCalendarPage: React.FC = () => {
             }}
           />
 
-          <div style={{ marginLeft: "auto", display: "flex", gap: spacing.sm }}>
+          <div style={{ marginLeft: isMobile ? 0 : "auto", display: "flex", gap: spacing.sm, flexWrap: "wrap", width: isMobile ? "100%" : undefined }}>
             <Button
               variant={viewMode === "month" ? "primary" : "secondary"}
               size="sm"
@@ -294,6 +304,8 @@ const CoachTrainingCalendarPage: React.FC = () => {
 
       {/* Calendar */}
       <Card variant="default" padding="lg">
+        <div className="rv-table-wrap">
+        <div style={{ minWidth: isMobile ? 700 : 0 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: spacing.sm }}>
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
             <div
@@ -319,7 +331,7 @@ const CoachTrainingCalendarPage: React.FC = () => {
               <div
                 key={idx}
                 style={{
-                  minHeight: "120px",
+                  minHeight: isMobile ? "96px" : "120px",
                   padding: spacing.xs,
                   border: `1px solid ${colors.border.medium}`,
                   borderRadius: borderRadius.sm,
@@ -368,6 +380,8 @@ const CoachTrainingCalendarPage: React.FC = () => {
               </div>
             );
           })}
+        </div>
+        </div>
         </div>
       </Card>
 
@@ -445,7 +459,7 @@ const SessionCreateModal: React.FC<{
       <Card
         variant="elevated"
         padding="xl"
-        style={{ maxWidth: "600px", width: "90%", maxHeight: "90vh", overflow: "auto" }}
+        style={{ maxWidth: "600px", width: "min(96vw, 600px)", maxHeight: "90vh", overflow: "auto" }}
         onClick={(e) => e.stopPropagation()}
       >
         <h2 style={{ ...typography.h2, marginBottom: spacing.lg }}>Create Training Session</h2>
@@ -650,7 +664,7 @@ const SessionDetailsModal: React.FC<{
       <Card
         variant="elevated"
         padding="xl"
-        style={{ maxWidth: "900px", width: "90%", maxHeight: "90vh", overflow: "auto" }}
+        style={{ maxWidth: "900px", width: "min(96vw, 900px)", maxHeight: "90vh", overflow: "auto" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: spacing.lg }}>
@@ -718,7 +732,7 @@ const SessionDetailsModal: React.FC<{
           )}
 
           {/* Bulk Actions */}
-          <div style={{ display: "flex", gap: spacing.sm, marginBottom: spacing.md }}>
+          <div style={{ display: "flex", gap: spacing.sm, marginBottom: spacing.md, flexWrap: "wrap" }}>
             <Button variant="secondary" size="sm" onClick={() => onBulkMarkAttendance(session.id, "PRESENT")}>
               Mark All Present
             </Button>
@@ -756,7 +770,7 @@ const SessionDetailsModal: React.FC<{
                     </div>
                   </div>
                   
-                  <div style={{ display: "flex", gap: spacing.xs }}>
+                  <div style={{ display: "flex", gap: spacing.xs, flexWrap: "wrap" }}>
                     <Button
                       variant={status === "PRESENT" ? "primary" : "secondary"}
                       size="sm"

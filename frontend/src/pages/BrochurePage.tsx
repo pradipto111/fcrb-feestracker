@@ -11,12 +11,18 @@ import { brochureAssets, galleryAssets, academyAssets, heroAssets, clubAssets, g
 import { TrophyIcon, ChartLineIcon, CommentIcon } from "../components/icons/IconSet";
 
 const MOBILE_BREAKPOINT = 768;
+const TABLET_BREAKPOINT = 1024;
 
 const BrochurePage: React.FC = () => {
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
+  const [isTablet, setIsTablet] = useState(typeof window !== "undefined" && window.innerWidth <= TABLET_BREAKPOINT);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < MOBILE_BREAKPOINT);
+      setIsTablet(width <= TABLET_BREAKPOINT);
+    };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -31,6 +37,7 @@ const BrochurePage: React.FC = () => {
   return (
     <div
       data-realverse-page
+      data-public-page="true"
       style={{
         minHeight: "100vh",
         width: "100%",
@@ -76,7 +83,7 @@ const BrochurePage: React.FC = () => {
               width: "100%",
               height: "100%",
               display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
+              gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, 1fr)" : "repeat(3, 1fr)",
               zIndex: 0,
             }}
           >
@@ -226,7 +233,7 @@ const BrochurePage: React.FC = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+              gridTemplateColumns: isMobile || isTablet ? "1fr" : "1fr 1fr",
               gap: spacing["2xl"],
               alignItems: "center",
               marginBottom: spacing["2xl"],
@@ -333,7 +340,7 @@ const BrochurePage: React.FC = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
+              gridTemplateColumns: isMobile || isTablet ? "1fr" : "repeat(2, 1fr)",
               gap: spacing.lg,
             }}
           >
@@ -548,7 +555,7 @@ const BrochurePage: React.FC = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+              gridTemplateColumns: isMobile || isTablet ? "1fr" : "1fr 1fr",
               gap: spacing["2xl"],
               alignItems: "center",
             }}
@@ -670,7 +677,7 @@ const BrochurePage: React.FC = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
+              gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, 1fr)" : "repeat(3, 1fr)",
               gap: spacing.lg,
             }}
           >
@@ -897,7 +904,7 @@ const BrochurePage: React.FC = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+              gridTemplateColumns: isMobile || isTablet ? "1fr" : "1fr 1fr",
               gap: spacing["2xl"],
               alignItems: "center",
             }}
@@ -1004,7 +1011,7 @@ const BrochurePage: React.FC = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
+              gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, 1fr)" : "repeat(3, 1fr)",
               gap: spacing.lg,
             }}
           >
@@ -1059,7 +1066,7 @@ const BrochurePage: React.FC = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
+              gridTemplateColumns: isMobile || isTablet ? "1fr" : "repeat(2, 1fr)",
               gap: spacing.lg,
             }}
           >

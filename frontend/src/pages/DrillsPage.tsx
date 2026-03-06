@@ -13,6 +13,10 @@ import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 import "../styles/animations.css";
 
 const DrillsPage: React.FC = () => {
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
   const [videos, setVideos] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -42,6 +46,12 @@ const DrillsPage: React.FC = () => {
   useEffect(() => {
     loadVideos();
   }, [selectedCategory, selectedPlatform, selectedMediaType]);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const loadVideos = async () => {
     try {
@@ -309,7 +319,7 @@ const DrillsPage: React.FC = () => {
       ) : (
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
           gap: spacing.lg,
         }}>
           {videos.map((video, index) => (
@@ -531,7 +541,7 @@ const DrillsPage: React.FC = () => {
           alignItems: "center",
           justifyContent: "center",
           zIndex: 2000,
-          padding: spacing.lg,
+          padding: isMobile ? spacing.md : spacing.lg,
           animation: "fadeIn 0.3s ease-out",
         }}
         onClick={closeVideo}
@@ -624,7 +634,7 @@ const DrillsPage: React.FC = () => {
                 // PDF viewer
                 <div style={{
                   width: "100%",
-                  height: "600px",
+                  height: isMobile ? "65vh" : "600px",
                   marginBottom: spacing.lg,
                   borderRadius: borderRadius.xl,
                   overflow: "hidden",

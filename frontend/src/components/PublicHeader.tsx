@@ -6,29 +6,39 @@ import { colors, typography, spacing, borderRadius, shadows } from "../theme/des
 const MOBILE_NAV_DRAWER_ID = "mobile-nav-drawer";
 
 const MOBILE_BREAKPOINT = 768;
+const TABLET_BREAKPOINT = 1024;
 
 const PublicHeader: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < MOBILE_BREAKPOINT);
+  const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
   const location = useLocation();
   const navigate = useNavigate();
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const isRealverseRoute = location.pathname.startsWith("/realverse");
+  const navCollapseBreakpoint = isRealverseRoute ? MOBILE_BREAKPOINT : TABLET_BREAKPOINT;
+  const isMobile = viewportWidth < MOBILE_BREAKPOINT;
+  const isCompactNav = viewportWidth < navCollapseBreakpoint;
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-      if (window.innerWidth >= MOBILE_BREAKPOINT) {
+      const nextWidth = window.innerWidth;
+      setViewportWidth(nextWidth);
+      if (nextWidth >= navCollapseBreakpoint) {
         setIsMobileMenuOpen(false);
       }
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [navCollapseBreakpoint]);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname, navCollapseBreakpoint]);
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
-    if (isMobileMenuOpen && isMobile) {
+    if (isMobileMenuOpen && isCompactNav) {
       const scrollY = window.scrollY;
       document.body.style.position = "fixed";
       document.body.style.top = `-${scrollY}px`;
@@ -51,7 +61,7 @@ const PublicHeader: React.FC = () => {
       document.body.style.right = "";
       document.body.style.overflow = "";
     };
-  }, [isMobileMenuOpen, isMobile]);
+  }, [isMobileMenuOpen, isCompactNav]);
 
   // Restore focus to menu button when mobile menu closes (not on initial mount)
   const prevMobileMenuOpen = useRef(false);
@@ -241,7 +251,7 @@ const PublicHeader: React.FC = () => {
         {/* Desktop Navigation */}
         <nav
           style={{
-            display: !isMobile ? "flex" : "none",
+            display: !isCompactNav ? "flex" : "none",
             alignItems: "center",
             gap: spacing.md,
             flex: 1,
@@ -395,7 +405,7 @@ const PublicHeader: React.FC = () => {
         {/* CTAs - Ordered by importance: Secondary actions → Primary action */}
         <div
           style={{
-            display: !isMobile ? "flex" : "none",
+            display: !isCompactNav ? "flex" : "none",
             alignItems: "center",
             gap: spacing.sm,
             flexWrap: "nowrap",
@@ -482,7 +492,7 @@ const PublicHeader: React.FC = () => {
           aria-expanded={isMobileMenuOpen}
           aria-controls={MOBILE_NAV_DRAWER_ID}
           style={{
-            display: isMobile ? "flex" : "none",
+            display: isCompactNav ? "flex" : "none",
             alignItems: "center",
             justifyContent: "center",
             minWidth: 44,
@@ -510,7 +520,7 @@ const PublicHeader: React.FC = () => {
 
       {/* Mobile Menu - Rendered via portal to avoid header overflow/clipping */}
       {isMobileMenuOpen &&
-        isMobile &&
+        isCompactNav &&
         ReactDOM.createPortal(
           <>
             {/* Backdrop - closes menu on tap, prevents interaction with page */}
@@ -539,7 +549,7 @@ const PublicHeader: React.FC = () => {
               aria-label="Main navigation"
               style={{
               position: "fixed",
-              top: 72,
+              top: isMobile ? 72 : 86,
               left: 0,
               right: 0,
               bottom: 0,

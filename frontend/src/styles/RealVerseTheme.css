@@ -234,6 +234,23 @@
   margin-top: 0.2rem;
 }
 
+.rv-action-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.rv-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rv-table-wrap table {
+  min-width: 680px;
+}
+
 /* ==================================================
    Progress Bar
    ================================================== */
@@ -485,6 +502,18 @@
 
   .rv-card-actions {
     flex-wrap: wrap;
+  }
+
+  .rv-action-row {
+    align-items: stretch;
+  }
+
+  .rv-action-row > * {
+    flex: 1 1 180px;
+  }
+
+  .rv-table-wrap table {
+    min-width: 560px;
   }
 }
 

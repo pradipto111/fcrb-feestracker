@@ -523,7 +523,9 @@ const EnhancedScheduleManagementPage: React.FC = () => {
               ))}
             </div>
 
-            <div style={{ marginTop: spacing.md, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
+            <div className="rv-table-wrap" style={{ marginTop: spacing.md }}>
+              <div style={{ minWidth: isMobile ? 640 : 0 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
               {weekdayLabels.map((w) => (
                 <div key={w} style={{ ...typography.caption, color: colors.text.muted, textAlign: "center", letterSpacing: "0.12em" }}>
                   {w}
@@ -547,7 +549,7 @@ const EnhancedScheduleManagementPage: React.FC = () => {
                     whileHover={!reduce ? { y: -2 } : undefined}
                     whileTap={!reduce ? { scale: 0.98 } : undefined}
                     style={{
-                      minHeight: 70,
+                      minHeight: isMobile ? 64 : 70,
                       borderRadius: 14,
                       border: isSelected
                         ? "1px solid rgba(0,224,255,0.34)"
@@ -612,6 +614,8 @@ const EnhancedScheduleManagementPage: React.FC = () => {
                   </motion.button>
                 );
               })}
+            </div>
+            </div>
             </div>
 
             <div style={{ marginTop: spacing.md }}>

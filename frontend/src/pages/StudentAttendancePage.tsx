@@ -9,6 +9,10 @@ import { cardVariants } from "../utils/motion";
 import { useHomepageAnimation } from "../hooks/useHomepageAnimation";
 
 const StudentAttendancePage: React.FC = () => {
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
   const [sessions, setSessions] = useState<any[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -18,6 +22,12 @@ const StudentAttendancePage: React.FC = () => {
   useEffect(() => {
     loadAttendance();
   }, [selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const loadAttendance = async () => {
     try {
@@ -217,9 +227,9 @@ const StudentAttendancePage: React.FC = () => {
                     border: `1px solid rgba(255, 255, 255, 0.1)`,
                   }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: spacing.md, flexWrap: "wrap" }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: spacing.md, marginBottom: spacing.sm }}>
+                      <div style={{ display: "flex", alignItems: isMobile ? "flex-start" : "center", gap: spacing.md, marginBottom: spacing.sm, flexWrap: "wrap" }}>
                         <div style={{ 
                           fontSize: typography.fontSize.lg, 
                           fontWeight: typography.fontWeight.bold,

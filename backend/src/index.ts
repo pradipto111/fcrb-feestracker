@@ -54,6 +54,24 @@ process.on('uncaughtException', (error: Error) => {
 });
 
 const app = express();
+const DEFAULT_CORS_ORIGINS = [
+  "https://www.realbengaluru.com",
+  "https://realbengaluru.com",
+  "https://fcrb-frontend.onrender.com",
+  "http://localhost:5173",
+  "http://localhost:4173",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:4173",
+];
+
+const normalizeOrigin = (origin: string) => origin.trim().replace(/\/+$/, "").toLowerCase();
+const envCorsOrigins = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const allowedOrigins = new Set(
+  [...DEFAULT_CORS_ORIGINS, ...envCorsOrigins].map(normalizeOrigin)
+);
 
 // Request logging middleware (for debugging)
 app.use((req, res, next) => {
@@ -95,9 +113,19 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS configuration for production
+// CORS configuration for production and development.
 app.use(cors({
-  origin: true, // Allow all origins in development/production
+  origin: (origin, callback) => {
+    // Allow non-browser clients (curl/postman/server-to-server) with no Origin header.
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.has(normalizeOrigin(origin))) {
+      return callback(null, true);
+    }
+
+    console.warn(`Blocked CORS origin: ${origin}`);
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

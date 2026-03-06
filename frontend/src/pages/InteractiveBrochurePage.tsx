@@ -216,6 +216,7 @@ const InteractiveBrochurePage: React.FC = () => {
   return (
     <div
       data-realverse-page
+      data-public-page="true"
       style={{
         minHeight: "100vh",
         background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,

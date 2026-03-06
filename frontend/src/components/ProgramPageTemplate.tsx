@@ -34,14 +34,17 @@ interface ProgramPageTemplateProps {
 }
 
 const MOBILE_BREAKPOINT = 768;
+const TABLET_BREAKPOINT = 1024;
 
 const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) => {
-  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
+  const [viewportWidth, setViewportWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1280);
+  const isMobile = viewportWidth < MOBILE_BREAKPOINT;
+  const isCompactLayout = viewportWidth <= TABLET_BREAKPOINT;
   const { scrollYProgress } = useScroll();
   const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    const handleResize = () => setViewportWidth(window.innerWidth);
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -66,6 +69,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
   return (
     <div
       data-program-page
+      data-public-page="true"
       style={{
         minHeight: "100vh",
         width: "100%",
@@ -83,7 +87,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         style={{
-          padding: isMobile ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
+          padding: isCompactLayout ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
           position: "relative",
           overflow: "hidden",
           minHeight: isMobile ? "60vh" : "70vh",
@@ -201,7 +205,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
 
       {/* Who This Programme Is For - Card Cluster */}
       <section style={{
-        padding: isMobile ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
+        padding: isCompactLayout ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
         background: "transparent",
         position: "relative",
       }}>
@@ -241,7 +245,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : "1.1fr 0.9fr",
+                gridTemplateColumns: isCompactLayout ? "1fr" : "1.1fr 0.9fr",
                 gap: spacing.xl,
                 alignItems: "start",
               }}
@@ -257,7 +261,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
                   background: `rgba(10, 16, 32, 0.65)`,
                   borderRadius: borderRadius["2xl"],
                   border: `1px solid rgba(255,255,255,0.12)`,
-                  padding: isMobile ? spacing.lg : spacing.xl,
+                  padding: isCompactLayout ? spacing.lg : spacing.xl,
                   overflow: "hidden",
                   boxShadow: `0 18px 54px rgba(0,0,0,0.35)`,
                   backdropFilter: "blur(18px)",
@@ -320,7 +324,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
                   <div
                     style={{
                       display: "flex",
-                      flexDirection: isMobile ? "column" : "row",
+                      flexDirection: isCompactLayout ? "column" : "row",
                       gap: spacing.md,
                       marginTop: spacing.lg,
                     }}
@@ -331,7 +335,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
                       onClick={() => {
                         window.location.href = "/brochure";
                       }}
-                      style={{ width: isMobile ? "100%" : "auto", minHeight: 44 }}
+                      style={{ width: isCompactLayout ? "100%" : "auto", minHeight: 44 }}
                     >
                       Apply / Enquire <ArrowRightIcon size={18} style={{ marginLeft: spacing.xs }} />
                     </Button>
@@ -341,7 +345,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
                       onClick={() => {
                         window.location.href = "/realverse/experience";
                       }}
-                      style={{ width: isMobile ? "100%" : "auto", minHeight: 44 }}
+                      style={{ width: isCompactLayout ? "100%" : "auto", minHeight: 44 }}
                     >
                       See RealVerse Experience <ArrowRightIcon size={18} style={{ marginLeft: spacing.xs }} />
                     </Button>
@@ -430,7 +434,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
 
       {/* MERGED SECTION 1: Training, Match Environment & Progression - Split Layout */}
       <section style={{
-        padding: isMobile ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
+        padding: isCompactLayout ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
         background: `linear-gradient(135deg, rgba(0,224,255,0.08) 0%, rgba(255,169,0,0.06) 100%)`,
         position: "relative",
         overflow: "hidden",
@@ -519,7 +523,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
           {/* Split Layout: Left Side - Training & Match */}
           <div style={{
             display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+            gridTemplateColumns: isCompactLayout ? "1fr" : "1fr 1fr",
             gap: spacing.xl,
             marginBottom: spacing.xl,
           }}>
@@ -748,7 +752,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
 
       {/* MERGED SECTION 2: Data, Analytics, AI & RealVerse Experience - Unified Dashboard */}
       <section style={{
-        padding: isMobile ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
+        padding: isCompactLayout ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
         background: "transparent",
         position: "relative",
         overflow: "hidden",
@@ -911,7 +915,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
               background: "rgba(10, 16, 32, 0.55)",
               backdropFilter: "blur(18px)",
               boxShadow: "0 22px 60px rgba(0,0,0,0.45)",
-              minHeight: isMobile ? 280 : 360,
+              minHeight: isCompactLayout ? 280 : 360,
               marginBottom: spacing["2xl"],
             }}
           >
@@ -953,7 +957,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
               transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut" }}
             />
 
-            <div style={{ position: "relative", zIndex: 2, padding: isMobile ? spacing.lg : spacing.xl }}>
+            <div style={{ position: "relative", zIndex: 2, padding: isCompactLayout ? spacing.lg : spacing.xl }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.lg }}>
                 <div>
                   <div style={{ ...typography.overline, color: accentColor, letterSpacing: "0.18em" }}>
@@ -1035,7 +1039,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
           {/* Split Layout: AI Features Left, RealVerse Features Right */}
           <div style={{
             display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+            gridTemplateColumns: isCompactLayout ? "1fr" : "1fr 1fr",
             gap: spacing.xl,
           }}>
             {/* Left: AI & Analytics Features */}
@@ -1059,7 +1063,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
                 <ChartBarIcon size={22} color={accentColor} />
                 AI-Powered Analytics
               </motion.h3>
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: spacing.md }}>
+              <div style={{ display: "grid", gridTemplateColumns: isCompactLayout ? "1fr" : "1fr 1fr", gap: spacing.md }}>
                 {program.data.aiFeatures.slice(0, 6).map((feature, idx) => (
                   <motion.div
                     key={idx}
@@ -1181,7 +1185,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
               >
                 Features available to players & parents:
               </motion.p>
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: spacing.md }}>
+              <div style={{ display: "grid", gridTemplateColumns: isCompactLayout ? "1fr" : "1fr 1fr", gap: spacing.md }}>
                 {program.realverse.features.slice(0, 8).map((feature, idx) => (
                   <motion.div
                     key={idx}
@@ -1266,7 +1270,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
 
       {/* CTA Section - Premium */}
       <section style={{
-        padding: isMobile ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
+        padding: isCompactLayout ? `${spacing["2xl"]} ${spacing.md}` : `${spacing["4xl"]} ${spacing.xl}`,
         background: `linear-gradient(135deg, rgba(0,224,255,0.1) 0%, rgba(255,169,0,0.08) 100%)`,
         position: "relative",
         overflow: "hidden",
@@ -1334,7 +1338,7 @@ const ProgramPageTemplate: React.FC<ProgramPageTemplateProps> = ({ program }) =>
                 onClick={() => {
                   window.location.href = "/brochure";
                 }}
-                style={{ width: isMobile ? "100%" : "auto", minHeight: 44 }}
+                style={{ width: isCompactLayout ? "100%" : "auto", minHeight: 44 }}
               >
                 Apply / Enquire <ArrowRightIcon size={18} style={{ marginLeft: spacing.xs }} />
               </Button>

@@ -49,11 +49,6 @@ async function request(
     }
 
     const url = `${API_BASE}${path}`;
-    // #region agent log
-    if (path.includes("/payments/logs")) {
-      fetch("http://127.0.0.1:7242/ingest/265bcb14-462a-43bf-9004-045e0f654b8f", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location: "client.ts:request", message: "payments/logs request", data: { apiBase: API_BASE, path, hasAuth: !!currentToken }, timestamp: Date.now(), hypothesisId: "A" }) }).catch(() => {});
-    }
-    // #endregion
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const payloadSize = options.body ? new Blob([options.body as string]).size : 0;
     
@@ -134,11 +129,6 @@ async function request(
       if (res.status !== 404) {
         console.error(`[${requestId}] API Error: ${res.status} ${path} - ${errorMessage}`);
       }
-      // #region agent log
-      if (path.includes("/payments/logs")) {
-        fetch("http://127.0.0.1:7242/ingest/265bcb14-462a-43bf-9004-045e0f654b8f", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location: "client.ts:request", message: "payments/logs error response", data: { status: res.status, errorMessage }, timestamp: Date.now(), hypothesisId: "B" }) }).catch(() => {});
-      }
-      // #endregion
       const error = new Error(errorMessage);
       (error as any).status = res.status;
       (error as any).requestId = requestId;
@@ -148,11 +138,6 @@ async function request(
     const contentType = res.headers.get("Content-Type") || "";
     if (contentType.includes("application/json")) {
       const jsonData = await res.json();
-      // #region agent log
-      if (path.includes("/payments/logs")) {
-        fetch("http://127.0.0.1:7242/ingest/265bcb14-462a-43bf-9004-045e0f654b8f", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location: "client.ts:request", message: "payments/logs success", data: { logsCount: jsonData?.logs?.length, total: jsonData?.pagination?.total }, timestamp: Date.now(), hypothesisId: "C" }) }).catch(() => {});
-      }
-      // #endregion
       return jsonData;
     }
     return null;

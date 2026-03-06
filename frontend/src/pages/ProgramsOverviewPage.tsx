@@ -410,6 +410,7 @@ const ProgramsOverviewPage: React.FC = () => {
   return (
     <div
       data-program-page
+      data-public-page="true"
       style={{
         position: "relative",
         background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,
@@ -641,7 +642,7 @@ const ProgramsOverviewPage: React.FC = () => {
             position: "relative",
             zIndex: 10,
             display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "1.15fr 0.85fr",
+            gridTemplateColumns: isMobile || isTablet ? "1fr" : "1.15fr 0.85fr",
             gap: isMobile ? spacing["2xl"] : spacing["3xl"],
             alignItems: "center",
             minHeight: "calc(100vh - 96px)",
@@ -781,7 +782,7 @@ const ProgramsOverviewPage: React.FC = () => {
               transition={{ delay: 0.85, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
               style={{ 
                 display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                gridTemplateColumns: isMobile || isTablet ? "1fr" : "1fr 1fr",
                 gap: spacing.md, 
                 alignItems: "stretch",
                 maxWidth: isMobile ? "100%" : "680px",
@@ -1272,7 +1273,7 @@ const ProgramsOverviewPage: React.FC = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
+              gridTemplateColumns: isMobile || isTablet ? "1fr" : "repeat(2, 1fr)",
               gap: spacing.xl,
             }}
           >
@@ -1733,7 +1734,7 @@ const ProgramsOverviewPage: React.FC = () => {
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr 1.2fr",
+                    gridTemplateColumns: isMobile || isTablet ? "1fr" : "1.2fr 1fr 1fr 1.2fr",
                     gap: isMobile ? 20 : 24,
                     alignItems: "flex-start",
                   }}
@@ -1976,7 +1977,7 @@ const ProgramsOverviewPage: React.FC = () => {
                       <div
                         style={{
                           display: "grid",
-                          gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
+                          gridTemplateColumns: isMobile || isTablet ? "1fr" : "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
                           gap: isMobile ? spacing.md : spacing.lg,
                           maxWidth: "1200px",
                           margin: "0 auto",

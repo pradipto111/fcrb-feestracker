@@ -16,6 +16,10 @@ import "../styles/animations.css";
 const FeedPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -26,6 +30,12 @@ const FeedPage: React.FC = () => {
 
   useEffect(() => {
     loadPosts();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const loadPosts = async () => {
@@ -352,7 +362,7 @@ const FeedPage: React.FC = () => {
                 padding: spacing.lg, 
                 borderBottom: "1px solid rgba(255, 255, 255, 0.1)" 
               }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: spacing.md, flexWrap: "wrap" }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: spacing.md, marginBottom: spacing.sm }}>
                       <div style={{
@@ -417,6 +427,7 @@ const FeedPage: React.FC = () => {
                       variant="danger"
                       size="sm"
                       onClick={() => handleDeletePost(post.id)}
+                      style={{ width: isMobile ? "100%" : undefined }}
                     >
                       🗑️ Delete
                     </Button>
@@ -514,7 +525,7 @@ const FeedPage: React.FC = () => {
                                 </div>
                               </div>
                               {(user?.role === "ADMIN" || (comment.createdByRole === user?.role && comment.createdById === user?.id)) && (
-                                <div style={{ display: "flex", gap: spacing.sm }}>
+                                <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
                                   <Button
                                     variant="primary"
                                     size="sm"
