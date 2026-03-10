@@ -32,8 +32,16 @@ const CoachDrillContentPage: React.FC = () => {
     platform: "YOUTUBE" as "YOUTUBE" | "INSTAGRAM",
     category: "",
     file: null as File | null,
-    filePreview: null as string | null, // Base64 preview for images
+    filePreview: null as string | null, // Object URL for local preview or remote URL
   });
+
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve((reader.result as string) || "");
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(file);
+    });
 
   const categories = [
     "Dribbling",
@@ -103,20 +111,13 @@ const CoachDrillContentPage: React.FC = () => {
       }
     }
 
-    // Convert to base64
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData({
-        ...formData,
-        file,
-        filePreview: reader.result as string,
-      });
-      setError("");
-    };
-    reader.onerror = () => {
-      setError("Failed to read file");
-    };
-    reader.readAsDataURL(file);
+    const previewUrl = formData.mediaType === "IMAGE" ? URL.createObjectURL(file) : null;
+    setFormData({
+      ...formData,
+      file,
+      filePreview: previewUrl,
+    });
+    setError("");
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -163,7 +164,7 @@ const CoachDrillContentPage: React.FC = () => {
         videoData.platform = formData.platform;
       } else {
         const uploadedFile = formData.file;
-        videoData.fileData = formData.filePreview;
+        videoData.fileData = await fileToBase64(uploadedFile!);
         videoData.fileName = uploadedFile!.name;
         videoData.mimeType = uploadedFile!.type;
         videoData.fileSize = uploadedFile!.size;
@@ -254,7 +255,7 @@ const CoachDrillContentPage: React.FC = () => {
       } else {
         // Only send fileData if a new file was uploaded
         if (formData.file) {
-          videoData.fileData = formData.filePreview;
+          videoData.fileData = await fileToBase64(formData.file);
           videoData.fileName = formData.file.name;
           videoData.mimeType = formData.file.type;
           videoData.fileSize = formData.file.size;

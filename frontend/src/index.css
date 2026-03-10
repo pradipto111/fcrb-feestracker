@@ -98,8 +98,13 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 500;
 }
 
-/* Smooth Animations */
-* {
+/* Smooth Animations - limit to interactive elements to reduce style recalculation */
+button,
+a,
+input,
+select,
+textarea,
+[role="button"] {
   transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -109,39 +114,7 @@ h1, h2, h3, h4, h5, h6 {
   100% { transform: rotate(360deg); }
 }
 
-/* Hide ALL Scrollbars - Keep scrolling functionality */
-* {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
-
-*::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
-  width: 0;
-  height: 0;
-}
-
-html {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-html::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
-}
-
-body {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-body::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
-}
+/* Keep default scrollbars globally for better performance/accessibility */
 
 /* Sidebar Scroll Fix - Ensure scroll wheel works and smooth UX */
 aside[style*="overflow-y: auto"],
@@ -485,6 +458,29 @@ body > div[style*="position: relative"] > div[style*="position: absolute"] {
   white-space: nowrap;
 }
 
+/* Public pages: keep nested scrollers functional but hide their bars.
+   This leaves only the main page scrollbar visibly active. */
+[data-public-page="true"] [style*="overflow-y: auto"],
+[data-public-page="true"] [style*="overflowY: auto"],
+[data-public-page="true"] [style*="overflow-x: auto"],
+[data-public-page="true"] [style*="overflowX: auto"],
+[data-public-page="true"] [style*="overflow: auto"],
+[data-public-page="true"] [style*="overflow: scroll"] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+[data-public-page="true"] [style*="overflow-y: auto"]::-webkit-scrollbar,
+[data-public-page="true"] [style*="overflowY: auto"]::-webkit-scrollbar,
+[data-public-page="true"] [style*="overflow-x: auto"]::-webkit-scrollbar,
+[data-public-page="true"] [style*="overflowX: auto"]::-webkit-scrollbar,
+[data-public-page="true"] [style*="overflow: auto"]::-webkit-scrollbar,
+[data-public-page="true"] [style*="overflow: scroll"]::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 @media (max-width: 1024px) {
   .public-responsive-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -523,4 +519,31 @@ body > div[style*="position: relative"] > div[style*="position: absolute"] {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Global scrollbar policy:
+   - Show exactly one visible scrollbar (page/root)
+   - Keep nested containers scrollable, but hide their scrollbar UI */
+*:not(html):not(body) {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+*:not(html):not(body)::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+html,
+body {
+  scrollbar-width: auto !important;
+  -ms-overflow-style: auto !important;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 12px !important;
+  height: 12px !important;
+  display: block !important;
 }

@@ -9,6 +9,49 @@ import { colors, typography, spacing, shadows } from "../theme/design-tokens";
 import { realverseAssets, galleryAssets } from "../config/assets";
 
 const MOBILE_BREAKPOINT = 768;
+type RealverseRole = "ADMIN" | "COACH" | "STUDENT" | "FAN" | "CRM";
+
+function getLandingRouteForRole(role: RealverseRole): string {
+  if (role === "ADMIN") return "/realverse/admin/students";
+  if (role === "COACH") return "/realverse/coach/students";
+  if (role === "STUDENT") return "/realverse/student";
+  if (role === "FAN") return "/realverse/fan";
+  if (role === "CRM") return "/realverse/crm";
+  return "/realverse";
+}
+
+function preloadRoleLanding(role: RealverseRole): void {
+  let preloadPromise: Promise<unknown>;
+  if (role === "ADMIN") {
+    preloadPromise = Promise.allSettled([
+      import("../components/AdminLayout"),
+      import("./EnhancedStudentsPage"),
+    ]);
+  } else if (role === "COACH") {
+    preloadPromise = Promise.allSettled([
+      import("../components/CoachLayout"),
+      import("./EnhancedStudentsPage"),
+    ]);
+  } else if (role === "STUDENT") {
+    preloadPromise = Promise.allSettled([
+      import("../components/StudentLayout"),
+      import("./student/StudentDashboardOverview"),
+    ]);
+  } else if (role === "FAN") {
+    preloadPromise = Promise.allSettled([
+      import("../components/FanLayout"),
+      import("./fan/FanDashboardOverview"),
+    ]);
+  } else {
+    preloadPromise = Promise.allSettled([
+      import("../components/CrmLayout"),
+      import("./crm/CrmDashboardPage"),
+    ]);
+  }
+
+  // Best effort only: preload failures should never block sign-in.
+  preloadPromise.catch(() => undefined);
+}
 
 function toUserFriendlyLoginError(message: string): string {
   if (/invalid credentials/i.test(message)) return "Invalid email or password.";
@@ -60,8 +103,9 @@ const LoginPage: React.FC = () => {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
-      navigate("/realverse");
+      const authenticatedUser = await login(email, password);
+      preloadRoleLanding(authenticatedUser.role);
+      navigate(getLandingRouteForRole(authenticatedUser.role), { replace: true });
     } catch (err: any) {
       setError(toUserFriendlyLoginError(err?.message || ""));
     } finally {

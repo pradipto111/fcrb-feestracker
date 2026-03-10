@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import * as XLSX from "xlsx";
 import { api } from "../../api/client";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { Card } from "../../components/ui/Card";
@@ -126,6 +125,7 @@ const CrmImportPage: React.FC = () => {
         return;
       }
       if (ext === "xlsx" || ext === "xls") {
+        const XLSX = await import("xlsx");
         const buf = await f.arrayBuffer();
         const wb = XLSX.read(buf, { type: "array" });
         const sheetName = wb.SheetNames[0];

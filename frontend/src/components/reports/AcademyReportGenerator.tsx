@@ -1,6 +1,4 @@
 import React, { useRef } from "react";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { colors, typography, spacing } from "../../theme/design-tokens";
 
 interface AcademyReportData {
@@ -45,6 +43,11 @@ export const AcademyReportGenerator: React.FC<AcademyReportGeneratorProps> = ({
         box-shadow: 0 4px 20px rgba(0,0,0,0.3);
       `;
       document.body.appendChild(loadingMsg);
+
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
 
       // Generate canvas
       const canvas = await html2canvas(reportRef.current, {

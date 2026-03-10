@@ -11,7 +11,7 @@ type User = {
 type AuthContextType = {
   user: User | null;
   isReady: boolean;
-  login: (email: string, password: string, role?: User["role"]) => Promise<void>;
+  login: (email: string, password: string, role?: User["role"]) => Promise<User>;
   logout: () => void;
 };
 
@@ -58,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(res.token);
     setUser(res.user);
     localStorage.setItem("user", JSON.stringify(res.user));
+    return res.user as User;
   };
 
   const logout = useCallback(() => {

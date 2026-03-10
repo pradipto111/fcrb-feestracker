@@ -159,7 +159,7 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
 
   const profileInfo = profileData && getProfileInfo ? getProfileInfo(profileData) : null;
 
-  if (isMobile) {
+  if (isMobile || isTablet) {
     return (
       <div
         data-realverse-page
@@ -208,7 +208,7 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
           </div>
 
           {mobileMenuOpen && (
-            <div style={{ marginTop: spacing.md, display: "flex", flexDirection: "column", gap: spacing.xs, maxHeight: "60vh", overflowY: "auto" }}>
+            <div style={{ marginTop: spacing.md, display: "flex", flexDirection: "column", gap: spacing.xs }}>
               {navItems.map((item) => {
                 const active = isActive(item.path);
                 return (
@@ -315,7 +315,7 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
           top: 0,
           height: "100vh",
           maxHeight: "100vh",
-          overflowY: "auto",
+          overflowY: "visible",
           overflowX: "hidden",
           WebkitOverflowScrolling: "touch" as any,
           overscrollBehavior: "contain",
@@ -374,7 +374,7 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
             gap: spacing.xs, 
             flex: 1,
             minHeight: 0, // Critical for flex scrolling
-            overflowY: "auto",
+            overflowY: "visible",
             overflowX: "hidden",
             scrollBehavior: "smooth",
             WebkitOverflowScrolling: "touch" as any,
@@ -522,7 +522,6 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({
       <main style={{ 
         flex: 1, 
         padding: isTablet ? spacing.lg : spacing.xl, 
-        overflowY: "auto", 
         overflowX: "hidden",
         background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,
         minHeight: "100vh",

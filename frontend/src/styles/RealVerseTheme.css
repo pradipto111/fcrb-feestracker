@@ -175,6 +175,107 @@
   box-shadow: 0 0 0 1px rgba(0, 224, 255, 0.5);
 }
 
+.rv-multi-select {
+  position: relative;
+}
+
+.rv-multi-select__trigger {
+  width: 100%;
+  min-height: 42px;
+  border-radius: var(--rv-radius-sm);
+  border: 1px solid var(--rv-border-subtle);
+  background: rgba(3, 9, 28, 0.9);
+  color: var(--rv-text-body);
+  padding: 0.55rem 0.7rem;
+  font-size: 0.86rem;
+  font-family: "Inter", sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rv-multi-select__trigger--open,
+.rv-multi-select__trigger:focus-visible {
+  border-color: rgba(0, 224, 255, 0.7);
+  box-shadow: 0 0 0 1px rgba(0, 224, 255, 0.5);
+  outline: none;
+}
+
+.rv-multi-select__summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rv-multi-select__chevron {
+  color: var(--rv-text-muted);
+  flex-shrink: 0;
+  transition: transform 160ms ease;
+}
+
+.rv-multi-select__trigger--open .rv-multi-select__chevron {
+  transform: rotate(180deg);
+}
+
+.rv-multi-select__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  border-radius: var(--rv-radius-sm);
+  border: 1px solid rgba(0, 224, 255, 0.2);
+  background: #0c1730;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+  padding: 0.55rem;
+}
+
+.rv-multi-select__search {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.rv-multi-select__list {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding-right: 0.1rem;
+}
+
+.rv-multi-select__option {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--rv-text-secondary);
+}
+
+.rv-multi-select__option:hover {
+  background: rgba(0, 224, 255, 0.08);
+}
+
+.rv-multi-select__option input[type="checkbox"] {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  margin: 0 !important;
+  accent-color: #00e0ff;
+}
+
+.rv-multi-select__empty {
+  padding: 0.65rem 0.5rem;
+  color: var(--rv-text-muted);
+  font-size: 0.82rem;
+}
+
 /* ==================================================
    Cards
    ================================================== */

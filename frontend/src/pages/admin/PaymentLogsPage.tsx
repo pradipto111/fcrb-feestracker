@@ -70,6 +70,10 @@ function writePaymentLogsCache(key: string, payload: Omit<PaymentLogsCacheEntry,
 }
 
 const PaymentLogsPage: React.FC = () => {
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -85,6 +89,12 @@ const PaymentLogsPage: React.FC = () => {
   const [actorTypeFilter, setActorTypeFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const cacheKey = getPaymentLogsCacheKey({
@@ -443,6 +453,34 @@ const PaymentLogsPage: React.FC = () => {
           </div>
         ) : (
           <>
+            {isMobile ? (
+              <div style={{ display: "grid", gap: spacing.sm }}>
+                {logs.map((log) => (
+                  <Card key={log.id} variant="default" padding="md">
+                    <div style={{ ...typography.caption, color: colors.text.muted }}>
+                      {formatDate(log.timestamp)}
+                    </div>
+                    <div style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.semibold, marginTop: spacing.xs }}>
+                      {getActionLabel(log.action)}
+                    </div>
+                    <div style={{ ...typography.caption, color: colors.text.secondary, marginTop: spacing.xs }}>
+                      {log.actorName || "Unknown"} ({getActorTypeLabel(log.actorType)})
+                    </div>
+                    <div style={{ ...typography.caption, color: colors.text.secondary, marginTop: spacing.xs }}>
+                      Student: {log.studentName || "-"}
+                    </div>
+                    <div style={{ ...typography.body, color: colors.text.primary, marginTop: spacing.xs }}>
+                      Amount: ₹{Number(log.amount || 0).toLocaleString("en-IN")}
+                    </div>
+                    {log.notes ? (
+                      <div style={{ ...typography.caption, color: colors.text.muted, marginTop: spacing.xs }}>
+                        {log.notes}
+                      </div>
+                    ) : null}
+                  </Card>
+                ))}
+              </div>
+            ) : (
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ 
@@ -499,13 +537,6 @@ const PaymentLogsPage: React.FC = () => {
                     key={log.id} 
                     style={{ 
                       borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
                     }}
                   >
                     <td style={{ padding: spacing.md, color: colors.text.muted, fontSize: typography.fontSize.sm }}>
@@ -574,6 +605,7 @@ const PaymentLogsPage: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            )}
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (

@@ -5,18 +5,16 @@ import { DISABLE_HEAVY_ANALYTICS } from "../../../config/featureFlags";
 import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { colors, typography, spacing, borderRadius } from "../../../theme/design-tokens";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import { LineChart } from "recharts/es6/chart/LineChart";
+import { BarChart } from "recharts/es6/chart/BarChart";
+import { Line } from "recharts/es6/cartesian/Line";
+import { Bar } from "recharts/es6/cartesian/Bar";
+import { XAxis } from "recharts/es6/cartesian/XAxis";
+import { YAxis } from "recharts/es6/cartesian/YAxis";
+import { CartesianGrid } from "recharts/es6/cartesian/CartesianGrid";
+import { Tooltip } from "recharts/es6/component/Tooltip";
+import { Legend } from "recharts/es6/component/Legend";
+import { ResponsiveContainer } from "recharts/es6/component/ResponsiveContainer";
 import { AnalyticsCard } from "../../../components/analytics/AnalyticsCard";
 import { ChartContainer } from "../../../components/analytics/ChartContainer";
 import FinanceDataModal from "./FinanceDataModal";

@@ -212,12 +212,37 @@ const AttendanceManagementPage: React.FC = () => {
     }
   };
 
-  const handleMarkAttendance = async (sessionId: number, studentId: number, status: "PRESENT" | "ABSENT" | "EXCUSED", notes?: string) => {
+  const handleMarkAttendance = async (
+    sessionId: number,
+    studentId: number,
+    status: "PRESENT" | "ABSENT" | "EXCUSED",
+    notes?: string,
+    options?: { skipReload?: boolean }
+  ) => {
     try {
       setLoading(true);
       await api.markAttendance(sessionId, { studentId, status, notes: notes || "" });
-      await loadSessions();
-      await loadAttendanceAnalytics();
+      setAttendanceModalSession((prev: any) => {
+        if (!prev || prev.id !== sessionId) return prev;
+        const previousAttendance = Array.isArray(prev.attendance) ? prev.attendance : [];
+        const index = previousAttendance.findIndex((item: any) => item.studentId === studentId);
+        const nextRecord = {
+          ...(index >= 0 ? previousAttendance[index] : { studentId }),
+          studentId,
+          status,
+          notes: notes || "",
+        };
+        const nextAttendance =
+          index >= 0
+            ? previousAttendance.map((item: any, idx: number) => (idx === index ? nextRecord : item))
+            : [...previousAttendance, nextRecord];
+        return { ...prev, attendance: nextAttendance };
+      });
+
+      if (!options?.skipReload) {
+        await loadSessions();
+        await loadAttendanceAnalytics();
+      }
       setError("");
     } catch (err: any) {
       setError(err.message || "Failed to update attendance");
@@ -1595,8 +1620,9 @@ const AttendanceManagementPage: React.FC = () => {
                           size="sm"
                           onClick={async () => {
                             const remark = attendanceModalRemarks[student.id] || "";
-                            await handleMarkAttendance(attendanceModalSession.id, student.id, "PRESENT", remark);
-                            await handleOpenAttendanceModal(attendanceModalSession);
+                            await handleMarkAttendance(attendanceModalSession.id, student.id, "PRESENT", remark, {
+                              skipReload: true,
+                            });
                           }}
                           disabled={loading}
                           style={{
@@ -1610,8 +1636,9 @@ const AttendanceManagementPage: React.FC = () => {
                           size="sm"
                           onClick={async () => {
                             const remark = attendanceModalRemarks[student.id] || "";
-                            await handleMarkAttendance(attendanceModalSession.id, student.id, "ABSENT", remark);
-                            await handleOpenAttendanceModal(attendanceModalSession);
+                            await handleMarkAttendance(attendanceModalSession.id, student.id, "ABSENT", remark, {
+                              skipReload: true,
+                            });
                           }}
                           disabled={loading}
                         >
@@ -1622,8 +1649,9 @@ const AttendanceManagementPage: React.FC = () => {
                           size="sm"
                           onClick={async () => {
                             const remark = attendanceModalRemarks[student.id] || "";
-                            await handleMarkAttendance(attendanceModalSession.id, student.id, "EXCUSED", remark);
-                            await handleOpenAttendanceModal(attendanceModalSession);
+                            await handleMarkAttendance(attendanceModalSession.id, student.id, "EXCUSED", remark, {
+                              skipReload: true,
+                            });
                           }}
                           disabled={loading}
                           style={{
@@ -1655,9 +1683,9 @@ const AttendanceManagementPage: React.FC = () => {
                               attendanceModalSession.id, 
                               student.id, 
                               currentStatus as "PRESENT" | "ABSENT" | "EXCUSED", 
-                              attendanceModalRemarks[student.id] || ""
+                              attendanceModalRemarks[student.id] || "",
+                              { skipReload: true }
                             );
-                            await handleOpenAttendanceModal(attendanceModalSession);
                           }
                         }}
                         placeholder="Add review or remarks for this student (e.g., 'Excellent performance today', 'Needs improvement in passing', 'Late by 10 minutes')"
@@ -1706,11 +1734,13 @@ const AttendanceManagementPage: React.FC = () => {
                         attendanceModalSession.id,
                         student.id,
                         attendance.status as "PRESENT" | "ABSENT" | "EXCUSED",
-                        remark
+                        remark,
+                        { skipReload: true }
                       );
                     }
                   }
-                  await handleOpenAttendanceModal(attendanceModalSession);
+                  await loadSessions();
+                  await loadAttendanceAnalytics();
                 }}
                 disabled={loading}
                 style={{ flex: 1 }}

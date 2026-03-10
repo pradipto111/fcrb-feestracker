@@ -897,8 +897,101 @@ const EnhancedStudentsPage: React.FC = () => {
             </div>
           }
         >
-          <div className="rv-table-wrap">
-          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? 760 : 0 }}>
+          {isMobile ? (
+            <div style={{ display: "grid", gap: spacing.md }}>
+              {paginatedStudents.map((student) => {
+                const paymentInfo = studentPayments[student.id];
+                const outstanding = paymentInfo?.outstanding ?? 0;
+                return (
+                  <Card key={student.id} variant="default" padding="md">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.sm }}>
+                      <div>
+                        <Link
+                          to={`/students/${student.id}`}
+                          style={{
+                            ...typography.body,
+                            fontWeight: typography.fontWeight.semibold,
+                            color: colors.primary.light,
+                            textDecoration: "none",
+                          }}
+                        >
+                          {student.fullName}
+                        </Link>
+                        <div style={{ ...typography.caption, color: colors.text.muted, marginTop: spacing.xs }}>
+                          {student.centerName} • {student.programType || "-"}
+                        </div>
+                      </div>
+                      <StatusChip
+                        status={student.status === "ACTIVE" ? "success" : student.status === "TRIAL" ? "warning" : "inactive"}
+                        label={student.status}
+                      />
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: spacing.sm,
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: spacing.sm,
+                      }}
+                    >
+                      <div>
+                        <div style={{ ...typography.caption, color: colors.text.muted }}>Monthly Fee</div>
+                        <div style={{ ...typography.body, color: colors.text.primary, fontWeight: typography.fontWeight.semibold }}>
+                          ₹{student.monthlyFeeAmount.toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ ...typography.caption, color: colors.text.muted }}>Outstanding</div>
+                        <div
+                          style={{
+                            ...typography.body,
+                            color: outstanding > 0 ? colors.danger.main : colors.success.main,
+                            fontWeight: typography.fontWeight.semibold,
+                          }}
+                        >
+                          {paymentInfo ? `₹${outstanding.toLocaleString()}` : "Loading..."}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: spacing.md, display: "flex", flexDirection: "column", gap: spacing.xs }}>
+                      <Link to={`/realverse/admin/players/${student.id}/profile`} style={{ textDecoration: "none" }}>
+                        <Button variant="primary" size="sm" style={{ width: "100%" }}>
+                          View Profile
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => navigate(`/realverse/students/${student.id}`)}
+                        style={{ width: "100%" }}
+                      >
+                        Update Payment
+                      </Button>
+                      {user?.role === "ADMIN" && (
+                        <Button
+                          variant="utility"
+                          size="sm"
+                          onClick={() => handleDeleteClick(student)}
+                          style={{
+                            width: "100%",
+                            background: colors.danger.soft,
+                            color: colors.danger.main,
+                            border: `1px solid ${colors.danger.main}40`,
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rv-table-wrap">
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 760 }}>
           <thead>
             <tr style={{ 
               background: "rgba(255, 255, 255, 0.05)", 
@@ -961,13 +1054,7 @@ const EnhancedStudentsPage: React.FC = () => {
                 key={student.id} 
                 style={{ 
                   borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-                  transition: "all 0.2s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
+                  background: "transparent",
                 }}
               >
                 <td style={{ padding: spacing.md }}>
@@ -1088,6 +1175,7 @@ const EnhancedStudentsPage: React.FC = () => {
           </tbody>
         </table>
         </div>
+          )}
         </DataTableCard>
         
         {/* Pagination Controls */}

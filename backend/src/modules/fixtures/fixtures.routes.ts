@@ -28,6 +28,7 @@ function extractScore(notes?: string | null): string | null {
 // PUBLIC: Get fixtures for landing page (no auth required)
 router.get("/public", async (req, res) => {
   try {
+    res.setHeader("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
     const now = new Date();
     
     // Get upcoming fixtures (next 10)

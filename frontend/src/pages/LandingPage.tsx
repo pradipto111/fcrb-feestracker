@@ -957,11 +957,65 @@ const InfinitySection: React.FC<{
 }> = ({ children, id, style, delay = 0, bridge = false }) => {
   const { infinitySectionVariants, viewportOnce } = useHomepageAnimation();
   const sectionRef = useRef<HTMLElement>(null);
+  const {
+    padding: stylePadding,
+    paddingTop: stylePaddingTop,
+    paddingBottom: stylePaddingBottom,
+    ...styleWithoutPaddingShorthand
+  } = style ?? {};
   const isInView = useInView(sectionRef, { 
     once: false, 
     amount: 0.1,
     margin: "-100px", // Negative margin to trigger earlier for smoother transitions
   });
+
+  const expandedPadding: Partial<React.CSSProperties> = (() => {
+    if (stylePadding === undefined) return {};
+
+    if (typeof stylePadding === "number") {
+      return {
+        paddingTop: stylePadding,
+        paddingRight: stylePadding,
+        paddingBottom: stylePadding,
+        paddingLeft: stylePadding,
+      };
+    }
+
+    const tokens = String(stylePadding).trim().split(/\s+/);
+    if (tokens.length === 1) {
+      return {
+        paddingTop: tokens[0],
+        paddingRight: tokens[0],
+        paddingBottom: tokens[0],
+        paddingLeft: tokens[0],
+      };
+    }
+
+    if (tokens.length === 2) {
+      return {
+        paddingTop: tokens[0],
+        paddingBottom: tokens[0],
+        paddingRight: tokens[1],
+        paddingLeft: tokens[1],
+      };
+    }
+
+    if (tokens.length === 3) {
+      return {
+        paddingTop: tokens[0],
+        paddingRight: tokens[1],
+        paddingLeft: tokens[1],
+        paddingBottom: tokens[2],
+      };
+    }
+
+    return {
+      paddingTop: tokens[0],
+      paddingRight: tokens[1],
+      paddingBottom: tokens[2],
+      paddingLeft: tokens[3],
+    };
+  })();
 
   // If a section uses a background image/gradient, mirror it onto the
   // transition bridges so we don't see "frame" borders between sections.
@@ -1012,14 +1066,21 @@ const InfinitySection: React.FC<{
         }}
         viewport={{ once: false, amount: 0.1 }}
         style={{
-          ...style,
+          ...styleWithoutPaddingShorthand,
+          ...expandedPadding,
           position: "relative",
           marginTop: bridge ? "-100px" : "0",
           marginBottom: bridge ? "-100px" : "0",
           // Fixed header overlap - ensure top padding accounts for sticky header (120px)
           // Consistent spacing matching hero-to-our-story gap: 64px top + 96px bottom = 160px total
-          paddingTop: bridge ? "150px" : (style?.paddingTop !== undefined ? style.paddingTop : spacing.sectionGap),
-          paddingBottom: bridge ? "150px" : (style?.paddingBottom !== undefined ? style.paddingBottom : spacing["4xl"]),
+          paddingTop:
+            bridge
+              ? "150px"
+              : (stylePaddingTop ?? expandedPadding.paddingTop ?? spacing.sectionGap),
+          paddingBottom:
+            bridge
+              ? "150px"
+              : (stylePaddingBottom ?? expandedPadding.paddingBottom ?? spacing["4xl"]),
           zIndex: bridge ? 2 : 1,
           overflow: "visible",
           overflowY: "visible",

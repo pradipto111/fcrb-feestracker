@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import compression from "compression";
 import { PORT } from "./config";
 import authRoutes from "./auth/auth.routes";
 import centersRoutes from "./modules/centers/centers.routes";
@@ -131,7 +132,17 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+app.use(compression());
 app.use(express.json());
+
+app.use((req, res, next) => {
+  if (req.method === "GET" && req.path === "/fixtures/public") {
+    res.setHeader("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+  } else if (req.path.startsWith("/auth")) {
+    res.setHeader("Cache-Control", "no-store");
+  }
+  next();
+});
 
 app.get("/", (req, res) => {
   res.json({ status: "ok", service: "fees-tracker-backend" });

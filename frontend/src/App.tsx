@@ -1,15 +1,11 @@
-import React, { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
+import React, { Suspense, lazy, useEffect, useRef } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+import { useGlobalLoading } from "./context/GlobalLoadingContext";
 import { SmoothScroll } from "./components/SmoothScroll";
 import { PageTransition } from "./components/PageTransition";
 import Layout from "./components/Layout";
 import LoginPage from "./pages/LoginPage";
-import StudentLayout from "./components/StudentLayout";
-import CoachLayout from "./components/CoachLayout";
-import AdminLayout from "./components/AdminLayout";
-import FanLayout from "./components/FanLayout";
-import CrmLayout from "./components/CrmLayout";
 import NotFound from "./pages/NotFound";
 
 // Component to handle legacy route redirects with params
@@ -80,76 +76,53 @@ const StudentTrainingCalendarPage = lazy(() => import("./pages/StudentTrainingCa
 const CoachDrillContentPage = lazy(() => import("./pages/coach/CoachDrillContentPage"));
 const CoachPostApprovalPage = lazy(() => import("./pages/coach/CoachPostApprovalPage"));
 const CoachPostCreationPage = lazy(() => import("./pages/coach/CoachPostCreationPage"));
-
-// Simple loading spinner component for auth restoration
-const AuthLoadingSpinner: React.FC = () => {
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#020C1B",
-        zIndex: 9999,
-      }}
-    >
-      <div style={{ textAlign: "center" }}>
-        <div
-          style={{
-            display: "inline-block",
-            width: "40px",
-            height: "40px",
-            border: "3px solid rgba(28, 36, 48, 0.6)",
-            borderTopColor: "#0A3D91",
-            borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-          }}
-        />
-        <p style={{ marginTop: "1rem", color: "#B0B0B0", fontSize: "0.875rem" }}>
-          Loading...
-        </p>
-      </div>
-    </div>
-  );
-};
+const StudentLayout = lazy(() => import("./components/StudentLayout"));
+const CoachLayout = lazy(() => import("./components/CoachLayout"));
+const AdminLayout = lazy(() => import("./components/AdminLayout"));
+const FanLayout = lazy(() => import("./components/FanLayout"));
+const CrmLayout = lazy(() => import("./components/CrmLayout"));
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isReady } = useAuth();
-  
-  // Wait for auth restoration to complete
+  const { setChannelLoading } = useGlobalLoading();
+
+  useEffect(() => {
+    setChannelLoading("auth", !isReady, "RESTORING YOUR SESSION");
+    return () => setChannelLoading("auth", false);
+  }, [isReady, setChannelLoading]);
+
   if (!isReady) {
-    return <AuthLoadingSpinner />;
+    return null;
   }
-  
-  // Only redirect to login if auth is ready and user is missing
+
   if (!user) {
     return <Navigate to="/realverse/login" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
 const RequireRole: React.FC<{ roles: Array<"ADMIN" | "COACH" | "STUDENT" | "FAN" | "CRM">; children: React.ReactNode }> = ({ roles, children }) => {
   const { user, isReady } = useAuth();
-  
-  // Wait for auth restoration to complete
+  const { setChannelLoading } = useGlobalLoading();
+
+  useEffect(() => {
+    setChannelLoading("auth", !isReady, "CHECKING ACCESS");
+    return () => setChannelLoading("auth", false);
+  }, [isReady, setChannelLoading]);
+
   if (!isReady) {
-    return <AuthLoadingSpinner />;
+    return null;
   }
-  
+
   if (!user) {
     return <Navigate to="/realverse/login" replace />;
   }
-  
+
   if (!roles.includes(user.role)) {
     return <Navigate to="/realverse" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
@@ -170,6 +143,42 @@ const DashboardSelector: React.FC = () => {
   return null;
 };
 
+const SuspenseLoaderFallback: React.FC = () => {
+  const { setChannelLoading } = useGlobalLoading();
+
+  useEffect(() => {
+    setChannelLoading("suspense", true, "PREPARING MATCHDAY VIEW");
+    return () => setChannelLoading("suspense", false);
+  }, [setChannelLoading]);
+
+  return null;
+};
+
+const RouteLoaderBridge: React.FC = () => {
+  const location = useLocation();
+  const { setChannelLoading } = useGlobalLoading();
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    setChannelLoading("route", true, "ENTERING THE PITCH");
+    const timerId = window.setTimeout(() => {
+      setChannelLoading("route", false);
+    }, 700);
+
+    return () => {
+      window.clearTimeout(timerId);
+      setChannelLoading("route", false);
+    };
+  }, [location.pathname, location.search, location.hash, setChannelLoading]);
+
+  return null;
+};
+
 const App: React.FC = () => {
   return (
     <SmoothScroll>
@@ -179,8 +188,9 @@ const App: React.FC = () => {
           v7_relativeSplatPath: true,
         }}
       >
+        <RouteLoaderBridge />
         <PageTransition>
-          <Suspense fallback={<AuthLoadingSpinner />}>
+          <Suspense fallback={<SuspenseLoaderFallback />}>
             <Routes>
         {/* Public Landing Page */}
         <Route path="/" element={<LandingPage />} />

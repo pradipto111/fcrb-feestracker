@@ -1,3 +1,5 @@
+import { beginGlobalNetworkLoading, endGlobalNetworkLoading } from "../context/globalLoadingBus";
+
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 let token: string | null = localStorage.getItem("token");
@@ -37,6 +39,7 @@ async function request(
   path: string,
   options: RequestOptions = {}
 ): Promise<any> {
+  beginGlobalNetworkLoading();
   try {
     // Get fresh token from localStorage on each request
     const currentToken = localStorage.getItem("token");
@@ -169,6 +172,8 @@ async function request(
       throw new Error(`Cannot reach the backend at ${API_BASE}. Start the server with: cd backend && npm run dev`);
     }
     throw error;
+  } finally {
+    endGlobalNetworkLoading();
   }
 }
 
@@ -622,15 +627,19 @@ export const api = {
     });
   },
   // Public fixtures for landing page (no auth required)
-  getPublicFixtures() {
-    return fetch(`${API_BASE}/fixtures/public`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-      mode: 'cors',
-    }).then(res => {
+  async getPublicFixtures() {
+    beginGlobalNetworkLoading();
+    try {
+      const res = await fetch(`${API_BASE}/fixtures/public`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        mode: "cors",
+      });
       if (!res.ok) throw new Error("Failed to fetch fixtures");
-      return res.json();
-    });
+      return await res.json();
+    } finally {
+      endGlobalNetworkLoading();
+    }
   },
   // Club Calendar / Events (public read + admin/coach CRUD)
   getEvents(params?: { from?: string; to?: string; type?: string }) {
@@ -1119,6 +1128,7 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
     });
   },
   async exportLegacyLeadsCSV(params?: { status?: string; fromDate?: string; toDate?: string }) {
+    beginGlobalNetworkLoading();
     const query = new URLSearchParams();
     if (params?.status) query.set("status", params.status);
     if (params?.fromDate) query.set("fromDate", params.fromDate);
@@ -1131,9 +1141,13 @@ return request("/events", { method: "POST", body: JSON.stringify(data) });
     }
     
     const url = `${API_BASE}/legacy/export/csv?${query.toString()}`;
-    const res = await fetch(url, { headers });
-    if (!res.ok) throw new Error(`Export failed: ${res.statusText}`);
-    return await res.blob();
+    try {
+      const res = await fetch(url, { headers });
+      if (!res.ok) throw new Error(`Export failed: ${res.statusText}`);
+      return await res.blob();
+    } finally {
+      endGlobalNetworkLoading();
+    }
   },
   // Analytics APIs
   // Admin Analytics

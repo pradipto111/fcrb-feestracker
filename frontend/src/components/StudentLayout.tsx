@@ -247,7 +247,7 @@ const StudentLayout: React.FC = () => {
   const activeNavItem = allNavItems.find((item) => isActive(item.path));
   const currentPageLabel = activeNavItem?.label || "Student Dashboard";
 
-  if (isMobile) {
+  if (isMobile || isTablet) {
     return (
       <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
         {/* Mobile Top Nav */}
@@ -302,8 +302,6 @@ const StudentLayout: React.FC = () => {
                 display: "flex",
                 flexDirection: "column",
                 gap: spacing.xs,
-                maxHeight: "60vh",
-                overflowY: "auto",
               }}
             >
               {/* Analytics CTA for Mobile */}
@@ -540,7 +538,7 @@ const StudentLayout: React.FC = () => {
           top: 0,
           height: "100vh",
           maxHeight: "100vh",
-          overflowY: "auto",
+          overflowY: "visible",
           overflowX: "hidden",
           WebkitOverflowScrolling: "touch" as any,
           overscrollBehavior: "contain",
@@ -693,7 +691,7 @@ const StudentLayout: React.FC = () => {
             gap: spacing.lg, 
             flex: 1, 
             minHeight: 0, // Critical for flex scrolling
-            overflowY: "auto",
+            overflowY: "visible",
             overflowX: "hidden",
             scrollBehavior: "smooth",
             WebkitOverflowScrolling: "touch" as any,
@@ -1242,7 +1240,6 @@ const StudentLayout: React.FC = () => {
         style={{
           flex: 1,
           padding: isTablet ? spacing.lg : spacing.xl,
-          overflowY: "auto",
           overflowX: "hidden",
           background: `linear-gradient(135deg, #050B20 0%, #0A1633 30%, #101C3A 60%, #050B20 100%)`,
           minHeight: "100vh",

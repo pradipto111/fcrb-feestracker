@@ -384,3 +384,64 @@
 	
 2026-03-06 13:42:57.864 IST [44660] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
 	
+2026-03-06 14:04:28.414 IST [36660] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-06 14:04:28.415 IST [13444] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-06 14:04:28.415 IST [40644] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-06 14:04:28.415 IST [41144] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-06 21:53:25.344 IST [42096] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-07 02:37:59.200 IST [45296] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-07 02:37:59.200 IST [32376] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-07 02:37:59.200 IST [32380] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-07 02:37:59.200 IST [11236] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-07 02:37:59.200 IST [46588] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-07 02:37:59.200 IST [36756] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-07 02:43:18.488 IST [33568] LOG:  checkpoint starting: time
+2026-03-07 02:43:18.616 IST [33568] LOG:  checkpoint complete: wrote 1 buffers (0.0%), wrote 0 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.103 s, sync=0.003 s, total=0.129 s; sync files=1, longest=0.003 s, average=0.003 s; distance=0 kB, estimate=9 kB; lsn=0/20E51C8, redo lsn=0/20E5170
+2026-03-07 15:24:43.795 IST [49956] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-07 15:24:43.796 IST [3752] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-07 15:24:43.796 IST [15828] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-07 15:24:43.796 IST [51856] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-07 15:24:43.796 IST [42036] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-07 15:24:43.796 IST [12028] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-03-07 23:34:42.468 IST [2800] LOG:  background worker "logical replication launcher" (PID 36224) was terminated by exception 0x40010004
+2026-03-07 23:34:42.468 IST [2800] HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
+2026-03-07 23:34:42.469 IST [2800] LOG:  terminating any other active server processes
+2026-03-07 23:34:42.518 IST [2800] LOG:  all server processes terminated; reinitializing
+2026-03-07 23:34:42.611 IST [2800] LOG:  startup process (PID 35644) was terminated by exception 0xC000026B
+2026-03-07 23:34:42.611 IST [2800] HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
+2026-03-07 23:34:42.611 IST [2800] LOG:  aborting startup due to startup process failure
+2026-03-07 23:34:42.616 IST [2800] LOG:  database system is shut down
+2026-03-10 09:56:50.905 IST [41104] LOG:  starting PostgreSQL 18.1 on x86_64-windows, compiled by msvc-19.44.35219, 64-bit
+2026-03-10 09:56:50.908 IST [41104] LOG:  listening on IPv6 address "::1", port 5431
+2026-03-10 09:56:50.908 IST [41104] LOG:  listening on IPv4 address "127.0.0.1", port 5431
+2026-03-10 09:56:50.955 IST [43056] LOG:  database system was interrupted; last known up at 2026-03-07 02:43:18 IST
+2026-03-10 09:56:53.956 IST [43056] LOG:  database system was not properly shut down; automatic recovery in progress
+2026-03-10 09:56:53.964 IST [43056] LOG:  redo starts at 0/20E5170
+2026-03-10 09:56:53.964 IST [43056] LOG:  invalid record length at 0/20E5278: expected at least 24, got 0
+2026-03-10 09:56:53.964 IST [43056] LOG:  redo done at 0/20E5240 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+2026-03-10 09:56:53.974 IST [37260] LOG:  checkpoint starting: end-of-recovery immediate wait
+2026-03-10 09:56:53.996 IST [37260] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.003 s, sync=0.003 s, total=0.027 s; sync files=2, longest=0.002 s, average=0.002 s; distance=0 kB, estimate=0 kB; lsn=0/20E5278, redo lsn=0/20E5278
+2026-03-10 09:56:54.008 IST [41104] LOG:  database system is ready to accept connections
+2026-03-10 10:06:38.294 IST [41104] LOG:  client backend (PID 34456) was terminated by exception 0xC000013A
+2026-03-10 10:06:38.294 IST [41104] DETAIL:  Failed process was running: SELECT "public"."FooterConfig"."id", "public"."FooterConfig"."sectionTitle", "public"."FooterConfig"."displayOrder", "public"."FooterConfig"."isActive", "public"."FooterConfig"."createdAt", "public"."FooterConfig"."updatedAt" FROM "public"."FooterConfig" WHERE "public"."FooterConfig"."isActive" = $1 ORDER BY "public"."FooterConfig"."displayOrder" ASC OFFSET $2
+2026-03-10 10:06:38.294 IST [41104] HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
+2026-03-10 10:06:38.294 IST [41104] LOG:  terminating any other active server processes
+2026-03-10 10:06:38.303 IST [41104] LOG:  all server processes terminated; reinitializing
+^C

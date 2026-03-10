@@ -74,6 +74,8 @@ const CoachPostApprovalPage: React.FC = () => {
         <video
           src={post.mediaUrl}
           controls
+          preload="metadata"
+          playsInline
           style={{
             width: "100%",
             maxHeight: 400

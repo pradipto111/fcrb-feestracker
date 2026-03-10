@@ -17,6 +17,10 @@ import {
 } from "../components/icons/IconSet";
 
 const StudentDetailPage: React.FC = () => {
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = viewportWidth <= 768;
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -54,6 +58,12 @@ const StudentDetailPage: React.FC = () => {
         }
       });
   };
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -1148,6 +1158,39 @@ const StudentDetailPage: React.FC = () => {
           }}>
             Payment History
           </h2>
+          {isMobile ? (
+            <div style={{ display: "grid", gap: spacing.sm }}>
+              {payments.length === 0 ? (
+                <div
+                  style={{
+                    padding: spacing["3xl"],
+                    textAlign: "center",
+                    color: colors.text.muted,
+                    ...typography.body,
+                  }}
+                >
+                  No payments yet
+                </div>
+              ) : (
+                payments.map((p: any) => (
+                  <Card key={p.id} variant="default" padding="md">
+                    <div style={{ ...typography.body, fontWeight: typography.fontWeight.semibold, color: colors.success.main }}>
+                      ₹ {p.amount.toLocaleString()}
+                    </div>
+                    <div style={{ ...typography.caption, color: colors.text.secondary, marginTop: spacing.xs }}>
+                      {new Date(p.paymentDate).toLocaleDateString()} • {p.paymentMode}
+                    </div>
+                    <div style={{ ...typography.caption, color: colors.text.muted, marginTop: spacing.xs }}>
+                      {p.upiOrTxnReference || "-"}
+                    </div>
+                    <div style={{ ...typography.caption, color: colors.text.muted, marginTop: spacing.xs }}>
+                      {p.notes || "-"}
+                    </div>
+                  </Card>
+                ))
+              )}
+            </div>
+          ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
@@ -1208,13 +1251,6 @@ const StudentDetailPage: React.FC = () => {
                     key={p.id} 
                     style={{ 
                       borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
                     }}
                   >
                     <td style={{ 
@@ -1264,6 +1300,7 @@ const StudentDetailPage: React.FC = () => {
               </div>
             )}
           </div>
+          )}
         </Card>
       </motion.div>
     </motion.div>

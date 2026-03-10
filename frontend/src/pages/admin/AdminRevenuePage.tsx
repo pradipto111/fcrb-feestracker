@@ -1,25 +1,21 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { BarChart } from "recharts/es6/chart/BarChart";
+import { LineChart } from "recharts/es6/chart/LineChart";
+import { Bar } from "recharts/es6/cartesian/Bar";
+import { CartesianGrid } from "recharts/es6/cartesian/CartesianGrid";
+import { Line } from "recharts/es6/cartesian/Line";
+import { XAxis } from "recharts/es6/cartesian/XAxis";
+import { YAxis } from "recharts/es6/cartesian/YAxis";
+import { Legend } from "recharts/es6/component/Legend";
+import { ResponsiveContainer } from "recharts/es6/component/ResponsiveContainer";
+import { Tooltip } from "recharts/es6/component/Tooltip";
 import { api, RevenueAnalyticsQuery, RevenueFilterOptions } from "../../api/client";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { DataTableCard } from "../../components/ui/DataTableCard";
+import { RevenueMultiSelectDropdown } from "../../components/ui/RevenueMultiSelectDropdown";
 import { Section } from "../../components/ui/Section";
 import { colors, typography, spacing, borderRadius } from "../../theme/design-tokens";
 import { cardVariants, pageVariants } from "../../utils/motion";
@@ -53,6 +49,7 @@ const DEFAULT_FILTERS: RevenueDraftFilters = {
 
 const TAB_KEYS = ["trend", "center", "programme", "players"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
+const ProgrammeBreakdownChart = lazy(() => import("./charts/ProgrammeBreakdownChart"));
 
 const INR = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 });
 const EMPTY_FILTER_META: RevenueFilterOptions = {
@@ -391,66 +388,60 @@ const AdminRevenuePage: React.FC = () => {
       <Section title="Revenue Filters" description="Apply filters to load data" variant="default" style={{ marginBottom: spacing.xl }}>
         <div className="rv-filter-bar" style={{ marginBottom: spacing.md }}>
           <div className="rv-filter-field">
-            <label>Center (multi-select)</label>
-            <select
-              multiple
-              value={draft.centerIds.map(String)}
-              onChange={(e) =>
+            <RevenueMultiSelectDropdown
+              label="Center (multi-select)"
+              options={(filtersMeta.centers || []).map((center: any) => ({
+                value: String(center.id),
+                label: center.name,
+              }))}
+              selectedValues={draft.centerIds.map(String)}
+              onChange={(nextValues) =>
                 setDraft((prev) => ({
                   ...prev,
-                  centerIds: Array.from(e.target.selectedOptions).map((o) => Number(o.value)),
+                  centerIds: nextValues.map((value) => Number(value)).filter((value) => Number.isFinite(value)),
                 }))
               }
-              style={{ minHeight: 120 }}
-            >
-              {(filtersMeta.centers || []).map((center: any) => (
-                <option key={center.id} value={center.id}>
-                  {center.name}
-                </option>
-              ))}
-            </select>
+              placeholder="All centers"
+              searchPlaceholder="Search centers..."
+            />
           </div>
 
           <div className="rv-filter-field">
-            <label>Programme (multi-select)</label>
-            <select
-              multiple
-              value={draft.programmes}
-              onChange={(e) =>
+            <RevenueMultiSelectDropdown
+              label="Programme (multi-select)"
+              options={(filtersMeta.programmes || []).map((programme: string) => ({
+                value: programme,
+                label: programme,
+              }))}
+              selectedValues={draft.programmes}
+              onChange={(nextValues) =>
                 setDraft((prev) => ({
                   ...prev,
-                  programmes: Array.from(e.target.selectedOptions).map((o) => o.value),
+                  programmes: nextValues,
                 }))
               }
-              style={{ minHeight: 120 }}
-            >
-              {(filtersMeta.programmes || []).map((programme: string) => (
-                <option key={programme} value={programme}>
-                  {programme}
-                </option>
-              ))}
-            </select>
+              placeholder="All programmes"
+              searchPlaceholder="Search programmes..."
+            />
           </div>
 
           <div className="rv-filter-field">
-            <label>Player Status (multi-select)</label>
-            <select
-              multiple
-              value={draft.statuses}
-              onChange={(e) =>
+            <RevenueMultiSelectDropdown
+              label="Player Status (multi-select)"
+              options={(filtersMeta.statuses || []).map((status: string) => ({
+                value: status,
+                label: status,
+              }))}
+              selectedValues={draft.statuses}
+              onChange={(nextValues) =>
                 setDraft((prev) => ({
                   ...prev,
-                  statuses: Array.from(e.target.selectedOptions).map((o) => o.value),
+                  statuses: nextValues,
                 }))
               }
-              style={{ minHeight: 120 }}
-            >
-              {(filtersMeta.statuses || []).map((status: string) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
+              placeholder="All statuses"
+              searchPlaceholder="Search statuses..."
+            />
           </div>
 
           <div className="rv-filter-field">
@@ -704,24 +695,9 @@ const AdminRevenuePage: React.FC = () => {
 
             {activeTab === "programme" && (
               <div className="rv-table-wrap">
-                <div style={{ height: 300 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={programmeBreakdown}
-                        dataKey="totalCollected"
-                        nameKey="programme"
-                        outerRadius={110}
-                        label={(entry: any) => `${entry.programme}`}
-                      >
-                        {programmeBreakdown.map((_: any, index: number) => (
-                          <Cell key={`cell-${index}`} fill={["#3B82F6", "#06B6D4", "#8B5CF6", "#22C55E", "#F59E0B", "#EF4444"][index % 6]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: any) => `₹${INR.format(Number(value || 0))}`} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+                <Suspense fallback={<div style={{ height: 300 }} />}>
+                  <ProgrammeBreakdownChart data={programmeBreakdown} height={300} />
+                </Suspense>
                 <table style={{ width: "100%", borderCollapse: "collapse", marginTop: spacing.md }}>
                   <thead>
                     <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
@@ -773,8 +749,48 @@ const AdminRevenuePage: React.FC = () => {
                     Download CSV
                   </Button>
                 </div>
-                <div className="rv-table-wrap">
-                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? 960 : isTablet ? 1040 : 1100 }}>
+                {isMobile ? (
+                  <div style={{ display: "grid", gap: spacing.sm }}>
+                    {pagedRows.map((row: any) => (
+                      <Card key={row.id} variant="default" padding="md">
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: spacing.sm }}>
+                          <button
+                            style={{
+                              color: colors.primary.light,
+                              background: "transparent",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: 0,
+                              ...typography.body,
+                              fontWeight: typography.fontWeight.semibold,
+                            }}
+                            onClick={() => navigate(`/realverse/admin/players/${row.id}/profile`)}
+                          >
+                            {row.fullName}
+                          </button>
+                          <span style={{ ...typography.caption, color: colors.text.muted }}>{Number(row.collectionPct).toFixed(1)}%</span>
+                        </div>
+                        <div style={{ ...typography.caption, color: colors.text.muted, marginTop: spacing.xs }}>
+                          {row.centerName} • {row.programme}
+                        </div>
+                        <div style={{ marginTop: spacing.sm, display: "grid", gridTemplateColumns: "1fr 1fr", gap: spacing.sm }}>
+                          <div>
+                            <div style={{ ...typography.caption, color: colors.text.muted }}>Expected</div>
+                            <div style={{ ...typography.body, color: colors.text.primary }}>₹{INR.format(row.expected)}</div>
+                          </div>
+                          <div>
+                            <div style={{ ...typography.caption, color: colors.text.muted }}>Outstanding</div>
+                            <div style={{ ...typography.body, color: row.outstanding > 0 ? colors.danger.main : colors.success.main }}>
+                              ₹{INR.format(row.outstanding)}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rv-table-wrap">
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isTablet ? 1040 : 1100 }}>
                   <thead>
                     <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
                       {[
@@ -848,6 +864,7 @@ const AdminRevenuePage: React.FC = () => {
                   </tbody>
                 </table>
                 </div>
+                )}
                 <div className="rv-action-row" style={{ justifyContent: "space-between", marginTop: spacing.md }}>
                   <span style={{ ...typography.caption, color: colors.text.muted }}>
                     Showing {(page - 1) * 25 + 1}-{Math.min(page * 25, filteredRows.length)} of {filteredRows.length}
